@@ -2,7 +2,7 @@
 # PyPSA-Eur: Use of pypsa-eur for sufficiency scenario studies
 This repository contains modified scripts to use PyPSA-Eur for sufficiency scenario studies. The demand data used in the scenarios are based on the CLEVER scenario (https://clever-energy-scenario.eu/). The data folder in the repository contains CSV files considered for demands in the scenarios, which can be freely used and utilized for reproduction purposes or further improvement of sufficiency scenarios. The scripts folder also includes a script to convert CLEVER sufficiency data for 28 countries into csv files which can also be freely utilized. The Config folder also contains config files used for 4 scenarios in the current study. For further information, please feel free to contact Sylvain Quoilin (squoilin@uliege.be) and Muhammad Umair Tareen (muhammadumair.tareen@uliege.be).
 
-# Quick Usage
+**Quick Usage**:
 - Download repistory
 - Install the pypsa environmrnt and activate pypsa-eur.
    conda env create -f envs/environment.yaml
