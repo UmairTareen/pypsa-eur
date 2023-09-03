@@ -2,16 +2,16 @@
 This repository contains modified scripts to use PyPSA-Eur for sufficiency scenario studies. The demand data used in the scenarios are based on the CLEVER scenario (https://clever-energy-scenario.eu/). The data folder in the repository contains CSV files considered for demands in the scenarios, which can be freely used and utilized for reproduction purposes or further improvement of sufficiency scenarios. The scripts folder also includes a script to convert CLEVER sufficiency data for 28 countries into csv files which can also be freely utilized. The Config folder also contains config files used for 4 scenarios in the current study. For further information, please feel free to contact Sylvain Quoilin (squoilin@uliege.be) and Muhammad Umair Tareen (muhammadumair.tareen@uliege.be).
 
 **Quick Usage**:
-- Download repistory
-- Install the pypsa environmrnt and activate pypsa-eur.
+- Download repository
+- Install the pypsa environment and activate pypsa-eur.
    conda env create -f envs/environment.yaml
    conda activate pypsa-eur
 
-- For reference case based on 2020 values and BAU-2050 scenario, rename the config-ref.yaml to config.yaml and config-BAU2050.yaml to config.yaml and also rename the prepare_sector_network_reff and prepare_sector_network_BAU2050 scripts in the scripts folder to prepare_sector_network before running a scenario.
+- For reference cases based on 2020 values and BAU-2050 scenario, rename the config-ref.yaml to config.yaml and config-BAU2050.yaml to config.yaml and also rename the prepare_sector_network_reff and prepare_sector_network_BAU2050 scripts in the scripts folder to prepare_sector_network before running a scenario.
 - For both sufficiency scenarios, the following scripts should be renamed before running any one of the scenarios, build_energy_totals_suff>>>>> build_energy_totals, build_induastrial energy demand_per-country_today_suff>>>>>build_induastrial energy demand_per-country_today, build_industrial_energy_demand_per_node_suff>>>>>>>>>>>build_industrial_energy_demand_per_node, build_industrial_production_per_country_suff>>>>>>build_industrial_production_per_country, build-transport_demand_suff>>>>>>>build-transport_demand and solve_network_suff>>>>>solve_network
 Also change the prepare_sector_network_LULUCF>>>>>>>prepare_sector_network for NO-CDR scenario, and prepare_sector_network_suff>>>>>>>prepare_sector_network for sufficiency scenario 2050 with CCS.
 
-- The sankey codes for all scenarios are included in the sankey folder to analyse the results.
+- The Sankey codes for all scenarios are included in the repository to analyze the results.
 
 
 <!--
