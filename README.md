@@ -12,6 +12,7 @@ This repository contains modified scripts to use PyPSA-Eur for sufficiency scena
 Also change the prepare_sector_network_LULUCF>>>>>>>prepare_sector_network for NO-CDR scenario, and prepare_sector_network_suff>>>>>>>prepare_sector_network for sufficiency scenario 2050 with CCS.
 
 - The Sankey codes for all scenarios are included in the repository to analyze the results.
+- To run the scenarios, type (snakemake -call all) after activating pypsa-eur.
 
 
 <!--
