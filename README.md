@@ -7,6 +7,36 @@ This repository contains modified scripts to use PyPSA-Eur for sufficiency scena
    conda env create -f envs/environment.yaml
    conda activate pypsa-eur
 
+**First run of the model**:
+During the first run, all data bundles must be downloaded. In the config file, set the retrieve options as such:
+- retrieve: auto
+- prepare_links_p_nom: true
+- retrieve_databundle: true
+- retrieve_sector_databundle: true
+- retrieve_cost_data: true
+- build_cutout: false
+- retrieve_cutout: true
+- build_natura_raster: false
+- retrieve_natura_raster: true
+- custom_busmap: false
+Be aware that, depending on your connection speed, download time may be several hours!
+
+You can then run:
+> snakemake -call all
+
+After running the whole snakemake, the options can be set back to:
+- retrieve: auto
+- prepare_links_p_nom: false
+- retrieve_databundle: false
+- retrieve_sector_databundle: false
+- retrieve_cost_data: false
+- build_cutout: false
+- retrieve_cutout: false
+- build_natura_raster: false
+- retrieve_natura_raster: true
+- custom_busmap: false
+
+**Selection of the scenario**:
 - For reference cases based on 2020 values and BAU-2050 scenario, rename the config-ref.yaml to config.yaml and config-BAU2050.yaml to config.yaml and also rename the prepare_sector_network_reff and prepare_sector_network_BAU2050 scripts in the scripts folder to prepare_sector_network before running a scenario.
 - For both sufficiency scenarios, the following scripts should be renamed before running any one of the scenarios, build_energy_totals_suff>>>>> build_energy_totals, build_induastrial energy demand_per-country_today_suff>>>>>build_induastrial energy demand_per-country_today, build_industrial_energy_demand_per_node_suff>>>>>>>>>>>build_industrial_energy_demand_per_node, build_industrial_production_per_country_suff>>>>>>build_industrial_production_per_country, build-transport_demand_suff>>>>>>>build-transport_demand and solve_network_suff>>>>>solve_network
 Also change the prepare_sector_network_LULUCF>>>>>>>prepare_sector_network for NO-CDR scenario, and prepare_sector_network_suff>>>>>>>prepare_sector_network for sufficiency scenario 2050 with CCS.
