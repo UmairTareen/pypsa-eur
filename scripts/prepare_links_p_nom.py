@@ -83,10 +83,10 @@ if __name__ == "__main__":
     )
 
     links_p_nom["x1"], links_p_nom["y1"] = extract_coordinates(
-        links_p_nom["Converterstation 1"]
+        links_p_nom["Converter station 1"]
     )
     links_p_nom["x2"], links_p_nom["y2"] = extract_coordinates(
-        links_p_nom["Converterstation 2"]
+        links_p_nom["Converter station 2"]
     )
 
     links_p_nom.dropna(subset=["x1", "y1", "x2", "y2"]).to_csv(
