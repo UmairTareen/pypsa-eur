@@ -518,8 +518,8 @@ new_row = {'label': 'biomass',
             'value': bb}
 
 # Append the new row to the DataFrame
-df = df.append(new_row, ignore_index=True)
-
+#df = df.append(new_row, ignore_index=True)
+df.loc[len(df)] = pd.Series(new_row)
 
 # make DAC demand
 df.loc[df.label == "DAC", "target"] = "DAC"

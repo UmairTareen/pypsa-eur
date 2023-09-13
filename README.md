@@ -36,6 +36,10 @@ After running the whole snakemake, the options can be set back to:
 - retrieve_natura_raster: true
 - custom_busmap: false
 
+**Package to be added to the environment**
+> conda install plotly
+> pip install -U kaleido
+
 **Selection of the scenario**:
 - For reference cases based on 2020 values and BAU-2050 scenario, rename the config-ref.yaml to config.yaml and config-BAU2050.yaml to config.yaml and also rename the prepare_sector_network_reff and prepare_sector_network_BAU2050 scripts in the scripts folder to prepare_sector_network before running a scenario.
 - For both sufficiency scenarios, the following scripts should be renamed before running any one of the scenarios, build_energy_totals_suff>>>>> build_energy_totals, build_induastrial energy demand_per-country_today_suff>>>>>build_induastrial energy demand_per-country_today, build_industrial_energy_demand_per_node_suff>>>>>>>>>>>build_industrial_energy_demand_per_node, build_industrial_production_per_country_suff>>>>>>build_industrial_production_per_country, build-transport_demand_suff>>>>>>>build-transport_demand and solve_network_suff>>>>>solve_network
