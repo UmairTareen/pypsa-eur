@@ -15,12 +15,12 @@ import yaml
 import os
 from matplotlib.colors import to_rgba
 
-PATH = "/home/umair/pypsa-eur/"
+PATH = "./"
 SCENARIO = "elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020"
 
 RUN = ""
 
-OUTPUT = "/home/umair/Results/sankeys/bau/"
+OUTPUT = "./results/sankeys/bau/"
 OUTPUT_SCENARIO = f"{OUTPUT}/{RUN}/{SCENARIO}/"
 
 if not os.path.exists(OUTPUT_SCENARIO):
