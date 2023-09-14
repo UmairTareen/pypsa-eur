@@ -653,8 +653,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_network",
             simpl="",
-            opts="Ept",
-            clusters="37",
+            opts="",
+            clusters="6",
             ll="v1.0",
             sector_opts="",
             planning_horizons="2020",
