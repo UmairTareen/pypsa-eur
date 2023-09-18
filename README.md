@@ -48,6 +48,10 @@ Also change the prepare_sector_network_LULUCF>>>>>>>prepare_sector_network for N
 - The Sankey codes for all scenarios are included in the repository to analyze the results.
 - To run the scenarios, type (snakemake -call all) after activating pypsa-eur.
 
+**myopic scenario**:
+- Change the file build_sector_myopic.smk to build_sector.smk in rules folder for myopic version of sufficiency scenarios.
+- Change the congif_myopic.yaml to config.yaml in config folder.
+- Only change the build_energy_totals_myopic.py to build_energy_totals.py, build_transport_demand_myopic.py to build_transport_demand.py, build_industrial_demand_per_node_myopic.py to build_industrial_demand_per_node.py, and build_sector_network_suff2050 or LULUCF.py to build_sector_network.py for myopic simulations.
 
 <!--
 SPDX-FileCopyrightText: 2017-2023 The PyPSA-Eur Authors
