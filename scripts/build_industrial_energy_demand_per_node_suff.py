@@ -13,7 +13,7 @@ __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 paths = os.path.join(os.path.dirname(__file__), '../data/')
 def clever_industry_data():
-    years = snakemake.params.energy["sufficiency_scenario"]
+    years = snakemake.config['energy']["sufficiency_scenario"]
     df= pd.read_csv(f'{paths}/clever_Industry_{years}.csv',index_col=0)
     return df
 
@@ -24,8 +24,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "build_industrial_energy_demand_per_node",
             simpl="",
-            clusters=48, #48
-            planning_horizons=2030, #2030
+            clusters=6, #48
+            planning_horizons=2050, #2030
         )
     
     #params = snakemake.params.energy

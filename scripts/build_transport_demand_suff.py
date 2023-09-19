@@ -170,7 +170,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "build_transport_demand",
             simpl="",
-            clusters=48, #48
+            clusters=6, #48
+            planning_horizons=2050,
         )
 
     pop_layout = pd.read_csv(snakemake.input.clustered_pop_layout, index_col=0)
@@ -188,7 +189,7 @@ if __name__ == "__main__":
     nyears = len(snapshots) / 8760
 
     nodal_transport_data = build_nodal_transport_data(
-        snakemake.input.transport_data, pop_layout
+        snakemake.input.transport_datas, pop_layout
     )
 
     transport_demand = build_transport_demand(

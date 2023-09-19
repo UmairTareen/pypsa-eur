@@ -170,8 +170,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "build_transport_demand",
             simpl="",
-            clusters=48,
-            planning_horizons=2030,#48
+            clusters=6,
+            planning_horizons=2050,
         )
         
     pop_layout = pd.read_csv(snakemake.input.clustered_pop_layout, index_col=0)

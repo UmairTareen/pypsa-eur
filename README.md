@@ -19,6 +19,7 @@ During the first run, all data bundles must be downloaded. In the config file, s
 - build_natura_raster: false
 - retrieve_natura_raster: true
 - custom_busmap: false
+
 Be aware that, depending on your connection speed, download time may be several hours!
 
 You can then run:
@@ -38,20 +39,21 @@ After running the whole snakemake, the options can be set back to:
 
 **Package to be added to the environment**
 > conda install plotly
+
 > pip install -U kaleido
 
 **Selection of the scenario**:
-- For reference cases based on 2020 values and BAU-2050 scenario, rename the config-ref.yaml to config.yaml and config-BAU2050.yaml to config.yaml and also rename the prepare_sector_network_reff and prepare_sector_network_BAU2050 scripts in the scripts folder to prepare_sector_network before running a scenario.
-- For both sufficiency scenarios, the following scripts should be renamed before running any one of the scenarios, build_energy_totals_suff>>>>> build_energy_totals, build_induastrial energy demand_per-country_today_suff>>>>>build_induastrial energy demand_per-country_today, build_industrial_energy_demand_per_node_suff>>>>>>>>>>>build_industrial_energy_demand_per_node, build_industrial_production_per_country_suff>>>>>>build_industrial_production_per_country, build-transport_demand_suff>>>>>>>build-transport_demand and solve_network_suff>>>>>solve_network
-Also change the prepare_sector_network_LULUCF>>>>>>>prepare_sector_network for NO-CDR scenario, and prepare_sector_network_suff>>>>>>>prepare_sector_network for sufficiency scenario 2050 with CCS.
+- To run the default workflow, use  (snakemake -call all) after activating pypsa-eur.
+> snakemake -call all
+
+- Tu run a different scenario/workflow, use the dedicated Snakefile, e.g:
+> snakemake -s Snakefile_suff -call all
 
 - The Sankey codes for all scenarios are included in the repository to analyze the results.
 - To run the scenarios, type (snakemake -call all) after activating pypsa-eur.
 
-**myopic scenario**:
-- Change the file build_sector_myopic.smk to build_sector.smk in rules folder for myopic version of sufficiency scenarios.
-- Change the congif_myopic.yaml to config.yaml in config folder.
-- Only change the build_energy_totals_myopic.py to build_energy_totals.py, build_transport_demand_myopic.py to build_transport_demand.py, build_industrial_demand_per_node_myopic.py to build_industrial_demand_per_node.py, and build_sector_network_suff2050 or LULUCF.py to build_sector_network.py for myopic simulations.
+**myopic scenarios**:
+- The myopic scenarios perform the optimization for successive years defined in the config file. They can be run using the dedicated Snakefile.
 
 <!--
 SPDX-FileCopyrightText: 2017-2023 The PyPSA-Eur Authors

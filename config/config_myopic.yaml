@@ -66,7 +66,7 @@ enable:
   prepare_links_p_nom: false
   retrieve_databundle: false
   retrieve_sector_databundle: false
-  retrieve_cost_data: false
+  retrieve_cost_data: true
   build_cutout: false
   retrieve_cutout: false
   build_natura_raster: false
@@ -446,7 +446,7 @@ sector:
   methanation: true
   helmeth: false
   coal_cc: false
-  dac: true
+  dac: false
   co2_vent: false
   allam_cycle: false
   hydrogen_fuel_cell: true

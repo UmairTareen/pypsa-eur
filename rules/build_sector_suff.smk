@@ -262,14 +262,17 @@ rule build_energy_totals:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_energy_totals_myopic.py"
+        "../scripts/build_energy_totals_suff.py"
 
 
 rule build_biomass_potentials:
     params:
         biomass=config["biomass"],
     input:
-        enspreso_biomass="data/ENSPRESO_BIOMASS.xlsx",
+        enspreso_biomass=HTTP.remote(
+            "https://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/ENSPRESO/ENSPRESO_BIOMASS.xlsx",
+            keep_local=True,
+        ),
         nuts2="data/bundle-sector/nuts/NUTS_RG_10M_2013_4326_LEVL_2.geojson",  # https://gisco-services.ec.europa.eu/distribution/v2/nuts/download/#nuts21
         regions_onshore=RESOURCES + "regions_onshore_elec_s{simpl}_{clusters}.geojson",
         nuts3_population=ancient("data/bundle/nama_10r_3popgdp.tsv.gz"),
@@ -445,7 +448,7 @@ rule build_industrial_production_per_country:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_industrial_production_per_country_myopic.py"
+        "../scripts/build_industrial_production_per_country_suff.py"
 
 
 rule build_industrial_production_per_country_tomorrow:
@@ -550,7 +553,7 @@ rule build_industrial_energy_demand_per_node:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_industrial_energy_demand_per_node_myopic.py"
+        "../scripts/build_industrial_energy_demand_per_node_suff.py"
 
 
 rule build_industrial_energy_demand_per_country_today:
@@ -575,7 +578,7 @@ rule build_industrial_energy_demand_per_country_today:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_industrial_energy_demand_per_country_today_myopic.py"
+        "../scripts/build_industrial_energy_demand_per_country_today.py"
 
 
 rule build_industrial_energy_demand_per_node_today:
@@ -680,7 +683,7 @@ rule build_transport_demand:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_transport_demand_myopic.py"
+        "../scripts/build_transport_demand_suff.py"
         
         
 rule build_shipping_demand:
@@ -795,4 +798,4 @@ rule prepare_sector_network:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/prepare_sector_network_LULUCF_myopic.py"
+        "../scripts/prepare_sector_network_LULUCF.py"
