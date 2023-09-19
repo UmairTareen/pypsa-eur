@@ -16,8 +16,8 @@ import os
 from matplotlib.colors import to_rgba
 
 PATH = "./"
-SCENARIO = "elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020"
-file_industrial_demand = f"{PATH}resources/industrial_energy_demand_elec_s_6_2020.csv"
+SCENARIO = "elec_s_6_lvopt__Co2L0-1H-T-H-B-I-A-dist1_2050"
+file_industrial_demand = f"{PATH}resources/industrial_energy_demand_elec_s_6_2050.csv"
 
 RUN = ""
 
@@ -213,7 +213,7 @@ for i in range(3):
     n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
 
 
-def calculate_losses(x, include_losses=include_losses):
+def calculate_losses(x, include_losses=True):
     if include_losses:
         energy_ports = x.loc[
             x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
@@ -223,7 +223,7 @@ def calculate_losses(x, include_losses=include_losses):
         return 0
 
 
-n.links["total_e3"] = n.links.apply(calculate_losses, include_losses=True, axis=1)  # e4 and bus 4 for bAU 2050
+n.links["total_e3"] = n.links.apply(calculate_losses, include_losses=include_losses, axis=1)  # e4 and bus 4 for bAU 2050
 n.links["carrier_bus3"] = "losses"
 
 df = pd.concat(
@@ -343,7 +343,7 @@ new_row = {'label': 'biomass',
 
 # Append the new row to the DataFrame
 # df = df.append(new_row, ignore_index=True)
-df.loc[len(df)] = pd.Series(new_row)
+#df.loc[len(df)] = pd.Series(new_row)
 
 # make DAC demand
 df.loc[df.label == "DAC", "target"] = "DAC"
