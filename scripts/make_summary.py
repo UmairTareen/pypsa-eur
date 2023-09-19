@@ -299,7 +299,7 @@ def calculate_energy(n, label, energy):
                 )
                 # remove values where bus is missing (bug in nomopyomo)
                 no_bus = c.df.index[c.df["bus" + port] == ""]
-                totals.loc[no_bus] = float(
+                totals.loc[no_bus.intersection(totals.index)] = float(
                     n.component_attrs[c.name].loc["p" + port, "default"]
                 )
                 c_energies -= totals.groupby(c.df.carrier).sum()
@@ -352,7 +352,7 @@ def calculate_supply(n, label, supply):
 
                 # lots of sign compensation for direction and to do maximums
                 s = (-1) ** (1 - int(end)) * (
-                    (-1) ** int(end) * c.pnl["p" + end][items]
+                    (-1) ** int(end) * c.pnl["p" + end][items.intersection(c.pnl["p" + end].columns)]
                 ).max().groupby(c.df.loc[items, "carrier"]).sum()
                 s.index = s.index + end
                 s = pd.concat([s], keys=[c.list_name])
@@ -402,7 +402,7 @@ def calculate_supply_energy(n, label, supply_energy):
                 if len(items) == 0:
                     continue
 
-                s = (-1) * c.pnl["p" + end][items].multiply(
+                s = (-1) * c.pnl["p" + end][items.intersection(c.pnl["p" + end].columns)].multiply(
                     n.snapshot_weightings.generators, axis=0
                 ).sum().groupby(c.df.loc[items, "carrier"]).sum()
                 s.index = s.index + end
@@ -678,7 +678,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake
 
-        snakemake = mock_snakemake("make_summary")
+        snakemake = mock_snakemake("make_summary",configfiles=["config/config (BAU-Suff-2050).yaml"])
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
 
