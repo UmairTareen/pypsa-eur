@@ -100,6 +100,28 @@ rule make_summary:
     script:
         "../scripts/make_summary.py"
 
+rule plot_sankey:
+    params:
+        plotting=config["plotting"],
+    input:
+        network=RESULTS
+        + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+        industrial_energy_demand_per_node=RESOURCES
+        + "industrial_energy_demand_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
+        
+    output:
+        sankey=RESULTS
+        + "sankey/sankey_{planning_horizons}.html",
+        sankey_csv = RESULTS + "sankey/sankey_csv_{planning_horizons}.csv",
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "plot_sankey_{planning_horizons}.log",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../scripts/plot_sankey.py"
 
 rule plot_summary:
     params:
