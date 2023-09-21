@@ -14,7 +14,7 @@ from snakemake.utils import min_version
 min_version("7.7")
 
 
-configfile: "config/config (BAU-Suff-2050).yaml"
+configfile: "config/config_suff.yaml"
 
 
 COSTS = f"data/costs_{config['costs']['year']}.csv"
@@ -46,20 +46,20 @@ include: "rules/common.smk"
 include: "rules/collect.smk"
 include: "rules/retrieve.smk"
 include: "rules/build_electricity.smk"
-include: "rules/solve_electricity_suff.smk"
+include: "rules/solve_electricity.smk"
 include: "rules/postprocess.smk"
 include: "rules/validate.smk"
 
 
 if config["foresight"] == "overnight":
 
-    include: "rules/solve_overnight.smk"
+    include: "rules/solve_overnight_suff.smk"
     include: "rules/build_sector_suff.smk"
 
 
 if config["foresight"] == "myopic":
 
-    include: "rules/solve_myopic.smk"
+    include: "rules/solve_myopic_suff.smk"
     include: "rules/build_sector_myopic.smk"
 
 
