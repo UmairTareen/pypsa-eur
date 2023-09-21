@@ -76,11 +76,13 @@ def define_spatial(nodes, options):
         spatial.co2.locations = nodes
         spatial.co2.vents = nodes + " co2 vent"
         spatial.co2.process_emissions = nodes + " process emissions"
+        spatial.co2.LULUCF = ["LULUCF"]
     else:
         spatial.co2.nodes = ["co2 stored"]
         spatial.co2.locations = ["EU"]
         spatial.co2.vents = ["co2 vent"]
         spatial.co2.process_emissions = ["process emissions"]
+        spatial.co2.LULUCF = ["LULUCF"]
 
     spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
 
@@ -191,17 +193,15 @@ def get(item, investment_year=None):
 
 
 def co2_emissions_year(
-    countries, input_eurostat, opts, emissions_scope, report_year, year
+    countries, input_eurostat, opts, emissions_scope, report_year, input_co2, year
 ):
     """
     Calculate CO2 emissions in one specific year (e.g. 1990 or 2018).
     """
-    emissions_scope = snakemake.params.energy["emissions"]
-    eea_co2 = build_eea_co2(snakemake.input.co2, year, emissions_scope)
+    eea_co2 = build_eea_co2(input_co2, year, emissions_scope)
 
     # TODO: read Eurostat data from year > 2014
     # this only affects the estimation of CO2 emissions for BA, RS, AL, ME, MK
-    report_year = snakemake.params.energy["eurostat_report_year"]
     if year > 2014:
         eurostat_co2 = build_eurostat_co2(
             input_eurostat, countries, report_year, year=2014
@@ -222,7 +222,7 @@ def co2_emissions_year(
 
 
 # TODO: move to own rule with sector-opts wildcard?
-def build_carbon_budget(o, input_eurostat, fn, emissions_scope, report_year):
+def build_carbon_budget(o, input_eurostat, fn, emissions_scope, report_year, input_co2):
     """
     Distribute carbon budget following beta or exponential transition path.
     """
@@ -240,12 +240,24 @@ def build_carbon_budget(o, input_eurostat, fn, emissions_scope, report_year):
     countries = snakemake.params.countries
 
     e_1990 = co2_emissions_year(
-        countries, input_eurostat, opts, emissions_scope, report_year, year=1990
+        countries,
+        input_eurostat,
+        opts,
+        emissions_scope,
+        report_year,
+        input_co2,
+        year=1990,
     )
 
     # emissions at the beginning of the path (last year available 2018)
     e_0 = co2_emissions_year(
-        countries, input_eurostat, opts, emissions_scope, report_year, year=2018
+        countries,
+        input_eurostat,
+        opts,
+        emissions_scope,
+        report_year,
+        input_co2,
+        year=2018,
     )
 
     planning_horizons = snakemake.params.planning_horizons
@@ -530,6 +542,22 @@ def add_co2_tracking(n, options):
         carrier="co2",
         bus="co2 atmosphere",
     )
+    fn = snakemake.input.co2_totals_name
+    LULUCF_totals = pd.read_csv(fn, index_col=0)
+    lt = ['BE', 'DE', 'FR', 'GB', 'NL']
+    column_to_lock = ['LULUCF']
+    sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
+    sum_results = sum_results * -1e6
+    n.madd(
+        "Store",
+        spatial.co2.LULUCF,
+        e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
+        e_nom_max=sum_results,
+        carrier="LULUCF",
+        capital_cost=0,
+        bus="co2 atmosphere",
+    )
+    n.add("Carrier", "LULUCF")
 
     # this tracks CO2 stored, e.g. underground
     n.madd(
@@ -562,7 +590,7 @@ def add_co2_tracking(n, options):
     n.madd(
         "Store",
         spatial.co2.nodes,
-        e_nom_extendable=True,                                    #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>CO2 storage
+        e_nom_extendable=False,
         e_nom_max=e_nom_max,
         capital_cost=options["co2_sequestration_cost"],
         carrier="co2 stored",
@@ -946,7 +974,7 @@ def insert_electricity_distribution_grid(n, costs):
 
     # add max solar rooftop potential assuming 0.1 kW/m2 and 10 m2/person,
     # i.e. 1 kW/person (population data is in thousands of people) so we get MW
-    potential = 0.25 * 10 * pop_solar                          #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>solar rooftop
+    potential = 0.1 * 10 * pop_solar
 
     n.madd(
         "Generator",
@@ -1379,7 +1407,7 @@ def add_storage_and_grids(n, costs):
             capital_cost=costs.at["coal", "efficiency"] * costs.at["coal", "fixed"]
             + costs.at["biomass CHP capture", "fixed"]
             * costs.at["coal", "CO2 intensity"],  # NB: fixed cost is per MWel
-            p_nom_extendable=True,                                                #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>coal CC
+            p_nom_extendable=True,
             carrier="coal",
             efficiency=costs.at["coal", "efficiency"],
             efficiency2=costs.at["coal", "CO2 intensity"]
@@ -1398,7 +1426,7 @@ def add_storage_and_grids(n, costs):
             bus1=nodes + " H2",
             bus2="co2 atmosphere",
             bus3=spatial.co2.nodes,
-            p_nom_extendable=True,                                               #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SMR CC
+            p_nom_extendable=False,#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SMR CC
             carrier="SMR CC",
             efficiency=costs.at["SMR CC", "efficiency"],
             efficiency2=costs.at["gas", "CO2 intensity"] * (1 - options["cc_fraction"]),
@@ -1569,12 +1597,12 @@ def add_land_transport(n, costs):
             suffix=" land transport oil",
             bus=spatial.oil.nodes,
             carrier="land transport oil",
-            p_set=ice_share / ice_efficiency * transport[nodes],
+            p_set=ice_share * transport[nodes],
         )
 
         co2 = (
             ice_share
-            / ice_efficiency
+            #/ ice_efficiency
             * transport[nodes].sum().sum()
             / nhours
             * costs.at["oil", "CO2 intensity"]
@@ -1892,7 +1920,7 @@ def add_heat(n, costs):
                 bus3="co2 atmosphere",
                 bus4=spatial.co2.df.loc[nodes[name], "nodes"].values,
                 carrier="urban central gas CHP CC",
-                p_nom_extendable=True,                                    #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>gas CHP CC
+                p_nom_extendable=False,
                 capital_cost=costs.at["central gas CHP", "fixed"]
                 * costs.at["central gas CHP", "efficiency"]
                 + costs.at["biomass CHP capture", "fixed"]
@@ -2156,12 +2184,11 @@ def add_biomass(n, costs):
     )
 
     if options["biomass_transport"]:
-        transport_costs = pd.read_csv(
-            snakemake.input.biomass_transport_costs,
-            index_col=0,
-        ).squeeze()
-
         # add biomass transport
+        transport_costs = pd.read_csv(
+            snakemake.input.biomass_transport_costs, index_col=0
+        )
+        transport_costs = transport_costs.squeeze()
         biomass_transport = create_network_topology(
             n, "biomass transport ", bidirectional=False
         )
@@ -2183,6 +2210,27 @@ def add_biomass(n, costs):
             length=biomass_transport.length.values,
             marginal_cost=biomass_transport.costs * biomass_transport.length.values,
             carrier="solid biomass transport",
+        )
+
+    elif options["biomass_spatial"]:
+        # add artificial biomass generators at nodes which include transport costs
+        transport_costs = pd.read_csv(
+            snakemake.input.biomass_transport_costs, index_col=0
+        )
+        transport_costs = transport_costs.squeeze()
+        bus_transport_costs = spatial.biomass.nodes.to_series().apply(
+            lambda x: transport_costs[x[:2]]
+        )
+        average_distance = 200  # km #TODO: validate this assumption
+
+        n.madd(
+            "Generator",
+            spatial.biomass.nodes,
+            bus=spatial.biomass.nodes,
+            carrier="solid biomass",
+            p_nom=10000,
+            marginal_cost=costs.at["solid biomass", "fuel"]
+            + bus_transport_costs * average_distance,
         )
 
     # AC buses with district heating
@@ -2216,7 +2264,7 @@ def add_biomass(n, costs):
             bus3="co2 atmosphere",
             bus4=spatial.co2.df.loc[urban_central, "nodes"].values,
             carrier="urban central solid biomass CHP CC",
-            p_nom_extendable=True,                                                #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>biomass CHP CC
+            p_nom_extendable=False,
             capital_cost=costs.at[key, "fixed"] * costs.at[key, "efficiency"]
             + costs.at["biomass CHP capture", "fixed"]
             * costs.at["solid biomass", "CO2 intensity"],
@@ -2297,7 +2345,7 @@ def add_biomass(n, costs):
             efficiency2=-costs.at["solid biomass", "CO2 intensity"]
             + costs.at["BtL", "CO2 stored"] * (1 - costs.at["BtL", "capture rate"]),
             efficiency3=costs.at["BtL", "CO2 stored"] * costs.at["BtL", "capture rate"],
-            p_nom_extendable=True,                                                             #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>biomass to liquid CC
+            p_nom_extendable=False,
             capital_cost=costs.at["BtL", "fixed"]
             + costs.at["biomass CHP capture", "fixed"] * costs.at["BtL", "CO2 stored"],
             marginal_cost=costs.at["BtL", "efficiency"] * costs.loc["BtL", "VOM"],
@@ -2311,7 +2359,7 @@ def add_biomass(n, costs):
             suffix=" solid biomass to gas",
             bus0=spatial.biomass.nodes,
             bus1=spatial.gas.nodes,
-            bus3="co2 atmosphere",
+            bus2="co2 atmosphere",
             carrier="BioSNG",
             lifetime=costs.at["BioSNG", "lifetime"],
             efficiency=costs.at["BioSNG", "efficiency"],
@@ -2329,8 +2377,8 @@ def add_biomass(n, costs):
             suffix=" solid biomass to gas CC",
             bus0=spatial.biomass.nodes,
             bus1=spatial.gas.nodes,
-            bus2="co2 atmosphere",
-            bus3=spatial.co2.nodes,
+            bus2=spatial.co2.nodes,
+            bus3="co2 atmosphere",
             carrier="BioSNG",
             lifetime=costs.at["BioSNG", "lifetime"],
             efficiency=costs.at["BioSNG", "efficiency"],
@@ -2339,7 +2387,7 @@ def add_biomass(n, costs):
             efficiency3=-costs.at["solid biomass", "CO2 intensity"]
             + costs.at["BioSNG", "CO2 stored"]
             * (1 - costs.at["BioSNG", "capture rate"]),
-            p_nom_extendable=True,                                      #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>biomass to gas CC
+            p_nom_extendable=False,
             capital_cost=costs.at["BioSNG", "fixed"]
             + costs.at["biomass CHP capture", "fixed"]
             * costs.at["BioSNG", "CO2 stored"],
@@ -2403,7 +2451,7 @@ def add_industry(n, costs):
         bus2="co2 atmosphere",
         bus3=spatial.co2.nodes,
         carrier="solid biomass for industry CC",
-        p_nom_extendable=True,                                      #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>biomass for industry CC
+        p_nom_extendable=False,
         capital_cost=costs.at["cement capture", "fixed"]
         * costs.at["solid biomass", "CO2 intensity"],
         efficiency=0.9,  # TODO: make config option
@@ -2457,7 +2505,7 @@ def add_industry(n, costs):
         bus2="co2 atmosphere",
         bus3=spatial.co2.nodes,
         carrier="gas for industry CC",
-        p_nom_extendable=True,                             #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>gas for industry CC
+        p_nom_extendable=False,
         capital_cost=costs.at["cement capture", "fixed"]
         * costs.at["gas", "CO2 intensity"],
         efficiency=0.9,
@@ -2764,7 +2812,7 @@ def add_industry(n, costs):
         p_set=industrial_demand.loc[nodes, "low-temperature heat"] / nhours,
     )
 
-    # remove today's industrial electricity demand by scaling down total electricity demand
+    # remove today's industrial electricity demand by scaling down total electricity demand   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>electric load
     for ct in n.buses.country.dropna().unique():
         # TODO map onto n.bus.country
 
@@ -2774,7 +2822,7 @@ def add_industry(n, costs):
         fn = snakemake.input.pop_weighted_energy_totals
         energy_totals = pd.read_csv(fn, index_col=0)
         lt = ['BE1 0', 'DE1 0', 'FR1 0', 'GB0 0', 'GB2 0', 'NL1 0']
-        column_to_lock = ['electricity residential', 'electricity services', 'total rail', 'electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']
+        column_to_lock = ['electricity residential', 'electricity services', 'electricity residential space', 'total rail', 'electricity residential water', 'electricity services space', 'electricity services water']
         energy_totals.loc[lt, column_to_lock] = energy_totals.loc[lt, column_to_lock]
         sum_result = (energy_totals.loc[lt, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[lt, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']].sum(axis=1))
         
@@ -2842,7 +2890,7 @@ def add_industry(n, costs):
         bus1="co2 atmosphere",
         bus2=spatial.co2.nodes,
         carrier="process emissions CC",
-        p_nom_extendable=True,                                            #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>process emissions CC
+        p_nom_extendable=True,
         capital_cost=costs.at["cement capture", "fixed"],
         efficiency=1 - costs.at["cement capture", "capture_rate"],
         efficiency2=costs.at["cement capture", "capture_rate"],
@@ -3377,12 +3425,18 @@ if __name__ == "__main__":
         if "cb" not in o:
             continue
         limit_type = "carbon budget"
-        fn = "results/" + snakemake.params.RDIR + "/csvs/carbon_budget_distribution.csv"
+        fn = "results/" + snakemake.params.RDIR + "csvs/carbon_budget_distribution.csv"
         if not os.path.exists(fn):
             emissions_scope = snakemake.params.emissions_scope
             report_year = snakemake.params.eurostat_report_year
+            input_co2 = snakemake.input.co2
             build_carbon_budget(
-                o, snakemake.input.eurostat, fn, emissions_scope, report_year
+                o,
+                snakemake.input.eurostat,
+                fn,
+                emissions_scope,
+                report_year,
+                input_co2,
             )
         co2_cap = pd.read_csv(fn, index_col=0).squeeze()
         limit = co2_cap.loc[investment_year]
