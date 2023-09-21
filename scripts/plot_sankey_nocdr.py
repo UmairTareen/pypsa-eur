@@ -140,32 +140,28 @@ def prepare_sankey(n):
             load.label == "low-temperature heat for industry"), "source"] = "District Heating"
     load.loc[load.label.str.contains("NH3") & (load.label == "NH3"), "target"] = "Industry"
 
-    
+    for i in range(4):
+        n.links[f"total_e{i}"] = (n.snapshot_weightings.generators @ n.links_t[f"p{i}"]).div(1e6)  # TWh
+        n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
 
 
     def calculate_losses(x, include_losses=include_losses):
-     '''
-     This function compute the losses for generation and storage technologies. The flag "include_losses" can be 
-     used to activate and deactivate the losses in the sankey plot.
-     '''
-     for i in range(5):
-        n.links[f"total_e{i}"] = (n.snapshot_weightings.generators @ n.links_t[f"p{i}"]).div(1e6)  # TWh
-        n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
-     if include_losses:
-        energy_ports = x.loc[
+        
+        if include_losses:
+            energy_ports = x.loc[
             x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
             ].index.str.replace("carrier_bus", "total_e")
-        return -x.loc[energy_ports].sum()
-     else:
-        return 0
+            return -x.loc[energy_ports].sum()
+        else:
+            return 0
 
-    n.links["total_e5"] = n.links.apply(calculate_losses, include_losses=True, axis=1)  # e4 and bus 4 for bAU 2050
-    n.links["carrier_bus5"] = "losses"
+    n.links["total_e4"] = n.links.apply(calculate_losses, include_losses=include_losses, axis=1)  # e4 and bus 4 for bAU 2050
+    n.links["carrier_bus4"] = "losses"
 
     df = pd.concat(
     [
         n.links.groupby(["carrier", "carrier_bus0", "carrier_bus" + str(i)]).sum(numeric_only=True)["total_e" + str(i)]
-        for i in range(1, 6)
+        for i in range(1, 5)
     ]
     ).reset_index()
     df.columns = columns
