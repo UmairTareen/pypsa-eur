@@ -108,6 +108,7 @@ rule plot_sankey:
         + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
         industrial_energy_demand_per_node=RESOURCES
         + "industrial_energy_demand_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
+        energy_name=RESOURCES + "energy_totals.csv",
         
     output:
         sankey=RESULTS
@@ -118,6 +119,8 @@ rule plot_sankey:
         mem_mb=10000,
     log:
         LOGS + "plot_sankey_{planning_horizons}.log",
+    benchmark:
+        BENCHMARKS + "plot_sankey_{planning_horizons}"
     conda:
         "../envs/environment.yaml"
     script:
