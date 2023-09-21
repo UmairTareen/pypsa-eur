@@ -14,10 +14,7 @@ import pandas as pd
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 import plotly.graph_objects as go
 import numpy as np
-import yaml
-import os
 from matplotlib.colors import to_rgba
-import seaborn as sns
 
 
 
@@ -40,6 +37,7 @@ if __name__ == "__main__":
 
 colors = snakemake.params.plotting["tech_colors"]
 file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
+energy = snakemake.input.energy_name
 
 
 # Flag to include losses or not in the sankey:
@@ -104,7 +102,8 @@ n=network.copy()
 feedstock_emissions = (
         pd.read_csv(file_industrial_demand, index_col=0)["process emission from feedstock"].sum() * 1e6
 )  # t
-
+energy_demand = (
+        pd.read_csv(energy, index_col=0))
 # def prepare_sankey(n):
 columns = ["label", "source", "target", "value"]
 
@@ -157,6 +156,7 @@ gen.loc[len(gen), :] = hydro_dams.loc[1, :]
 
 # Combine hydro dams with run of river:
 gen = combine_rows(gen, ['label', 'source', 'target'], ['ror', 'hydro'], 'Hydro')
+#su = su.drop(su[(su["label"] == "hydro")].index)
 
 # Storages:
 sto = ((n.snapshot_weightings.generators @ n.stores_t.p)
@@ -426,17 +426,6 @@ fig = go.Figure(
 fig.write_html(snakemake.output.sankey)
 connections = connections
 connections.to_csv(snakemake.output.sankey_csv)
-
-
-
-    
-
-
-
-
-
-
-
 
 # %%
 # columns = ["label", "source", "target", "value"]
