@@ -249,16 +249,16 @@ rule build_energy_totals:
         district_heat_share="data/district_heat_share.csv",
         eurostat=input_eurostat,
     output:
-        energy_name=RESOURCES + "energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
-        co2_name=RESOURCES + "co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
-        transport_name=RESOURCES + "transport_datas_s{simpl}_{clusters}_{planning_horizons}.csv",
+        energy_name=RESOURCES + "energy_totals.csv",
+        co2_name=RESOURCES + "co2_totals.csv",
+        transport_name=RESOURCES + "transport_data.csv",
     threads: 16
     resources:
         mem_mb=10000,
     log:
-        LOGS + "build_energy_totals_s{simpl}_{clusters}_{planning_horizons}.log",
+        LOGS + "build_energy_totals.log",
     benchmark:
-        BENCHMARKS + "build_energy_totals_s{simpl}_{clusters}_{planning_horizons}"
+        BENCHMARKS + "build_energy_totals"
     conda:
         "../envs/environment.yaml"
     script:
@@ -431,6 +431,7 @@ rule build_industrial_production_per_country:
     params:
         industry=config["industry"],
         countries=config["countries"],
+        planning_horizons=config["scenario"]["planning_horizons"],
     input:
         ammonia_production=RESOURCES + "ammonia_production.csv",
         jrc="data/bundle-sector/jrc-idees-2015",
@@ -644,15 +645,15 @@ if not config["sector"]["retrofitting"]["retro_endogen"]:
 
 rule build_population_weighted_energy_totals:
     input:
-        energy_totals=RESOURCES + "energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
+        energy_totals=RESOURCES + "energy_totals.csv",
         clustered_pop_layout=RESOURCES + "pop_layout_elec_s{simpl}_{clusters}.csv",
     output:
-        RESOURCES + "pop_weighted_energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
+        RESOURCES + "pop_weighted_energy_totals_s{simpl}_{clusters}.csv",
     threads: 1
     resources:
         mem_mb=2000,
     log:
-        LOGS + "build_population_weighted_energy_totals_s{simpl}_{clusters}_{planning_horizons}.log",
+        LOGS + "build_population_weighted_energy_totals_s{simpl}_{clusters}.log",
     conda:
         "../envs/environment.yaml"
     script:
@@ -665,21 +666,21 @@ rule build_transport_demand:
     input:
         clustered_pop_layout=RESOURCES + "pop_layout_elec_s{simpl}_{clusters}.csv",
         pop_weighted_energy_totals=RESOURCES
-        + "pop_weighted_energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
-        transport_datas=RESOURCES + "transport_datas_s{simpl}_{clusters}_{planning_horizons}.csv",
+        + "pop_weighted_energy_totals_s{simpl}_{clusters}.csv",
+        transport_data=RESOURCES + "transport_data.csv",
         traffic_data_KFZ="data/bundle-sector/emobility/KFZ__count",
         traffic_data_Pkw="data/bundle-sector/emobility/Pkw__count",
         temp_air_total=RESOURCES + "temp_air_total_elec_s{simpl}_{clusters}.nc",
     output:
-        transport_demand=RESOURCES + "transport_demand_s{simpl}_{clusters}_{planning_horizons}.csv",
-        transport_data=RESOURCES + "transport_data_s{simpl}_{clusters}_{planning_horizons}.csv",
-        avail_profile=RESOURCES + "avail_profile_s{simpl}_{clusters}_{planning_horizons}.csv",
-        dsm_profile=RESOURCES + "dsm_profile_s{simpl}_{clusters}_{planning_horizons}.csv",
+        transport_demand=RESOURCES + "transport_demand_s{simpl}_{clusters}.csv",
+        transport_data=RESOURCES + "transport_data_s{simpl}_{clusters}.csv",
+        avail_profile=RESOURCES + "avail_profile_s{simpl}_{clusters}.csv",
+        dsm_profile=RESOURCES + "dsm_profile_s{simpl}_{clusters}.csv",
     threads: 1
     resources:
         mem_mb=2000,
     log:
-        LOGS + "build_transport_demand_s{simpl}_{clusters}_{planning_horizons}.log",
+        LOGS + "build_transport_demand_s{simpl}_{clusters}.log",
     conda:
         "../envs/environment.yaml"
     script:
@@ -691,14 +692,14 @@ rule build_shipping_demand:
         ports="data/attributed_ports.json",
         scope=RESOURCES + "europe_shape.geojson",
         regions=RESOURCES + "regions_onshore_elec_s{simpl}_{clusters}.geojson",
-        demand=RESOURCES + "energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
+        demand=RESOURCES + "energy_totals.csv",
     output:
-        RESOURCES + "shipping_demand_s{simpl}_{clusters}_{planning_horizons}.csv",
+        RESOURCES + "shipping_demand_s{simpl}_{clusters}.csv",
     threads: 1
     resources:
         mem_mb=2000,
     log:
-        LOGS + "build_shipping_demand_s{simpl}_{clusters}_{planning_horizons}.log",
+        LOGS + "build_shipping_demand_s{simpl}_{clusters}.log",
     conda:
         "../envs/environment.yaml"
     script:
@@ -729,16 +730,16 @@ rule prepare_sector_network:
         **gas_infrastructure,
         **build_sequestration_potentials_output,
         network=RESOURCES + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
-        energy_totals_name=RESOURCES + "energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
+        energy_totals_name=RESOURCES + "energy_totals.csv",
         eurostat=input_eurostat,
         pop_weighted_energy_totals=RESOURCES
-        + "pop_weighted_energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
-        shipping_demand=RESOURCES + "shipping_demand_s{simpl}_{clusters}_{planning_horizons}.csv",
-        transport_demand=RESOURCES + "transport_demand_s{simpl}_{clusters}_{planning_horizons}.csv",
-        transport_data=RESOURCES + "transport_data_s{simpl}_{clusters}_{planning_horizons}.csv",
-        avail_profile=RESOURCES + "avail_profile_s{simpl}_{clusters}_{planning_horizons}.csv",
-        dsm_profile=RESOURCES + "dsm_profile_s{simpl}_{clusters}_{planning_horizons}.csv",
-        co2_totals_name=RESOURCES + "co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
+        + "pop_weighted_energy_totals_s{simpl}_{clusters}.csv",
+        shipping_demand=RESOURCES + "shipping_demand_s{simpl}_{clusters}.csv",
+        transport_demand=RESOURCES + "transport_demand_s{simpl}_{clusters}.csv",
+        transport_data=RESOURCES + "transport_data_s{simpl}_{clusters}.csv",
+        avail_profile=RESOURCES + "avail_profile_s{simpl}_{clusters}.csv",
+        dsm_profile=RESOURCES + "dsm_profile_s{simpl}_{clusters}.csv",
+        co2_totals_name=RESOURCES + "co2_totals.csv",
         co2="data/bundle-sector/eea/UNFCCC_v23.csv",
         biomass_potentials=RESOURCES + "biomass_potentials_s{simpl}_{clusters}.csv",
         heat_profile="data/heat_load_profile_BDEW.csv",
@@ -798,4 +799,4 @@ rule prepare_sector_network:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/prepare_sector_network_LULUCF.py"
+        "../scripts/prepare_sector_network_suff.py"
