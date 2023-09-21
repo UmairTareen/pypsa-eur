@@ -18,69 +18,117 @@ from matplotlib.colors import to_rgba
 
 
 
+# def prepare_sankey(n):
+#     colors = snakemake.params.plotting["tech_colors"]
+#     file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
+#     energy = snakemake.input.energy_name
+
+
+#     # Flag to include losses or not in the sankey:
+#     include_losses = True
+
+#     colors["electricity grid"] = colors["electricity"]
+#     colors["ground-sourced ambient"] = colors["ground heat pump"]
+#     colors["air-sourced ambient"] = colors["air heat pump"]
+#     colors["co2 atmosphere"] = colors["co2"]
+#     colors["co2 stored"] = colors["co2"]
+#     colors["net co2 emissions"] = colors["co2"]
+#     colors["co2 sequestration"] = colors["co2"]
+#     colors["fossil oil"] = colors["oil"]
+#     colors["fossil gas"] = colors["gas"]
+#     colors["biogas to gas"] = colors["biogas"]
+#     colors["process emissions from feedstocks"] = colors["process emissions"]
+
+#     gas_boilers = [
+#     "residential rural gas boiler",
+#     "services rural gas boiler",
+#     "residential urban decentral gas boiler",
+#     "services urban decentral gas boiler",
+#     "urban central gas boiler",
+#       ]
+#     for gas_boiler in gas_boilers:
+#         colors[gas_boiler] = colors["gas boiler"]
+
+#     colors["urban central gas CHP"] = colors["CHP"]
+#     colors["urban central gas CHP CC"] = colors["CHP"]
+#     colors["urban central solid biomass CHP"] = colors["CHP"]
+#     colors["urban central solid biomass CHP CC"] = colors["CHP"]
+#     colors["Solar Power"] = colors["onwind"]
+#     colors["Onshore Wind"] = colors["onwind"]
+#     colors["Offshore Wind"] = colors["onwind"]
+#     colors["Fossil gas"] = colors["CCGT"]
+#     colors["Gas Network"] = colors["CCGT"]
+#     colors["Hydro"] = colors["onwind"]
+#     colors["TES"] = "red"
+#     colors["TES Central"] = "red"
+#     colors["H2 network"] = colors["H2"]
+#     colors["H2 turbine"] = colors["onwind"]
+#     colors["District Heating"] = "red"
+#     colors["DH Network"] = "red"
+#     colors["Ambient Heat"] = "pink"
+#     colors["Residential and Tertiary"] = "black"
+#     colors["Non-energy"] = "black"
+#     colors["Industry"] = "black"
+#     colors["Aviation bunkers"] = "black"
+#     colors["Maritime bunkers"] = "black"
+#     colors["Agriculture"] = "black"
+#     colors["Domestic transport"] = "black"
+#     colors["Electricity grid"] = colors["onwind"]
+#     colors["battery"] = colors["onwind"]
+#     colors["V2G"] = colors["onwind"]
+#     colors["solid biomass biomass to liquid"] = colors["biomass"]
+#     colors["solid biomass biomass to liquid CC"] = colors["biomass"]
+#     colors["solid biomass solid biomass to gas"] = colors["biomass"]
+#     colors["solid biomass solid biomass to gas CC"] = colors["biomass"]
+#     colors["co2 storage"] = colors["CCS"]
+
+#     n=network.copy()
+#     feedstock_emissions = (
+#         pd.read_csv(file_industrial_demand, index_col=0)["process emission from feedstock"].sum() * 1e6
+#       )  # t
+#     energy_demand = (
+#         pd.read_csv(energy, index_col=0))
+#     # def prepare_sankey(n):
+#     columns = ["label", "source", "target", "value"]
+
+#     gen = ((n.snapshot_weightings.generators @ n.generators_t.p)
+#        .groupby([n.generators.carrier, n.generators.carrier, n.generators.bus.map(n.buses.carrier), ]).sum().div(
+#        1e6))  # TWh
+
+#     gen.index.set_names(columns[:-1], inplace=True)
+#     gen = gen.reset_index(name="value")
+#     gen = gen.loc[gen.value > 0.1]
+    
+#     return gen
+
 def prepare_sankey(n):
-    colors = snakemake.params.plotting["tech_colors"]
+    def combine_rows(df, column_names, list_labels, target_label):
+     '''
+    Function that combines and sums the rows of the df dataframe for which the values of column_name are in the list_labels.
+    For the columns that hold numbers, the values are summed
+    For the columns that hold orther objects (such as string), the function checks that they are identical before combining the rows
+    :param df: Pandas dataframe to be processes
+    :param column_names: list of columns with the labels to be combined
+    :param list_labels: List with the strings to be combined
+    :param target_label: String
+    '''
+     from pandas.api.types import is_numeric_dtype
+    # find the columns that are not numeric:
+     cols_misc = [col for col in df.columns if not is_numeric_dtype(df[col])]
+     for column_name in column_names:
+        for i in df.index:
+            if df.loc[i, column_name] in list_labels:
+                df.loc[i, column_name] = target_label
+     return df.groupby(cols_misc).sum().reset_index()
+
+    
     file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
     energy = snakemake.input.energy_name
-
+    network = pypsa.Network(snakemake.input.network)
 
     # Flag to include losses or not in the sankey:
     include_losses = True
-
-    colors["electricity grid"] = colors["electricity"]
-    colors["ground-sourced ambient"] = colors["ground heat pump"]
-    colors["air-sourced ambient"] = colors["air heat pump"]
-    colors["co2 atmosphere"] = colors["co2"]
-    colors["co2 stored"] = colors["co2"]
-    colors["net co2 emissions"] = colors["co2"]
-    colors["co2 sequestration"] = colors["co2"]
-    colors["fossil oil"] = colors["oil"]
-    colors["fossil gas"] = colors["gas"]
-    colors["biogas to gas"] = colors["biogas"]
-    colors["process emissions from feedstocks"] = colors["process emissions"]
-
-    gas_boilers = [
-    "residential rural gas boiler",
-    "services rural gas boiler",
-    "residential urban decentral gas boiler",
-    "services urban decentral gas boiler",
-    "urban central gas boiler",
-      ]
-    for gas_boiler in gas_boilers:
-        colors[gas_boiler] = colors["gas boiler"]
-
-    colors["urban central gas CHP"] = colors["CHP"]
-    colors["urban central gas CHP CC"] = colors["CHP"]
-    colors["urban central solid biomass CHP"] = colors["CHP"]
-    colors["urban central solid biomass CHP CC"] = colors["CHP"]
-    colors["Solar Power"] = colors["onwind"]
-    colors["Onshore Wind"] = colors["onwind"]
-    colors["Offshore Wind"] = colors["onwind"]
-    colors["Fossil gas"] = colors["CCGT"]
-    colors["Gas Network"] = colors["CCGT"]
-    colors["Hydro"] = colors["onwind"]
-    colors["TES"] = "red"
-    colors["TES Central"] = "red"
-    colors["H2 network"] = colors["H2"]
-    colors["H2 turbine"] = colors["onwind"]
-    colors["District Heating"] = "red"
-    colors["DH Network"] = "red"
-    colors["Ambient Heat"] = "pink"
-    colors["Residential and Tertiary"] = "black"
-    colors["Non-energy"] = "black"
-    colors["Industry"] = "black"
-    colors["Aviation bunkers"] = "black"
-    colors["Maritime bunkers"] = "black"
-    colors["Agriculture"] = "black"
-    colors["Domestic transport"] = "black"
-    colors["Electricity grid"] = colors["onwind"]
-    colors["battery"] = colors["onwind"]
-    colors["V2G"] = colors["onwind"]
-    colors["solid biomass biomass to liquid"] = colors["biomass"]
-    colors["solid biomass biomass to liquid CC"] = colors["biomass"]
-    colors["solid biomass solid biomass to gas"] = colors["biomass"]
-    colors["solid biomass solid biomass to gas CC"] = colors["biomass"]
-    colors["co2 storage"] = colors["CCS"]
+    
 
     n=network.copy()
     feedstock_emissions = (
@@ -99,31 +147,6 @@ def prepare_sankey(n):
     gen = gen.reset_index(name="value")
     gen = gen.loc[gen.value > 0.1]
     
-    return gen
-    return colors
-
-
-def combine_rows(df, column_names, list_labels, target_label):
-    '''
-    Function that combines and sums the rows of the df dataframe for which the values of column_name are in the list_labels.
-    For the columns that hold numbers, the values are summed
-    For the columns that hold orther objects (such as string), the function checks that they are identical before combining the rows
-    :param df: Pandas dataframe to be processes
-    :param column_names: list of columns with the labels to be combined
-    :param list_labels: List with the strings to be combined
-    :param target_label: String
-    '''
-    from pandas.api.types import is_numeric_dtype
-    # find the columns that are not numeric:
-    cols_misc = [col for col in df.columns if not is_numeric_dtype(df[col])]
-    for column_name in column_names:
-        for i in df.index:
-            if df.loc[i, column_name] in list_labels:
-                df.loc[i, column_name] = target_label
-    return df.groupby(cols_misc).sum().reset_index()
-
-    columns = ["label", "source", "target", "value"]
-    gen = prepare_sankey()
     gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc'], 'offshore wind')
     gen = combine_rows(gen, ['label', 'source', 'target'], ['solar', 'solar rooftop'], 'Solar Power')
 
@@ -199,30 +222,24 @@ def combine_rows(df, column_names, list_labels, target_label):
     load.loc[load.label.str.contains("low-temperature heat for industry") & (
             load.label == "low-temperature heat for industry"), "source"] = "District Heating"
     load.loc[load.label.str.contains("NH3") & (load.label == "NH3"), "target"] = "Industry"
-    
-    return load
-    return gen
-    return su
-    return sto
 
     
 
 
-def calculate_losses(n, x, include_losses=True):
-    for i in range(4):
+    def calculate_losses(x, include_losses=include_losses):
+     for i in range(5):
         n.links[f"total_e{i}"] = (n.snapshot_weightings.generators @ n.links_t[f"p{i}"]).div(1e6)  # TWh
         n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
-    if include_losses:
+     if include_losses:
         energy_ports = x.loc[
             x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
             ].index.str.replace("carrier_bus", "total_e")
         return -x.loc[energy_ports].sum()
-    else:
+     else:
         return 0
 
-    columns = ["label", "source", "target", "value"]
-    n.links["total_e4"] = n.links.apply(calculate_losses, include_losses=True, axis=1)  # e4 and bus 4 for bAU 2050
-    n.links["carrier_bus4"] = "losses"
+    n.links["total_e5"] = n.links.apply(calculate_losses, include_losses=True, axis=1)  # e4 and bus 4 for bAU 2050
+    n.links["carrier_bus5"] = "losses"
 
     df = pd.concat(
     [
@@ -231,17 +248,9 @@ def calculate_losses(n, x, include_losses=True):
     ]
     ).reset_index()
     df.columns = columns
-    return df
 
-def prepare_sankeyy(n):
     # fix heat pump energy balance
-    df = calculate_losses()
-    load = combine_rows()
-    gen = combine_rows()
-    sto = combine_rows()
-    su = combine_rows()
-    colors = prepare_sankey()
-    columns = ["label", "source", "target", "value"]
+    
     hp = n.links.loc[n.links.carrier.str.contains("heat pump")]
 
     hp_t_elec = n.links_t.p0.filter(like="heat pump")
@@ -400,9 +409,62 @@ def prepare_sankeyy(n):
 
 def plot_sankey(connections):
     labels = np.unique(connections[["source", "target"]])
+    colors = snakemake.params.plotting["tech_colors"]
+    colors["electricity grid"] = colors["electricity"]
+    colors["ground-sourced ambient"] = colors["ground heat pump"]
+    colors["air-sourced ambient"] = colors["air heat pump"]
+    colors["co2 atmosphere"] = colors["co2"]
+    colors["co2 stored"] = colors["co2"]
+    colors["net co2 emissions"] = colors["co2"]
+    colors["co2 sequestration"] = colors["co2"]
+    colors["fossil oil"] = colors["oil"]
+    colors["fossil gas"] = colors["gas"]
+    colors["biogas to gas"] = colors["biogas"]
+    colors["process emissions from feedstocks"] = colors["process emissions"]
 
+    gas_boilers = [
+    "residential rural gas boiler",
+    "services rural gas boiler",
+    "residential urban decentral gas boiler",
+    "services urban decentral gas boiler",
+    "urban central gas boiler",
+      ]
+    for gas_boiler in gas_boilers:
+        colors[gas_boiler] = colors["gas boiler"]
+
+    colors["urban central gas CHP"] = colors["CHP"]
+    colors["urban central gas CHP CC"] = colors["CHP"]
+    colors["urban central solid biomass CHP"] = colors["CHP"]
+    colors["urban central solid biomass CHP CC"] = colors["CHP"]
+    colors["Solar Power"] = colors["onwind"]
+    colors["Onshore Wind"] = colors["onwind"]
+    colors["Offshore Wind"] = colors["onwind"]
+    colors["Fossil gas"] = colors["CCGT"]
+    colors["Gas Network"] = colors["CCGT"]
+    colors["Hydro"] = colors["onwind"]
+    colors["TES"] = "red"
+    colors["TES Central"] = "red"
+    colors["H2 network"] = colors["H2"]
+    colors["H2 turbine"] = colors["onwind"]
+    colors["District Heating"] = "red"
+    colors["DH Network"] = "red"
+    colors["Ambient Heat"] = "pink"
+    colors["Residential and Tertiary"] = "black"
+    colors["Non-energy"] = "black"
+    colors["Industry"] = "black"
+    colors["Aviation bunkers"] = "black"
+    colors["Maritime bunkers"] = "black"
+    colors["Agriculture"] = "black"
+    colors["Domestic transport"] = "black"
+    colors["Electricity grid"] = colors["onwind"]
+    colors["battery"] = colors["onwind"]
+    colors["V2G"] = colors["onwind"]
+    colors["solid biomass biomass to liquid"] = colors["biomass"]
+    colors["solid biomass biomass to liquid CC"] = colors["biomass"]
+    colors["solid biomass solid biomass to gas"] = colors["biomass"]
+    colors["solid biomass solid biomass to gas CC"] = colors["biomass"]
+    colors["co2 storage"] = colors["CCS"]
     nodes = pd.Series({v: i for i, v in enumerate(labels)})
-    colors = prepare_sankey()
 
     node_colors = pd.Series(nodes.index.map(colors).fillna("grey"), index=nodes.index)
 
@@ -442,9 +504,8 @@ if __name__ == "__main__":
         )
     logging.basicConfig(level=snakemake.config["logging"]["level"])
 
-    network = pypsa.Network(snakemake.input.network)
-    n=network.copy()
-    connections = prepare_sankeyy(n)
+    n = pypsa.Network(snakemake.input.network)
+    connections = prepare_sankey(n)
     fig = plot_sankey(connections)  
     fig.write_html(snakemake.output.sankey)
     connections.to_csv(snakemake.output.sankey_csv)
