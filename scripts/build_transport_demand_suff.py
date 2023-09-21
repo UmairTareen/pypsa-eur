@@ -169,6 +169,7 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake(
             "build_transport_demand",
+            #configfiles=["config/config (BAU-Suff-2050).yaml"],
             simpl="",
             clusters=6, #48
             planning_horizons=2050,

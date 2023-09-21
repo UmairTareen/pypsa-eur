@@ -43,14 +43,13 @@ After running the whole snakemake, the options can be set back to:
 > pip install -U kaleido
 
 **Selection of the scenario**:
-- To run the default workflow, use  (snakemake -call all) after activating pypsa-eur.
+- To run the default workflow, activate pypsa-eur and run:
 > snakemake -call all
 
 - Tu run a different scenario/workflow, use the dedicated Snakefile, e.g:
 > snakemake -s Snakefile_suff -call all
 
 - The Sankey codes for all scenarios are included in the repository to analyze the results.
-- To run the scenarios, type (snakemake -call all) after activating pypsa-eur.
 
 **myopic scenarios**:
 - The myopic scenarios perform the optimization for successive years defined in the config file. They can be run using the dedicated Snakefile.
