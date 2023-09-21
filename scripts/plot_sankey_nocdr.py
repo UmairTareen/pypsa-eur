@@ -17,91 +17,12 @@ import numpy as np
 from matplotlib.colors import to_rgba
 
 
-
-# def prepare_sankey(n):
-#     colors = snakemake.params.plotting["tech_colors"]
-#     file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
-#     energy = snakemake.input.energy_name
-
-
-#     # Flag to include losses or not in the sankey:
-#     include_losses = True
-
-#     colors["electricity grid"] = colors["electricity"]
-#     colors["ground-sourced ambient"] = colors["ground heat pump"]
-#     colors["air-sourced ambient"] = colors["air heat pump"]
-#     colors["co2 atmosphere"] = colors["co2"]
-#     colors["co2 stored"] = colors["co2"]
-#     colors["net co2 emissions"] = colors["co2"]
-#     colors["co2 sequestration"] = colors["co2"]
-#     colors["fossil oil"] = colors["oil"]
-#     colors["fossil gas"] = colors["gas"]
-#     colors["biogas to gas"] = colors["biogas"]
-#     colors["process emissions from feedstocks"] = colors["process emissions"]
-
-#     gas_boilers = [
-#     "residential rural gas boiler",
-#     "services rural gas boiler",
-#     "residential urban decentral gas boiler",
-#     "services urban decentral gas boiler",
-#     "urban central gas boiler",
-#       ]
-#     for gas_boiler in gas_boilers:
-#         colors[gas_boiler] = colors["gas boiler"]
-
-#     colors["urban central gas CHP"] = colors["CHP"]
-#     colors["urban central gas CHP CC"] = colors["CHP"]
-#     colors["urban central solid biomass CHP"] = colors["CHP"]
-#     colors["urban central solid biomass CHP CC"] = colors["CHP"]
-#     colors["Solar Power"] = colors["onwind"]
-#     colors["Onshore Wind"] = colors["onwind"]
-#     colors["Offshore Wind"] = colors["onwind"]
-#     colors["Fossil gas"] = colors["CCGT"]
-#     colors["Gas Network"] = colors["CCGT"]
-#     colors["Hydro"] = colors["onwind"]
-#     colors["TES"] = "red"
-#     colors["TES Central"] = "red"
-#     colors["H2 network"] = colors["H2"]
-#     colors["H2 turbine"] = colors["onwind"]
-#     colors["District Heating"] = "red"
-#     colors["DH Network"] = "red"
-#     colors["Ambient Heat"] = "pink"
-#     colors["Residential and Tertiary"] = "black"
-#     colors["Non-energy"] = "black"
-#     colors["Industry"] = "black"
-#     colors["Aviation bunkers"] = "black"
-#     colors["Maritime bunkers"] = "black"
-#     colors["Agriculture"] = "black"
-#     colors["Domestic transport"] = "black"
-#     colors["Electricity grid"] = colors["onwind"]
-#     colors["battery"] = colors["onwind"]
-#     colors["V2G"] = colors["onwind"]
-#     colors["solid biomass biomass to liquid"] = colors["biomass"]
-#     colors["solid biomass biomass to liquid CC"] = colors["biomass"]
-#     colors["solid biomass solid biomass to gas"] = colors["biomass"]
-#     colors["solid biomass solid biomass to gas CC"] = colors["biomass"]
-#     colors["co2 storage"] = colors["CCS"]
-
-#     n=network.copy()
-#     feedstock_emissions = (
-#         pd.read_csv(file_industrial_demand, index_col=0)["process emission from feedstock"].sum() * 1e6
-#       )  # t
-#     energy_demand = (
-#         pd.read_csv(energy, index_col=0))
-#     # def prepare_sankey(n):
-#     columns = ["label", "source", "target", "value"]
-
-#     gen = ((n.snapshot_weightings.generators @ n.generators_t.p)
-#        .groupby([n.generators.carrier, n.generators.carrier, n.generators.bus.map(n.buses.carrier), ]).sum().div(
-#        1e6))  # TWh
-
-#     gen.index.set_names(columns[:-1], inplace=True)
-#     gen = gen.reset_index(name="value")
-#     gen = gen.loc[gen.value > 0.1]
-    
-#     return gen
-
 def prepare_sankey(n):
+    '''
+    This functions prepare the data for making the sankey diagram. The "gen" specifies generators, "su" storage units 
+    "sto" stores and "load" demands for each sector. The function compiles all the data and convert it into a dataframe which is used to plot the 
+    sankey plot for a scenario.
+    '''
     def combine_rows(df, column_names, list_labels, target_label):
      '''
     Function that combines and sums the rows of the df dataframe for which the values of column_name are in the list_labels.
@@ -177,10 +98,6 @@ def prepare_sankey(n):
     sto = sto.reset_index(name="value")
     sto = sto.loc[sto.value > 0.1]
 
-# ccgt_v = gen.loc[gen.label == "CCGT", "value"]
-# gas_v = gen.loc[gen.label == "gas", "value"]
-# sum_v = pd.concat([ccgt_v, gas_v], axis=0).sum()
-# gen.loc[gen.label == "gas", "value"] = sum_v
 
     load = (
     (n.snapshot_weightings.generators @ as_dense(n, "Load", "p_set"))
@@ -227,6 +144,10 @@ def prepare_sankey(n):
 
 
     def calculate_losses(x, include_losses=include_losses):
+     '''
+     This function compute the losses for generation and storage technologies. The flag "include_losses" can be 
+     used to activate and deactivate the losses in the sankey plot.
+     '''
      for i in range(5):
         n.links[f"total_e{i}"] = (n.snapshot_weightings.generators @ n.links_t[f"p{i}"]).div(1e6)  # TWh
         n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
@@ -408,6 +329,10 @@ def prepare_sankey(n):
     return connections
 
 def plot_sankey(connections):
+    '''
+    This function plots the sankey diagram. The colors for each energy carrier and technology can be specified 
+    by user here or can be updated in the config file.
+    '''
     labels = np.unique(connections[["source", "target"]])
     colors = snakemake.params.plotting["tech_colors"]
     colors["electricity grid"] = colors["electricity"]
