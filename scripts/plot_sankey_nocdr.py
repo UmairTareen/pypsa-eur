@@ -99,10 +99,11 @@ def prepare_sankey(n):
     gen = gen.reset_index(name="value")
     gen = gen.loc[gen.value > 0.1]
     
-    return gen, colors
+    return gen
+    return colors
 
 
-def combine_rows(n, gen, df, column_names, list_labels, target_label):
+def combine_rows(df, column_names, list_labels, target_label):
     '''
     Function that combines and sums the rows of the df dataframe for which the values of column_name are in the list_labels.
     For the columns that hold numbers, the values are summed
@@ -122,6 +123,7 @@ def combine_rows(n, gen, df, column_names, list_labels, target_label):
     return df.groupby(cols_misc).sum().reset_index()
 
     columns = ["label", "source", "target", "value"]
+    gen = prepare_sankey()
     gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc'], 'offshore wind')
     gen = combine_rows(gen, ['label', 'source', 'target'], ['solar', 'solar rooftop'], 'Solar Power')
 
@@ -197,7 +199,11 @@ def combine_rows(n, gen, df, column_names, list_labels, target_label):
     load.loc[load.label.str.contains("low-temperature heat for industry") & (
             load.label == "low-temperature heat for industry"), "source"] = "District Heating"
     load.loc[load.label.str.contains("NH3") & (load.label == "NH3"), "target"] = "Industry"
-    return load, gen, su, sto
+    
+    return load
+    return gen
+    return su
+    return sto
 
     
 
@@ -227,8 +233,14 @@ def calculate_losses(n, x, include_losses=True):
     df.columns = columns
     return df
 
-def prepare_sankeyy(n,df, load, gen, sto, su, colors):
+def prepare_sankeyy(n):
     # fix heat pump energy balance
+    df = calculate_losses()
+    load = combine_rows()
+    gen = combine_rows()
+    sto = combine_rows()
+    su = combine_rows()
+    colors = prepare_sankey()
     columns = ["label", "source", "target", "value"]
     hp = n.links.loc[n.links.carrier.str.contains("heat pump")]
 
@@ -386,10 +398,11 @@ def prepare_sankeyy(n,df, load, gen, sto, su, colors):
     
     return connections
 
-def plot_sankey(connections, colors):
+def plot_sankey(connections):
     labels = np.unique(connections[["source", "target"]])
 
     nodes = pd.Series({v: i for i, v in enumerate(labels)})
+    colors = prepare_sankey()
 
     node_colors = pd.Series(nodes.index.map(colors).fillna("grey"), index=nodes.index)
 
@@ -432,7 +445,7 @@ if __name__ == "__main__":
     network = pypsa.Network(snakemake.input.network)
     n=network.copy()
     connections = prepare_sankeyy(n)
-    fig = plot_sankey()  
+    fig = plot_sankey(connections)  
     fig.write_html(snakemake.output.sankey)
     connections.to_csv(snakemake.output.sankey_csv)
 
