@@ -42,22 +42,29 @@ def prepare_sankey(n):
                 df.loc[i, column_name] = target_label
      return df.groupby(cols_misc).sum().reset_index()
 
-    
+    PATH = "../data/"
     file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
     energy = snakemake.input.energy_name
+    countries = ['BE', 'DE', 'FR', 'GB', 'NL']
+    clever_industry = f"{PATH}/clever_Industry_{planning_horizons}.csv"
     network = pypsa.Network(snakemake.input.network)
 
     # Flag to include losses or not in the sankey:
     include_losses = True
     
-
     n=network.copy()
     feedstock_emissions = (
         pd.read_csv(file_industrial_demand, index_col=0)["process emission from feedstock"].sum() * 1e6
       )  # t
     energy_demand = (
-        pd.read_csv(energy, index_col=0))
-    # def prepare_sankey(n):
+            pd.read_csv(energy, index_col=0)).T
+    clever_industry = (
+            pd.read_csv(clever_industry, index_col=0)).loc[countries].T
+
+    Rail_demand = energy_demand.loc["total rail"].sum()
+    H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
+    H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].sum()
+   
     columns = ["label", "source", "target", "value"]
 
     gen = ((n.snapshot_weightings.generators @ n.generators_t.p)
@@ -88,7 +95,12 @@ def prepare_sankey(n):
 
     # Combine hydro dams with run of river:
     gen = combine_rows(gen, ['label', 'source', 'target'], ['ror', 'hydro'], 'Hydro')
-    #su = su.drop(su[(su["label"] == "hydro")].index)
+    
+    #Combine the values of hydro in storage units and generatos together
+    su_hydro = su.loc[len(su), "value"]
+    gen_hydro = gen.loc[gen.label== "Hydro", "value"].sum()
+    gen.loc[gen.label== "Hydro", "value"] = su_hydro + gen_hydro
+    su = su.drop(su[(su["label"] == "hydro")].index)
 
     # Storages:
     sto = ((n.snapshot_weightings.generators @ n.stores_t.p)
@@ -119,6 +131,7 @@ def prepare_sankey(n):
     load.loc[
     load.label.str.contains("industry electricity") & (load.label == "industry electricity"), "target"] = "Industry"
     load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "target"] = "Industry"
+    load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
     load.loc[
     load.label.str.contains("naphtha for industry") & (load.label == "naphtha for industry"), "target"] = "Non-energy"
     load.loc[load.label.str.contains("land transport fuel cell") & (
@@ -139,7 +152,9 @@ def prepare_sankey(n):
     load.loc[load.label.str.contains("low-temperature heat for industry") & (
             load.label == "low-temperature heat for industry"), "source"] = "District Heating"
     load.loc[load.label.str.contains("NH3") & (load.label == "NH3"), "target"] = "Industry"
-
+    # Subtract the raiway demand from electricity demand
+    value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"] 
+    load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"] = value - Rail_demand
     for i in range(4):
         n.links[f"total_e{i}"] = (n.snapshot_weightings.generators @ n.links_t[f"p{i}"]).div(1e6)  # TWh
         n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
@@ -305,13 +320,25 @@ def prepare_sankey(n):
     connections.loc[trg_contains("services urban decentral water tank"), "target"] = "water tank"
     connections.loc[src_contains("heat") & ~src_contains("demand"), "source"] = "heat"
     connections.loc[trg_contains("heat") & ~trg_contains("demand"), "target"] = "heat"
+    new_row1 = {'label': 'Rail Network',
+                'source': 'Electricity grid',
+                'target': 'Rail Network',
+                'value': Rail_demand}
+    new_row2 = {'label': 'H2 for non-energy',
+                'source': 'H2',
+                'target': 'Non-energy',
+                'value': H2_nonenergyy}
+
+    connections = connections.append(new_row1, ignore_index=True)
+
+    connections = connections.append(new_row2, ignore_index=True)
 
     connections = connections.loc[
     ~(connections.source == connections.target)
     & ~connections.source.str.contains("co2")
     & ~connections.target.str.contains("co2")
     & ~connections.source.str.contains("emissions")
-    & (connections.value >= 0.21)]
+    & (connections.value >= 0.1)]
 
     connections.replace("fossil gas", "Fossil gas", inplace=True)
     connections.replace("gas", "Gas Network", inplace=True)
@@ -410,6 +437,543 @@ def plot_sankey(connections):
           )
       )
     return fig
+
+def prepare_carbon_sankey(n):
+    
+    '''
+    This function prepare the data for co2 emissions sankey chart. All the emissions from
+    the technologies are compiled together
+    '''
+
+    collection = []
+
+    # DAC
+    value = -(n.snapshot_weightings.generators @ n.links_t.p1.filter(like="DAC")).sum()
+    collection.append(
+    pd.Series(
+        dict(label="DAC", source="co2 atmosphere", target="co2 stored", value=value)
+      )
+       )
+
+    # process emissions
+    value = -(
+    n.snapshot_weightings.generators @ n.links_t.p1.filter(regex="process emissions$")
+    ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="process emissions",
+            source="process emissions",
+            target="co2 atmosphere",
+            value=value,
+           )
+            )
+             )
+
+    # process emissions CC
+    value = -(
+    n.snapshot_weightings.generators @ n.links_t.p1.filter(regex="process emissions CC")
+    ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="process emissions CC",
+            source="process emissions",
+            target="co2 atmosphere",
+            value=value,
+           )
+            )
+             )
+
+    value = -(
+    n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="process emissions CC")
+    ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="process emissions CC",
+            source="process emissions",
+            target="co2 stored",
+            value=value,
+           )
+            )
+             )
+
+    # OCGT
+    value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="OCGT")).sum()
+    collection.append(
+    pd.Series(dict(label="OCGT", source="gas", target="co2 atmosphere", value=value))
+     )
+
+    value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="CCGT")).sum()
+    collection.append(
+    pd.Series(dict(label="CCGT", source="gas", target="co2 atmosphere", value=value))
+     )
+
+    value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="CCGT")
+     ).sum() * 0.2
+    collection.append(
+    pd.Series(dict(label="CCGT", source="fossil gas", target="gas", value=value))
+     )
+    collection.append(
+    pd.Series(dict(label="CCGT", source="gas", target="co2 atmosphere", value=value))
+     )
+
+    value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="OCGT")
+    ).sum() * 0.2
+    collection.append(
+    pd.Series(dict(label="OCGT", source="fossil gas", target="gas", value=value))
+    )
+    collection.append(
+    pd.Series(dict(label="OCGT", source="gas", target="co2 atmosphere", value=value))
+    )
+
+    value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="lignite")).sum()
+    collection.append(
+    pd.Series(dict(label="lignite", source="coal", target="co2 atmosphere", value=value))
+    )
+
+    # Sabatier
+    value = (n.snapshot_weightings.generators @ n.links_t.p2.filter(like="Sabatier")).sum()
+    collection.append(
+    pd.Series(dict(label="Methanation", source="co2 stored", target="gas", value=value))
+    )
+
+    # SMR
+    value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="SMR$")).sum()
+    collection.append(
+    pd.Series(dict(label="SMR", source="gas", target="co2 atmosphere", value=value))
+    )
+
+    # SMR CC
+    value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="SMR CC")).sum()
+    collection.append(
+    pd.Series(dict(label="SMR CC", source="gas", target="co2 atmosphere", value=value))
+     )
+
+    value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like="SMR CC")).sum()
+    collection.append(
+    pd.Series(dict(label="SMR CC", source="gas", target="co2 stored", value=value))
+     )
+
+    # gas boiler
+    gas_boilers = [
+     "residential rural gas boiler",
+     "services rural gas boiler",
+     "residential urban decentral gas boiler",
+     "services urban decentral gas boiler",
+     "urban central gas boiler",
+       ]
+    for gas_boiler in gas_boilers:
+        value = -(
+         n.snapshot_weightings.generators @ n.links_t.p2.filter(like=gas_boiler)
+         ).sum()
+        collection.append(
+        pd.Series(
+            dict(label=gas_boiler, source="gas", target="co2 atmosphere", value=value)
+         )
+          )
+
+    #biogas to gas
+    value = (
+    n.snapshot_weightings.generators @ n.links_t.p2.filter(like="biogas to gas")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="biogas to gas", source="co2 atmosphere", target="biogas", value=value
+        )
+         )
+          )
+    collection.append(
+    pd.Series(dict(label="biogas to gas", source="biogas", target="gas", value=value))
+      )
+
+    # solid biomass for industry
+    value = (
+    n.snapshot_weightings.generators
+    @ n.links_t.p0.filter(like="solid biomass for industry")
+      ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="solid biomass for industry",
+            source="solid biomass",
+            target="co2 atmosphere",
+            value=value * 0.37,
+        )
+         )
+          )
+    collection.append(
+    pd.Series(dict(label="solid biomass for industry", source="co2 atmosphere", target="solid biomass", value=value * 0.37))
+      )
+
+
+    #Solid biomass to liquid
+    value = (
+    n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="solid biomass biomass to liquid$")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="solid biomass biomass to liquid", source="solid biomass", target="oil", value=value  #C02 stored in oil by BTL from costs data 2050
+        )
+         )
+          )
+
+    collection.append(
+    pd.Series(dict(label="solid biomass biomass to liquid", source="co2 atmosphere", target="solid biomass", value=value))
+     )
+    value = (
+    n.snapshot_weightings.generators @ n.links_t.p0.filter(regex="solid biomass biomass to liquid$")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="solid biomass biomass to liquid", source="solid biomass", target="co2 atmosphere", value=value * 0.26 #C02 stored in oil by BTL from costs data 2050
+        )
+         )
+          )
+
+    collection.append(
+    pd.Series(dict(label="solid biomass biomass to liquid", source="co2 atmosphere", target="solid biomass", value=value * 0.26 ))
+     )
+
+
+    #solid biomass to gas 
+    value = (
+    n.snapshot_weightings.generators @ n.links_t.p3.filter(regex="solid biomass solid biomass to gas$")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="solid biomass solid biomass to gas", source="solid biomass", target="gas", value=value# CO2 stored in bioSNG from cost data
+        )
+         )
+          )
+    collection.append(
+    pd.Series(dict(label="solid biomass solid biomass to gas", source="co2 atmosphere", target="solid biomass", value=value ))
+     )
+
+    value = (
+    n.snapshot_weightings.generators @ n.links_t.p0.filter(regex="solid biomass solid biomass to gas$")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="solid biomass solid biomass to gas", source="solid biomass", target="co2 atmosphere", value=value * 0.2# CO2 stored in bioSNG from cost data
+        )
+         )
+          )
+    collection.append(
+    pd.Series(dict(label="solid biomass solid biomass to gas", source="co2 atmosphere", target="solid biomass", value=value * 0.2 ))
+     )
+    
+    #gas for industry
+    value = -(
+    n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="gas for industry$")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="gas for industry", source="gas", target="co2 atmosphere", value=value  # C02 intensity of gas from cost data
+        )
+         )
+          )
+
+
+    #methanolisation
+    value = (
+    n.snapshot_weightings.generators @ n.links_t.p3.filter(regex="methanolisation$")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="methanolisation", source="co2 stored", target="methanol", value=value  # C02 intensity of gas from cost data
+        )
+         )
+          )
+
+
+    #Fischer-Tropsch
+    value = (
+    n.snapshot_weightings.generators @ n.links_t.p2.filter(like="Fischer-Tropsch")
+    ).sum()
+    collection.append(
+    pd.Series(
+        dict(label="Fischer-Tropsch", source="co2 stored", target="oil", value=value)
+    )
+     )
+
+    #urban central gas CHP
+    value = -(
+    n.snapshot_weightings.generators @ n.links_t.p3.filter(like="urban central gas CHP")
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="urban central gas CHP",
+            source="gas",
+            target="co2 atmosphere",
+            value=value,
+        )
+         )
+          )
+
+
+
+    #residential urban decentral biomass boiler
+    tech = "residential urban decentral biomass boiler"
+
+    value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
+    collection.append(
+    pd.Series(
+        dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+    )
+     )
+    collection.append(
+    pd.Series(dict(label="residential urban decentral biomass boiler", source="co2 atmosphere", target="solid biomass", value=value * 0.37))
+     )
+    #services urban decentral biomass boiler
+    tech = "services urban decentral biomass boiler"
+
+    value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
+    collection.append(
+    pd.Series(
+        dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+    )
+     )
+    collection.append(
+    pd.Series(dict(label="services urban decentral biomass boiler", source="co2 atmosphere", target="solid biomass", value=value * 0.37))
+     )
+    #residential rural biomass boiler
+    tech = "residential rural biomass boiler"
+
+    value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
+    collection.append(
+    pd.Series(
+        dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+    )
+     )
+    collection.append(
+    pd.Series(dict(label="residential rural biomass boiler", source="co2 atmosphere", target="solid biomass", value=value * 0.37))
+     )
+    #services rural biomass boiler
+    tech = "services rural biomass boiler"
+
+    value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
+    collection.append(
+    pd.Series(
+        dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+    )
+     )
+    collection.append(
+    pd.Series(dict(label="services rural biomass boiler", source="co2 atmosphere", target="solid biomass", value=value * 0.37))
+     )
+    #urban central solid biomass CHP
+    tech = "urban central solid biomass CHP"
+
+    value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
+    collection.append(
+    pd.Series(
+        dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+    )
+     )
+    collection.append(
+    pd.Series(dict(label="urban central solid biomass CHP", source="co2 atmosphere", target="solid biomass", value=value * 0.37))
+     )
+
+    # oil emissions
+    value = -(
+    n.snapshot_weightings.generators
+    @ as_dense(n, "Load", "p_set").filter(regex="^oil emissions", axis=1)
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(label="oil emissions", source="oil", target="co2 atmosphere", value=value)
+    )
+     )
+
+    # agriculture machinery oil emissions
+    value = -(
+    n.snapshot_weightings.generators
+    @ as_dense(n, "Load", "p_set").filter(
+        like="agriculture machinery oil emissions", axis=1
+    )
+      ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="agriculture machinery oil emissions",
+            source="oil",
+            target="co2 atmosphere",
+            value=value,
+        )
+         )
+          )
+
+    value = -(
+    n.snapshot_weightings.generators
+    @ as_dense(n, "Load", "p_set").filter(
+        like="land transport oil emissions", axis=1
+    )
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="land transport oil emissions",
+            source="oil",
+            target="co2 atmosphere",
+            value=value,
+        )
+         )
+          )
+
+    value = -(
+    n.snapshot_weightings.generators
+    @ as_dense(n, "Load", "p_set").filter(
+        like="shipping oil emissions", axis=1
+    )
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="shipping oil emissions",
+            source="oil",
+            target="co2 atmosphere",
+            value=value,
+        )
+         )
+          )
+    value = -(
+    n.snapshot_weightings.generators
+    @ as_dense(n, "Load", "p_set").filter(
+        like="shipping methanol emissions", axis=1
+    )
+     ).sum()
+    collection.append(
+    pd.Series(
+        dict(
+            label="shipping methanol emissions",
+            source="methanol",
+            target="co2 atmosphere",
+            value=value,
+        )
+         )
+          )
+
+    #LULUCF
+    V=n.stores.e_nom_opt.filter(like="LULUCF").sum()
+    collection.append(
+        pd.Series(
+            dict(
+                label="LULUCF",
+                source="co2 atmosphere",
+                target="LULUCF",
+                value=V,
+            )
+        )
+    )
+
+    # # co2 storage
+    collection_df = pd.DataFrame(collection)
+
+    # Step 2: Filter the data for target and source
+    target_data = collection_df.loc[collection_df['target'] == "co2 stored"].copy()
+    source_data = collection_df.loc[collection_df['source'] == "co2 stored"].copy()
+
+    # Step 3: Perform the desired calculation on the filtered data
+    value = (target_data["value"].sum() - source_data["value"].sum())
+    collection.append(
+    pd.Series(
+        dict(
+            label="co2 storage",
+            source="co2 stored",
+            target="co2 sequestration",
+            value=value,
+        )
+         )
+          )
+
+    # net co2 emissions
+    collection_df = pd.DataFrame(collection)
+    target_data = collection_df.loc[collection_df['target'] == "co2 atmosphere"].copy()
+    source_data = collection_df.loc[collection_df['source'] == "co2 atmosphere"].copy()
+
+    # Step 3: Perform the desired calculation on the filtered data
+    value = (target_data["value"].sum() - source_data["value"].sum())
+    collection.append(
+    pd.Series(
+        dict(
+            label="net co2 emissions",
+            source="co2 atmosphere",
+            target="net co2 emissions",
+            value=value,
+        )
+         )
+          )
+
+    df = pd.concat(collection, axis=1).T
+    df.value /= 1e6  # Mt
+
+    # fossil gas
+    co2_intensity = 0.20 # t/MWh
+    value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas")).div(
+    1e6
+     ).sum() * co2_intensity
+    row = pd.DataFrame(
+    [dict(label="fossil gas", source="fossil gas", target="gas", value=value)]
+     )
+
+    df = pd.concat([df, row], axis=0)
+
+    # fossil oil
+    # co2_intensity = 0.26  # t/MWh
+    value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="oil")).div(
+    1e6
+     ).sum() * 0.26
+    row = pd.DataFrame(
+    [dict(label="fossil oil", source="fossil oil", target="oil", value=value)]
+     )
+    df = pd.concat([df, row], axis=0)
+
+
+
+    df = df.loc[(df.value >= 0.1)]
+    
+    return df
+
+def plot_carbon_sankey(collection):
+    labels = np.unique(collection[["source", "target"]])
+
+    nodes = pd.Series({v: i for i, v in enumerate(labels)})
+    colors = snakemake.params.plotting["tech_colors"]
+    colors["LULUCF"] = "greenyellow"
+    colors["Methanation"] = colors["Sabatier"]
+    node_colors = pd.Series(nodes.index.map(colors).fillna("grey"), index=nodes.index)
+
+    link_colors = [
+        "rgba{}".format(to_rgba(colors[src], alpha=0.5)) for src in collection.label
+    ]
+
+    fig_co2 = go.Figure(
+        go.Sankey(
+            arrangement="freeform",  # [snap, nodepad, perpendicular, fixed]
+            valuesuffix=" MtCO2",
+            valueformat=".1f",
+            node=dict(pad=20, thickness=20, label=nodes.index, color=node_colors),
+            link=dict(
+                source=collection.source.map(nodes),
+                target=collection.target.map(nodes),
+                value=collection.value,
+                label=collection.label,
+                color=link_colors,
+            ),
+        )
+    )
+
+    return fig_co2
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake
@@ -424,612 +988,17 @@ if __name__ == "__main__":
             planning_horizons="2050",
         )
     logging.basicConfig(level=snakemake.config["logging"]["level"])
+    planning_horizons = int(snakemake.wildcards.planning_horizons)
+    
 
     n = pypsa.Network(snakemake.input.network)
     connections = prepare_sankey(n)
-    fig = plot_sankey(connections)  
+    collection = prepare_carbon_sankey(n)
+    fig = plot_sankey(connections) 
+    fig_co2 = plot_carbon_sankey(collection)
     fig.write_html(snakemake.output.sankey)
+    fig_co2.write_html(snakemake.output.sankey_carbon)
     connections.to_csv(snakemake.output.sankey_csv)
-
-# %%
-# columns = ["label", "source", "target", "value"]
-
-# collection = []
-
-# # DAC
-# value = -(n.snapshot_weightings.generators @ n.links_t.p1.filter(like="DAC")).sum()
-# collection.append(
-#     pd.Series(
-#         dict(label="DAC", source="co2 atmosphere", target="co2 stored", value=value)
-#     )
-# )
-
-# # process emissions
-# value = -(
-#         n.snapshot_weightings.generators @ n.links_t.p1.filter(regex="process emissions$")
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="process emissions",
-#             source="process emissions",
-#             target="co2 atmosphere",
-#             value=value,
-#         )
-#     )
-# )
-
-# # process emissions CC
-# value = -(
-#         n.snapshot_weightings.generators @ n.links_t.p1.filter(regex="process emissions CC")
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="process emissions CC",
-#             source="process emissions",
-#             target="co2 atmosphere",
-#             value=value,
-#         )
-#     )
-# )
-
-# value = -(
-#         n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="process emissions CC")
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="process emissions CC",
-#             source="process emissions",
-#             target="co2 stored",
-#             value=value,
-#         )
-#     )
-# )
-
-# # OCGT
-# value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="OCGT")).sum()
-# collection.append(
-#     pd.Series(dict(label="OCGT", source="gas", target="co2 atmosphere", value=value))
-# )
-
-# value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="CCGT")).sum()
-# collection.append(
-#     pd.Series(dict(label="CCGT", source="gas", target="co2 atmosphere", value=value))
-# )
-
-# value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="lignite")).sum()
-# collection.append(
-#     pd.Series(dict(label="lignite", source="coal", target="co2 atmosphere", value=value))
-# )
-# value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="lignite")).sum() * 0.41
-# collection.append(
-#     pd.Series(dict(label="lignite", source="lignite", target="co2 atmosphere", value=value))
-# )
-# value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="lignite")).sum() * 0.34
-# collection.append(
-#     pd.Series(dict(label="coal", source="coal", target="co2 atmosphere", value=value))
-# )
-
-# # Sabatier
-# value = (n.snapshot_weightings.generators @ n.links_t.p2.filter(like="Sabatier")).sum()
-# collection.append(
-#     pd.Series(dict(label="Sabatier", source="co2 stored", target="gas", value=value))
-# )
-
-# # SMR
-# value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="SMR$")).sum()
-# collection.append(
-#     pd.Series(dict(label="SMR", source="gas", target="co2 atmosphere", value=value))
-# )
-# value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="CCGT")
-#          ).sum() * 0.2
-# collection.append(
-#     pd.Series(dict(label="CCGT", source="fossil gas", target="gas", value=value))
-# )
-# collection.append(
-#     pd.Series(dict(label="CCGT", source="gas", target="co2 atmosphere", value=value))
-# )
-
-# value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="OCGT")
-#          ).sum() * 0.2
-# collection.append(
-#     pd.Series(dict(label="OCGT", source="fossil gas", target="gas", value=value))
-# )
-# collection.append(
-#     pd.Series(dict(label="OCGT", source="gas", target="co2 atmosphere", value=value))
-# )
-# # # SMR CC
-# # value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="SMR CC")).sum()
-# # collection.append(
-# #     pd.Series(dict(label="SMR CC", source="gas", target="co2 atmosphere", value=value))
-# # )
-
-# # value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like="SMR CC")).sum()
-# # collection.append(
-# #     pd.Series(dict(label="SMR CC", source="gas", target="co2 stored", value=value))
-# # )
-
-# # gas boiler
-# gas_boilers = [
-#     "residential rural gas boiler",
-#     "services rural gas boiler",
-#     "residential urban decentral gas boiler",
-#     "services urban decentral gas boiler",
-#     "urban central gas boiler",
-# ]
-# for gas_boiler in gas_boilers:
-#     value = -(
-#             n.snapshot_weightings.generators @ n.links_t.p2.filter(like=gas_boiler)
-#     ).sum()
-#     collection.append(
-#         pd.Series(
-#             dict(label=gas_boiler, source="gas", target="co2 atmosphere", value=value)
-#         )
-#     )
-
-# # biogas to gas
-# value = (
-#         n.snapshot_weightings.generators @ n.links_t.p2.filter(like="biogas to gas")
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="biogas to gas", source="co2 atmosphere", target="biogas", value=value
-#         )
-#     )
-# )
-# collection.append(
-#     pd.Series(dict(label="biogas to gas", source="biogas", target="gas", value=value))
-# )
-
-# # solid biomass for industry
-# value = (
-#         n.snapshot_weightings.generators
-#         @ n.links_t.p0.filter(like="solid biomass for industry")
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="solid biomass for industry",
-#             source="co2 atmosphere",
-#             target="solid biomass",
-#             value=value * 0.37,
-#         )
-#     )
-# )
-# collection.append(
-#     pd.Series(
-#         dict(label="solid biomass for industry", source="solid biomass", target="co2 atmosphere", value=value * 0.37))
-# )
-
-# # value = -(
-# #     n.snapshot_weightings.generators
-# #     @ n.links_t.p3.filter(like="solid biomass for industry CC")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="solid biomass for industry CC",
-# #             source="BECCS",
-# #             target="co2 stored",
-# #             value=value,
-# #         )
-# #     )
-# # )
-
-# # #methanolisation
-# # value = (
-# #     n.snapshot_weightings.generators @ n.links_t.p3.filter(regex="methanolisation$")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="methanolisation", source="co2 stored", target="methanol", value=value  # C02 intensity of gas from cost data
-# #         )
-# #     )
-# # )
-# # gas for industry
-# value = -(
-#         n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="gas for industry$")
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="gas for industry", source="gas", target="co2 atmosphere", value=value
-#         )
-#     )
-# )
-
-# # # gas for industry CC
-# # value = -(
-# #     n.snapshot_weightings.generators @ n.links_t.p2.filter(like="gas for industry CC")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="gas for industry CC",
-# #             source="gas",
-# #             target="co2 atmosphere",
-# #             value=value,
-# #         )
-# #     )
-# # )
-
-# # value = -(
-# #     n.snapshot_weightings.generators @ n.links_t.p3.filter(like="gas for industry CC")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="gas for industry CC", source="gas", target="co2 stored", value=value
-# #         )
-# #     )
-# # )
-# # #solid biomass to gas 
-# # value = -(
-# #     n.snapshot_weightings.generators @ n.links_t.p1.filter(regex="solid biomass solid biomass to gas$")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="solid biomass solid biomass to gas", source="solid biomass", target="gas", value=value# CO2 stored in bioSNG from cost data
-# #         )
-# #     )
-# # )
-
-# # # solid biomass to gas CC
-# # value = -(
-# #     n.snapshot_weightings.generators @ n.links_t.p2.filter(like="solid biomass solid biomass to gas CC")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="solid biomass solid biomass to gas CC",
-# #             source="gas",
-# #             target="co2 atmosphere",
-# #             value=value,
-# #         )
-# #     )
-# # )
-
-# # value = -(
-# #     n.snapshot_weightings.generators @ n.links_t.p3.filter(like="solid biomass solid biomass to gas CC")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="solid biomass solid biomass to gas CC", source="co2 atmosphere", target="co2 stored", value=value
-# #         )
-# #     )
-# # )
-
-# # biomass boilers
-# # residential urban decentral biomass boiler
-# tech = "residential urban decentral biomass boiler"
-
-# value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
-# collection.append(
-#     pd.Series(
-#         dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
-#     )
-# )
-# collection.append(
-#     pd.Series(dict(label="residential urban decentral biomass boiler", source="co2 atmosphere", target="solid biomass",
-#                    value=value * 0.37))
-# )
-# # services urban decentral biomass boiler
-# tech = "services urban decentral biomass boiler"
-
-# value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
-# collection.append(
-#     pd.Series(
-#         dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
-#     )
-# )
-# collection.append(
-#     pd.Series(dict(label="services urban decentral biomass boiler", source="co2 atmosphere", target="solid biomass",
-#                    value=value * 0.37))
-# )
-# # residential rural biomass boiler
-# tech = "residential rural biomass boiler"
-
-# value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
-# collection.append(
-#     pd.Series(
-#         dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
-#     )
-# )
-# collection.append(
-#     pd.Series(dict(label="residential rural biomass boiler", source="co2 atmosphere", target="solid biomass",
-#                    value=value * 0.37))
-# )
-# # services rural biomass boiler
-# tech = "services rural biomass boiler"
-
-# value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech)).sum()
-# collection.append(
-#     pd.Series(
-#         dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
-#     )
-# )
-# collection.append(
-#     pd.Series(dict(label="services rural biomass boiler", source="co2 atmosphere", target="solid biomass",
-#                    value=value * 0.37))
-# )
-# # #Solid biomass to liquid
-# # value = -(
-# #     n.snapshot_weightings.generators @ n.links_t.p1.filter(like="solid biomass biomass to liquid")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="solid biomass biomass to liquid", source="solid biomass", target="oil", value=value*0.26  #C02 stored in oil by BTL from costs data 2050
-# #         )
-# #     )
-# # )
-# # collection.append(
-# #     pd.Series(dict(label="solid biomass biomass to liquid", source="co2 atmosphere", target="solid biomass", value=value * 0.26))
-# # )
-# # # # solid biomass liquid to  CC
-
-# # value = -(
-# #     n.snapshot_weightings.generators @ n.links_t.p3.filter(like="solid biomass biomass to liquid CC")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="solid biomass biomass to liquid CC", source="solid biomass", target="co2 stored", value=value
-# #         )
-# #     )
-# # )
-# # collection.append(
-# #     pd.Series(dict(label="solid biomass biomass to liquid CC", source="co2 atmosphere", target="solid biomass", value=value))
-# # )
-# # #Fischer-Tropsch
-# # value = (
-# #     n.snapshot_weightings.generators @ n.links_t.p2.filter(like="Fischer-Tropsch")
-# # ).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(label="Fischer-Tropsch", source="co2 stored", target="oil", value=value)
-# #     )
-# # )
-
-# # urban central gas CHP
-# value = -(
-#         n.snapshot_weightings.generators @ n.links_t.p3.filter(like="urban central gas CHP")
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="urban central gas CHP",
-#             source="gas",
-#             target="co2 atmosphere",
-#             value=value,
-#         )
-#     )
-# )
-
-# # #urban central gas CHP CC
-# # tech = "urban central gas CHP CC"
-# # value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
-# # collection.append(
-# #     pd.Series(dict(label=tech, source="gas", target="co2 atmosphere", value=value))
-# # )
-
-# # value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
-# # collection.append(
-# #     pd.Series(dict(label=tech, source="gas", target="co2 stored", value=value))
-# # )
+    collection.to_csv(snakemake.output.sankey_carbon_csv)
 
 
-# # #urban solid biomass CHP CC
-# # tech = "urban central solid biomass CHP CC"
-
-# # value = (n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(label=tech, source="co2 atmosphere", target="BECCS", value=value)
-# #     )
-# # )
-
-# # value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
-# # collection.append(
-# #     pd.Series(
-# #         dict(label=tech, source="BECCS", target="co2 stored", value=value)
-# #     )
-# # )
-
-# # oil emissions
-# value = -(
-#         n.snapshot_weightings.generators
-#         @ as_dense(n, "Load", "p_set").filter(regex="^oil emissions", axis=1)
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(label="oil emissions", source="oil", target="co2 atmosphere", value=value)
-#     )
-# )
-
-# # agriculture machinery oil emissions
-# value = -(
-#         n.snapshot_weightings.generators
-#         @ as_dense(n, "Load", "p_set").filter(
-#     like="agriculture machinery oil emissions", axis=1
-# )
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="agriculture machinery oil emissions",
-#             source="oil",
-#             target="co2 atmosphere",
-#             value=value,
-#         )
-#     )
-# )
-
-# value = -(
-#         n.snapshot_weightings.generators
-#         @ as_dense(n, "Load", "p_set").filter(
-#     like="land transport oil emissions", axis=1
-# )
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="land transport oil emissions",
-#             source="oil",
-#             target="co2 atmosphere",
-#             value=value,
-#         )
-#     )
-# )
-
-# value = -(
-#         n.snapshot_weightings.generators
-#         @ as_dense(n, "Load", "p_set").filter(
-#     like="shipping oil emissions", axis=1
-# )
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="shipping oil emissions",
-#             source="oil",
-#             target="co2 atmosphere",
-#             value=value,
-#         )
-#     )
-# )
-# value = -(
-#         n.snapshot_weightings.generators
-#         @ as_dense(n, "Load", "p_set").filter(
-#     like="shipping methanol emissions", axis=1
-# )
-# ).sum()
-# collection.append(
-#     pd.Series(
-#         dict(
-#             label="shipping methanol emissions",
-#             source="methanol",
-#             target="co2 atmosphere",
-#             value=value,
-#         )
-#     )
-# )
-# # # #feedstock_emissions
-# # collection.append(
-# #     pd.Series(
-# #         dict(
-# #             label="process emissions from feedstocks",
-# #             source="oil",
-# #             target="process emissions",
-# #             value=feedstock_emissions,
-# #         )
-# #     )
-# # )
-
-# df = pd.concat(collection, axis=1).T
-# df.value /= 1e6  # Mt
-
-# # fossil gas
-# co2_intensity = 0.2  # t/MWh
-# value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas")).div(
-#     1e6
-# ).sum() * 0.2
-# row = pd.DataFrame(
-#     [dict(label="fossil gas", source="fossil gas", target="gas", value=value)]
-# )
-
-# df = pd.concat([df, row], axis=0)
-
-# # fossil oil
-# # co2_intensity = 0.27  # t/MWh
-# value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="oil")).div(
-#     1e6
-# ).sum() * 0.26
-# row = pd.DataFrame(
-#     [dict(label="fossil oil", source="fossil oil", target="oil", value=value)]
-# )
-# df = pd.concat([df, row], axis=0)
-
-# # sequestration
-# value = (
-#         df.loc[df.target == "co2 stored", "value"].sum()
-#         - df.loc[df.source == "co2 stored", "value"].sum()
-# )
-# row = pd.DataFrame(
-#     [
-#         dict(
-#             label="co2 sequestration",
-#             source="co2 stored",
-#             target="co2 sequestration",
-#             value=value,
-#         )
-#     ]
-# )
-
-# df = pd.concat([df, row], axis=0)
-
-# # net co2 emissions
-# value = (
-#         df.loc[df.target == "co2 atmosphere", "value"].sum()
-#         - df.loc[df.source == "co2 atmosphere", "value"].sum()
-# )
-# row = pd.DataFrame(
-#     [
-#         dict(
-#             label="net co2 emissions",
-#             source="co2 atmosphere",
-#             target="net co2 emissions",
-#             value=value,
-#         )
-#     ]
-# )
-# df = pd.concat([df, row], axis=0)
-# df = df.loc[(df.value >= 0.1)]
-# colors["BECCS"] = colors['biomass']
-
-
-# def plot_carbon_sankey(co2, fn=None):
-#     labels = np.unique(co2[["source", "target"]])
-
-#     nodes = pd.Series({v: i for i, v in enumerate(labels)})
-
-#     node_colors = pd.Series(nodes.index.map(colors).fillna("grey"), index=nodes.index)
-
-#     link_colors = [
-#         "rgba{}".format(to_rgba(colors[src], alpha=0.5)) for src in co2.label
-#     ]
-
-#     fig = go.Figure(
-#         go.Sankey(
-#             arrangement="freeform",  # [snap, nodepad, perpendicular, fixed]
-#             valuesuffix=" MtCO2",
-#             valueformat=".1f",
-#             node=dict(pad=10, thickness=10, label=nodes.index, color=node_colors),
-#             link=dict(
-#                 source=co2.source.map(nodes),
-#                 target=co2.target.map(nodes),
-#                 value=co2.value,
-#                 label=co2.label,
-#                 color=link_colors,
-#             ),
-#         )
-#     )
-
-#     fig.update_layout(
-#         title=f"Carbon Flow Sankey:<br>{SCENARIO}",
-#     )
-
-#     if fn is not None:
-#         fig.write_html(fn + ".html")
-#         fig.write_image(fn + ".pdf", width=800, height=600)
-
-
-# df.to_csv(f"{OUTPUT_SCENARIO}sankey-carbon.csv")
-
-# plot_carbon_sankey(df, fn=f"{OUTPUT_SCENARIO}sankey-carbon")
