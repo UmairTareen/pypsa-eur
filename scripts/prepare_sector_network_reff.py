@@ -2786,7 +2786,7 @@ def add_industry(n, costs):
     co2_release = ["naphtha for industry", "kerosene for aviation"]
     co2 = (
         n.loads.loc[co2_release, "p_set"].sum() * costs.at["oil", "CO2 intensity"]
-        - industrial_demand.loc[nodes, "process emission from feedstock"].sum() / nhours
+        #- industrial_demand.loc[nodes, "process emission from feedstock"].sum() / nhours
     )
 
     n.add(
