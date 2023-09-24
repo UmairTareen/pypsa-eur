@@ -103,17 +103,23 @@ rule make_summary:
 rule plot_sankey:
     params:
         plotting=config["plotting"],
+        countries=config["countries"],
+        planning_horizons=config["scenario"]["planning_horizons"],
     input:
         network=RESULTS
         + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
         industrial_energy_demand_per_node=RESOURCES
         + "industrial_energy_demand_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
         energy_name=RESOURCES + "energy_totals.csv",
+        clever_industry = "data/clever_Industry_{planning_horizons}.csv",
         
     output:
         sankey=RESULTS
         + "sankey/sankey_{planning_horizons}.html",
+        sankey_carbon=RESULTS
+        + "sankey/sankey_carbon_{planning_horizons}.html",
         sankey_csv = RESULTS + "sankey/sankey_csv_{planning_horizons}.csv",
+        sankey_carbon_csv = RESULTS + "sankey/sankey_carbon_csv_{planning_horizons}.csv",
     threads: 1
     resources:
         mem_mb=10000,
