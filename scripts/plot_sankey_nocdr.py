@@ -42,11 +42,10 @@ def prepare_sankey(n):
                 df.loc[i, column_name] = target_label
      return df.groupby(cols_misc).sum().reset_index()
 
-    PATH = "../data/"
     file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
     energy = snakemake.input.energy_name
-    countries = ['BE', 'DE', 'FR', 'GB', 'NL']
-    clever_industry = f"{PATH}/clever_Industry_{planning_horizons}.csv"
+    countries = snakemake.params.countries
+    clever_industry = snakemake.input.clever_industry
     network = pypsa.Network(snakemake.input.network)
 
     # Flag to include losses or not in the sankey:
@@ -136,6 +135,10 @@ def prepare_sankey(n):
     load.label.str.contains("naphtha for industry") & (load.label == "naphtha for industry"), "target"] = "Non-energy"
     load.loc[load.label.str.contains("land transport fuel cell") & (
             load.label == "land transport fuel cell"), "target"] = "Domestic transport"
+    load.loc[load.label.str.contains("land transport oil") & (
+            load.label == "land transport oil"), "target"] = "Domestic transport"
+    load.loc[load.label.str.contains("shipping oil") & (
+            load.label == "shipping oil"), "target"] = "Maritime bunkers"
     load.loc[
     load.label.str.contains("land transport EV") & (load.label == "land transport EV"), "target"] = "Domestic transport"
     load.loc[load.label.str.contains("agriculture electricity") & (
@@ -379,6 +382,16 @@ def plot_sankey(connections):
       ]
     for gas_boiler in gas_boilers:
         colors[gas_boiler] = colors["gas boiler"]
+        
+    oil_boilers = [
+        "residential rural oil boiler",
+        "services rural oil boiler",
+        "residential urban decentral oil boiler",
+        "services urban decentral oil boiler",
+        "urban central oil boiler",
+    ]
+    for oil_boiler in oil_boilers:
+        colors[oil_boiler] = colors["oil boiler"]
 
     colors["urban central gas CHP"] = colors["CHP"]
     colors["urban central gas CHP CC"] = colors["CHP"]
@@ -573,7 +586,23 @@ def prepare_carbon_sankey(n):
             dict(label=gas_boiler, source="gas", target="co2 atmosphere", value=value)
          )
           )
-
+    #oil boiler
+    oil_boilers = [
+        "residential rural oil boiler",
+        "services rural oil boiler",
+        "residential urban decentral oil boiler",
+        "services urban decentral oil boiler",
+        "urban central oil boiler",
+    ]
+    for oil_boiler in oil_boilers:
+        value = -(
+            n.snapshot_weightings.generators @ n.links_t.p2.filter(like=oil_boiler)
+        ).sum()
+        collection.append(
+            pd.Series(
+                dict(label=oil_boiler, source="oil", target="co2 atmosphere", value=value)
+            )
+        )
     #biogas to gas
     value = (
     n.snapshot_weightings.generators @ n.links_t.p2.filter(like="biogas to gas")
@@ -684,7 +713,7 @@ def prepare_carbon_sankey(n):
 
     #methanolisation
     value = (
-    n.snapshot_weightings.generators @ n.links_t.p3.filter(regex="methanolisation$")
+    n.snapshot_weightings.generators @ n.links_t.p3.filter(like="methanolisation")
      ).sum()
     collection.append(
     pd.Series(
