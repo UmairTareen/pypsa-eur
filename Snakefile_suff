@@ -47,13 +47,13 @@ include: "rules/collect.smk"
 include: "rules/retrieve.smk"
 include: "rules/build_electricity.smk"
 include: "rules/solve_electricity.smk"
-include: "rules/postprocess.smk"
+include: "rules/postprocess_suff.smk"
 include: "rules/validate.smk"
 
 
 if config["foresight"] == "overnight":
 
-    include: "rules/solve_overnight_suff.smk"
+    include: "rules/solve_overnight.smk"
     include: "rules/build_sector_suff.smk"
 
 
