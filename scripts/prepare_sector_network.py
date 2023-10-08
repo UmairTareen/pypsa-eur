@@ -76,11 +76,13 @@ def define_spatial(nodes, options):
         spatial.co2.locations = nodes
         spatial.co2.vents = nodes + " co2 vent"
         spatial.co2.process_emissions = nodes + " process emissions"
+        spatial.co2.LULUCF = ["LULUCF"]
     else:
         spatial.co2.nodes = ["co2 stored"]
         spatial.co2.locations = ["EU"]
         spatial.co2.vents = ["co2 vent"]
         spatial.co2.process_emissions = ["process emissions"]
+        spatial.co2.LULUCF = ["LULUCF"]
 
     spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
 
@@ -540,6 +542,22 @@ def add_co2_tracking(n, options):
         carrier="co2",
         bus="co2 atmosphere",
     )
+    fn = snakemake.input.co2_totals_name
+    LULUCF_totals = pd.read_csv(fn, index_col=0)
+    lt = ['BE', 'DE', 'FR', 'GB', 'NL']
+    column_to_lock = ['LULUCF']
+    sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
+    sum_results = sum_results * -1e6
+    n.madd(
+        "Store",
+        spatial.co2.LULUCF,
+        e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
+        e_nom_max=sum_results,
+        carrier="LULUCF",
+        capital_cost=0,
+        bus="co2 atmosphere",
+    )
+    n.add("Carrier", "LULUCF")
 
     # this tracks CO2 stored, e.g. underground
     n.madd(
@@ -2768,7 +2786,7 @@ def add_industry(n, costs):
     co2_release = ["naphtha for industry", "kerosene for aviation"]
     co2 = (
         n.loads.loc[co2_release, "p_set"].sum() * costs.at["oil", "CO2 intensity"]
-        - industrial_demand.loc[nodes, "process emission from feedstock"].sum() / nhours
+        #- industrial_demand.loc[nodes, "process emission from feedstock"].sum() / nhours
     )
 
     n.add(

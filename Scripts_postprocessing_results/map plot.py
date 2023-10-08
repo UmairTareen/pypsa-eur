@@ -32,7 +32,8 @@ LL = "vopt"
 
 
     
-n= pypsa.Network("../results/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+n= pypsa.Network("../simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+# n= pypsa.Network("../simulations/Overnight simulations/resultsreff/postnetworks/elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc")
 plt.style.use(["ggplot", "matplotlibrc"])
 with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
@@ -170,7 +171,7 @@ def plot_map(
     # PDF has minimum width, so set these to zero
     line_lower_threshold = 500.0
     line_upper_threshold = 1e4
-    linewidth_factor = 4e3
+    linewidth_factor = 2e3
     ac_color = "rosybrown"
     dc_color = "darkseagreen"
 
@@ -178,6 +179,8 @@ def plot_map(
         # should be zero
         line_widths = n.lines.s_nom_opt - n.lines.s_nom
         link_widths = n.links.p_nom_opt - n.links.p_nom
+        linewidth_factor = 2e3
+        line_lower_threshold = 0.0
         title = "added grid"
         
 
@@ -189,20 +192,30 @@ def plot_map(
             title = "current grid"
             
     else:
-        line_widths = n.lines.s_nom_opt - n.lines.s_nom_min
-        link_widths = n.links.p_nom_opt - n.links.p_nom_min
+        line_widths_a = n.lines.s_nom_opt - n.lines.s_nom_min
+        link_widths_a = n.links.p_nom_opt - n.links.p_nom_min
+        linewidth_factor = 2e3
+        line_lower_threshold = 0.0
         title = "added grid"
 
         if transmission:
-            line_widths = n.lines.s_nom_opt
-            link_widths = n.links.p_nom_opt
+            line_widths_t = n.lines.s_nom_opt
+            link_widths_t = n.links.p_nom_opt
+            linewidth_factor = 2e3
+            line_lower_threshold = 0.0
             title = "total grid"
 
-    line_widths = line_widths.clip(line_lower_threshold, line_upper_threshold)
-    link_widths = link_widths.clip(line_lower_threshold, line_upper_threshold)
+    # line_widths_t = line_widths_t.clip(line_lower_threshold, line_upper_threshold)
+    # link_widths_t = link_widths_t.clip(line_lower_threshold, line_upper_threshold)
 
-    line_widths = line_widths.replace(line_lower_threshold, 0)
-    link_widths = link_widths.replace(line_lower_threshold, 0)
+    # line_widths_t = line_widths_t.replace(line_lower_threshold, 0)
+    # link_widths_t = link_widths_t.replace(line_lower_threshold, 0)
+    
+    # line_widths_a = line_widths_a.clip(line_lower_threshold, line_upper_threshold)
+    # link_widths_a = link_widths_a.clip(line_lower_threshold, line_upper_threshold)
+
+    # line_widths_a = line_widths_a.replace(line_lower_threshold, 0)
+    # link_widths_a = link_widths_a.replace(line_lower_threshold, 0)
 
     fig, ax = plt.subplots(subplot_kw={"projection": ccrs.Sinusoidal()})
     fig.set_size_inches(10, 10)
@@ -212,9 +225,19 @@ def plot_map(
         bus_colors=tech_colors,
         line_colors=ac_color,
         link_colors=dc_color,
-        line_widths=line_widths / linewidth_factor,
-        link_widths=link_widths / linewidth_factor,
+        line_widths=(line_widths_t/linewidth_factor),
+        link_widths=(link_widths_t/linewidth_factor),
         ax=ax,
+    )
+    n.plot(
+        ax=ax,
+        bus_sizes=0.0,
+        link_colors="black",
+        line_colors="black",
+        link_widths=(link_widths_a/linewidth_factor),
+        line_widths=(line_widths_a/linewidth_factor),
+        # branch_components=["Link"],
+        color_geomap=False,
     )
 
     #sizes = [20, 10, 5]
@@ -241,6 +264,24 @@ def plot_map(
         legend_kw=legend_kw,
     )
 
+    # sizes = [10, 5]
+    # labels = [f"{s} GW" for s in sizes]
+    # scale = 1e3 / linewidth_factor
+    # sizes = [s * scale for s in sizes]
+
+    # legend_kw = dict(
+    #     loc="upper left",
+    #     bbox_to_anchor=(0.05, 0.45),
+    #     fontsize=20,
+    #     frameon=False,
+    #     labelspacing=1,
+    #     handletextpad=1,
+    #     title=title,
+    # )
+
+    # add_legend_lines(
+    #     ax, sizes, labels, patch_kw=dict(color="black"), legend_kw=legend_kw,
+    # )
     sizes = [10, 5]
     labels = [f"{s} GW" for s in sizes]
     scale = 1e3 / linewidth_factor
@@ -253,7 +294,7 @@ def plot_map(
         frameon=False,
         labelspacing=1,
         handletextpad=1,
-        title=title,
+        title="added grid",
     )
 
     add_legend_lines(
@@ -261,7 +302,7 @@ def plot_map(
     )
 
     # legend_kw = dict(
-    #     bbox_to_anchor=(0.6, 0.8),
+    #     bbox_to_anchor=(0.5, 1),
     #     frameon=False,
     #     fontsize=20,
     # )
@@ -280,11 +321,12 @@ plot_map(
         n,
         components=["generators", "links", "stores", "storage_units"],
         bus_size_factor=90e9,
-        transmission=False,
+        transmission=True,
     )
 plt.title("NO_CDR-2050", fontsize=(25))
 plt.rcParams['legend.title_fontsize'] = '20'
 plt.tight_layout()
+
 #%%
 
 def group_pipes(df, drop_direction=False):
@@ -517,7 +559,7 @@ def plot_h2_map(network):
     ax.set_facecolor("white")
     
 plot_h2_map(n)
-plt.title("NO_CDR-2050", fontsize=(25))
+plt.title("Suff-2050", fontsize=(25))
 plt.rcParams['legend.title_fontsize'] = '20'
 plt.tight_layout()
 
@@ -730,6 +772,6 @@ def plot_ch4_map(network):
         legend_kw=legend_kw,
     )
 plot_ch4_map(n)
-plt.title("NO_CDR-2050", fontsize=(25))
+plt.title("Suff-2050", fontsize=(25))
 plt.rcParams['legend.title_fontsize'] = '20'
 plt.tight_layout()

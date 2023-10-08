@@ -67,9 +67,9 @@ def plot_series(carrier="AC", name="test"):
     colors["agriculture heat"] = "grey"
     colors["gas-to-power/heat"] = "orange"
     n=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resultsreff/postnetworks/elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc")
-    m=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/bau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-    p=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/suff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-    r=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/nocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+    m=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+    p=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+    r=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 
     assign_location(n)
     assign_carriers(n)
@@ -430,27 +430,27 @@ def plot_series(carrier="AC", name="test"):
     
     
     
-    fig, (ax1,ax2,ax4,ax5) = plt.subplots(4,1)
-    fig.set_size_inches((10, 34))
+    fig, (ax1,ax2) = plt.subplots(2,1)
+    fig.set_size_inches((10, 16))
 
-    (
-        supplyn.loc[start:stop, supplyn.columns].plot(
-            ax=ax1,
-            kind="area",
-            stacked=True,
-            title = "BAU",
-            legend=False,
-            linewidth=0.0,
-            color=[
-                config["plotting"]["tech_colors"][i.replace(suffix, "")]
-                for i in supplyn.columns
-            ],
-        )
-    )
+    # (
+    #     supplyn.loc[start:stop, supplyn.columns].plot(
+    #         ax=ax1,
+    #         kind="area",
+    #         stacked=True,
+    #         title = "BAU",
+    #         legend=False,
+    #         linewidth=0.0,
+    #         color=[
+    #             config["plotting"]["tech_colors"][i.replace(suffix, "")]
+    #             for i in supplyn.columns
+    #         ],
+    #     )
+    # )
     
     (
         supplym.loc[start:stop, supplym.columns].plot(
-            ax=ax2,
+            ax=ax1,
             kind="area",
             stacked=True,
             title = "2030",
@@ -480,7 +480,7 @@ def plot_series(carrier="AC", name="test"):
     
     (
         supplyp.loc[start:stop, supplyp.columns].plot(
-            ax=ax4,
+            ax=ax2,
             kind="area",
             stacked=True,
             title = "2050",
@@ -493,49 +493,49 @@ def plot_series(carrier="AC", name="test"):
         )
     )
     
-    (
-        supplyr.loc[start:stop, supplyr.columns].plot(
-            ax=ax5,
-            kind="area",
-            stacked=True,
-            title = "BAU-2050",
-            legend=False,
-            linewidth=0.0,
-            color=[
-                config["plotting"]["tech_colors"][i.replace(suffix, "")]
-                for i in supplyr.columns
-            ],
-        )
-    )
+    # (
+    #     supplyr.loc[start:stop, supplyr.columns].plot(
+    #         ax=ax5,
+    #         kind="area",
+    #         stacked=True,
+    #         title = "BAU-2050",
+    #         legend=False,
+    #         linewidth=0.0,
+    #         color=[
+    #             config["plotting"]["tech_colors"][i.replace(suffix, "")]
+    #             for i in supplyr.columns
+    #         ],
+    #     )
+    # )
 
-    handles, labels = ax4.get_legend_handles_labels()
-    # handles, labels = ax2.get_legend_handles_labels()
-    # handles, labels = ax3.get_legend_handles_labels()
     # handles, labels = ax4.get_legend_handles_labels()
-    # handles, labels = ax5.get_legend_handles_labels()
+    # # handles, labels = ax2.get_legend_handles_labels()
+    # # handles, labels = ax3.get_legend_handles_labels()
+    # # handles, labels = ax4.get_legend_handles_labels()
+    # # handles, labels = ax5.get_legend_handles_labels()
 
-    handles.reverse()
-    labels.reverse()
+    # handles.reverse()
+    # labels.reverse()
 
-    new_handles = []
-    new_labels = []
+    # new_handles = []
+    # new_labels = []
 
-    for i, item in enumerate(labels):
-        if "charging" not in item:
-            new_handles.append(handles[i])
-            new_labels.append(labels[i])
+    # for i, item in enumerate(labels):
+    #     if "charging" not in item:
+    #         new_handles.append(handles[i])
+    #         new_labels.append(labels[i])
 
-    ax4.legend(new_handles, new_labels, ncol=1, bbox_to_anchor=(1,3.4), loc="upper left", frameon=False, fontsize=20)
+    # ax4.legend(new_handles, new_labels, ncol=1, bbox_to_anchor=(1,3.4), loc="upper left", frameon=False, fontsize=20)
     #fig.supxlabel('Electricity Dispatch in winters')
 
     # ax4.set_xlim([start, stop])
     # ax4.set_ylim([-800, 800])
     # ax4.grid(True)
-    ax1.set_title("Reff", fontsize=20)
-    ax2.set_title("BAU-2030", fontsize=20)
+    # ax1.set_title("Reff", fontsize=20)
+    ax1.set_title("BAU-2050", fontsize=20)
     # ax3.set_title("2040", fontsize=11)
-    ax4.set_title("Suff-2030", fontsize=20)
-    ax5.set_title("NO_CDR-2030", fontsize=20)
+    ax2.set_title("Suff-2050", fontsize=20)
+    # ax5.set_title("NO_CDR-2030", fontsize=20)
     #fig.supxlabel('Electricity Dispatch in winters')
 
     # ax4.set_xlim([start, stop])
@@ -546,11 +546,11 @@ def plot_series(carrier="AC", name="test"):
     ax2.set_ylabel("Heat [GW]", fontsize=20)
     ax2.set_ylim(-600, 600)
     # ax3.set_ylabel("Demand [GW]")
-    ax4.set_ylabel("Heat [GW]", fontsize=20)
-    ax4.set_ylim(-600, 600)
-    ax5.set_ylabel("Heat [GW]", fontsize=20)
-    ax5.set_ylim(-600, 600)
-    ax5.set_xlabel("Heat Dispatch in Winter",fontsize=20)
+    # ax4.set_ylabel("Heat [GW]", fontsize=20)
+    # ax4.set_ylim(-600, 600)
+    # ax5.set_ylabel("Heat [GW]", fontsize=20)
+    # ax5.set_ylim(-600, 600)
+    ax2.set_xlabel("Heat Dispatch in Winter",fontsize=20)
     
     
 

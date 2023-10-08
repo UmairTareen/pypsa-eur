@@ -15,9 +15,9 @@ with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
 capn = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resultsreff/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
-capm = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/bau/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
-capp = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/suff/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
-capr = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/nocdr/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
+capm = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
+capp = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
+capr = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
 
 
 nn = capn.groupby(level=1).sum().div(1e3)
@@ -287,6 +287,64 @@ for ax, group, groupp, ylim, xlim in zip(axs, groups,groupps, ylims,xlims):
     rf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-2.5,width=0.12, legend=False)
     rf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-4,width=0.12, legend=False)
     rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-5.5,width=0.12, legend=False)
+    
+    #ax.set_xlabel('grid expansion')
+    #ax.legend(bbox_to_anchor=(1.02, 1.45))
+    ax.set_ylabel("Capacities [GW]", fontsize=20)
+    ax.set_xlabel("")
+    ax.set_ylim(ylim)
+    ax.set_xlim(xlim)
+    ax.set_xticks(x, x_labels, rotation='vertical')
+    
+# fig.supxlabel('Total Costs', fontsize=20)
+plt.rc('xtick',labelsize=15)
+plt.rc('ytick',labelsize=20)
+plt.tight_layout()
+
+#%%
+params = {'legend.fontsize': 'x-large',
+          }
+pylab.rcParams.update(params)
+
+fig, axs = plt.subplots(1, 5, figsize=(20, 6))
+groups = [
+    ["solar PV", "solar rooftop"],
+    ["onshore wind", "offshore wind"],
+    ["SMR", "SMR CC","H2 Electrolysis", "methanation", "methanolisation"],
+    ["gas-to-power/heat","power-to-heat", "power-to-liquid"],
+    ["transmission lines"],
+]
+groupps = [
+    ["solar PV", "solar rooftop"],
+    ["onshore wind", "offshore wind"],
+    ["SMR", "H2 Electrolysis"],
+    ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+    ["transmission lines"],
+]
+
+
+x= [-0.73,-0.3,0.13,0.59]
+x_labels =["Reff", "BAU","SUff", "NO_CDR"]
+ylims = [
+    [0, 2000],
+    [0, 1500],
+    [0, 1000],
+    [0, 1200],
+    [0, 250],
+]
+xlims = [
+    [-1, 1],
+    [-1, 1],
+    [-1, 1],
+    [-1, 1],
+    [-1, 1],
+]
+
+for ax, group,groupp, ylim, xlim in zip(axs, groups, groupps, ylims,xlims):
+    nn.loc[groupp].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=3,width=0.3,legend=False)
+    mf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=1.5,width=0.3, legend=True)
+    pf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0,width=0.3, legend=False)
+    rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-1.5,width=0.3, legend=False)
     
     #ax.set_xlabel('grid expansion')
     #ax.legend(bbox_to_anchor=(1.02, 1.45))

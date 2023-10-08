@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun 26 18:23:33 2023
 
-@author: umair
-"""
 import logging
 
 logger = logging.getLogger(__name__)
@@ -68,7 +62,7 @@ def prepare_sankey(n):
     gen = gen.reset_index(name="value")
     gen = gen.loc[gen.value > 0.1]
     
-    gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc'], 'offshore wind')
+    gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc', 'offwind'], 'offshore wind')
     gen = combine_rows(gen, ['label', 'source', 'target'], ['solar', 'solar rooftop'], 'Solar Power')
 
     gen["source"] = gen["source"].replace({"gas": "fossil gas", "oil": "fossil oil", "onwind": "Onshore Wind", "biomass": "solid biomass"})

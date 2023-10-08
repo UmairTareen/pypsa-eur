@@ -15,19 +15,20 @@ with open("../config/config.yaml") as file:
 
 n=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resultsreff/postnetworks/elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc")
 
-m_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/bau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-m_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/bau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-m_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/bau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+m_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+m_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+m_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 
 
-p_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/suff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-p_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/suff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-p_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/suff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+p_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+p_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+p_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 
-r_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/nocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-r_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/nocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-r_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/nocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+r_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+r_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+r_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 
+#%%
 
 def process_demand(scenario):
     demand = as_dense(scenario, "Load", "p_set").div(1e6)  # TWh
@@ -254,9 +255,10 @@ order = [
     "methane",
     "hydrogen",
     "Non-energy demand",
+    # "methanol",
 ]
 
-fig, ax = plt.subplots(figsize=(10, 10), )
+fig, ax = plt.subplots(figsize=(10, 13), )
 pd.DataFrame(nf.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
     ax=ax,
     position=4.8,
@@ -339,6 +341,7 @@ plt.ylim(0, 8000)
 plt.xticks(x, x_labels, rotation='vertical')
 plt.rc('xtick',labelsize=20)
 plt.rc('ytick',labelsize=20)
+ax.bar_label(ax.containers[48], fmt='%.1f',label_type='edge', fontsize=15)
 a = ax.get_legend_handles_labels()  # a = [(h1 ... h2) (l1 ... l2)]  non unique
 b = {l:h for h,l in zip(*a)}        # b = {l1:h1, l2:h2}             unique
 c = [*zip(*b.items())]              # c = [(l1 l2) (h1 h2)]
@@ -346,6 +349,32 @@ d = c[::-1]
 plt.legend(*d, ncol=1, fontsize=14)
 plt.show()
 
+#%%
+frames = [nf, rf1,rf2,rf3]
+gf= pd.concat(frames, axis=1)
+gf = gf.groupby(level=0).sum()
+gf = gf.rename(columns={0: '2020', 1: '2030', 2: '2040', 3: '2050'})
+hf= pd.concat(frames, axis=1)
+hf = hf.groupby(level=0).sum()
+hf = hf.rename(columns={0: '2020', 1: '2030', 2: '2040', 3: '2050'})
+
+fig, ax = plt.subplots(
+    figsize=(20, 10),
+)
+# gf.T.plot.bar(ax=ax1,stacked= True, color=colors, legend =False)
+hf.T.plot.area(ax=ax,stacked= True, color=colors, legend =False)
+ax.set_ylabel("Final energy and non-energy demand [TWh/a]", fontsize=20)
+ax.set_xlabel("")
+ax.set_xticks([0,1,2,3], labels=gf.columns, fontsize=20)
+ax.set_yticks([0,2000,4000,6000,8000],fontsize=12)
+ax.set_ylabel("Final energy and non-energy demand [TWh/a]", fontsize=20)
+ax.set_xlabel("")
+plt.legend(ncol=1,bbox_to_anchor=(1.21,1),
+          fancybox=False, shadow=False,fontsize=17 )
+# plt.rcParams['figure.dpi'] = 300
+# plt.rcParams['savefig.dpi'] = 300
+# plt.savefig('demandss.png')
+plt.tight_layout()
 #%%
 
 colors = config["plotting"]["tech_colors"]
@@ -373,7 +402,7 @@ colors["solid biomass for industry"] = "paleturquoise"
 colors["urban central heat"] = "cyan"
 colors["residential and tertiary heat elec"] = "red"
 colors["H2 for non-energy"] = "violet"
-fig, ax = plt.subplots(figsize=(25, 20))
+fig, ax = plt.subplots(figsize=(35, 30))
 
 x= [0.075,0.19,0.3,0.43,0.53,0.64,0.75,1.075,1.19,1.3,1.43,1.53,1.64,1.75,2.075,2.19,2.3,2.43,2.53,2.64,2.75,3.075,3.19,3.3,3.43,3.53,3.64,3.75,4.075,4.19,4.3,4.43,4.53,4.64,4.75,5.075,5.19,5.3,5.43,5.53,5.64,5.75,6.075,6.19,6.3,6.43,6.53,6.64,6.75]
 # x_labels = ['BAU','2030','electricity            ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','heat             ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','oil             ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','biomass            ','2040','2050','2050 (NO-CCS)','BAU-2050', 'BAU','2030','methane            ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','hydrogen            ','2040','2050','2050 (NO-CCS)','BAU-2050']
@@ -404,9 +433,52 @@ plt.xlim(0, 7)
 plt.ylim(0, 3500)
 
 
-plt.xticks(x, x_labels, rotation='vertical', fontsize=12.5)
+plt.xticks(x, x_labels, rotation='vertical', fontsize=18)
 plt.rcParams['legend.fontsize'] = '20'
 plt.rc('ytick', labelsize=20) 
 
+
+plt.show()
+
+#%%
+fig, ax = plt.subplots(figsize=(30, 15))
+xx= [0.13,0.36,0.58,0.80,1.13,1.36,1.58,1.80,2.13,2.36,2.58,2.80,3.13,3.36,3.58,3.80,4.13,4.36,4.58,4.80,5.13,5.36,5.58,5.80,6.13,6.36,6.58,6.80]
+# x_labels = ['BAU','2030','electricity            ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','heat             ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','oil             ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','biomass            ','2040','2050','2050 (NO-CCS)','BAU-2050', 'BAU','2030','methane            ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','hydrogen            ','2040','2050','2050 (NO-CCS)','BAU-2050']
+xx_labels = ['Reff', '2030','Electricity       2040', '2050','Reff', '2030','Heat       2040', '2050', 'Reff', '2030','Oil       2040', '2050', 'Reff', '2030','Biomass       2040', '2050', 'Reff', '2030','Methane       2040', '2050','Reff', '2030','Hydrogen       2040', '2050','Reff', '2030','Non-energy       2040', '2050']
+nf.unstack().loc[order].loc[order].plot.bar(
+    ax=ax, stacked=True, edgecolor="k",position=-0.3, width=0.15,legend=False,color=colors,
+)
+mf1.unstack().loc[order].plot.bar(
+      ax=ax, stacked=True, edgecolor="k",position=-1.8, width=0.15,legend=True,color=colors,
+)
+mf2.unstack().loc[order].plot.bar(
+      ax=ax, stacked=True, edgecolor="k",position=-3.3, width=0.15,legend=False,color=colors,
+)
+mf3.unstack().loc[order].plot.bar(
+      ax=ax, stacked=True, edgecolor="k",position=-4.8, width=0.15,legend=False,color=colors,
+)
+# pf1.unstack().loc[order].plot.bar(
+#       ax=ax, stacked=True, edgecolor="k",position=-6.5, width=0.075,legend=False,color=colors,
+# )
+# pf2.unstack().loc[order].plot.bar(
+#       ax=ax, stacked=True, edgecolor="k",position=-8, width=0.075,legend=False,color=colors,
+# )
+# pf3.unstack().loc[order].plot.bar(
+#       ax=ax, stacked=True, edgecolor="k",position=-9.5, width=0.075,legend=False,color=colors,
+# )
+plt.ylabel("Final energy and non-energy demand [TWh/a]", fontsize=30)
+plt.xlim(0, 7)
+plt.ylim(0, 2800)
+
+
+plt.xticks(xx, xx_labels, rotation='vertical', fontsize=30)
+# plt.rcParams['legend.fontsize'] = '20'
+plt.rc('ytick', labelsize=30) 
+a = ax.get_legend_handles_labels()  # a = [(h1 ... h2) (l1 ... l2)]  non unique
+b = {l:h for h,l in zip(*a)}        # b = {l1:h1, l2:h2}             unique
+c = [*zip(*b.items())]              # c = [(l1 l2) (h1 h2)]
+d = c[::-1]                        
+plt.legend(*d, ncol=2, fontsize=25)
+plt.show()
 
 plt.show()

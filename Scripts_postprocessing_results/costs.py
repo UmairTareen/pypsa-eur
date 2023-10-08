@@ -15,9 +15,9 @@ with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
 costsn = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resultsreff/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
-costsm = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/bau/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
-costsp = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/suff/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
-costsr = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/nocdr/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
+costsm = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
+costsp = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
+costsr = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
 
 
 nn = costsn.groupby(level=2).sum().div(1e9)
@@ -184,6 +184,20 @@ rf2 = pd.DataFrame(rf2)
 rf3 = rr["2050"]
 rf3 = pd.DataFrame(rf3)
 
+
+mf=pd.concat([mf1, mf2,mf3], axis=1)
+mf=mf.T.sum()/3
+mf=pd.DataFrame(mf)
+
+pf=pd.concat([pf1, pf2,pf3], axis=1)
+pf=pf.T.sum()/3
+pf=pd.DataFrame(pf)
+
+rf=pd.concat([rf1, rf2,rf3], axis=1)
+rf=rf.T.sum()/3
+rf=pd.DataFrame(rf)
+
+
 #%%
 
 params = {'legend.fontsize': 'xx-large',
@@ -249,6 +263,55 @@ plt.rc('xtick',labelsize=15)
 plt.rc('ytick',labelsize=20)
 plt.tight_layout()
 
+#%%
+params = {'legend.fontsize': 'x-large',
+          }
+pylab.rcParams.update(params)
+
+fig, axs = plt.subplots(1, 5, figsize=(20, 6))
+groups = [
+    ["H2 pipeline", "H2 storage"],
+    ["battery storage"],
+    ["gas pipeline", "gas pipeline new", "transmission lines"],
+    ["gas-to-power/heat", "power-to-gas", "power-to-heat", "power-to-liquid"],
+    ["solar", "offshore wind", "onshore wind"],
+]
+
+
+x= [-0.6,0,0.6]
+x_labels =["BAU", "SUff", "NO_CDR"]
+ylims = [
+    [0, 10],
+    [0, 4],
+    [0, 10],
+    [0, 120],
+    [0, 300],
+]
+xlims = [
+    [-1, 1],
+    [-1, 1],
+    [-1, 1],
+    [-1, 1],
+    [-1, 1],
+]
+
+for ax, group,groupp, ylim, xlim in zip(axs, groups,groupps, ylims,xlims):
+    mf.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=2,width=0.4, legend=True)
+    pf.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0.5,width=0.4, legend=False)
+    rf.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-1,width=0.4, legend=False)
+    
+    #ax.set_xlabel('grid expansion')
+    #ax.legend(bbox_to_anchor=(1.02, 1.45))
+    ax.set_ylabel("Costs [Billion Euros/year]", fontsize=20)
+    ax.set_xlabel("")
+    ax.set_ylim(ylim)
+    ax.set_xlim(xlim)
+    ax.set_xticks(x, x_labels, rotation='vertical')
+    
+# fig.supxlabel('Total Costs', fontsize=20)
+plt.rc('xtick',labelsize=20)
+plt.rc('ytick',labelsize=20)
+plt.tight_layout()
 
 #%%
 
@@ -388,16 +451,16 @@ ax.set_xlim(-1, 1)
 ax.set_xticks(x, x_labels, rotation='vertical', fontsize=20)
 # fig.supxlabel('Total Costs', fontsize=20)
 ax = plt.gca() 
-ax.bar_label(ax.containers[21], label_type='edge', fontsize=15)
-ax.bar_label(ax.containers[55], label_type='edge', fontsize=15)
-ax.bar_label(ax.containers[89], label_type='edge', fontsize=15)
-ax.bar_label(ax.containers[122], label_type='edge', fontsize=15)
-ax.bar_label(ax.containers[156], label_type='edge', fontsize=15)   
-ax.bar_label(ax.containers[190], label_type='edge', fontsize=15)  
-ax.bar_label(ax.containers[223], label_type='edge', fontsize=15) 
-ax.bar_label(ax.containers[256], label_type='edge', fontsize=15)   
-ax.bar_label(ax.containers[289], label_type='edge', fontsize=15)  
-ax.bar_label(ax.containers[321], label_type='edge', fontsize=15)                   # Get the axes you need
+ax.bar_label(ax.containers[21], fmt='%.1f', label_type='edge', fontsize=15)
+ax.bar_label(ax.containers[56],fmt='%.1f', label_type='edge', fontsize=15)
+ax.bar_label(ax.containers[91], fmt='%.1f',label_type='edge', fontsize=15)
+ax.bar_label(ax.containers[125], fmt='%.1f',label_type='edge', fontsize=15)
+ax.bar_label(ax.containers[160], fmt='%.1f',label_type='edge', fontsize=15)   
+ax.bar_label(ax.containers[195], fmt='%.1f',label_type='edge', fontsize=15)  
+ax.bar_label(ax.containers[229], fmt='%.1f',label_type='edge', fontsize=15) 
+ax.bar_label(ax.containers[262], fmt='%.1f',label_type='edge', fontsize=15)   
+ax.bar_label(ax.containers[295], fmt='%.1f',label_type='edge', fontsize=15)  
+ax.bar_label(ax.containers[327], fmt='%.1f',label_type='edge', fontsize=15)                   # Get the axes you need
 a = ax.get_legend_handles_labels()  # a = [(h1 ... h2) (l1 ... l2)]  non unique
 b = {l:h for h,l in zip(*a)}        # b = {l1:h1, l2:h2}             unique
 c = [*zip(*b.items())]              # c = [(l1 l2) (h1 h2)]
@@ -408,6 +471,85 @@ plt.legend(*d, loc=(1, 0), ncol=2, fontsize=12)
 plt.yticks(fontsize=20)
 plt.tight_layout()
 
+#%%
+nn=nn.T
+nn = nn.loc[:, (nn >0).any(axis=0)]
+mf=mf.T
+mf = mf.loc[:, (mf >0).any(axis=0)]
+pf=pf.T
+pf = pf.loc[:, (pf >0).any(axis=0)]
+rf=rf.T
+rf = rf.loc[:, (rf >0).any(axis=0)]
+
+nn=nn.T
+mf=mf.T
+pf=pf.T
+rf=rf.T
+
+
+x= [-0.74,-0.3,0.16,0.62]
+x_labels =["Reff", "BAU", "SUff", "NO_CDR"]
+
+fig, ax = plt.subplots(figsize=(15, 8), )
+pd.DataFrame(nn.T.groupby(level=0).sum()).plot.bar(
+    ax=ax,
+    position=3,
+    width=0.3,
+    stacked=True,
+    color=colors,
+    edgecolor="k",
+    legend=False,
+)
+
+pd.DataFrame(mf.T.groupby(level=0).sum()).plot.bar(
+    ax=ax,
+    position=1.5,
+    width=0.3,
+    stacked=True,
+    color=colors,
+    edgecolor="k",
+    legend=False,
+)
+pd.DataFrame(pf.T.groupby(level=0).sum()).plot.bar(
+    ax=ax,
+    position=0,
+    width=0.3,
+    stacked=True,
+    color=colors,
+    edgecolor="k",
+    legend=False,
+)
+
+pd.DataFrame(rf.T.groupby(level=0).sum()).plot.bar(
+    ax=ax,
+    position=-1.5,
+    width=0.3,
+    stacked=True,
+    color=colors,
+    edgecolor="k",
+    legend=False,
+)
+
+ax.set_ylabel("Total Costs [Billion Euros/year]", fontsize=20)
+ax.set_xlabel("")
+ax.set_ylim(0, 700)
+ax.set_xlim(-1, 1)
+ax.set_xticks(x, x_labels, rotation='vertical', fontsize=20)
+# fig.supxlabel('Total Costs', fontsize=20)
+ax = plt.gca() 
+ax.bar_label(ax.containers[21], fmt='%.1f', label_type='edge', fontsize=20)
+ax.bar_label(ax.containers[56],fmt='%.1f', label_type='edge', fontsize=20)
+ax.bar_label(ax.containers[91], fmt='%.1f',label_type='edge', fontsize=20)
+ax.bar_label(ax.containers[124], fmt='%.1f',label_type='edge', fontsize=20)                  # Get the axes you need
+a = ax.get_legend_handles_labels()  # a = [(h1 ... h2) (l1 ... l2)]  non unique
+b = {l:h for h,l in zip(*a)}        # b = {l1:h1, l2:h2}             unique
+c = [*zip(*b.items())]              # c = [(l1 l2) (h1 h2)]
+d = c[::-1]                         # d = [(h1 h2) (l1 l2)]
+#plt.rc('xtick',labelsize=20)
+plt.rc('ytick',labelsize=20)
+plt.legend(*d, loc=(1, 0), ncol=2, fontsize=15)
+plt.yticks(fontsize=20)
+plt.tight_layout()
 #%%
 frames = [nn,rf1,rf2,rf3]
 gf= pd.concat(frames, axis=1)
@@ -449,10 +591,10 @@ colors["load shedding"] = 'black'
 colors["gas-to-power/heat"] = 'darkred'
 colors["Capital Costs"] = 'blue'
 colors["Operational Costs"] = 'orange'
-costsn = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resultsreff/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
-costsm = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/bau/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
-costsp = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/suff/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
-costsr = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/nocdr/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
+costsn = pd.read_csv("/home/umair/pypsa-eur_repository/results/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
+costsm = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
+costsp = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
+costsr = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/csvs/costs.csv", header=[0, 1, 2, 3], index_col=[0, 1, 2])
 
 nn = costsn.groupby(level=1).sum().div(1e9)
 nn.columns=nn.columns.droplevel(1)

@@ -76,7 +76,7 @@ enable:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#co2-budget
 co2_budget:
-  2020: 0.701
+  2020: 0.801
   2025: 0.524
   2030: 0.45
   2035: 0.150
@@ -497,8 +497,6 @@ sector:
   biomass_transport: false
   conventional_generation:
     OCGT: gas
-    CCGT: gas
-    biomass: biomass
   biomass_to_liquid: false
   biosng: false
 

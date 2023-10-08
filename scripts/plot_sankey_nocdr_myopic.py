@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun 26 18:23:33 2023
 
-@author: umair
-"""
 import logging
 
 logger = logging.getLogger(__name__)
@@ -74,7 +68,7 @@ def prepare_sankey(n):
     gen = gen.reset_index(name="value")
     gen = gen.loc[gen.value > 0.1]
     
-    gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc'], 'offshore wind')
+    gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc', 'offwind'], 'offshore wind')
     gen = combine_rows(gen, ['label', 'source', 'target'], ['solar', 'solar rooftop'], 'Solar Power')
 
     gen["source"] = gen["source"].replace({"gas": "fossil gas", "oil": "fossil oil", "onwind": "Onshore Wind"})
@@ -640,7 +634,7 @@ def prepare_carbon_sankey(n):
 
     #Solid biomass to liquid
     value = (
-    n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="solid biomass biomass to liquid$")
+    n.snapshot_weightings.generators @ n.links_t.p2.filter(like="solid biomass biomass to liquid")
      ).sum()
     collection.append(
     pd.Series(
@@ -652,21 +646,7 @@ def prepare_carbon_sankey(n):
 
     collection.append(
     pd.Series(dict(label="solid biomass biomass to liquid", source="co2 atmosphere", target="solid biomass", value=value))
-     )
-    value = (
-    n.snapshot_weightings.generators @ n.links_t.p0.filter(regex="solid biomass biomass to liquid$")
-     ).sum()
-    collection.append(
-    pd.Series(
-        dict(
-            label="solid biomass biomass to liquid", source="solid biomass", target="co2 atmosphere", value=value * 0.26 #C02 stored in oil by BTL from costs data 2050
-        )
-         )
-          )
-
-    collection.append(
-    pd.Series(dict(label="solid biomass biomass to liquid", source="co2 atmosphere", target="solid biomass", value=value * 0.26 ))
-     )
+      )
 
 
     #solid biomass to gas 
@@ -690,12 +670,12 @@ def prepare_carbon_sankey(n):
     collection.append(
     pd.Series(
         dict(
-            label="solid biomass solid biomass to gas", source="solid biomass", target="co2 atmosphere", value=value * 0.2# CO2 stored in bioSNG from cost data
+            label="solid biomass solid biomass to gas", source="solid biomass", target="co2 atmosphere", value=value * 0.23# CO2 stored in bioSNG from cost data
         )
          )
           )
     collection.append(
-    pd.Series(dict(label="solid biomass solid biomass to gas", source="co2 atmosphere", target="solid biomass", value=value * 0.2 ))
+    pd.Series(dict(label="solid biomass solid biomass to gas", source="co2 atmosphere", target="solid biomass", value=value * 0.23 ))
      )
     
     #gas for industry

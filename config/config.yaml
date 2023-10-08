@@ -978,3 +978,4 @@ plotting:
     solar curtailment: "gold"
     onshore curtailment: "navy"
     offshore curtailment: "lightskyblue"
+    load shedding: "black"

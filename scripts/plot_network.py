@@ -945,7 +945,7 @@ if __name__ == "__main__":
         transmission=False,
     )
 
-    plot_h2_map(n, regions)
+    #plot_h2_map(n, regions)
     plot_ch4_map(n)
     plot_map_without(n)
 

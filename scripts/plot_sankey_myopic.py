@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun 26 18:23:33 2023
 
-@author: umair
-"""
 import logging
 
 logger = logging.getLogger(__name__)
@@ -70,7 +64,7 @@ def prepare_sankey(n):
     gen = gen.reset_index(name="value")
     gen = gen.loc[gen.value > 0.1]
     
-    gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc'], 'offshore wind')
+    gen = combine_rows(gen, ['label', 'source', 'target'], ['offwind-ac', 'offwind-dc', 'offwind'], 'offshore wind')
     gen = combine_rows(gen, ['label', 'source', 'target'], ['solar', 'solar rooftop'], 'Solar Power')
 
     gen["source"] = gen["source"].replace({"gas": "fossil gas", "oil": "fossil oil", "onwind": "Onshore Wind"})
@@ -429,7 +423,7 @@ def plot_sankey(connections):
             arrangement="freeform",  # [snap, nodepad, perpendicular, fixed]
             valuesuffix="TWh",
             valueformat=".1f",
-            node=dict(pad=20, thickness=10, label=nodes.index, color=node_colors),
+            node=dict(pad=0, thickness=10, label=nodes.index, color=node_colors),
             link=dict(
                 source=connections.source.map(nodes),
                 target=connections.target.map(nodes),
@@ -707,32 +701,27 @@ def prepare_carbon_sankey(n):
         pd.Series(
             dict(
                 label="solid biomass solid biomass to gas CC",
-                source="BioSNG",
+                source="solid biomass",
                 target="gas",
-                value=value*0.2,
+                value=value*0.23,
             )
         )
     )
-
+    collection.append(
+        pd.Series(dict(label="solid biomass solid biomass to gas CC", source="co2 atmosphere", target="solid biomass", value=value*0.23))
+    )
     value = -(
         n.snapshot_weightings.generators @ n.links_t.p2.filter(like="solid biomass solid biomass to gas CC")
     ).sum()
     collection.append(
         pd.Series(
             dict(
-                label="solid biomass solid biomass to gas CC", source="BioSNG", target="co2 stored", value=value
+                label="solid biomass solid biomass to gas CC", source="solid biomass", target="co2 stored", value=value
             )
         )
     )
-    value = -(
-        n.snapshot_weightings.generators @ n.links_t.p3.filter(like="solid biomass solid biomass to gas CC")
-    ).sum()
     collection.append(
-        pd.Series(
-            dict(
-                label="solid biomass solid biomass to gas CC", source="BioSNG", target="co2 atmosphere", value=value
-            )
-        )
+        pd.Series(dict(label="solid biomass solid biomass to gas CC", source="co2 atmosphere", target="solid biomass", value=value))
     )
     #biomass boilers
     #residential urban decentral biomass boiler
@@ -1051,7 +1040,7 @@ def plot_carbon_sankey(collection):
             arrangement="freeform",  # [snap, nodepad, perpendicular, fixed]
             valuesuffix=" MtCO2",
             valueformat=".1f",
-            node=dict(pad=20, thickness=20, label=nodes.index, color=node_colors),
+            node=dict(pad=10, thickness=10, label=nodes.index, color=node_colors),
             link=dict(
                 source=collection.source.map(nodes),
                 target=collection.target.map(nodes),
@@ -1075,7 +1064,7 @@ if __name__ == "__main__":
             clusters="6",
             ll="vopt",
             sector_opts="1H-T-H-B-I-A-dist1",
-            planning_horizons="2030",
+            planning_horizons="2050",
         )
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     planning_horizons = int(snakemake.wildcards.planning_horizons)
