@@ -795,4 +795,4 @@ rule prepare_sector_network:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/prepare_sector_network_LULUCF_myopic.py"
+        "../scripts/prepare_sector_network.py"
