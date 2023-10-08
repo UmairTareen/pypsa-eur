@@ -818,8 +818,8 @@ if __name__ == "__main__":
         energy.loc[country, 'total rail freight'] = clever_Transport.loc[country, 'Total final energy consumption in rail freight transport']
         energy.loc[country, 'electricity rail freight'] = clever_Transport.loc[country, 'Final electricity consumption in rail freight transport']
         energy.loc[country, 'total aviation passenger'] = clever_Transport.loc[country, 'Total final energy consumption for air travel']
-        energy.loc[country, 'total international aviation'] = clever_Transport.loc[country, 'Final liquid fuels consumption on international flights']
-        energy.loc[country, 'total domestic aviation'] = clever_Transport.loc[country, 'Final liquid fuels consumption on domestic flights']
+        energy.loc[country, 'total international aviation'] = clever_Transport.loc[country, 'Total final energy consumption for air travel']
+        energy.loc[country, 'total domestic aviation'] = clever_Transport.loc[country, 'Final liquid fuels consumption on domestic flights']*0
         energy.loc[country, 'total domestic navigation'] = clever_Transport.loc[country, 'Final energy consumption from liquid fuels in national water freight transport']
         energy.loc[country, 'total international navigation'] = clever_Transport.loc[country, 'Final energy consumption from liquid fuels in international water freight transport']
         energy.loc[country, 'total residential space'] = clever_residential.loc[country, 'Total final energy consumption for space heating in the residential sector']
