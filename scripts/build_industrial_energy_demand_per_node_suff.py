@@ -33,7 +33,7 @@ if __name__ == "__main__":
     fn = snakemake.input.industry_sector_ratios
     industry_sector_ratios = pd.read_csv(fn, index_col=0)
     
-    countrries = ['BE', 'DE', 'FR', 'GB', 'NL']
+    countrries = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
     clever_Industry = clever_industry_data()
 
     # material demand per node and industry (kton/a)
@@ -44,7 +44,30 @@ if __name__ == "__main__":
     'DE1 0': 'DE',
     'FR1 0': 'FR',
     'GB0 0': 'GB',
-    'NL1 0': 'NL'}
+    'NL1 0': 'NL',
+    'AT1 0': 'AT',
+    'BG1 0': 'BG',
+    'CH1 0': 'CH',
+    'CZ1 0': 'CZ',
+    'DK1 0': 'DK',
+    'EE6 0': 'EE',
+    'ES1 0': 'ES',
+    'FI2 0': 'FI',
+    'GR1 0': 'GR',
+    'HR1 0': 'HR',
+    'HU1 0': 'HU',
+    'IE5 0': 'IE',
+    'IT1 0': 'IT',
+    'LT6 0': 'LT',
+    'LU1 0': 'LU',
+    'LV6 0': 'LV',
+    'NO2 0': 'NO',
+    'PL1 0': 'PL',
+    'PT1 0': 'PT',
+    'RO1 0': 'RO',
+    'SE2 0': 'SE',
+    'SI1 0': 'SI',
+    'SK1 0': 'SK'}
     nodal_production.rename(index=new_row_names, inplace=True)
     for country in countrries:
         nodal_production.loc[country, 'Electric arc'] = clever_Industry.loc[country, 'Production of primary steel']
@@ -58,7 +81,30 @@ if __name__ == "__main__":
     'DE': 'DE1 0',
     'FR': 'FR1 0',
     'GB': 'GB0 0',
-    'NL': 'NL1 0'}
+    'NL': 'NL1 0',
+    'AT': 'AT1 0',
+    'BG': 'BG1 0',
+    'CH': 'CH1 0',
+    'CZ': 'CZ1 0',
+    'DK': 'DK1 0',
+    'EE': 'EE6 0',
+    'ES': 'ES1 0',
+    'FI': 'FI2 0',
+    'GR': 'GR1 0',
+    'HR': 'HR1 0',
+    'HU': 'HU1 0',
+    'IE': 'IE5 0',
+    'IT': 'IT1 0',
+    'LT': 'LT6 0',
+    'LU': 'LU1 0',
+    'LV': 'LV6 0',
+    'NO': 'NO2 0',
+    'PL': 'PL1 0',
+    'PT': 'PT1 0',
+    'RO': 'RO1 0',
+    'SE': 'SE2 0',
+    'SI': 'SI1 0',
+    'SK': 'SK1 0'}
     nodal_production.rename(index=new_row_names, inplace=True)
     # energy demand today to get current electricity
     fn = snakemake.input.industrial_energy_demand_per_node_today
@@ -87,7 +133,30 @@ if __name__ == "__main__":
     'DE1 0': 'DE',
     'FR1 0': 'FR',
     'GB0 0': 'GB',
-    'NL1 0': 'NL'}
+    'NL1 0': 'NL',
+    'AT1 0': 'AT',
+    'BG1 0': 'BG',
+    'CH1 0': 'CH',
+    'CZ1 0': 'CZ',
+    'DK1 0': 'DK',
+    'EE6 0': 'EE',
+    'ES1 0': 'ES',
+    'FI2 0': 'FI',
+    'GR1 0': 'GR',
+    'HR1 0': 'HR',
+    'HU1 0': 'HU',
+    'IE5 0': 'IE',
+    'IT1 0': 'IT',
+    'LT6 0': 'LT',
+    'LU1 0': 'LU',
+    'LV6 0': 'LV',
+    'NO2 0': 'NO',
+    'PL1 0': 'PL',
+    'PT1 0': 'PT',
+    'RO1 0': 'RO',
+    'SE2 0': 'SE',
+    'SI1 0': 'SI',
+    'SK1 0': 'SK'}
     nodal_df.rename(index=new_row_names, inplace=True)
     
     
@@ -107,7 +176,30 @@ if __name__ == "__main__":
     'DE': 'DE1 0',
     'FR': 'FR1 0',
     'GB': 'GB0 0',
-    'NL': 'NL1 0'}
+    'NL': 'NL1 0',
+    'AT': 'AT1 0',
+    'BG': 'BG1 0',
+    'CH': 'CH1 0',
+    'CZ': 'CZ1 0',
+    'DK': 'DK1 0',
+    'EE': 'EE6 0',
+    'ES': 'ES1 0',
+    'FI': 'FI2 0',
+    'GR': 'GR1 0',
+    'HR': 'HR1 0',
+    'HU': 'HU1 0',
+    'IE': 'IE5 0',
+    'IT': 'IT1 0',
+    'LT': 'LT6 0',
+    'LU': 'LU1 0',
+    'LV': 'LV6 0',
+    'NO': 'NO2 0',
+    'PL': 'PL1 0',
+    'PT': 'PT1 0',
+    'RO': 'RO1 0',
+    'SE': 'SE2 0',
+    'SI': 'SI1 0',
+    'SK': 'SK1 0'}
     nodal_df.rename(index=new_row_names, inplace=True)
     fn = snakemake.output.industrial_energy_demand_per_node
     nodal_df.to_csv(fn, float_format="%.2f")

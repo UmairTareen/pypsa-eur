@@ -499,6 +499,8 @@ rule build_industrial_distribution_key:
 
 
 rule build_industrial_production_per_node:
+    params:
+        planning_horizons=config["scenario"]["planning_horizons"],
     input:
         industrial_distribution_key=RESOURCES
         + "industrial_distribution_key_elec_s{simpl}_{clusters}.csv",
@@ -521,12 +523,12 @@ rule build_industrial_production_per_node:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_industrial_production_per_node.py"
+        "../scripts/build_industrial_production_per_node_suff.py"
 
 
 rule build_industrial_energy_demand_per_node:
     params:
-        planning_horizons=config["scenario"],
+        planning_horizons=config["scenario"]["planning_horizons"],
     input:
         industry_sector_ratios=RESOURCES + "industry_sector_ratios.csv",
         industrial_production_per_node=RESOURCES

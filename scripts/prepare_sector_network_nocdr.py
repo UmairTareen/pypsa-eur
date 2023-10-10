@@ -544,7 +544,7 @@ def add_co2_tracking(n, options):
     )
     fn = snakemake.input.co2_totals_name
     LULUCF_totals = pd.read_csv(fn, index_col=0)
-    lt = ['BE', 'DE', 'FR', 'GB', 'NL']
+    lt = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
     column_to_lock = ['LULUCF']
     sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
     sum_results = sum_results * -1e6
@@ -2821,7 +2821,7 @@ def add_industry(n, costs):
         ]
         fn = snakemake.input.pop_weighted_energy_totals
         energy_totals = pd.read_csv(fn, index_col=0)
-        lt = ['BE1 0', 'DE1 0', 'FR1 0', 'GB0 0', 'GB2 0', 'NL1 0']
+        lt = ['BE1 0','DE1 0','FR1 0','GB0 0','NL1 0','AT1 0','BG1 0','CH1 0','CZ1 0','DK1 0','EE6 0','ES1 0','FI2 0','GR1 0','HR1 0','HU1 0','IE5 0','IT1 0','LT6 0','LU1 0','LV6 0','NO2 0','PL1 0','PT1 0','RO1 0','SE2 0','SI1 0','SK1 0']
         column_to_lock = ['electricity residential', 'electricity services', 'electricity residential space', 'total rail', 'electricity residential water', 'electricity services space', 'electricity services water']
         energy_totals.loc[lt, column_to_lock] = energy_totals.loc[lt, column_to_lock]
         sum_result = (energy_totals.loc[lt, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[lt, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']].sum(axis=1))

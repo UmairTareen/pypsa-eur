@@ -193,8 +193,8 @@ if __name__ == "__main__":
     countries = pd.Index(snakemake.params.countries)
     
     clever_Industry = clever_industry_data()
-    #countrries = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK']
-    countrries = ['BE', 'DE', 'FR', 'GB', 'NL']
+    countrries = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK']
+    #countrries = ['BE', 'DE', 'FR', 'GB', 'NL']
     columns_to_reset = [
     'Printing and media reproduction',
     'Pulp production',

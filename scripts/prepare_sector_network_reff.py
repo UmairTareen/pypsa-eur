@@ -544,7 +544,7 @@ def add_co2_tracking(n, options):
     )
     fn = snakemake.input.co2_totals_name
     LULUCF_totals = pd.read_csv(fn, index_col=0)
-    lt = ['BE', 'DE', 'FR', 'GB', 'NL']
+    lt = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
     column_to_lock = ['LULUCF']
     sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
     sum_results = sum_results * -1e6

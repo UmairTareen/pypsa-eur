@@ -13,20 +13,20 @@ with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
 
-n=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resultsreff/postnetworks/elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc")
+n=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/Overnight simulations/resultsreff/postnetworks/elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc")
 
-m_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-m_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-m_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+m_1=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+m_2=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+m_3=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 
 
-p_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-p_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-p_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+p_1=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+p_2=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+p_3=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultssuff/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 
-r_1=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-r_2=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-r_3=pypsa.Network("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+r_1=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+r_2=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+r_3=pypsa.Network("/home/umair/scripts_results/ECEMP Simulations/simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 
 #%%
 

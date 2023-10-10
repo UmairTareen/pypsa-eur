@@ -787,8 +787,8 @@ if __name__ == "__main__":
     clever_AFOLUB = clever_AFOLUB_data()
     clever_Macro = clever_macro_data()
     
-    #countries = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
-    countries = ['BE', 'DE', 'FR', 'GB', 'NL']
+    countries = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
+    #countries = ['BE', 'DE', 'FR', 'GB', 'NL']
     nuts3 = gpd.read_file(snakemake.input.nuts3_shapes).set_index("index")
     population = nuts3["pop"].groupby(nuts3.country).sum()
     

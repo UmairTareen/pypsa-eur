@@ -36,7 +36,7 @@ scenario:
   ll:
   - v1.0
   clusters:
-  - 6
+  - 32
   #- 128
   #- 256
   #- 512
@@ -53,7 +53,7 @@ scenario:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 #countries: ['AL', 'AT', 'BA', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'ME', 'MK', 'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'SE', 'SI', 'SK']
-countries: ['BE', 'DE', 'FR', 'GB', 'NL']
+countries: ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#snapshots
 snapshots:
@@ -638,7 +638,7 @@ solving:
       parallel: "on"
       random_seed: 123
     gurobi-default:
-      threads: 4
+      threads: 32
       method: 2 # barrier
       crossover: 0
       BarConvTol: 1.e-6
@@ -679,7 +679,7 @@ solving:
     cbc-default: {} # Used in CI
     glpk-default: {} # Used in CI
 
-  mem: 30000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
+  mem: 400000  #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
   walltime: "12:00:00"
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#plotting
