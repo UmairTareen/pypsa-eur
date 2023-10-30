@@ -437,8 +437,8 @@ def generate_results(flows, country):
         
     # # Gross final energy consumption (net + network losses)
     gross_fec_carrier = fec_carrier.copy()
-    for en_code in ['elc','gaz','vap']:
-        gross_fec_carrier[en_code+'_fe'] = gross_fec_carrier.get(en_code+'_fe',0) + flows_bk.get((en_code+'_se','per','ntw'),0)
+    # for en_code in ['elc','gaz','vap']:
+    #     gross_fec_carrier[en_code+'_fe'] = gross_fec_carrier.get(en_code+'_fe',0)
     gross_net_ratio = gross_fec_carrier / fec_carrier
     
     # # Primary energy production
@@ -494,16 +494,82 @@ def generate_results(flows, country):
 
     flows_from_node_t = flows_from_node.drop(columns=ren_columns + fos_columns + nuk_columns)
     gfec_breakdown = flows_from_node_t.loc[:, (flows_from_node_t != 0).any()]
+    
     tot_columns = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe', 'pac_pe','cms_pe', 'gaz_pe', 'pet_pe','ura_pe']
-    filtered_columns = [col for col in flows_from_node_cum.columns if col[0] in tot_columns and col[1] == 'elc_se']
-    result_elc = flows_from_node_cum[filtered_columns].groupby(level='Source', axis=1).sum()
+    filtered_columns = [col for col in flows_bk.columns if col[0] in tot_columns and col[1] == 'elc_se']
+    result_elc = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_elc_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
     ren_elc = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe']
     ren_elc = result_elc[ren_elc].sum(axis=1)
-    ren_cov_ratios['ren'] = ren_elc
-    # ren_cov_ratios = calculate_res(flows_bk)
-    # sf.consistency_check(gross_fec_carrier,gfec_breakdown,'Debug: max difference between final energy cons and breakdown by source (should be close to 0)',0.2)
-    # ren_cov_ratios_eu = calculate_res(flows_imp_eu, gross_net_ratio)[0] if eu_bunker_change else ren_cov_ratios
-
+    ren_cov_ratios = pd.DataFrame()
+    ren_cov_ratios['elc_fe'] = (ren_elc/result_elc_t)*100
+    
+    gas_columns = ['bgl_pe','enc_pe', 'gaz_pe']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in gas_columns and col[1] == 'gaz_se']
+    result_gas = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_gas_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_gas = ['bgl_pe','enc_pe']
+    ren_gas = result_gas[ren_gas].sum(axis=1)
+    ren_cov_ratios['gaz_fe'] = (ren_gas/result_gas_t)*100
+    
+    pet_columns = ['pet_pe','enc_pe']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in pet_columns and col[1] in ['pet_fe', 'lqf_se']]
+    result_pet = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_pet_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_pet = ['enc_pe']
+    ren_pet = result_pet[ren_pet].sum(axis=1)
+    ren_cov_ratios['pet_fe'] = (ren_pet/result_pet_t)*100
+    
+    hyd_columns = ['elc_se','gaz_se']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in hyd_columns and col[1] == 'hyd_se']
+    result_hyd = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_hyd_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_hyd = ['elc_se']
+    ren_hyd = result_hyd[ren_hyd].sum(axis=1)
+    ren_cov_ratios['hyd_fe'] = (ren_hyd/result_hyd_t)*100
+    
+    bm_columns = ['enc_pe']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in bm_columns and col[1] in ['gaz_se', 'lqf_se', 'elc_se','vap_se']]
+    result_bm = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_bm_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_bm = ['enc_pe']
+    ren_bm = result_bm[ren_bm].sum(axis=1)
+    ren_cov_ratios['enc_fe'] = (ren_bm/result_bm_t)*100
+    
+    dh_columns = ['enc_pe','cms_pe','pet_pe','gaz_se','bgl_pe','elc_se','pac_pe','tes_se']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in dh_columns and col[1] in ['vap_se']]
+    result_dh = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_dh_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_dh = ['enc_pe','bgl_pe','elc_se','pac_pe']
+    ren_dh = result_dh[ren_dh].sum(axis=1)
+    ren_cov_ratios['vap_fe'] = (ren_dh/result_dh_t)*100
+    
+    am_columns = ['pac_pe']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in am_columns and col[1] in ['vap_se','pac_fe']]
+    result_am = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_am_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_am = ['pac_pe']
+    ren_am = result_am[ren_am].sum(axis=1)
+    ren_cov_ratios['pac_fe'] = (ren_am/result_am_t)*100
+    
+    nh_columns = ['elc_se','hyd_se']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in nh_columns and col[1] in ['amm_fe']]
+    result_nh = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_nh_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_nh = ['elc_se','hyd_se']
+    ren_nh = result_nh[ren_nh].sum(axis=1)
+    ren_cov_ratios['amm_fe'] = (ren_nh/result_nh_t)*100
+    
+    me_columns = ['elc_se','hyd_se']
+    filtered_columns = [col for col in flows_bk.columns if col[0] in me_columns and col[1] in ['met_fe']]
+    result_me = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
+    result_me_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
+    ren_me = ['elc_se','hyd_se']
+    ren_me = result_me[ren_me].sum(axis=1)
+    ren_cov_ratios['met_fe'] = (ren_me/result_me_t)*100
+    
+    gfec_breakdown_pct = sf.share_percent(gfec_breakdown,100)
+    ren_cov_ratios['total'] = gfec_breakdown_pct['ren']
     # # Share of renewable following EU methodology
     res_share_eu=pd.DataFrame()
     # # No change for overal RES share
@@ -612,11 +678,11 @@ def generate_results(flows, country):
 
     # html_items['INTRO'] = f'This page provides detailed data visualisation of the trajectory for {country_label}, as suggested by the <a href="https://clever-energy-scenario.eu/">CLEVER project</a>. To access pathways for another country (or EU perimeter), you may use the dropdown menu in the top right menu. You may also <a href="{xls_file_name}" target="_blank">click here</a> to download the raw data behind all graphs shown below.'
 
-    html_items['DISCLAIMER'] = '<b>DISCLAIMER:</b> this document is work in progress, including the result of the "V0" (the first EU aggregation of some bottom-up national trajectories and top-down normalised trajectories for remaining countries). Those trajectories will continue to be harmonised and reinforced.<br /><span style="font-weight:bold;color:red">Results shown below are not to be disseminated to third parties</span>.' if MAIN_PARAMS['DRAFT'] else 'This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License <img alt="Creative Commons License" style="display: inline; vertical-align: middle;" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a>'
+    # html_items['DISCLAIMER'] = '<b>DISCLAIMER:</b> this document is work in progress, including the result of the "V0" (the first EU aggregation of some bottom-up national trajectories and top-down normalised trajectories for remaining countries). Those trajectories will continue to be harmonised and reinforced.<br /><span style="font-weight:bold;color:red">Results shown below are not to be disseminated to third parties</span>.' if MAIN_PARAMS['DRAFT'] else 'This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License <img alt="Creative Commons License" style="display: inline; vertical-align: middle;" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a>'
     # License => https://creativecommons.org/choose/results-one?license_code=by&amp;jurisdiction=&amp;version=4.0&amp;lang=en
 
-    html_items['METHODO'] = '<p>Methodological notes: unless specified, calculations below have been made <b><span style="color:red">' + ('without' if 'avi' in sectors_to_remove else 'with') + '</span> international aviation and <span style="color:red">' + ('without' if 'wati' in sectors_to_remove else 'with') + '</span> international maritime transport</b>.'
-    if MAIN_PARAMS['DRAFT']: html_items['METHODO'] += 'The mix of imported energy carriers is '+('calculated from other european trajectories' if MAIN_PARAMS['USE_IMPORT_MIX'] else 'considered fossil-sourced by default') +'. The share of biofuels in liquid fuels is '+('defined by a dashboard indicator' if MAIN_PARAMS['BIOFUEL_SHARE'] else 'adjusted, according to available biofuel')+'.</p>'
+    # html_items['METHODO'] = '<p>Methodological notes: unless specified, calculations below have been made <b><span style="color:red">' + ('without' if 'avi' in sectors_to_remove else 'with') + '</span> international aviation and <span style="color:red">' + ('without' if 'wati' in sectors_to_remove else 'with') + '</span> international maritime transport</b>.'
+    # if MAIN_PARAMS['DRAFT']: html_items['METHODO'] += 'The mix of imported energy carriers is '+('calculated from other european trajectories' if MAIN_PARAMS['USE_IMPORT_MIX'] else 'considered fossil-sourced by default') +'. The share of biofuels in liquid fuels is '+('defined by a dashboard indicator' if MAIN_PARAMS['BIOFUEL_SHARE'] else 'adjusted, according to available biofuel')+'.</p>'
     
     id_section = -1
     sections = [('ghg','GHG'),('sankey','Sankey diagram'),('res','Renewable energy share'),('carrier','Energy carrier balance'),('cons','Energy consumption'),('eu','EU indicators & objectives')]
@@ -645,8 +711,8 @@ def generate_results(flows, country):
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
     html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(ren_cov_ratios, NODES, MAIN_PARAMS, 'linechart', 'Renewable share per final energies', results_xls_writer, '%'))
-    html_items['MAIN'] += '<p>Renewable shares per final energies are calculated by analysing all energy flows going through different transformation processes (electricity and heat production processes, power-to-gas etc.) as described by the Sankey diagram. An algorithm goes upstream through this complex energy system, from a given final energy to all relevant primary energies, and determines their respective shares. For example, a renewable share of 50% for final electricity means that 50% of the electricity consumed has been produced by renewable means, either directly from renewable power technologies such as wind of PV, or indirectly - for example if gas cogeneration has been used with a share of renewables in the gas mix.'
-    if MAIN_PARAMS['USE_IMPORT_MIX'] and not show_total: html_items['MAIN'] += ' NB: the mix of imported secondary energy carriers (power, gas...) is calculated from exports of other EU countries, and may thus contain some level of renewables, included in this calculation as well.'
+    # html_items['MAIN'] += '<p>Renewable shares per final energies are calculated by analysing all energy flows going through different transformation processes (electricity and heat production processes, power-to-gas etc.) as described by the Sankey diagram. An algorithm goes upstream through this complex energy system, from a given final energy to all relevant primary energies, and determines their respective shares. For example, a renewable share of 50% for final electricity means that 50% of the electricity consumed has been produced by renewable means, either directly from renewable power technologies such as wind of PV, or indirectly - for example if gas cogeneration has been used with a share of renewables in the gas mix.'
+    # if MAIN_PARAMS['USE_IMPORT_MIX'] and not show_total: html_items['MAIN'] += ' NB: the mix of imported secondary energy carriers (power, gas...) is calculated from exports of other EU countries, and may thus contain some level of renewables, included in this calculation as well.'
     html_items['MAIN'] += '<p>'
     if show_total: html_items['MAIN'] += sf.chart_to_output(sf.create_map(tot_results[('ren_cov_ratio','total')], country_list, 'RES share in final consumption', MAIN_PARAMS, unit='%', min_scale=0,max_scale=100))
     html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(gfec_breakdown, NODES, MAIN_PARAMS, 'area', 'Final consumption by origin', results_xls_writer))
@@ -655,7 +721,7 @@ def generate_results(flows, country):
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
     html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(cov_ratios, NODES, MAIN_PARAMS, 'linechart', 'Local production coverage ratios', results_xls_writer, unit='%'))
-    html_items['MAIN'] += '<p>Local production coverage ratios are simply defined as the ratio between the local production of a given energy carrier, and its local consumption (including final and non final uses). A ratio above 100% thus means that the country is more than self-sufficient (net exporter), while a ratio below 100% means that the country is a net importer.</p>'
+    # html_items['MAIN'] += '<p>Local production coverage ratios are simply defined as the ratio between the local production of a given energy carrier, and its local consumption (including final and non final uses). A ratio above 100% thus means that the country is more than self-sufficient (net exporter), while a ratio below 100% means that the country is a net importer.</p>'
     if show_total:
         node_list = tot_results['cov_ratio'].columns.unique(level='Sub_indicator').to_list()
         sf.put_item_in_front(node_list, 'total') # We put total first
@@ -671,7 +737,7 @@ def generate_results(flows, country):
         combinations += [(NODES.loc[energy,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'sec_mix.'+energy, False)
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
-    html_items['MAIN'] += '<p>The above chart describes the contribution of misc. technologies (and possibly imports) to the production of a given secondary energy carrier.</p>'
+    # html_items['MAIN'] += '<p>The above chart describes the contribution of misc. technologies (and possibly imports) to the production of a given secondary energy carrier.</p>'
     combinations = []
     # for energy in SE_NODES + ['enc_pe']:
     #     df = sf.node_consumption(sf.shares_from_node(flows_bk,energy,SE_NODES,'forward',include_losses=True),DS_NODES+SE_NODES+['per','exp','exc'],'backwards')
@@ -696,34 +762,34 @@ def generate_results(flows, country):
     # html_items['MAIN'] += sf.combine_charts([('consumption',pec),('consumption by type',pec_breakdown)], MAIN_PARAMS, NODES, 'Primary energy', 'areachart', results_xls_writer)
 
     ## EU indicators & objectives
-    targets = {}
-    targets_res = {'total':{},'elc_fe':{},'tra':{},'chfcli':{}}
-    id_section += 1
-    html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += '<p>In this section, indicators are calculated according to Eurostat methodology, and compared with official EU objectives (when available).</p>'
+    # targets = {}
+    # targets_res = {'total':{},'elc_fe':{},'tra':{},'chfcli':{}}
+    # id_section += 1
+    # html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    # html_items['MAIN'] += '<p>In this section, indicators are calculated according to Eurostat methodology, and compared with official EU objectives (when available).</p>'
     # if eu_bunker_change: html_items['MAIN'] += '<p><b>Caution</b>: the perimeter for bunkers is different in this section than above graphs - international aviation is included, international maritime transport is excluded.</p>'
     # # GHG
     # if country == 'EU': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[3622,3497,2027]}
     # html_items['MAIN'] += sf.combine_charts([('yearly emissions', ghg_sector_eu, targets)], MAIN_PARAMS, NODES, 'All GHG emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>eq')
 
-    # RES
-    if country == 'EUR':
-        targets_res['total'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[17.8,19.9,42.5]}
-        targets_res['elc_fe'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[29.66,34.09,65,69]}
-        targets_res['tra'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[6.75,8.8,28,32]}
-        targets_res['chfcli'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[20.31,22.43,38,46]}
+    # # RES
+    # if country == 'EUR':
+    #     targets_res['total'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[17.8,19.9,42.5]}
+    #     targets_res['elc_fe'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[29.66,34.09,65,69]}
+    #     targets_res['tra'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[6.75,8.8,28,32]}
+    #     targets_res['chfcli'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[20.31,22.43,38,46]}
     # html_items['MAIN'] += sf.combine_charts([(label,res_share_eu[[indicator]],targets_res[indicator]) for (label,indicator) in [('all energies','total'),('electricity','elc_fe'),('transportation','tra'),('heating & cooling','chfcli')]], MAIN_PARAMS, NODES, 'Renewable energy share -', 'linechart', results_xls_writer, '%')
-    html_items['MAIN'] += '<ul><li><b>Overall RES</b> has not been adapted.</li><li>The <b>RES-E</b> (share of renewables in power sector) has been adapted to follow Eurostat methodology and is calculated as gross renewable production / gross final consumption (including internal uses such as electrolysis and e-fuels). It may thus be above 100% (in case of high share of renewables, and exports). Renewable power imports are not included in the numerator.</li><li><b>RES-T</b> (share of renewable in transportation) only <u>partially follows</u> Eurostat methodology. Main differences: multipliers are approximated (3x for electricity use as a whole, 1.5x for biofuels), non compliant biofuels not excluded, international freight and kerosene not excluded, RES-E calculated from current year mix (not 2 years ago).</li><li><b>RES-H&C</b> (share of renewable in heating & cooling) follows Eurostat methodology: share of renewables in final energies excluding electricity and transportation uses.</li></ul>'
+    # html_items['MAIN'] += '<ul><li><b>Overall RES</b> has not been adapted.</li><li>The <b>RES-E</b> (share of renewables in power sector) has been adapted to follow Eurostat methodology and is calculated as gross renewable production / gross final consumption (including internal uses such as electrolysis and e-fuels). It may thus be above 100% (in case of high share of renewables, and exports). Renewable power imports are not included in the numerator.</li><li><b>RES-T</b> (share of renewable in transportation) only <u>partially follows</u> Eurostat methodology. Main differences: multipliers are approximated (3x for electricity use as a whole, 1.5x for biofuels), non compliant biofuels not excluded, international freight and kerosene not excluded, RES-E calculated from current year mix (not 2 years ago).</li><li><b>RES-H&C</b> (share of renewable in heating & cooling) follows Eurostat methodology: share of renewables in final energies excluding electricity and transportation uses.</li></ul>'
 
-    # Final energy consumption
-    if country == 'EUR': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[10912,11253,8882]}
+    # # Final energy consumption
+    # if country == 'EUR': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[10912,11253,8882]}
     # html_items['MAIN'] += sf.combine_charts([('All energies',fec_sector_eu,targets)], MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
-    html_items['MAIN'] += '<p>This indicator is equivalent to Eurostat\'s "Final energy consumption (Europe 2020-2030)", it is equal to the final energy consumption calculated previously, without ambient heat, non-energy consumption, international maritime consumption and the energy sector (except blast furnaces).</p>'
+    # html_items['MAIN'] += '<p>This indicator is equivalent to Eurostat\'s "Final energy consumption (Europe 2020-2030)", it is equal to the final energy consumption calculated previously, without ambient heat, non-energy consumption, international maritime consumption and the energy sector (except blast furnaces).</p>'
 
     # Primary energy consumption 
-    if country == 'EUR': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[15731,15745,11544]}
-    html_items['MAIN'] += sf.combine_charts([('consumption',pec,targets)], MAIN_PARAMS, NODES, 'Primary energy', 'areachart',  results_xls_writer)
-    html_items['MAIN'] += '<p>This indicator is equivalent to Eurostat\'s "Primary energy consumption (Europe 2020-2030)", it is equal to the primary energy consumption calculated previously, without ambient heat and non-energy consumption.</p>'
+    # if country == 'EUR': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[15731,15745,11544]}
+    # html_items['MAIN'] += sf.combine_charts([('consumption',pec,targets)], MAIN_PARAMS, NODES, 'Primary energy', 'areachart',  results_xls_writer)
+    # # html_items['MAIN'] += '<p>This indicator is equivalent to Eurostat\'s "Primary energy consumption (Europe 2020-2030)", it is equal to the primary energy consumption calculated previously, without ambient heat and non-energy consumption.</p>'
     
     interval_time = sf.calc_time('Plotting & file writting', interval_time)
 
@@ -795,15 +861,20 @@ def generate_results(flows, country):
 #     for cat in CATEGORIES:
 #         sf.balance_node(flows_imp, 'imp_'+cat)
 #     return flows_imp
-# def calculate_res(flows_bk,gfec_breakdown):
+# def calculate_res(flows_bk, gross_net_ratio,gfec_breakdown):
 #     ren_cov_ratios=pd.DataFrame()
+#     gfec_breakdown_carrier=pd.DataFrame()
 #     for final_node in FE_NODES:
-        
-#         percentage_ren = (gfec_breakdown['ren'] / 100).fillna(0)
-#         ren_cov_ratios[final_node] = percentage_ren
-#         # gfec_breakdown = pd.concat([gfec_breakdown,gfec_breakdown_carrier], axis=1).groupby(axis=1, level=0).sum()
-#     total = gfec_breakdown.sum()
-#     gfec_breakdown_pct = (gfec_breakdown / total) * 100
+#         # Share paths from final energy to primary energy nodes
+#         selected_columns_cr = flows_bk.columns.get_level_values('Source').isin(PE_NODES)
+#         flows_from_node = flows_bk.loc[:, selected_columns_cr]
+#         flows_from_node = flows_from_node.groupby(level='Source', axis=1).sum()
+#         cons_at_primary = sf.node_consumption(flows_from_node,PE_NODES+SI_NODES)
+#         # Adding network losses for gross final consumption
+#         if final_node in gross_net_ratio.columns: cons_at_primary = cons_at_primary.multiply(gross_net_ratio[final_node], axis=0)
+#         ren_cov_ratios[final_node] = sf.share_percent(gfec_breakdown,100).get('ren',0)
+#         gfec_breakdown = pd.concat([gfec_breakdown,gfec_breakdown_carrier], axis=1).groupby(axis=1, level=0).sum()
+#     gfec_breakdown_pct = sf.share_percent(gfec_breakdown,100)
 #     ren_cov_ratios['total'] = gfec_breakdown_pct['ren']
 #     return ren_cov_ratios
 
