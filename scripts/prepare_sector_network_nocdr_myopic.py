@@ -544,9 +544,7 @@ def add_co2_tracking(n, options):
     )
     fn = snakemake.input.co2_totals_name
     LULUCF_totals = pd.read_csv(fn, index_col=0)
-    lt = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
-    column_to_lock = ['LULUCF']
-    sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
+    sum_results = LULUCF_totals.loc[:, ['LULUCF']].sum()
     sum_results = sum_results * -1e6
     n.madd(
         "Store",
@@ -2821,10 +2819,7 @@ def add_industry(n, costs):
         ]
         fn = snakemake.input.pop_weighted_energy_totals
         energy_totals = pd.read_csv(fn, index_col=0)
-        lt = ['BE1 0','DE1 0','FR1 0','GB0 0','NL1 0','AT1 0','BG1 0','CH1 0','CZ1 0','DK1 0','EE6 0','ES1 0','FI2 0','GR1 0','HR1 0','HU1 0','IE5 0','IT1 0','LT6 0','LU1 0','LV6 0','NO2 0','PL1 0','PT1 0','RO1 0','SE2 0','SI1 0','SK1 0']
-        column_to_lock = ['electricity residential', 'electricity services', 'total rail', 'electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']
-        energy_totals.loc[lt, column_to_lock] = energy_totals.loc[lt, column_to_lock]
-        sum_result = (energy_totals.loc[lt, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[lt, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']].sum(axis=1))
+        sum_result = (energy_totals.loc[:, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[:, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']].sum(axis=1))
         
         if n.loads_t.p_set[loads_i].empty:
             continue
@@ -3309,12 +3304,12 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake(
             "prepare_sector_network",
-            configfiles="test/config.overnight.yaml",
+            configfiles="config/config_nocdr_myopic.yaml",
             simpl="",
             opts="",
-            clusters="5",
-            ll="v1.5",
-            sector_opts="CO2L0-24H-T-H-B-I-A-solar+p3-dist1",
+            clusters="6",
+            ll="vopt",
+            sector_opts="1H-T-H-B-I-A-dist1",
             planning_horizons="2030",
         )
 
