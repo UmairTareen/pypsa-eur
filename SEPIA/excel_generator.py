@@ -4,17 +4,36 @@ import pandas as pd # Read/analyse data
 import pypsa
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 
-Nnodes = 6
+simpl=""
+cluster = 6
+ll="vopt"
+opt=""
+sector_opt="1H-T-H-B-I-A-dist1"
+planning_horizon=str(2030)
 
-n=pypsa.Network("../results/postnetworks/elec_s_"+str(Nnodes)+"_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-m=pypsa.Network("../results/postnetworks/elec_s_"+str(Nnodes)+"_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-o=pypsa.Network("../results/postnetworks/elec_s_"+str(Nnodes)+"_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 countries=['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
 countries = ['BE', 'DE', 'FR', 'GB', 'NL']
-def process_network_1(n):
-    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(Nnodes)+"_2030.csv", index_col=0).T
+
+def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix="../results/postnetworks/elec_"):
+    return prefix+"s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
+        simpl=simpl,
+        cluster=cluster,
+        opt=opt,
+        sector_opt=sector_opt,
+        ll=ll,
+        planning_horizon=planning_horizon
+    )
+
+n=pypsa.Network("../results/postnetworks/elec_s_"+str(cluster)+"_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+m=pypsa.Network("../results/postnetworks/elec_s_"+str(cluster)+"_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+o=pypsa.Network("../results/postnetworks/elec_s_"+str(cluster)+"_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+
+def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
+    filename = build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
+    n = pypsa.Network(filename)
+    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
     clever_industry = (
-         pd.read_csv("../data/clever_Industry_2030.csv", index_col=0)).loc[countries].T
+         pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).loc[countries].T
 
     Rail_demand = energy_demand.loc["total rail"].sum()
     H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
@@ -68,7 +87,7 @@ def process_network_1(n):
     su.index.set_names(columns[:-1], inplace=True)
     su = su.reset_index(name="value")
     su = su.loc[su.value > 0.1]
-    
+
     load = (
         (n.snapshot_weightings.generators @ as_dense(n, "Load", "p_set"))
         .groupby([n.loads.carrier, n.loads.carrier, n.loads.bus.map(n.buses.carrier)])
@@ -82,7 +101,7 @@ def process_network_1(n):
     load = load.loc[~load.label.str.contains("emissions")]
     load.target += " demand"
     load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
-    value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"] 
+    value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
     load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
     for i in range(5):
         n.links[f"total_e{i}"] = (
@@ -112,7 +131,7 @@ def process_network_1(n):
     df.columns = columns
 
     # fix heat pump energy balance
-    
+
 
     hp = n.links.loc[n.links.carrier.str.contains("heat pump")]
 
@@ -127,7 +146,7 @@ def process_network_1(n):
         .reset_index()
     )
     hp_elec.columns = columns
-    
+
     df = df.loc[~(df.label.str.contains("heat pump") & (df.target == "losses"))]
 
     df.loc[df.label.str.contains("heat pump"), "value"] -= hp_elec["value"].values
@@ -212,442 +231,20 @@ def process_network_1(n):
      return label
 
     connections['label'] = connections['label'].apply(generate_new_label)
-    connections.rename(columns={'value': '2030'}, inplace=True)
+    connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
+    connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
 
     return connections
 
-def process_network_2(m):
-    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(Nnodes)+"_2040.csv", index_col=0).T
-    clever_industry = (
-         pd.read_csv("../data/clever_Industry_2040.csv", index_col=0)).loc[countries].T
-
-    Rail_demand = energy_demand.loc["total rail"].sum()
-    H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
-    H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].sum()
-    columns = ["label", "source", "target", "value"]
-
-    gen = (
-        (m.snapshot_weightings.generators @ m.generators_t.p)
-        .groupby(
-            [
-                m.generators.carrier,
-                m.generators.carrier,
-                m.generators.bus.map(m.buses.carrier),
-            ]
-        )
-        .sum()
-        .div(1e6)
-    )  # TWh
-
-    gen.index.set_names(columns[:-1], inplace=True)
-    gen = gen.reset_index(name="value")
-    gen = gen.loc[gen.value > 0.1]
-
-    gen["source"] = gen["source"].replace({"gas": "fossil gas", "oil": "fossil oil"})
-    gen["label"] = gen["label"].replace({"gas": "fossil gas", "oil": "fossil oil"})
-
-    sto = (
-        (m.snapshot_weightings.generators @ m.stores_t.p)
-        .groupby(
-            [m.stores.carrier, m.stores.carrier, m.stores.bus.map(m.buses.carrier)]
-        )
-        .sum()
-        .div(1e6)
-    )
-    sto.index.set_names(columns[:-1], inplace=True)
-    sto = sto.reset_index(name="value")
-    sto = sto.loc[sto.value > 0.1]
-
-    su = (
-        (m.snapshot_weightings.generators @ m.storage_units_t.p)
-        .groupby(
-            [
-                m.storage_units.carrier,
-                m.storage_units.carrier,
-                m.storage_units.bus.map(m.buses.carrier),
-            ]
-        )
-        .sum()
-        .div(1e6)
-    )
-    su.index.set_names(columns[:-1], inplace=True)
-    su = su.reset_index(name="value")
-    su = su.loc[su.value > 0.1]
-    
-    load = (
-        (m.snapshot_weightings.generators @ as_dense(m, "Load", "p_set"))
-        .groupby([m.loads.carrier, m.loads.carrier, m.loads.bus.map(m.buses.carrier)])
-        .sum()
-        .div(1e6)
-        .swaplevel()
-    )  # TWh
-    load.index.set_names(columns[:-1], inplace=True)
-    load = load.reset_index(name="value")
-
-    load = load.loc[~load.label.str.contains("emissions")]
-    load.target += " demand"
-    load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
-    value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"] 
-    load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
-    for i in range(5):
-        m.links[f"total_e{i}"] = (
-            m.snapshot_weightings.generators @ m.links_t[f"p{i}"]
-        ).div(
-            1e6
-        )  # TWh
-        m.links[f"carrier_bus{i}"] = m.links[f"bus{i}"].map(m.buses.carrier)
-
-    def calculate_losses(x):
-        energy_ports = x.loc[
-            x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
-        ].index.str.replace("carrier_bus", "total_e")
-        return -x.loc[energy_ports].sum()
-
-    m.links["total_e5"] = m.links.apply(calculate_losses, axis=1)    #e4 and bus 4 for bAU 2050
-    m.links["carrier_bus5"] = "losses"
-
-    df = pd.concat(
-        [
-            m.links.groupby(["carrier", "carrier_bus0", "carrier_bus" + str(i)]).sum()[
-                "total_e" + str(i)
-            ]
-            for i in range(1, 6)
-        ]
-    ).reset_index()
-    df.columns = columns
-
-    # fix heat pump energy balance
-    
-
-    hp = m.links.loc[m.links.carrier.str.contains("heat pump")]
-
-    hp_t_elec = m.links_t.p0.filter(like="heat pump")
-
-    grouper = [hp["carrier"], hp["carrier_bus0"], hp["carrier_bus1"]]
-    hp_elec = (
-        (-m.snapshot_weightings.generators @ hp_t_elec)
-        .groupby(grouper)
-        .sum()
-        .div(1e6)
-        .reset_index()
-    )
-    hp_elec.columns = columns
-    
-    df = df.loc[~(df.label.str.contains("heat pump") & (df.target == "losses"))]
-
-    df.loc[df.label.str.contains("heat pump"), "value"] -= hp_elec["value"].values
-
-    df.loc[df.label.str.contains("air heat pump"), "source"] = "air-sourced ambient"
-    df.loc[
-        df.label.str.contains("ground heat pump"), "source"
-    ] = "ground-sourced ambient"
-
-    df = pd.concat([df, hp_elec])
-    df = df.set_index(["label", "source", "target"]).squeeze()
-    df = pd.concat(
-        [
-            df.loc[df < 0].mul(-1),
-            df.loc[df > 0].swaplevel(1, 2),
-        ]
-    ).reset_index()
-    df.columns = columns
-
-    # make DAC demand
-    df.loc[df.label == "DAC", "target"] = "DAC"
-
-    to_concat = [df, gen, su, sto, load]
-    connections = pd.concat(to_concat).sort_index().reset_index(drop=True)
-
-    # aggregation
-
-    src_contains = connections.source.str.contains
-    trg_contains = connections.target.str.contains
-
-    connections.loc[src_contains("low voltage"), "source"] = "AC"
-    connections.loc[trg_contains("low voltage"), "target"] = "AC"
-    connections.loc[src_contains("CCGT"), "source"] = "gas"
-    connections.loc[trg_contains("CCGT"), "target"] = "AC"
-    connections.loc[src_contains("OCGT"), "source"] = "gas"
-    connections.loc[trg_contains("OCGT"), "target"] = "AC"
-    connections.loc[src_contains("water tank"), "source"] = "water tank"
-    connections.loc[trg_contains("water tank"), "target"] = "water tank"
-    connections.loc[src_contains("solar thermal"), "source"] = "solar thermal"
-    connections.loc[src_contains("battery"), "source"] = "battery"
-    connections.loc[trg_contains("battery"), "target"] = "battery"
-    connections.loc[src_contains("Li ion"), "source"] = "battery"
-    connections.loc[trg_contains("Li ion"), "target"] = "battery"
-
-    connections.loc[src_contains("heat") & ~src_contains("demand"), "source"] = "heat"
-    connections.loc[trg_contains("heat") & ~trg_contains("demand"), "target"] = "heat"
-    new_row1 = {'label': 'Rail Network',
-            'source': 'Electricity grid',
-            'target': 'Rail Network',
-            'value': Rail_demand}
-    new_row2 = {'label': 'H2 for non-energy',
-            'source': 'hyd',
-            'target': 'Non-energy',
-            'value': H2_nonenergyy}
-
-    connections.loc[len(connections)] = pd.Series(new_row1)
-    connections.loc[len(connections)] = pd.Series(new_row2)
-
-    connections = connections.loc[
-        ~(connections.source == connections.target)
-        & ~connections.source.str.contains("co2")
-        & ~connections.target.str.contains("co2")
-        & ~connections.source.str.contains("emissions")
-        & ~connections.source.isin(["gas for industry", "solid biomass for industry"])
-        & (connections.value >= 0.1)
-    ]
-
-    where = connections.label == "urban central gas boiler"
-    connections.loc[where] = connections.loc[where].replace("losses", "fossil gas")
-
-    connections.replace("AC", "electricity grid", inplace=True)
-    
-    suffix_counter = {}
-
-    def generate_new_label(label):
-     if label in suffix_counter:
-        suffix_counter[label] += 1
-     else:
-        suffix_counter[label] = 1
-
-     if suffix_counter[label] > 1:
-        return f"{label}_{suffix_counter[label]}"
-     return label
-
-    connections['label'] = connections['label'].apply(generate_new_label)
-    connections.rename(columns={'value': '2040'}, inplace=True)
-
-    return connections
-
-def process_network_3(o):
-    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(Nnodes)+"_2050.csv", index_col=0).T
-    clever_industry = (
-         pd.read_csv("../data/clever_Industry_2050.csv", index_col=0)).loc[countries].T
-
-    Rail_demand = energy_demand.loc["total rail"].sum()
-    H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
-    H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].sum()
-    columns = ["label", "source", "target", "value"]
-
-    gen = (
-        (o.snapshot_weightings.generators @ o.generators_t.p)
-        .groupby(
-            [
-                o.generators.carrier,
-                o.generators.carrier,
-                o.generators.bus.map(o.buses.carrier),
-            ]
-        )
-        .sum()
-        .div(1e6)
-    )  # TWh
-
-    gen.index.set_names(columns[:-1], inplace=True)
-    gen = gen.reset_index(name="value")
-    gen = gen.loc[gen.value > 0.1]
-
-    gen["source"] = gen["source"].replace({"gas": "fossil gas", "oil": "fossil oil"})
-    gen["label"] = gen["label"].replace({"gas": "fossil gas", "oil": "fossil oil"})
-
-    sto = (
-        (o.snapshot_weightings.generators @ o.stores_t.p)
-        .groupby(
-            [o.stores.carrier, o.stores.carrier, o.stores.bus.map(o.buses.carrier)]
-        )
-        .sum()
-        .div(1e6)
-    )
-    sto.index.set_names(columns[:-1], inplace=True)
-    sto = sto.reset_index(name="value")
-    sto = sto.loc[sto.value > 0.1]
-
-    su = (
-        (o.snapshot_weightings.generators @ o.storage_units_t.p)
-        .groupby(
-            [
-                o.storage_units.carrier,
-                o.storage_units.carrier,
-                o.storage_units.bus.map(o.buses.carrier),
-            ]
-        )
-        .sum()
-        .div(1e6)
-    )
-    su.index.set_names(columns[:-1], inplace=True)
-    su = su.reset_index(name="value")
-    su = su.loc[su.value > 0.1]
-
-    load = (
-        (o.snapshot_weightings.generators @ as_dense(o, "Load", "p_set"))
-        .groupby([o.loads.carrier, o.loads.carrier, o.loads.bus.map(o.buses.carrier)])
-        .sum()
-        .div(1e6)
-        .swaplevel()
-    )  # TWh
-    load.index.set_names(columns[:-1], inplace=True)
-    load = load.reset_index(name="value")
-
-    load = load.loc[~load.label.str.contains("emissions")]
-    load.target += " demand"
-    load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
-    value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"] 
-    load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
-    for i in range(5):
-        o.links[f"total_e{i}"] = (
-            o.snapshot_weightings.generators @ o.links_t[f"p{i}"]
-        ).div(
-            1e6
-        )  # TWh
-        o.links[f"carrier_bus{i}"] = o.links[f"bus{i}"].map(o.buses.carrier)
-
-    def calculate_losses(x):
-        energy_ports = x.loc[
-            x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
-        ].index.str.replace("carrier_bus", "total_e")
-        return -x.loc[energy_ports].sum()
-
-    o.links["total_e5"] = o.links.apply(calculate_losses, axis=1)    #e4 and bus 4 for bAU 2050
-    o.links["carrier_bus5"] = "losses"
-
-    df = pd.concat(
-        [
-            o.links.groupby(["carrier", "carrier_bus0", "carrier_bus" + str(i)]).sum()[
-                "total_e" + str(i)
-            ]
-            for i in range(1, 6)
-        ]
-    ).reset_index()
-    df.columns = columns
-
-    # fix heat pump energy balance
-    
-
-    hp = o.links.loc[o.links.carrier.str.contains("heat pump")]
-
-    hp_t_elec = o.links_t.p0.filter(like="heat pump")
-
-    grouper = [hp["carrier"], hp["carrier_bus0"], hp["carrier_bus1"]]
-    hp_elec = (
-        (-o.snapshot_weightings.generators @ hp_t_elec)
-        .groupby(grouper)
-        .sum()
-        .div(1e6)
-        .reset_index()
-    )
-    hp_elec.columns = columns
-    
-    df = df.loc[~(df.label.str.contains("heat pump") & (df.target == "losses"))]
-
-    df.loc[df.label.str.contains("heat pump"), "value"] -= hp_elec["value"].values
-
-    df.loc[df.label.str.contains("air heat pump"), "source"] = "air-sourced ambient"
-    df.loc[
-        df.label.str.contains("ground heat pump"), "source"
-    ] = "ground-sourced ambient"
-
-    df = pd.concat([df, hp_elec])
-    df = df.set_index(["label", "source", "target"]).squeeze()
-    df = pd.concat(
-        [
-            df.loc[df < 0].mul(-1),
-            df.loc[df > 0].swaplevel(1, 2),
-        ]
-    ).reset_index()
-    df.columns = columns
-
-    # make DAC demand
-    df.loc[df.label == "DAC", "target"] = "DAC"
-
-    to_concat = [df, gen, su, sto, load]
-    connections = pd.concat(to_concat).sort_index().reset_index(drop=True)
-
-    # aggregation
-
-    src_contains = connections.source.str.contains
-    trg_contains = connections.target.str.contains
-
-    connections.loc[src_contains("low voltage"), "source"] = "AC"
-    connections.loc[trg_contains("low voltage"), "target"] = "AC"
-    connections.loc[src_contains("CCGT"), "source"] = "gas"
-    connections.loc[trg_contains("CCGT"), "target"] = "AC"
-    connections.loc[src_contains("OCGT"), "source"] = "gas"
-    connections.loc[trg_contains("OCGT"), "target"] = "AC"
-    connections.loc[src_contains("water tank"), "source"] = "water tank"
-    connections.loc[trg_contains("water tank"), "target"] = "water tank"
-    connections.loc[src_contains("solar thermal"), "source"] = "solar thermal"
-    connections.loc[src_contains("battery"), "source"] = "battery"
-    connections.loc[trg_contains("battery"), "target"] = "battery"
-    connections.loc[src_contains("Li ion"), "source"] = "battery"
-    connections.loc[trg_contains("Li ion"), "target"] = "battery"
-
-    connections.loc[src_contains("heat") & ~src_contains("demand"), "source"] = "heat"
-    connections.loc[trg_contains("heat") & ~trg_contains("demand"), "target"] = "heat"
-    new_row1 = {'label': 'Rail Network',
-            'source': 'Electricity grid',
-            'target': 'Rail Network',
-            'value': Rail_demand}
-    new_row2 = {'label': 'H2 for non-energy',
-            'source': 'hyd',
-            'target': 'Non-energy',
-            'value': H2_nonenergyy}
-
-    connections.loc[len(connections)] = pd.Series(new_row1)
-    connections.loc[len(connections)] = pd.Series(new_row2)
-    
-    connections = connections.loc[
-        ~(connections.source == connections.target)
-        & ~connections.source.str.contains("co2")
-        & ~connections.target.str.contains("co2")
-        & ~connections.source.str.contains("emissions")
-        & ~connections.source.isin(["gas for industry", "solid biomass for industry"])
-        & (connections.value >= 0.1)
-    ]
-
-    where = connections.label == "urban central gas boiler"
-    connections.loc[where] = connections.loc[where].replace("losses", "fossil gas")
-
-    connections.replace("AC", "electricity grid", inplace=True)
-
-    
-    suffix_counter = {}
-
-    def generate_new_label(label):
-     if label in suffix_counter:
-        suffix_counter[label] += 1
-     else:
-        suffix_counter[label] = 1
-
-     if suffix_counter[label] > 1:
-        return f"{label}_{suffix_counter[label]}"
-     return label
-
-    connections['label'] = connections['label'].apply(generate_new_label)
-    connections.rename(columns={'value': '2050'}, inplace=True)
-   
-    return connections
-#%%
-
-connections_n = process_network_1(n)
-connections_m = process_network_2(m)
-connections_o = process_network_3(o)
-
-# First, rename the columns to avoid conflicts
-connections_n = connections_n.rename(columns={'2030': 'value_2030'})
-connections_m = connections_m.rename(columns={'2040': 'value_2040'})
-connections_o = connections_o.rename(columns={'2050': 'value_2050'})
-
-# Merge the dataframes based on 'label,' 'source,' and 'target' columns
-merged_df = pd.merge(connections_n, connections_m, on=['label', 'source', 'target'], how='outer')
-merged_df = pd.merge(merged_df, connections_o, on=['label', 'source', 'target'], how='outer')
+planning_horizons = [2030, 2040, 2050]
+merged_df =  process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizons[0])
+for planning_horizon in planning_horizons[1:]:
+    temp = process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
+    merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
 
 # Fill missing values with 0
 merged_df = merged_df.fillna(0)
 connections=merged_df
-connections = connections.rename(columns={'value_2030': '2030', 'value_2040': '2040', 'value_2050': '2050'})
-connections = connections[['label', 'source', 'target', '2030', '2040', '2050']]
 suffix_counter = {}
 
 def generate_new_label(label):
