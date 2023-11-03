@@ -4,17 +4,17 @@ import pandas as pd # Read/analyse data
 import pypsa
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 
+Nnodes = 6
 
-
-n=pypsa.Network("/home/umair/1H-32c simulations/suff/results/postnetworks/elec_s_32_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-m=pypsa.Network("/home/umair/1H-32c simulations/suff/results/postnetworks/elec_s_32_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-o=pypsa.Network("/home/umair/1H-32c simulations/suff/results/postnetworks/elec_s_32_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+n=pypsa.Network("../results/postnetworks/elec_s_"+str(Nnodes)+"_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
+m=pypsa.Network("../results/postnetworks/elec_s_"+str(Nnodes)+"_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
+o=pypsa.Network("../results/postnetworks/elec_s_"+str(Nnodes)+"_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 countries=['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
-
+countries = ['BE', 'DE', 'FR', 'GB', 'NL']
 def process_network_1(n):
-    energy_demand =pd.read_csv("/home/umair/1H-32c simulations/suff/resources/energy_totals_s_32_2030.csv", index_col=0).T
+    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(Nnodes)+"_2030.csv", index_col=0).T
     clever_industry = (
-         pd.read_csv("/home/umair/pypsa-eur_repository/data/clever_Industry_2030.csv", index_col=0)).loc[countries].T
+         pd.read_csv("../data/clever_Industry_2030.csv", index_col=0)).loc[countries].T
 
     Rail_demand = energy_demand.loc["total rail"].sum()
     H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
@@ -183,9 +183,9 @@ def process_network_1(n):
             'target': 'Non-energy',
             'value': H2_nonenergyy}
 
-    connections = connections.append(new_row1, ignore_index=True)
+    connections.loc[len(connections)] = pd.Series(new_row1)
+    connections.loc[len(connections)] = pd.Series(new_row2)
 
-    connections = connections.append(new_row2, ignore_index=True)    
     connections = connections.loc[
         ~(connections.source == connections.target)
         & ~connections.source.str.contains("co2")
@@ -217,9 +217,9 @@ def process_network_1(n):
     return connections
 
 def process_network_2(m):
-    energy_demand =pd.read_csv("/home/umair/1H-32c simulations/suff/resources/energy_totals_s_32_2040.csv", index_col=0).T
+    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(Nnodes)+"_2040.csv", index_col=0).T
     clever_industry = (
-         pd.read_csv("/home/umair/pypsa-eur_repository/data/clever_Industry_2040.csv", index_col=0)).loc[countries].T
+         pd.read_csv("../data/clever_Industry_2040.csv", index_col=0)).loc[countries].T
 
     Rail_demand = energy_demand.loc["total rail"].sum()
     H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
@@ -388,9 +388,9 @@ def process_network_2(m):
             'target': 'Non-energy',
             'value': H2_nonenergyy}
 
-    connections = connections.append(new_row1, ignore_index=True)
+    connections.loc[len(connections)] = pd.Series(new_row1)
+    connections.loc[len(connections)] = pd.Series(new_row2)
 
-    connections = connections.append(new_row2, ignore_index=True)    
     connections = connections.loc[
         ~(connections.source == connections.target)
         & ~connections.source.str.contains("co2")
@@ -423,9 +423,9 @@ def process_network_2(m):
     return connections
 
 def process_network_3(o):
-    energy_demand =pd.read_csv("/home/umair/1H-32c simulations/suff/resources/energy_totals_s_32_2050.csv", index_col=0).T
+    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(Nnodes)+"_2050.csv", index_col=0).T
     clever_industry = (
-         pd.read_csv("/home/umair/pypsa-eur_repository/data/clever_Industry_2050.csv", index_col=0)).loc[countries].T
+         pd.read_csv("../data/clever_Industry_2050.csv", index_col=0)).loc[countries].T
 
     Rail_demand = energy_demand.loc["total rail"].sum()
     H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
@@ -594,9 +594,9 @@ def process_network_3(o):
             'target': 'Non-energy',
             'value': H2_nonenergyy}
 
-    connections = connections.append(new_row1, ignore_index=True)
-
-    connections = connections.append(new_row2, ignore_index=True)    
+    connections.loc[len(connections)] = pd.Series(new_row1)
+    connections.loc[len(connections)] = pd.Series(new_row2)
+    
     connections = connections.loc[
         ~(connections.source == connections.target)
         & ~connections.source.str.contains("co2")
