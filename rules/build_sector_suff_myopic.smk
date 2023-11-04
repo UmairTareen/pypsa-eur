@@ -262,7 +262,7 @@ rule build_energy_totals:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_energy_totals_myopic.py"
+        "../scripts/build_energy_totals_clever.py"
 
 
 rule build_biomass_potentials:
