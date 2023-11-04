@@ -38,4 +38,4 @@ rule solve_sector_network:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/solve_network_nocdr.py"
+        "../scripts/solve_network.py"

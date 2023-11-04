@@ -165,7 +165,7 @@ def prepare_network(
         buses_i = n.buses.query("carrier == 'AC'").index
         if not np.isscalar(load_shedding):
             # TODO: do not scale via sign attribute (use Eur/MWh instead of Eur/kWh)
-            load_shedding = 1e2  # Eur/kWh
+            load_shedding = 3000  # Eur/MWh
 
         n.madd(
             "Generator",
@@ -173,9 +173,9 @@ def prepare_network(
             " load",
             bus=buses_i,
             carrier="load",
-            sign=1e-3,  # Adjust sign to measure p and p_nom in kW instead of MW
-            marginal_cost=load_shedding,  # Eur/kWh
-            p_nom=1e9,  # kW
+            sign=1,  # Adjust sign to measure p and p_nom in kW instead of MW
+            marginal_cost=3000,  # Eur/MWh
+            p_nom=1e6,  # MW
         )
 
     if solve_opts.get("noisy_costs"):
@@ -628,6 +628,7 @@ def solve_network(n, config, solving, opts="", **kwargs):
         status, condition = "", ""
     elif skip_iterations:
         status, condition = n.optimize(**kwargs)
+        #n.model.print_infeasibilities()
     else:
         kwargs["track_iterations"] = (cf_solving.get("track_iterations", False),)
         kwargs["min_iterations"] = (cf_solving.get("min_iterations", 4),)
@@ -642,7 +643,7 @@ def solve_network(n, config, solving, opts="", **kwargs):
         )
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
-
+        
     return n
 
 
@@ -653,8 +654,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_network",
             simpl="",
-            opts="",
-            clusters="6",
+            opts="Ept",
+            clusters="37",
             ll="v1.0",
             sector_opts="",
             planning_horizons="2020",

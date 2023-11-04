@@ -44,7 +44,7 @@ scenario:
   opts:
   - ''
   sector_opts:
-  - Co2L0.8-1H-T-H-B-I-A-dist1
+  - Co2L0.7-12H-T-H-B-I-A-dist1
   planning_horizons:
   #- 2020
   #- 2030
@@ -53,7 +53,8 @@ scenario:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 #countries: ['AL', 'AT', 'BA', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'ME', 'MK', 'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'SE', 'SI', 'SK']
-countries: ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
+countries: ['BE', 'DE', 'FR', 'GB', 'NL','LU','IE','CH', 'ES','DK','AT','CZ','HU','IT','EE','FI','GR','HR','LT','LV','SE','NO','BG','RO','PL','SI', 'SK','PT']
+#countries: ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#snapshots
 snapshots:
@@ -76,7 +77,7 @@ enable:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#co2-budget
 co2_budget:
-  2020: 0.801
+  2020: 0.701
   2025: 0.524
   2030: 0.45
   2035: 0.150
@@ -423,7 +424,7 @@ sector:
   HVC_demand_factor: 1.
   time_dep_hp_cop: true
   heat_pump_sink_T: 55.
-  reduce_space_heat_exogenously: false
+  reduce_space_heat_exogenously: true
   reduce_space_heat_exogenously_factor:
     2020: 0.10  # this results in a space heat demand reduction of 10%
     2025: 0.09  # first heat demand increases compared to 2020 because of larger floor area per capita
@@ -446,7 +447,7 @@ sector:
   boilers: true
   oil_boilers: false
   biomass_boiler: true
-  chp: false
+  chp: true
   micro_chp: false
   solar_thermal: false
   solar_cf_correction: 0.788457  # =  >>> 1/1.2683
@@ -477,7 +478,7 @@ sector:
   - onshore  # more than 50 km from sea
   - nearshore    # within 50 km of sea
     # - offshore
-  ammonia: false
+  ammonia: true
   min_part_load_fischer_tropsch: 0.9
   min_part_load_methanolisation: 0.5
   use_fischer_tropsch_waste_heat: false
@@ -497,6 +498,7 @@ sector:
   biomass_transport: false
   conventional_generation:
     OCGT: gas
+    CCGT: gas
   biomass_to_liquid: false
   biosng: false
 
@@ -638,7 +640,7 @@ solving:
       parallel: "on"
       random_seed: 123
     gurobi-default:
-      threads: 32
+      threads: 4
       method: 2 # barrier
       crossover: 0
       BarConvTol: 1.e-6
@@ -679,7 +681,7 @@ solving:
     cbc-default: {} # Used in CI
     glpk-default: {} # Used in CI
 
-  mem: 400000  #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
+  mem: 60000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
   walltime: "12:00:00"
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#plotting
@@ -976,4 +978,3 @@ plotting:
     solar curtailment: "gold"
     onshore curtailment: "navy"
     offshore curtailment: "lightskyblue"
-    LULUCF: "greenyellow"
