@@ -36,6 +36,9 @@ country_groups = {'ALL':ALL_COUNTRIES}
 file = pd.ExcelFile(os.path.join(DIRNAME, r'SEPIA_config.xlsx'), engine="openpyxl")
 CONFIG = pd.read_excel(file, ["MAIN_PARAMS","NODES","PROCESSES","PROCESSES_2","PROCESSES_3","IMPORT_MIX","INDICATORS"], index_col=0)
 
+# Simulation data:
+datafile = os.path.join(DIRNAME, "../results/sepia/inputs.xlsx")
+
 # Main settings (cf. SEPIA_config for description of all setting constants)
 MAIN_PARAMS = CONFIG["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
 
@@ -81,11 +84,11 @@ for country in ALL_COUNTRIES:
     ##Import country data
     country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
     #file = pd.ExcelFile(os.path.join(DIRNAME,'Inputs',country_input_file), engine="openpyxl")
-    data = pd.read_excel("../results/sepia/input.xlsx", sheet_name="Inputs", index_col=0, usecols="C:F")
+    data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:F")
     data.reset_index(drop=True, inplace=False)
     data=data.T
     
-    data_co2 = pd.read_excel("../results/sepia/input.xlsx", sheet_name="Inputs_co2", index_col=0, usecols="C:F")
+    data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:F")
     data_co2.reset_index(drop=True, inplace=False)
     data_co2=data_co2.T
     # data = data.rename_axis('Year')
