@@ -76,8 +76,8 @@ for country in ALL_COUNTRIES:
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
     country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
-    file = pd.ExcelFile(os.path.join(DIRNAME,'Inputs',country_input_file), engine="openpyxl")
-    data = pd.read_excel("/home/umair/Desktop/Sylvain Sufficiency Data/sankey/SEPIA/Inputs/input.xlsx", sheet_name="Inputs", index_col=0, usecols="C:F")
+    #file = pd.ExcelFile(os.path.join(DIRNAME,'Inputs',country_input_file), engine="openpyxl")
+    data = pd.read_excel("../results/sepia/input.xlsx", sheet_name="Inputs", index_col=0, usecols="C:F")
     data.reset_index(drop=True, inplace=False)
     data=data.T
     # data = data.rename_axis('Year')

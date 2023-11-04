@@ -493,14 +493,15 @@ if __name__ == "__main__":
         from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
-            "prepare_sepia",
-            simpl="",
-            opts="",
-            clusters="6",
-            ll="vopt",
-            sector_opts="1H-T-H-B-I-A-dist1",
-            planning_horizons=[2030, 2040, 2050]
-        )
+            "prepare_sepia")
+
+        # Updating the configuration from the standard config file to run in standalone:
+        snakemake.params.scenario["simpl"] = [""]
+        snakemake.params.scenario["clusters"] = [6]
+        snakemake.params.scenario["opts"] = [""]
+        snakemake.params.scenario["sector_opts"] = ["1H-T-H-B-I-A-dist1"]
+        snakemake.params.scenario["ll"] = ["vopt"]
+        snakemake.params.scenario["planning_horizons"] = [2030, 2040, 2050]
 
     # List the input files for  this script:
     networks_dict = {
@@ -517,6 +518,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
 
+    # TODO: embed this function call in a loop for the case where there is more than one scenario
     write_to_excel(snakemake.params.scenario["simpl"][0],
                    snakemake.params.scenario["clusters"][0],
                    snakemake.params.scenario["opts"][0],
