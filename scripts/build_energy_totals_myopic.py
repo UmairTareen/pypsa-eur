@@ -732,33 +732,27 @@ def build_transport_data(countries, population, idees):
 
     return transport_data
 
-def clever_residential_data():
-    years = int(snakemake.wildcards.planning_horizons)
+def clever_residential_data(years):
     df= pd.read_csv(f'{paths}/clever_residential_{years}.csv',index_col=0)
     return df
 
-def clever_tertiary_data():
-    years = int(snakemake.wildcards.planning_horizons)
+def clever_tertiary_data(years):
     df= pd.read_csv(f'{paths}/clever_Tertairy_{years}.csv',index_col=0)
     return df
 
-def clever_transport_data():
-    years = int(snakemake.wildcards.planning_horizons)
+def clever_transport_data(years):
     df= pd.read_csv(f'{paths}/clever_Transport_{years}.csv',index_col=0)
     return df
 
-def clever_agriculture_data():
-    years = int(snakemake.wildcards.planning_horizons)
+def clever_agriculture_data(years):
     df= pd.read_csv(f'{paths}/clever_Agriculture_{years}.csv',index_col=0)
     return df
 
-def clever_AFOLUB_data():
-    years = int(snakemake.wildcards.planning_horizons)
+def clever_AFOLUB_data(years):
     df= pd.read_csv(f'{paths}/clever_AFOLUB_{years}.csv',index_col=0)
     return df
 
-def clever_macro_data():
-    years = int(snakemake.wildcards.planning_horizons)
+def clever_macro_data(years):
     df= pd.read_csv(f'{paths}/clever_Macro_{years}.csv',index_col=0)
     return df
 
@@ -776,29 +770,29 @@ if __name__ == "__main__":
         )
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
-
-    params = snakemake.params.planning_horizons
-    params = snakemake.params.energy
     
-    clever_residential = clever_residential_data()
-    clever_Transport = clever_transport_data()
-    clever_Tertairy = clever_tertiary_data()
-    clever_Agriculture = clever_agriculture_data()
-    clever_AFOLUB = clever_AFOLUB_data()
-    clever_Macro = clever_macro_data()
+    if snakemake.config['foresight'] == 'overnight':
+        years = snakemake.params.energy["sufficiency_scenario"]
+    elif snakemake.config['foresight'] == 'myopic':
+        years = int(snakemake.wildcards.planning_horizons)
     
-    countries = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
-    #countries = ['BE', 'DE', 'FR', 'GB', 'NL']
+    clever_residential = clever_residential_data(years)
+    clever_Transport = clever_transport_data(years)
+    clever_Tertairy = clever_tertiary_data(years)
+    clever_Agriculture = clever_agriculture_data(years)
+    clever_AFOLUB = clever_AFOLUB_data(years)
+    clever_Macro = clever_macro_data(years)
+    
+    countries = snakemake.params.countries
     nuts3 = gpd.read_file(snakemake.input.nuts3_shapes).set_index("index")
     population = nuts3["pop"].groupby(nuts3.country).sum()
     
     for country in countries:
         population.loc[country] = clever_Macro.loc[country, 'Total population']
 
-    countries = snakemake.params.countries
     idees_countries = pd.Index(countries).intersection(eu28)
 
-    data_year = params["energy_totals_year"]
+    data_year = snakemake.params.energy["energy_totals_year"]
     report_year = snakemake.params.energy["eurostat_report_year"]
     input_eurostat = snakemake.input.eurostat
     eurostat = build_eurostat(input_eurostat, countries, report_year, data_year)
@@ -851,7 +845,7 @@ if __name__ == "__main__":
     
     energy.to_csv(snakemake.output.energy_name)
 
-    base_year_emissions = params["base_emissions_year"]
+    base_year_emissions = snakemake.params.energy["base_emissions_year"]
     emissions_scope = snakemake.params.energy["emissions"]
     eea_co2 = build_eea_co2(snakemake.input.co2, base_year_emissions, emissions_scope)
     eurostat_co2 = build_eurostat_co2(
