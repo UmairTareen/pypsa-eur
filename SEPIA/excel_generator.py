@@ -3,16 +3,7 @@
 import pandas as pd # Read/analyse data
 import pypsa
 from pypsa.descriptors import get_switchable_as_dense as as_dense
-
-simpl=""
-cluster = 6
-ll="vopt"
-opt=""
-sector_opt="1H-T-H-B-I-A-dist1"
-planning_horizon=str(2030)
-
-countries=['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
-countries = ['BE', 'DE', 'FR', 'GB', 'NL']
+import logging
 
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix="../results/postnetworks/elec_"):
     return prefix+"s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
@@ -24,14 +15,11 @@ def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix="../
         planning_horizon=planning_horizon
     )
 
-n=pypsa.Network("../results/postnetworks/elec_s_"+str(cluster)+"_lvopt__1H-T-H-B-I-A-dist1_2030.nc")
-m=pypsa.Network("../results/postnetworks/elec_s_"+str(cluster)+"_lvopt__1H-T-H-B-I-A-dist1_2040.nc")
-o=pypsa.Network("../results/postnetworks/elec_s_"+str(cluster)+"_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
-
 def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     filename = build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
     n = pypsa.Network(filename)
     energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
+    countries = energy_demand.columns
     clever_industry = (
          pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).loc[countries].T
 
@@ -236,30 +224,6 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
 
     return connections
 
-planning_horizons = [2030, 2040, 2050]
-merged_df =  process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizons[0])
-for planning_horizon in planning_horizons[1:]:
-    temp = process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
-    merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
-
-# Fill missing values with 0
-merged_df = merged_df.fillna(0)
-connections=merged_df
-suffix_counter = {}
-
-def generate_new_label(label):
- if label in suffix_counter:
-    suffix_counter[label] += 1
- else:
-    suffix_counter[label] = 1
-
- if suffix_counter[label] > 1:
-    return f"{label}_{suffix_counter[label]}"
- return label
-
-connections['label'] = connections['label'].apply(generate_new_label)
-
-
 #%%
 entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'offwind-ac', 'offwind-dc', 'hydro', 'ror','nuclear',
@@ -458,40 +422,109 @@ entry_label_mapping = {
     
 }
 
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,filename='../SEPIA/input.xlsx'):
+    '''
+    Function that writes the simulation results to the SEPIA excel input file
+    :param filename: Name of the excel file to write
+    '''
 
-excel_file = 'input.xlsx'
-df=connections
-selected_entries_df = pd.DataFrame()
+    merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+    for planning_horizon in planning_horizons[1:]:
+        temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
 
-with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
-    for entry in entries_to_select:
-        selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
+    # Fill missing values with 0
+    merged_df = merged_df.fillna(0)
+    connections = merged_df
+    suffix_counter = {}
 
-        # Get the label mapping for the current entry
-        label_mapping = entry_label_mapping.get(entry, {})
+    def generate_new_label(label):
+        if label in suffix_counter:
+            suffix_counter[label] += 1
+        else:
+            suffix_counter[label] = 1
 
-        # Replace the values in the selected DataFrame based on the mapping
-        selected_df.loc[:, 'label'] = label_mapping.get('label', '')
-        selected_df.loc[:, 'source'] = label_mapping.get('source', '')
-        selected_df.loc[:, 'target'] = label_mapping.get('target', '')
+        if suffix_counter[label] > 1:
+            return f"{label}_{suffix_counter[label]}"
+        return label
 
-        # Concatenate the selected entry to the main DataFrame
-        selected_entries_df = pd.concat([selected_entries_df, selected_df])
+    connections['label'] = connections['label'].apply(generate_new_label)
 
-    # Write the concatenated DataFrame to a new sheet
-    selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
-    
+    df=connections
+    selected_entries_df = pd.DataFrame()
 
-print(f'Excel file "{excel_file}" created with the selected entries on the "SelectedEntries" sheet.')
+    with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+        for entry in entries_to_select:
+            selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
 
-list_as_set = set(entries_to_select)
-df_as_set = set(map(str, connections.label))
+            # Get the label mapping for the current entry
+            label_mapping = entry_label_mapping.get(entry, {})
 
-# Find the different elements
-different_elements = list_as_set.symmetric_difference(df_as_set)
+            # Replace the values in the selected DataFrame based on the mapping
+            selected_df.loc[:, 'label'] = label_mapping.get('label', '')
+            selected_df.loc[:, 'source'] = label_mapping.get('source', '')
+            selected_df.loc[:, 'target'] = label_mapping.get('target', '')
 
-# Convert the result back to a list
-different_elements_list = list(different_elements)
+            # Concatenate the selected entry to the main DataFrame
+            selected_entries_df = pd.concat([selected_entries_df, selected_df])
 
-print("Different elements between the list and DataFrame:", different_elements_list)
+        # Write the concatenated DataFrame to a new sheet
+        selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
+
+
+    print(f'Excel file "{filename}" created with the selected entries on the "SelectedEntries" sheet.')
+
+    list_as_set = set(entries_to_select)
+    df_as_set = set(map(str, connections.label))
+
+    # Find the different elements
+    different_elements = list_as_set.symmetric_difference(df_as_set)
+
+    # Convert the result back to a list
+    different_elements_list = list(different_elements)
+
+    print("Different elements between the list and DataFrame:", different_elements_list)
+
+
+
+
+if __name__ == "__main__":
+    if "snakemake" not in globals():
+        from _helpers import mock_snakemake
+
+        snakemake = mock_snakemake(
+            "prepare_sepia",
+            simpl="",
+            opts="",
+            clusters="6",
+            ll="vopt",
+            sector_opts="1H-T-H-B-I-A-dist1",
+            planning_horizons=[2030, 2040, 2050]
+        )
+
+    # List the input files for  this script:
+    networks_dict = {
+        (cluster, ll, opt + sector_opt, planning_horizon): "results/"
+        + snakemake.params.RDIR
+        + f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
+        for simpl in snakemake.params.scenario["simpl"]
+        for cluster in snakemake.params.scenario["clusters"]
+        for opt in snakemake.params.scenario["opts"]
+        for sector_opt in snakemake.params.scenario["sector_opts"]
+        for ll in snakemake.params.scenario["ll"]
+        for planning_horizon in snakemake.params.scenario["planning_horizons"]
+    }
+
+    logging.basicConfig(level=snakemake.config["logging"]["level"])
+
+    write_to_excel(snakemake.params.scenario["simpl"][0],
+                   snakemake.params.scenario["clusters"][0],
+                   snakemake.params.scenario["opts"][0],
+                   snakemake.params.scenario["sector_opts"][0],
+                   snakemake.params.scenario["ll"][0],
+                   snakemake.params.scenario["planning_horizons"],
+                   filename = snakemake.output.excelfile)
+
+    # if snakemake.params.foresight == "myopic":
+    #     cumulative_cost = calculate_cumulative_cost()
 
