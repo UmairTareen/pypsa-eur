@@ -67,7 +67,7 @@ def build_nodal_industrial_production():
         nodal_production.loc[buses, sector] = (
             industrial_production.at[country, sector] * key
         )
-    countrries = snakemake.params.countries
+    countrries = snakemake.config['countries']
     clever_Industry = clever_industry_data()
 
     # material demand per node and industry (kton/a)
