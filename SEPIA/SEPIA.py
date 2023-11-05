@@ -173,8 +173,13 @@ for country in ALL_COUNTRIES:
     fec_carrier_pe = flows.loc[:, selected_columns_pe]
     grouped_fec_pe = fec_carrier_pe.groupby(level='Source', axis=1).sum()
     fec_pe = grouped_fec_pe
-    for en_code in ['pac','pet','enc']:
+    for en_code in ['pac','enc']:
         flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']
+    fischer_tropsch_p = flows['hyd_se','pet_fe']
+    biomass_liquid_p = flows['blq_pe','pet_fe']
+    value = fischer_tropsch_p + biomass_liquid_p.sum()
+    for en_code in ['pet']:
+        flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']-value
         
     selected_columns_se = flows.columns.get_level_values('Source').isin(SE_NODES)
     fec_carrier_se = flows.loc[:, selected_columns_se]
