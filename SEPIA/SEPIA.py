@@ -119,6 +119,12 @@ for country in ALL_COUNTRIES:
     if len(unfound_inputs)>0:
         data = data.reindex(columns=[*data.columns.tolist(), *unfound_inputs], fill_value=0)
         print("! Warning: the following indicators have not been found (they have been filled with 0): "+", ".join(unfound_inputs)+" !!!")
+        
+    unfound_inputs_co2 = []
+    unfound_inputs_co2.extend(sf.unfound_indicators(data_co2,PROCESSES_2,'Value_Code'))
+    if len(unfound_inputs_co2)>0:
+        data_co2 = data_co2.reindex(columns=[*data_co2.columns.tolist(), *unfound_inputs_co2], fill_value=0)
+        print("! Warning: the following indicators have not been found (they have been filled with 0): "+", ".join(unfound_inputs_co2)+" !!!")
 
     # ## Corrections on input data
     # Renaming indicators, based on INDICATORS sheet
@@ -268,7 +274,7 @@ for country in ALL_COUNTRIES:
     fec_carrier_p = flows.loc[:, selected_columns_p]
     grouped_fec_p = fec_carrier_p.groupby(level='Source', axis=1).sum()
     fec_p = grouped_fec_p
-    for en_code in ['hdr','eon','eof','spv','cms','pac','ura','enc']:
+    for en_code in ['hdr','eon','eof','spv','cms','pac','ura','enc','bgl','blq']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe']
     for en_code in ['gaz']:
      values = fec_p[en_code + '_pe']
@@ -505,7 +511,7 @@ def generate_results(flows, country):
     selected_columns_de = flows_bk.columns.get_level_values('Source').isin(FE_NODES)
     flows_to_node = flows_bk.loc[:, selected_columns_de]
     flows_to_node = flows_to_node.groupby(level='Source', axis=1).sum()
-    ren_columns = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe', 'pac_pe']
+    ren_columns = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe', 'pac_pe','bgl_pe','blq_pe']
     fos_columns = ['cms_pe', 'gaz_pe', 'pet_pe']
     nuk_columns = ['ura_pe']
 
@@ -706,8 +712,10 @@ def generate_results(flows, country):
     ghg_sector = flows_ghg.copy()
     ghg_sector = ghg_sector.groupby(level='Source', axis=1).sum()
     ghg_sector['lufnes_ghg'] = -ghg_sector['lufnes_ghg']
+    ghg_sector['blg_ghg'] = -ghg_sector['blg_ghg']
     ghg_source = flows_ghg.groupby(level='Target', axis=1).sum()
     ghg_source['lufnes_ghg'] = -ghg_source['lufnes_ghg']
+    ghg_source['bgl_pe'] = -ghg_source['bgl_pe']
     ## Start HTML output
     html_items = {}
     # html_items['COUNTRY'] = country_label_w_flag

@@ -91,7 +91,7 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
     value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
     load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
-    for i in range(5):
+    for i in range(4):
         n.links[f"total_e{i}"] = (
             n.snapshot_weightings.generators @ n.links_t[f"p{i}"]
         ).div(
@@ -105,15 +105,15 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
         ].index.str.replace("carrier_bus", "total_e")
         return -x.loc[energy_ports].sum()
 
-    n.links["total_e5"] = n.links.apply(calculate_losses, axis=1)    #e4 and bus 4 for bAU 2050
-    n.links["carrier_bus5"] = "losses"
+    n.links["total_e4"] = n.links.apply(calculate_losses, axis=1)    #e4 and bus 4 for bAU 2050
+    n.links["carrier_bus4"] = "losses"
 
     df = pd.concat(
         [
             n.links.groupby(["carrier", "carrier_bus0", "carrier_bus" + str(i)]).sum()[
                 "total_e" + str(i)
             ]
-            for i in range(1, 6)
+            for i in range(1, 5)
         ]
     ).reset_index()
     df.columns = columns
@@ -223,7 +223,6 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
 
     return connections
-
 #%%
 entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'offwind-ac', 'offwind-dc', 'hydro', 'ror','nuclear',
@@ -261,8 +260,10 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'residential urban decentral resistive heater_2_2','services rural resistive heater_2_2','services urban decentral resistive heater_2_2',
                      'urban central resistive heater_2_2','residential rural ground heat pump_2_2','residential urban decentral air heat pump_2_2',
                      'services rural ground heat pump_2_2','services urban decentral air heat pump_2_2','solid biomass for industry CC_2',
-                     'gas for industry CC_2','SMR_2','SMR CC_2','methanolisation_3','urban central heat',
-                     'residential rural water tanks charger_2','residential rural water tanks discharger_2'] # Add moe entries if needed
+                     'gas for industry CC_2','SMR_2','SMR CC_2','methanolisation_3','urban central heat','oil','oil_2','biomass to liquid','biomass to liquid_2',
+                     'residential rural water tanks charger_2','residential rural water tanks discharger_2','battery charger','battery charger_2',
+                     'battery discharger','battery discharger_2','H2 turbine','H2 turbine_2','Fischer-Tropsch','Fischer-Tropsch_2','Fischer-Tropsch_3',
+                     'urban central gas CHP','urban central gas CHP_2','urban central gas CHP_3','OCGT','OCGT_2','biogas to gas'] # Add moe entries if needed
 
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
@@ -419,7 +420,25 @@ entry_label_mapping = {
     'methanolisation_3': {'label': 'electricity to metaholisation', 'source': 'TWh', 'target': 'pretareen'},
     'residential rural water tanks charger_2': {'label': 'TES charging', 'source': 'TWh', 'target': 'preclochar'},
     'residential rural water tanks discharger_2': {'label': 'TES discharging', 'source': 'TWh', 'target': 'preclocharr'},
-    
+    'oil': {'label': 'Oil generation losses', 'source': 'TWh', 'target': 'pof'},
+    'oil_2': {'label': 'Oil generation', 'source': 'TWh', 'target': 'proelcpet'},
+    'biomass to liquid': {'label': 'biomass to liquid', 'source': 'TWh', 'target': 'probmliqu'},
+    'biomass to liquid_2': {'label': 'biomass to liquid losses', 'source': 'TWh', 'target': 'probmliqlos'},
+    'battery charger': {'label': 'battery charger', 'source': 'TWh', 'target': 'probattchg'},
+    'battery charger_2': {'label': 'battery charger losses', 'source': 'TWh', 'target': 'probattchlos'},
+    'battery discharger': {'label': 'battery discharger', 'source': 'TWh', 'target': 'probattdhg'},
+    'battery discharger_2': {'label': 'battery discharger losses', 'source': 'TWh', 'target': 'probattdhlos'},
+    'H2 turbine': {'label': 'hydrogen turbine', 'source': 'TWh', 'target': 'proelchyd'},
+    'H2 turbine_2': {'label': 'hydrogen turbine losses', 'source': 'TWh', 'target': 'fftfy'},
+    'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'TWh', 'target': 'profischer'},
+    'Fischer-Tropsch_2': {'label': 'Fischer-Tropsch heat', 'source': 'TWh', 'target': 'profischerh'},
+    'Fischer-Tropsch_3': {'label': 'Fischer-Tropsch losses', 'source': 'TWh', 'target': 'profischerlo'},
+    'urban central gas CHP': {'label': 'Power output from gas CHP plants', 'source': 'TWh', 'target': 'prbelcchpgaz'},
+    'urban central gas CHP_2': {'label': 'Heat output from gas CHP plants', 'source': 'TWh', 'target': 'prbvapchpgaz'},
+    'urban central gas CHP_3': {'label': 'Losses from gas CHP plants', 'source': 'TWh', 'target': 'dqzf'},
+    'OCGT': {'label': 'Gas-fired power generation', 'source': 'TWh', 'target': 'proelcgazoc'},
+    'OCGT_2': {'label': 'Gas-fired power generation losses', 'source': 'TWh', 'target': 'proelcgazoclo'},
+    'biogas to gas': {'label': 'biogas to gas', 'source': 'TWh', 'target': 'prodombgr'},
 }
 
 
@@ -835,16 +854,16 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
     )
 
     # urban central gas CHP CC
-    tech = "urban central gas CHP CC"
-    value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
-    collection.append(
-        pd.Series(dict(label=tech, source="gas", target="co2 atmosphere", value=value))
-    )
+    # tech = "urban central gas CHP CC"
+    # value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
+    # collection.append(
+    #     pd.Series(dict(label=tech, source="gas", target="co2 atmosphere", value=value))
+    # )
 
-    value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
-    collection.append(
-        pd.Series(dict(label=tech, source="gas", target="co2 stored", value=value))
-    )
+    # value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
+    # collection.append(
+    #     pd.Series(dict(label=tech, source="gas", target="co2 stored", value=value))
+    # )
 
     # urban solid biomass CHP
 
@@ -862,21 +881,21 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
         )
     )
     # urban solid biomass CHP CC
-    tech = "urban central solid biomass CHP CC"
+    # tech = "urban central solid biomass CHP CC"
 
-    value = (n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
-    collection.append(
-        pd.Series(
-            dict(label=tech, source="co2 atmosphere", target="BECCS", value=value)
-        )
-    )
+    # value = (n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
+    # collection.append(
+    #     pd.Series(
+    #         dict(label=tech, source="co2 atmosphere", target="BECCS", value=value)
+    #     )
+    # )
 
-    value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
-    collection.append(
-        pd.Series(
-            dict(label=tech, source="BECCS", target="co2 stored", value=value)
-        )
-    )
+    # value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
+    # collection.append(
+    #     pd.Series(
+    #         dict(label=tech, source="BECCS", target="co2 stored", value=value)
+    #     )
+    # )
 
     # oil emissions
     value = -(
@@ -1057,13 +1076,17 @@ entries_to_select_c = ['process emissions','process emissions CC','process emiss
                       'oil emissions','agriculture machinery oil emissions','land transport oil emissions','shipping oil emissions',
                       'shipping methanol emissions','LULUCF','fossil gas','fossil oil','net co2 emissions','gas for industry CC',
                       'gas for industry CC_3','gas for industry CC_2','solid biomass for industry CC','solid biomass for industry CC_2',
-                      'urban central solid biomass CHP','urban central solid biomass CHP_2','coal'] # Add moe entries if needed
+                      'urban central solid biomass CHP','urban central solid biomass CHP_2','coal','solid biomass biomass to liquid',
+                       'solid biomass biomass to liquid_2','biogas to gas','biogas to gas_2','urban central gas CHP','Fischer-Tropsch',
+                       'OCGT'
+                       ] # Add moe entries if needed
 
 entry_label_mapping_c = {
     'process emissions': {'label': 'process emissions', 'source': 'MtCO2', 'target': 'emmprocess'},
     'process emissions CC': {'label': 'process emissions CC', 'source': 'MtCO2', 'target': 'emmprocesscc'},
     'process emissions CC_2': {'label': 'process emissions CC', 'source': 'MtCO2', 'target': 'emmprocessccst'},
     'CCGT': {'label': 'CCGT emissions', 'source': 'MtCO2', 'target': 'emmccgt'},
+    'OCGT': {'label': 'OCGT emissions', 'source': 'MtCO2', 'target': 'emmocgt'},
     'lignite': {'label': 'lignite emissions', 'source': 'MtCO2', 'target': 'emmlig'},
     'SMR CC': {'label': 'SMR emissions', 'source': 'MtCO2', 'target': 'emmsmr'},
     'SMR CC_2': {'label': 'SMR emissions captored', 'source': 'MtCO2', 'target': 'emmsmrcc'},
@@ -1105,6 +1128,12 @@ entry_label_mapping_c = {
     'urban central solid biomass CHP': {'label': 'urban central solid biomass CHP', 'source': 'MtCO2', 'target': 'emmbmchp'},
     'urban central solid biomass CHP_2': {'label': 'urban central solid biomass CHP', 'source': 'MtCO2', 'target': 'emmbmchpatm'},
     'coal': {'label': 'coal emissions', 'source': 'MtCO2', 'target': 'emmcoal'},
+    'solid biomass biomass to liquid': {'label': 'solid biomass to liquid', 'source': 'MtCO2', 'target': 'emmbmliq'},
+    'solid biomass biomass to liquid_2': {'label': 'solid biomass to liquid', 'source': 'MtCO2', 'target': 'emmbmliqat'},
+    'biogas to gas': {'label': 'biogas to gas', 'source': 'MtCO2', 'target': 'emmbiogasat'},
+    'biogas to gas_2': {'label': 'biogas to gas', 'source': 'MtCO2', 'target': 'emmbiogas'},
+    'urban central gas CHP': {'label': 'urban central gas CHP', 'source': 'MtCO2', 'target': 'emmgaschp'},
+    'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'MtCO2', 'target': 'emmfischer'},
 }
 
 def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,filename='../SEPIA/input.xlsx'):
@@ -1174,28 +1203,28 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,filena
     merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
     for planning_horizon in planning_horizons[1:]:
         temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        merged_emissions = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
+        merged_emissions = pd.merge(merged_emissions, temp, on=['label', 'source', 'target'], how='outer')
 
     # Fill missing values with 0
     merged_emissions.fillna(0,inplace=True)
 
-    suffix_counter = {}
-    used_labels = set(merged_emissions['label'])
+    #suffix_counter = {}
+    #used_labels = set(merged_emissions['label'])
 
     # TODO: merge this function with the previous similar one + add some documentation
-    def generate_new_label2(label):
-        if label in suffix_counter:
-            suffix_counter[label] += 1
-        else:
-            suffix_counter[label] = 2  # Start with _2 as the suffix
+    #def generate_new_label2(label):
+    #    if label in suffix_counter:
+    #        suffix_counter[label] += 1
+    #    else:
+    #        suffix_counter[label] = 2  # Start with _2 as the suffix
 
-        new_label = label if suffix_counter[label] == 2 else f"{label}_{suffix_counter[label]}"
-        while new_label in used_labels:
-            suffix_counter[label] += 1
-            new_label = f"{label}_{suffix_counter[label]}"
-        return new_label
+    #    new_label = label if suffix_counter[label] == 2 else f"{label}_{suffix_counter[label]}"
+    #    while new_label in used_labels:
+    #        suffix_counter[label] += 1
+    #        new_label = f"{label}_{suffix_counter[label]}"
+    #    return new_label
 
-    merged_emissions['label'] = merged_emissions['label'].apply(generate_new_label2)
+    #merge d_emissions['label'] = merged_emissions['label'].apply(generate_new_label2)
 
 
     selected_entries_cf = pd.DataFrame()
@@ -1237,12 +1266,13 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake(
             "prepare_sepia")
+        
 
         # Updating the configuration from the standard config file to run in standalone:
         snakemake.params.scenario["simpl"] = [""]
         snakemake.params.scenario["clusters"] = [6]
         snakemake.params.scenario["opts"] = [""]
-        snakemake.params.scenario["sector_opts"] = ["1H-T-H-B-I-A-dist1"]
+        snakemake.params.scenario["sector_opts"] = ["EQ0.7c-1H-T-H-B-I-A-dist1"]
         snakemake.params.scenario["ll"] = ["vopt"]
         snakemake.params.scenario["planning_horizons"] = [2030, 2040, 2050]
 
@@ -1260,7 +1290,7 @@ if __name__ == "__main__":
     }
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
-
+    
     # TODO: embed this function call in a loop for the case where there is more than one scenario
     write_to_excel(snakemake.params.scenario["simpl"][0],
                    snakemake.params.scenario["clusters"][0],
