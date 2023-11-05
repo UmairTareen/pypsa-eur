@@ -267,8 +267,8 @@ for country in ALL_COUNTRIES:
 #     flows[('hyd_se','gaz_se','irg')] = pd.concat([gas_on_grid * (1/(1-data['pchydirg']) - 1), flows[('hyd_se','gaz_se','irg')]], axis=1).min(axis=1)
 
     ## Local (renewable) production
-    gas_threshold = 2000  # TWh
-    oil_threshold = 1500  #TWh
+    # gas_threshold = 2000  # TWh
+    # oil_threshold = 1500  #TWh
     
     selected_columns_p = flows.columns.get_level_values('Source').isin(PE_NODES)
     fec_carrier_p = flows.loc[:, selected_columns_p]
@@ -278,17 +278,19 @@ for country in ALL_COUNTRIES:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe']
     for en_code in ['gaz']:
      values = fec_p[en_code + '_pe']
-     prod_values = values.clip(upper=gas_threshold)
-     imp_values = values - prod_values
+     # prod_values = values.clip(upper=gas_threshold)
+     # imp_values = values - prod_values
+     imp_values = values
     
-     flows[('prod', en_code + '_pe', '')] = prod_values
+     # flows[('prod', en_code + '_pe', '')] = prod_values
      flows[('imp', en_code + '_pe', '')] = imp_values
     for en_code in ['pet']:
      values = fec_p[en_code + '_pe']
-     prod_values = values.clip(upper=oil_threshold)
-     imp_values = values - prod_values
+     # prod_values = values.clip(upper=oil_threshold)
+     # imp_values = values - prod_values
+     imp_values = values
     
-     flows[('prod', en_code + '_pe', '')] = prod_values
+     # flows[('prod', en_code + '_pe', '')] = prod_values
      flows[('imp', en_code + '_pe', '')] = imp_values
 
    
