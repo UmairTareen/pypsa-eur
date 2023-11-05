@@ -550,11 +550,11 @@ def generate_results(flows, country):
     ren_gas = result_gas[ren_gas].sum(axis=1)
     ren_cov_ratios['gaz_fe'] = (ren_gas/result_gas_t)*100
     
-    pet_columns = ['pet_pe','enc_pe']
+    pet_columns = ['pet_pe','enc_pe','hyd_se']
     filtered_columns = [col for col in flows_bk.columns if col[0] in pet_columns and col[1] in ['pet_fe', 'lqf_se']]
     result_pet = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
     result_pet_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
-    ren_pet = ['enc_pe']
+    ren_pet = ['enc_pe','hyd_se']
     ren_pet = result_pet[ren_pet].sum(axis=1)
     ren_cov_ratios['pet_fe'] = (ren_pet/result_pet_t)*100
     
