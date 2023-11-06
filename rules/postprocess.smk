@@ -150,7 +150,7 @@ rule prepare_sepia:
         ),
         
     output:
-        excelfile=RESULTS + "sepia/inputs.xlsx",
+        excelfile=expand(RESULTS + "sepia/inputs_{country}.xlsx", country=config["countries"]),
     threads: 1
     resources:
         mem_mb=10000,
@@ -161,7 +161,7 @@ rule prepare_sepia:
     conda:
         "../envs/environment.yaml"
     script:
-        "../SEPIA/excel_generator.py"
+        "../SEPIA/excel_generator(copy).py"
 
 
 rule plot_summary:
