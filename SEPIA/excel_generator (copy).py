@@ -1184,21 +1184,22 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, filen
     :param filename: Name of the excel file to write
     '''
 
-    with pd.ExcelWriter(filename, engine='openpyxl') as writer:
-        for country in countries:
-           
-            merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+    
+    for country in countries:
+     merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+     merged_df = merged_df[country]
 
-            for planning_horizon in planning_horizons[1:]:
+     for planning_horizon in planning_horizons[1:]:
                 temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-                merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
+                temp = temp[country]
+                merged_df = pd.merge(merged_df, temp,on=['label', 'source', 'target'], how='outer')
 
             # Fill missing values with 0
-            merged_df = merged_df.fillna(0)
-            connections = merged_df
-            suffix_counter = {}
+     merged_df = merged_df.fillna(0)
+     connections = merged_df
+     suffix_counter = {}
 
-            def generate_new_label(label):
+     def generate_new_label(label):
                 if label in suffix_counter:
                     suffix_counter[label] += 1
                 else:
@@ -1208,37 +1209,40 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, filen
                     return f"{label}_{suffix_counter[label]}"
                 return label
 
-            connections['label'] = connections['label'].apply(generate_new_label)
+    connections['label'] = connections['label'].apply(generate_new_label)
 
-            df = connections
-            selected_entries_df = pd.DataFrame()
+    df = connections
+    selected_entries_df = pd.DataFrame()
 
-            for entry in entries_to_select:
-                selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
+    with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+                for entry in entries_to_select:
+                    selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
 
-                # Get the label mapping for the current entry
-                label_mapping = entry_label_mapping.get(entry, {})
+                    # Get the label mapping for the current entry
+                    label_mapping = entry_label_mapping.get(entry, {})
 
-                # Replace the values in the selected DataFrame based on the mapping
-                selected_df.loc[:, 'label'] = label_mapping.get('label', '')
-                selected_df.loc[:, 'source'] = label_mapping.get('source', '')
-                selected_df.loc[:, 'target'] = label_mapping.get('target', '')
+                    # Replace the values in the selected DataFrame based on the mapping
+                    selected_df.loc[:, 'label'] = label_mapping.get('label', '')
+                    selected_df.loc[:, 'source'] = label_mapping.get('source', '')
+                    selected_df.loc[:, 'target'] = label_mapping.get('target', '')
 
-                # Concatenate the selected entry to the main DataFrame
-                selected_entries_df = pd.concat([selected_entries_df, selected_df])
+                    # Concatenate the selected entry to the main DataFrame
+                    selected_entries_df = pd.concat([selected_entries_df, selected_df])
 
-            # Write the concatenated DataFrame to a new sheet
-            selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
+                # Write the concatenated DataFrame to a new sheet
+                selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
 
-    print(f'Excel file "{filename}" created with sheets for each country.')
+
+    print(f'Excel file "{filename}" created with the selected entries on the "SelectedEntries" sheet.')
 
     list_as_set = set(entries_to_select)
     df_as_set = set(map(str, connections.label))
-    # Find the different elements
+            # Find the different elements
     different_elements = list_as_set.symmetric_difference(df_as_set)
-    # Convert the result back to a list
+            # Convert the result back to a list
     different_elements_list = list(different_elements)
     print("Different elements between the list and DataFrame:", different_elements_list)
+
 # def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,filename='../SEPIA/input.xlsx'):
 #     '''
 #     Function that writes the simulation results to the SEPIA excel input file
@@ -1302,62 +1306,62 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, filen
 
 
 
-    # Deal with the emissions:
-    # merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
-    # for planning_horizon in planning_horizons[1:]:
-    #     temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-    #     merged_emissions = pd.merge(merged_emissions, temp, on=['label', 'source', 'target'], how='outer')
+    #Deal with the emissions:
+    merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+    for planning_horizon in planning_horizons[1:]:
+        temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        merged_emissions = pd.merge(merged_emissions, temp, on=['label', 'source', 'target'], how='outer')
 
-    # # Fill missing values with 0
-    # merged_emissions.fillna(0,inplace=True)
+    # Fill missing values with 0
+    merged_emissions.fillna(0,inplace=True)
 
-    # #suffix_counter = {}
-    # #used_labels = set(merged_emissions['label'])
+    #suffix_counter = {}
+    #used_labels = set(merged_emissions['label'])
 
-    # # TODO: merge this function with the previous similar one + add some documentation
-    # #def generate_new_label2(label):
-    # #    if label in suffix_counter:
-    # #        suffix_counter[label] += 1
-    # #    else:
-    # #        suffix_counter[label] = 2  # Start with _2 as the suffix
+    # TODO: merge this function with the previous similar one + add some documentation
+    #def generate_new_label2(label):
+    #    if label in suffix_counter:
+    #        suffix_counter[label] += 1
+    #    else:
+    #        suffix_counter[label] = 2  # Start with _2 as the suffix
 
-    # #    new_label = label if suffix_counter[label] == 2 else f"{label}_{suffix_counter[label]}"
-    # #    while new_label in used_labels:
-    # #        suffix_counter[label] += 1
-    # #        new_label = f"{label}_{suffix_counter[label]}"
-    # #    return new_label
+    #    new_label = label if suffix_counter[label] == 2 else f"{label}_{suffix_counter[label]}"
+    #    while new_label in used_labels:
+    #        suffix_counter[label] += 1
+    #        new_label = f"{label}_{suffix_counter[label]}"
+    #    return new_label
 
-    # #merge d_emissions['label'] = merged_emissions['label'].apply(generate_new_label2)
+    #merge d_emissions['label'] = merged_emissions['label'].apply(generate_new_label2)
 
 
-    # selected_entries_cf = pd.DataFrame()
-    # with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:  # Use 'a' to append to the existing file
-    #     for entry in entries_to_select_c:
-    #         selected_cf = merged_emissions[merged_emissions['label'] == entry].copy()  # Create a copy of the DataFrame
+    selected_entries_cf = pd.DataFrame()
+    with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:  # Use 'a' to append to the existing file
+        for entry in entries_to_select_c:
+            selected_cf = merged_emissions[merged_emissions['label'] == entry].copy()  # Create a copy of the DataFrame
 
-    #         # Get the label mapping for the current entry
-    #         label_mapping_c = entry_label_mapping_c.get(entry, {})
+            # Get the label mapping for the current entry
+            label_mapping_c = entry_label_mapping_c.get(entry, {})
 
-    #         # Replace the values in the selected DataFrame based on the mapping
-    #         selected_cf.loc[:, 'label'] = label_mapping_c.get('label', '')
-    #         selected_cf.loc[:, 'source'] = label_mapping_c.get('source', '')
-    #         selected_cf.loc[:, 'target'] = label_mapping_c.get('target', '')
+            # Replace the values in the selected DataFrame based on the mapping
+            selected_cf.loc[:, 'label'] = label_mapping_c.get('label', '')
+            selected_cf.loc[:, 'source'] = label_mapping_c.get('source', '')
+            selected_cf.loc[:, 'target'] = label_mapping_c.get('target', '')
 
-    #         # Concatenate the selected entry to the main DataFrame
-    #         selected_entries_cf = pd.concat([selected_entries_cf, selected_cf])
+            # Concatenate the selected entry to the main DataFrame
+            selected_entries_cf = pd.concat([selected_entries_cf, selected_cf])
 
-    #     # Write the concatenated DataFrame to a new sheet
-    #     selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
+        # Write the concatenated DataFrame to a new sheet
+        selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
 
-    # print(f'Excel file "{filename}" updated with the emissions data.')
+    print(f'Excel file "{filename}" updated with the emissions data.')
 
-    # list_as_set = set(entries_to_select_c)
-    # cf_as_set = set(map(str, merged_emissions.label))
-    # # Find the different elements
-    # different_elements_c = list_as_set.symmetric_difference(cf_as_set)
-    # # Convert the result back to a list
-    # different_elements_list_c = list(different_elements_c)
-    # print("Different elements between the list and the Emissions dataFrame:", different_elements_list_c)
+    list_as_set = set(entries_to_select_c)
+    cf_as_set = set(map(str, merged_emissions.label))
+    # Find the different elements
+    different_elements_c = list_as_set.symmetric_difference(cf_as_set)
+    # Convert the result back to a list
+    different_elements_list_c = list(different_elements_c)
+    print("Different elements between the list and the Emissions dataFrame:", different_elements_list_c)
 
 
 
@@ -1395,8 +1399,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     
     # TODO: embed this function call in a loop for the case where there is more than one scenario
-    for country in countries:
-     write_to_excel(snakemake.params.scenario["simpl"][0],
+    # for country in countries:
+    write_to_excel(snakemake.params.scenario["simpl"][0],
                    snakemake.params.scenario["clusters"][0],
                    snakemake.params.scenario["opts"][0],
                    snakemake.params.scenario["sector_opts"][0],
