@@ -1214,8 +1214,9 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
 
         df = connections
         selected_entries_df = pd.DataFrame()
+        country_filename = filename[:-5] + country + ".xlsx"
 
-        with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+        with pd.ExcelWriter(country_filename, engine='openpyxl') as writer:
             for entry in entries_to_select:
                 selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
 
@@ -1402,19 +1403,15 @@ if __name__ == "__main__":
     # for country in countries:
     countries = snakemake.params.countries
 
-# Loop through each country and call write_to_excel
-    for country in countries:
-     filename = snakemake.output.excelfile[:-5] + country + ".xlsx"
-
-     write_to_excel(
+    write_to_excel(
         snakemake.params.scenario["simpl"][0],
         snakemake.params.scenario["clusters"][0],
         snakemake.params.scenario["opts"][0],
         snakemake.params.scenario["sector_opts"][0],
         snakemake.params.scenario["ll"][0],
         snakemake.params.scenario["planning_horizons"],
-        [country],  # Pass the current country as a list
-        filename=filename,
+        countries,  # Pass the current country as a list
+        filename=snakemake.output.excelfile,
      )
 
     # if snakemake.params.foresight == "myopic":
