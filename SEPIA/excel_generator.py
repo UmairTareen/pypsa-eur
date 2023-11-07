@@ -1178,7 +1178,7 @@ entry_label_mapping_c = {
     'urban central gas CHP': {'label': 'urban central gas CHP', 'source': 'MtCO2', 'target': 'emmgaschp'},
     'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'MtCO2', 'target': 'emmfischer'},
 }
-def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_{country}.xlsx'):
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_country.xlsx'):
     '''
     Function that writes the simulation results to the SEPIA excel input file
     :param filename_template: Template for the excel file name with a placeholder for the country
@@ -1404,8 +1404,8 @@ if __name__ == "__main__":
 
 # Loop through each country and call write_to_excel
     for country in countries:
-     filename = f"/home/umair/pypsa-eur_repository/results/sepia/inputs_{country}.xlsx"
-    
+     filename = snakemake.output.excelfile[:-5] + country + ".xlsx"
+
      write_to_excel(
         snakemake.params.scenario["simpl"][0],
         snakemake.params.scenario["clusters"][0],
