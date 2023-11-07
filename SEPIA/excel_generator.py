@@ -14,22 +14,63 @@ def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix="../
         ll=ll,
         planning_horizon=planning_horizon
     )
-
+countries = ['BE','DE','FR','NL','GB']
 def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
-    filename = build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
-    n = pypsa.Network(filename)
-    energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
-    countries = energy_demand.columns
-    clever_industry = (
-         pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).loc[countries].T
+    results_dict = {}
+    for country in countries:
+     filename = build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
+     n = pypsa.Network(filename)
+    
+     energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
+     industry_demand =pd.read_csv("../resources/industrial_energy_demand_elec_s_"+str(cluster)+"_"+str(planning_horizon)+".csv",index_col=0).T
+     # countries = energy_demand.columns
+     clever_industry = (
+         pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).T
 
-    Rail_demand = energy_demand.loc["total rail"].sum()
-    H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
-    H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].sum()
-    columns = ["label", "source", "target", "value"]
+     Rail_demand = energy_demand.loc["total rail"].filter(like=country).sum()
+     H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].filter(like=country).sum()
+     H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
+     agriculture_machinery_oil =energy_demand.loc["total agriculture machinery"]
 
-    gen = (
-        (n.snapshot_weightings.generators @ n.generators_t.p)
+     aviation_p = energy_demand.loc["total international aviation"] 
+
+     navig_d = energy_demand.loc["total domestic navigation"]
+
+     navig_i =energy_demand.loc["total international navigation"]
+     naphta_t = industry_demand.loc["naphtha"]
+     
+     collection = []
+     agri_oil = agriculture_machinery_oil.filter(like=country).sum()
+     avaition = aviation_p.filter(like=country).sum()
+     navigation = navig_d + navig_i.sum()
+     navigation = navigation.filter(like=country).sum()
+     naphta = naphta_t.filter(like=country).sum()
+     collection.append(
+        pd.Series(
+            dict(label="agriculture machinery oil", source="oil", target="Agriculture", value=agri_oil)
+        )
+     )
+     collection.append(
+        pd.Series(
+            dict(label="kerosene for aviation", source="oil", target="kerosene for aviation", value=avaition)
+        )
+     )
+     collection.append(
+        pd.Series(
+            dict(label="naphta for industry", source="oil", target="Non-energy", value=naphta)
+        )
+     )
+     collection.append(
+         pd.Series(
+               dict(label="shipping oil", source="oil", target="shipping oil", value=navigation)
+         )
+      )
+     collection = pd.concat(collection, axis=1).T
+    
+     columns = ["label", "source", "target", "value"]
+
+     gen = (
+        (n.snapshot_weightings.generators @ n.generators_t.p).filter(like=country)
         .groupby(
             [
                 n.generators.carrier,
@@ -39,29 +80,29 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
         )
         .sum()
         .div(1e6)
-    )  # TWh
+     )  # TWh
 
-    gen.index.set_names(columns[:-1], inplace=True)
-    gen = gen.reset_index(name="value")
-    gen = gen.loc[gen.value > 0.1]
+     gen.index.set_names(columns[:-1], inplace=True)
+     gen = gen.reset_index(name="value")
+     gen = gen.loc[gen.value > 0.1]
 
-    gen["source"] = gen["source"].replace({"gas": "fossil gas", "oil": "fossil oil"})
-    gen["label"] = gen["label"].replace({"gas": "fossil gas", "oil": "fossil oil"})
+     gen["source"] = gen["source"].replace({"gas": "fossil gas", "oil": "fossil oil"})
+     gen["label"] = gen["label"].replace({"gas": "fossil gas", "oil": "fossil oil"})
 
-    sto = (
-        (n.snapshot_weightings.generators @ n.stores_t.p)
+     sto = (
+        (n.snapshot_weightings.generators @ n.stores_t.p).filter(like=country)
         .groupby(
             [n.stores.carrier, n.stores.carrier, n.stores.bus.map(n.buses.carrier)]
         )
         .sum()
         .div(1e6)
-    )
-    sto.index.set_names(columns[:-1], inplace=True)
-    sto = sto.reset_index(name="value")
-    sto = sto.loc[sto.value > 0.1]
+     )
+     sto.index.set_names(columns[:-1], inplace=True)
+     sto = sto.reset_index(name="value")
+     sto = sto.loc[sto.value > 0.1]
 
-    su = (
-        (n.snapshot_weightings.generators @ n.storage_units_t.p)
+     su = (
+        (n.snapshot_weightings.generators @ n.storage_units_t.p).filter(like=country)
         .groupby(
             [
                 n.storage_units.carrier,
@@ -71,158 +112,160 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
         )
         .sum()
         .div(1e6)
-    )
-    su.index.set_names(columns[:-1], inplace=True)
-    su = su.reset_index(name="value")
-    su = su.loc[su.value > 0.1]
+     )
+     su.index.set_names(columns[:-1], inplace=True)
+     su = su.reset_index(name="value")
+     su = su.loc[su.value > 0.1]
 
-    load = (
-        (n.snapshot_weightings.generators @ as_dense(n, "Load", "p_set"))
+     load = (
+        (n.snapshot_weightings.generators @ as_dense(n, "Load", "p_set")).filter(like=country)
         .groupby([n.loads.carrier, n.loads.carrier, n.loads.bus.map(n.buses.carrier)])
         .sum()
         .div(1e6)
         .swaplevel()
-    )  # TWh
-    load.index.set_names(columns[:-1], inplace=True)
-    load = load.reset_index(name="value")
+     )  # TWh
+     load.index.set_names(columns[:-1], inplace=True)
+     load = load.reset_index(name="value")
 
-    load = load.loc[~load.label.str.contains("emissions")]
-    load.target += " demand"
-    load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
-    value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
-    load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
-    for i in range(4):
+     load = load.loc[~load.label.str.contains("emissions")]
+     load.target += " demand"
+     load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
+     value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
+     load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
+     for i in range(4):
         n.links[f"total_e{i}"] = (
             n.snapshot_weightings.generators @ n.links_t[f"p{i}"]
-        ).div(
+        ).filter(like=country).div(
             1e6
         )  # TWh
-        n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
+        n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier).filter(like=country)
 
-    def calculate_losses(x):
+     def calculate_losses(x):
         energy_ports = x.loc[
             x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
-        ].index.str.replace("carrier_bus", "total_e")
+        ].filter(like=country).index.str.replace("carrier_bus", "total_e")
         return -x.loc[energy_ports].sum()
 
-    n.links["total_e4"] = n.links.apply(calculate_losses, axis=1)    #e4 and bus 4 for bAU 2050
-    n.links["carrier_bus4"] = "losses"
+     n.links["total_e4"] = n.links.apply(calculate_losses, axis=1).filter(like=country)    #e4 and bus 4 for bAU 2050
+     n.links["carrier_bus4"] = "losses"
 
-    df = pd.concat(
+     df = pd.concat(
         [
             n.links.groupby(["carrier", "carrier_bus0", "carrier_bus" + str(i)]).sum()[
                 "total_e" + str(i)
             ]
             for i in range(1, 5)
         ]
-    ).reset_index()
-    df.columns = columns
+     ).reset_index()
+     df.columns = columns
 
     # fix heat pump energy balance
 
 
-    hp = n.links.loc[n.links.carrier.str.contains("heat pump")]
+     hp = n.links.loc[n.links.carrier.str.contains("heat pump")]
 
-    hp_t_elec = n.links_t.p0.filter(like="heat pump")
+     hp_t_elec = n.links_t.p0.filter(like="heat pump").filter(like=country)
 
-    grouper = [hp["carrier"], hp["carrier_bus0"], hp["carrier_bus1"]]
-    hp_elec = (
-        (-n.snapshot_weightings.generators @ hp_t_elec)
+     grouper = [hp["carrier"], hp["carrier_bus0"], hp["carrier_bus1"]]
+     hp_elec = (
+        (-n.snapshot_weightings.generators @ hp_t_elec).filter(like=country)
         .groupby(grouper)
         .sum()
         .div(1e6)
         .reset_index()
-    )
-    hp_elec.columns = columns
+     )
+     hp_elec.columns = columns
 
-    df = df.loc[~(df.label.str.contains("heat pump") & (df.target == "losses"))]
+     df = df.loc[~(df.label.str.contains("heat pump") & (df.target == "losses"))]
 
-    df.loc[df.label.str.contains("heat pump"), "value"] -= hp_elec["value"].values
+     df.loc[df.label.str.contains("heat pump"), "value"] -= hp_elec["value"].values
 
-    df.loc[df.label.str.contains("air heat pump"), "source"] = "air-sourced ambient"
-    df.loc[
+     df.loc[df.label.str.contains("air heat pump"), "source"] = "air-sourced ambient"
+     df.loc[
         df.label.str.contains("ground heat pump"), "source"
-    ] = "ground-sourced ambient"
+     ] = "ground-sourced ambient"
 
-    df = pd.concat([df, hp_elec])
-    df = df.set_index(["label", "source", "target"]).squeeze()
-    df = pd.concat(
+     df = pd.concat([df, hp_elec])
+     df = df.set_index(["label", "source", "target"]).squeeze()
+     df = pd.concat(
         [
             df.loc[df < 0].mul(-1),
             df.loc[df > 0].swaplevel(1, 2),
         ]
-    ).reset_index()
-    df.columns = columns
+     ).reset_index()
+     df.columns = columns
 
     # make DAC demand
-    df.loc[df.label == "DAC", "target"] = "DAC"
+     df.loc[df.label == "DAC", "target"] = "DAC"
 
-    to_concat = [df, gen, su, sto, load]
-    connections = pd.concat(to_concat).sort_index().reset_index(drop=True)
+     to_concat = [df, gen, su, sto, load]
+     connections = pd.concat(to_concat).sort_index().reset_index(drop=True)
 
     # aggregation
 
-    src_contains = connections.source.str.contains
-    trg_contains = connections.target.str.contains
+     src_contains = connections.source.str.contains
+     trg_contains = connections.target.str.contains
 
-    connections.loc[src_contains("low voltage"), "source"] = "AC"
-    connections.loc[trg_contains("low voltage"), "target"] = "AC"
-    connections.loc[src_contains("CCGT"), "source"] = "gas"
-    connections.loc[trg_contains("CCGT"), "target"] = "AC"
-    connections.loc[src_contains("OCGT"), "source"] = "gas"
-    connections.loc[trg_contains("OCGT"), "target"] = "AC"
-    connections.loc[src_contains("water tank"), "source"] = "water tank"
-    connections.loc[trg_contains("water tank"), "target"] = "water tank"
-    connections.loc[src_contains("solar thermal"), "source"] = "solar thermal"
-    connections.loc[src_contains("battery"), "source"] = "battery"
-    connections.loc[trg_contains("battery"), "target"] = "battery"
-    connections.loc[src_contains("Li ion"), "source"] = "battery"
-    connections.loc[trg_contains("Li ion"), "target"] = "battery"
+     connections.loc[src_contains("low voltage"), "source"] = "AC"
+     connections.loc[trg_contains("low voltage"), "target"] = "AC"
+     connections.loc[src_contains("CCGT"), "source"] = "gas"
+     connections.loc[trg_contains("CCGT"), "target"] = "AC"
+     connections.loc[src_contains("OCGT"), "source"] = "gas"
+     connections.loc[trg_contains("OCGT"), "target"] = "AC"
+     connections.loc[src_contains("water tank"), "source"] = "water tank"
+     connections.loc[trg_contains("water tank"), "target"] = "water tank"
+     connections.loc[src_contains("solar thermal"), "source"] = "solar thermal"
+     connections.loc[src_contains("battery"), "source"] = "battery"
+     connections.loc[trg_contains("battery"), "target"] = "battery"
+     connections.loc[src_contains("Li ion"), "source"] = "battery"
+     connections.loc[trg_contains("Li ion"), "target"] = "battery"
 
-    connections.loc[src_contains("heat") & ~src_contains("demand"), "source"] = "heat"
-    connections.loc[trg_contains("heat") & ~trg_contains("demand"), "target"] = "heat"
-    new_row1 = {'label': 'Rail Network',
+     connections.loc[src_contains("heat") & ~src_contains("demand"), "source"] = "heat"
+     connections.loc[trg_contains("heat") & ~trg_contains("demand"), "target"] = "heat"
+     new_row1 = {'label': 'Rail Network',
             'source': 'Electricity grid',
             'target': 'Rail Network',
             'value': Rail_demand}
-    new_row2 = {'label': 'H2 for non-energy',
+     new_row2 = {'label': 'H2 for non-energy',
             'source': 'hyd',
             'target': 'Non-energy',
             'value': H2_nonenergyy}
 
-    connections.loc[len(connections)] = pd.Series(new_row1)
-    connections.loc[len(connections)] = pd.Series(new_row2)
+     connections.loc[len(connections)] = pd.Series(new_row1)
+     connections.loc[len(connections)] = pd.Series(new_row2)
 
-    connections = connections.loc[
+     connections = connections.loc[
         ~(connections.source == connections.target)
         & ~connections.source.str.contains("co2")
         & ~connections.target.str.contains("co2")
         & ~connections.source.str.contains("emissions")
         & ~connections.source.isin(["gas for industry", "solid biomass for industry"])
         & (connections.value >= 0.1)
-    ]
+     ]
 
-    where = connections.label == "urban central gas boiler"
-    connections.loc[where] = connections.loc[where].replace("losses", "fossil gas")
+     where = connections.label == "urban central gas boiler"
+     connections.loc[where] = connections.loc[where].replace("losses", "fossil gas")
 
-    connections.replace("AC", "electricity grid", inplace=True)
-    suffix_counter = {}
+     connections.replace("AC", "electricity grid", inplace=True)
+    
+     suffix_counter = {}
 
-    def generate_new_label(label):
-     if label in suffix_counter:
+     def generate_new_label(label):
+      if label in suffix_counter:
         suffix_counter[label] += 1
-     else:
+      else:
         suffix_counter[label] = 1
 
-     if suffix_counter[label] > 1:
+      if suffix_counter[label] > 1:
         return f"{label}_{suffix_counter[label]}"
-     return label
+      return label
 
-    connections['label'] = connections['label'].apply(generate_new_label)
-    connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
-    connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
+     connections['label'] = connections['label'].apply(generate_new_label)
+     connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
+     connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
+     results_dict[country] = connections
 
-    return connections
+    return results_dict
 #%%
 entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'offwind-ac', 'offwind-dc', 'hydro', 'ror','nuclear',
@@ -1135,126 +1178,190 @@ entry_label_mapping_c = {
     'urban central gas CHP': {'label': 'urban central gas CHP', 'source': 'MtCO2', 'target': 'emmgaschp'},
     'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'MtCO2', 'target': 'emmfischer'},
 }
-
-def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,filename='../SEPIA/input.xlsx'):
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_{country}.xlsx'):
     '''
     Function that writes the simulation results to the SEPIA excel input file
-    :param filename: Name of the excel file to write
+    :param filename_template: Template for the excel file name with a placeholder for the country
     '''
 
-    # First gather all energy flows:
-    merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
-    for planning_horizon in planning_horizons[1:]:
-        temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
+    for country in countries:
+        # Generate the filename for the current country
 
-    # Fill missing values with 0
-    merged_df = merged_df.fillna(0)
-    connections = merged_df
-    suffix_counter = {}
+        merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+        merged_df = merged_df[country]
 
-    def generate_new_label(label):
-        if label in suffix_counter:
-            suffix_counter[label] += 1
-        else:
-            suffix_counter[label] = 1
+        for planning_horizon in planning_horizons[1:]:
+            temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+            temp = temp[country]
+            merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
 
-        if suffix_counter[label] > 1:
-            return f"{label}_{suffix_counter[label]}"
-        return label
+        # Fill missing values with 0
+        merged_df = merged_df.fillna(0)
+        connections = merged_df
+        suffix_counter = {}
 
-    connections['label'] = connections['label'].apply(generate_new_label)
+        def generate_new_label(label):
+            if label in suffix_counter:
+                suffix_counter[label] += 1
+            else:
+                suffix_counter[label] = 1
 
-    df=connections
-    selected_entries_df = pd.DataFrame()
+            if suffix_counter[label] > 1:
+                return f"{label}_{suffix_counter[label]}"
+            return label
 
-    with pd.ExcelWriter(filename, engine='openpyxl') as writer:
-        for entry in entries_to_select:
-            selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
+        connections['label'] = connections['label'].apply(generate_new_label)
 
-            # Get the label mapping for the current entry
-            label_mapping = entry_label_mapping.get(entry, {})
+        df = connections
+        selected_entries_df = pd.DataFrame()
 
-            # Replace the values in the selected DataFrame based on the mapping
-            selected_df.loc[:, 'label'] = label_mapping.get('label', '')
-            selected_df.loc[:, 'source'] = label_mapping.get('source', '')
-            selected_df.loc[:, 'target'] = label_mapping.get('target', '')
+        with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+            for entry in entries_to_select:
+                selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
 
-            # Concatenate the selected entry to the main DataFrame
-            selected_entries_df = pd.concat([selected_entries_df, selected_df])
+                # Get the label mapping for the current entry
+                label_mapping = entry_label_mapping.get(entry, {})
 
-        # Write the concatenated DataFrame to a new sheet
-        selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
+                # Replace the values in the selected DataFrame based on the mapping
+                selected_df.loc[:, 'label'] = label_mapping.get('label', '')
+                selected_df.loc[:, 'source'] = label_mapping.get('source', '')
+                selected_df.loc[:, 'target'] = label_mapping.get('target', '')
+
+                # Concatenate the selected entry to the main DataFrame
+                selected_entries_df = pd.concat([selected_entries_df, selected_df])
+
+            # Write the concatenated DataFrame to a new sheet
+            selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
+
+        print(f'Excel file "{filename}" created with the selected entries on the "SelectedEntries" sheet.')
+
+        list_as_set = set(entries_to_select)
+        df_as_set = set(map(str, connections.label))
+        # Find the different elements
+        different_elements = list_as_set.symmetric_difference(df_as_set)
+        # Convert the result back to a list
+        different_elements_list = list(different_elements)
+        print("Different elements between the list and DataFrame:", different_elements_list)
+
+# def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,filename='../SEPIA/input.xlsx'):
+#     '''
+#     Function that writes the simulation results to the SEPIA excel input file
+#     :param filename: Name of the excel file to write
+#     '''
+
+#     # First gather all energy flows:
+#     merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+#     for planning_horizon in planning_horizons[1:]:
+#         temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+#         merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
+
+#     # Fill missing values with 0
+#     merged_df = merged_df.fillna(0)
+#     connections = merged_df
+#     suffix_counter = {}
+
+#     def generate_new_label(label):
+#         if label in suffix_counter:
+#             suffix_counter[label] += 1
+#         else:
+#             suffix_counter[label] = 1
+
+#         if suffix_counter[label] > 1:
+#             return f"{label}_{suffix_counter[label]}"
+#         return label
+
+#     connections['label'] = connections['label'].apply(generate_new_label)
+
+#     df=connections
+#     selected_entries_df = pd.DataFrame()
+
+#     with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+#         for entry in entries_to_select:
+#             selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
+
+#             # Get the label mapping for the current entry
+#             label_mapping = entry_label_mapping.get(entry, {})
+
+#             # Replace the values in the selected DataFrame based on the mapping
+#             selected_df.loc[:, 'label'] = label_mapping.get('label', '')
+#             selected_df.loc[:, 'source'] = label_mapping.get('source', '')
+#             selected_df.loc[:, 'target'] = label_mapping.get('target', '')
+
+#             # Concatenate the selected entry to the main DataFrame
+#             selected_entries_df = pd.concat([selected_entries_df, selected_df])
+
+#         # Write the concatenated DataFrame to a new sheet
+#         selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
 
 
-    print(f'Excel file "{filename}" created with the selected entries on the "SelectedEntries" sheet.')
+#     print(f'Excel file "{filename}" created with the selected entries on the "SelectedEntries" sheet.')
 
-    list_as_set = set(entries_to_select)
-    df_as_set = set(map(str, connections.label))
-    # Find the different elements
-    different_elements = list_as_set.symmetric_difference(df_as_set)
-    # Convert the result back to a list
-    different_elements_list = list(different_elements)
-    print("Different elements between the list and DataFrame:", different_elements_list)
-
-
-
-    # Deal with the emissions:
-    merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
-    for planning_horizon in planning_horizons[1:]:
-        temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        merged_emissions = pd.merge(merged_emissions, temp, on=['label', 'source', 'target'], how='outer')
-
-    # Fill missing values with 0
-    merged_emissions.fillna(0,inplace=True)
-
-    #suffix_counter = {}
-    #used_labels = set(merged_emissions['label'])
-
-    # TODO: merge this function with the previous similar one + add some documentation
-    #def generate_new_label2(label):
-    #    if label in suffix_counter:
-    #        suffix_counter[label] += 1
-    #    else:
-    #        suffix_counter[label] = 2  # Start with _2 as the suffix
-
-    #    new_label = label if suffix_counter[label] == 2 else f"{label}_{suffix_counter[label]}"
-    #    while new_label in used_labels:
-    #        suffix_counter[label] += 1
-    #        new_label = f"{label}_{suffix_counter[label]}"
-    #    return new_label
-
-    #merge d_emissions['label'] = merged_emissions['label'].apply(generate_new_label2)
+#     list_as_set = set(entries_to_select)
+#     df_as_set = set(map(str, connections.label))
+#     # Find the different elements
+#     different_elements = list_as_set.symmetric_difference(df_as_set)
+#     # Convert the result back to a list
+#     different_elements_list = list(different_elements)
+#     print("Different elements between the list and DataFrame:", different_elements_list)
 
 
-    selected_entries_cf = pd.DataFrame()
-    with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:  # Use 'a' to append to the existing file
-        for entry in entries_to_select_c:
-            selected_cf = merged_emissions[merged_emissions['label'] == entry].copy()  # Create a copy of the DataFrame
 
-            # Get the label mapping for the current entry
-            label_mapping_c = entry_label_mapping_c.get(entry, {})
+    # #Deal with the emissions:
+    # merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+    # for planning_horizon in planning_horizons[1:]:
+    #     temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+    #     merged_emissions = pd.merge(merged_emissions, temp, on=['label', 'source', 'target'], how='outer')
 
-            # Replace the values in the selected DataFrame based on the mapping
-            selected_cf.loc[:, 'label'] = label_mapping_c.get('label', '')
-            selected_cf.loc[:, 'source'] = label_mapping_c.get('source', '')
-            selected_cf.loc[:, 'target'] = label_mapping_c.get('target', '')
+    # # Fill missing values with 0
+    # merged_emissions.fillna(0,inplace=True)
 
-            # Concatenate the selected entry to the main DataFrame
-            selected_entries_cf = pd.concat([selected_entries_cf, selected_cf])
+    # #suffix_counter = {}
+    # #used_labels = set(merged_emissions['label'])
 
-        # Write the concatenated DataFrame to a new sheet
-        selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
+    # # TODO: merge this function with the previous similar one + add some documentation
+    # #def generate_new_label2(label):
+    # #    if label in suffix_counter:
+    # #        suffix_counter[label] += 1
+    # #    else:
+    # #        suffix_counter[label] = 2  # Start with _2 as the suffix
 
-    print(f'Excel file "{filename}" updated with the emissions data.')
+    # #    new_label = label if suffix_counter[label] == 2 else f"{label}_{suffix_counter[label]}"
+    # #    while new_label in used_labels:
+    # #        suffix_counter[label] += 1
+    # #        new_label = f"{label}_{suffix_counter[label]}"
+    # #    return new_label
 
-    list_as_set = set(entries_to_select_c)
-    cf_as_set = set(map(str, merged_emissions.label))
-    # Find the different elements
-    different_elements_c = list_as_set.symmetric_difference(cf_as_set)
-    # Convert the result back to a list
-    different_elements_list_c = list(different_elements_c)
-    print("Different elements between the list and the Emissions dataFrame:", different_elements_list_c)
+    # #merge d_emissions['label'] = merged_emissions['label'].apply(generate_new_label2)
+
+
+    # selected_entries_cf = pd.DataFrame()
+    # with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:  # Use 'a' to append to the existing file
+    #     for entry in entries_to_select_c:
+    #         selected_cf = merged_emissions[merged_emissions['label'] == entry].copy()  # Create a copy of the DataFrame
+
+    #         # Get the label mapping for the current entry
+    #         label_mapping_c = entry_label_mapping_c.get(entry, {})
+
+    #         # Replace the values in the selected DataFrame based on the mapping
+    #         selected_cf.loc[:, 'label'] = label_mapping_c.get('label', '')
+    #         selected_cf.loc[:, 'source'] = label_mapping_c.get('source', '')
+    #         selected_cf.loc[:, 'target'] = label_mapping_c.get('target', '')
+
+    #         # Concatenate the selected entry to the main DataFrame
+    #         selected_entries_cf = pd.concat([selected_entries_cf, selected_cf])
+
+    #     # Write the concatenated DataFrame to a new sheet
+    #     selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
+
+    # print(f'Excel file "{filename}" updated with the emissions data.')
+
+    # list_as_set = set(entries_to_select_c)
+    # cf_as_set = set(map(str, merged_emissions.label))
+    # # Find the different elements
+    # different_elements_c = list_as_set.symmetric_difference(cf_as_set)
+    # # Convert the result back to a list
+    # different_elements_list_c = list(different_elements_c)
+    # print("Different elements between the list and the Emissions dataFrame:", different_elements_list_c)
 
 
 
@@ -1292,13 +1399,23 @@ if __name__ == "__main__":
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     
     # TODO: embed this function call in a loop for the case where there is more than one scenario
-    write_to_excel(snakemake.params.scenario["simpl"][0],
-                   snakemake.params.scenario["clusters"][0],
-                   snakemake.params.scenario["opts"][0],
-                   snakemake.params.scenario["sector_opts"][0],
-                   snakemake.params.scenario["ll"][0],
-                   snakemake.params.scenario["planning_horizons"],
-                   filename = snakemake.output.excelfile)
+    # for country in countries:
+    countries = snakemake.params.countries
+
+# Loop through each country and call write_to_excel
+    for country in countries:
+     filename = f"/home/umair/pypsa-eur_repository/results/sepia/inputs_{country}.xlsx"
+    
+     write_to_excel(
+        snakemake.params.scenario["simpl"][0],
+        snakemake.params.scenario["clusters"][0],
+        snakemake.params.scenario["opts"][0],
+        snakemake.params.scenario["sector_opts"][0],
+        snakemake.params.scenario["ll"][0],
+        snakemake.params.scenario["planning_horizons"],
+        [country],  # Pass the current country as a list
+        filename=filename,
+     )
 
     # if snakemake.params.foresight == "myopic":
     #     cumulative_cost = calculate_cumulative_cost()

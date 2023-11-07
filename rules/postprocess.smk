@@ -161,7 +161,7 @@ rule prepare_sepia:
     conda:
         "../envs/environment.yaml"
     script:
-        "../SEPIA/excel_generator(copy).py"
+        "../SEPIA/excel_generator.py"
 
 
 rule plot_summary:
