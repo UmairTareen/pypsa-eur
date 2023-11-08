@@ -1190,7 +1190,7 @@ entry_label_mapping_c = {
     'urban central gas CHP': {'label': 'urban central gas CHP', 'source': 'MtCO2', 'target': 'emmgaschp'},
     'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'MtCO2', 'target': 'emmfischer'},
 }
-def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_{country}.xlsx'):
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_country.xlsx'):
     '''
     Function that writes the simulation results to the SEPIA excel input file
     :param filename_template: Template for the excel file name with a placeholder for the country
@@ -1227,7 +1227,9 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
         df = connections
         selected_entries_df = pd.DataFrame()
 
-        with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+        country_filename = filename[:-5] + country + ".xlsx"
+
+        with pd.ExcelWriter(country_filename, engine='openpyxl') as writer:
             for entry in entries_to_select:
                 selected_df = df[df['label'] == entry].copy()  # Create a copy of the DataFrame
 
@@ -1335,20 +1337,16 @@ if __name__ == "__main__":
     # TODO: embed this function call in a loop for the case where there is more than one scenario
     # for country in countries:
     countries = snakemake.params.countries
-
-# Loop through each country and call write_to_excel
-    for country in countries:
-     filename = f"/home/umair/pypsa-eur_repository/results/sepia/inputs_{country}.xlsx"
     
-     write_to_excel(
+    write_to_excel(
         snakemake.params.scenario["simpl"][0],
         snakemake.params.scenario["clusters"][0],
         snakemake.params.scenario["opts"][0],
         snakemake.params.scenario["sector_opts"][0],
         snakemake.params.scenario["ll"][0],
         snakemake.params.scenario["planning_horizons"],
-        [country],  # Pass the current country as a list
-        filename=filename,
+        countries,  # Pass the current country as a list
+        filename=snakemake.output.excelfile,
      )
 
     # if snakemake.params.foresight == "myopic":
