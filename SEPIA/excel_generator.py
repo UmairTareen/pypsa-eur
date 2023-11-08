@@ -38,12 +38,13 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
 
      navig_i =energy_demand.loc["total international navigation"]
      naphta_t = industry_demand.loc["naphtha"]
+     ammonia_t = industry_demand.loc["ammonia"]
      
      collection = []
      agri_oil = agriculture_machinery_oil.filter(like=country).sum()
      avaition = aviation_p.filter(like=country).sum()
-     navigation = navig_d + navig_i.sum()
-     navigation = navigation.filter(like=country).sum()
+     navigation = navig_d.filter(like=country).sum() + navig_i.filter(like=country).sum()
+     ammonia = ammonia_t.filter(like=country).sum()
      if planning_horizon == 2030:
         navigation_oil = navigation * 0.7
         navigation_methanol = navigation * 0.3
@@ -66,7 +67,12 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      )
      collection.append(
         pd.Series(
-            dict(label="naphta for industry", source="oil", target="Non-energy", value=naphta)
+            dict(label="naphtha for industry", source="oil", target="Non-energy", value=naphta)
+        )
+     )
+     collection.append(
+        pd.Series(
+            dict(label="NH3", source="H2", target="ammonia for industry", value=ammonia)
         )
      )
      collection.append(
@@ -157,7 +163,7 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      def calculate_losses(x):
         energy_ports = x.loc[
             x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
-        ].filter(like=country).index.str.replace("carrier_bus", "total_e")
+        ].index.str.replace("carrier_bus", "total_e")
         return -x.loc[energy_ports].sum()
 
      n.links["total_e4"] = n.links.apply(calculate_losses, axis=1).filter(like=country)    #e4 and bus 4 for bAU 2050
@@ -212,7 +218,7 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     # make DAC demand
      df.loc[df.label == "DAC", "target"] = "DAC"
 
-     to_concat = [df, gen, su, sto, load]
+     to_concat = [df, gen, su, sto, load,collection]
      connections = pd.concat(to_concat).sort_index().reset_index(drop=True)
 
     # aggregation
@@ -1204,7 +1210,7 @@ entry_label_mapping_c = {
     'urban central gas CHP': {'label': 'urban central gas CHP', 'source': 'MtCO2', 'target': 'emmgaschp'},
     'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'MtCO2', 'target': 'emmfischer'},
 }
-def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_{country}.xlsx'):
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_country.xlsx'):
     '''
     Function that writes the simulation results to the SEPIA excel input file
     :param filename_template: Template for the excel file name with a placeholder for the country
@@ -1241,7 +1247,7 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
         df = connections
         selected_entries_df = pd.DataFrame()
 
-        country_filename = filename[:-5] + country + ".xlsx"
+        country_filename = ''.join(filename)[:-12] + country + ".xlsx"
 
         with pd.ExcelWriter(country_filename, engine='openpyxl') as writer:
             for entry in entries_to_select:
@@ -1283,9 +1289,10 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
 
     # Fill missing values with 0
         merged_emissions.fillna(0,inplace=True)
+        country_filename = ''.join(filename)[:-12] + country + ".xlsx"
 
         selected_entries_cf = pd.DataFrame()
-        with pd.ExcelWriter(filename, engine='openpyxl', mode='a',if_sheet_exists='replace') as writer:  # Use 'a' to append to the existing file
+        with pd.ExcelWriter(country_filename, engine='openpyxl', mode='a',if_sheet_exists='overlay') as writer:  # Use 'a' to append to the existing file
             for entry in entries_to_select_c:
                 selected_cf = merged_emissions[merged_emissions['label'] == entry].copy()  # Create a copy of the DataFrame
 
