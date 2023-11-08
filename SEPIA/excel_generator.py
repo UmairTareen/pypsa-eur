@@ -44,6 +44,15 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      avaition = aviation_p.filter(like=country).sum()
      navigation = navig_d + navig_i.sum()
      navigation = navigation.filter(like=country).sum()
+     if planning_horizon == 2030:
+        navigation_oil = navigation * 0.7
+        navigation_methanol = navigation * 0.3
+     elif planning_horizon == 2040:
+        navigation_oil = navigation * 0.3
+        navigation_methanol = navigation * 0.7
+     elif planning_horizon == 2050:
+        navigation_oil = navigation * 0
+        navigation_methanol = navigation * 1
      naphta = naphta_t.filter(like=country).sum()
      collection.append(
         pd.Series(
@@ -62,7 +71,12 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      )
      collection.append(
          pd.Series(
-               dict(label="shipping oil", source="oil", target="shipping oil", value=navigation)
+               dict(label="shipping oil", source="oil", target="shipping oil", value=navigation_oil)
+         )
+      )
+     collection.append(
+         pd.Series(
+               dict(label="shipping methanol", source="methanol", target="shipping methanol", value=navigation_methanol)
          )
       )
      collection = pd.concat(collection, axis=1).T
@@ -1190,7 +1204,7 @@ entry_label_mapping_c = {
     'urban central gas CHP': {'label': 'urban central gas CHP', 'source': 'MtCO2', 'target': 'emmgaschp'},
     'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'MtCO2', 'target': 'emmfischer'},
 }
-def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_country.xlsx'):
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_{country}.xlsx'):
     '''
     Function that writes the simulation results to the SEPIA excel input file
     :param filename_template: Template for the excel file name with a placeholder for the country
