@@ -181,6 +181,7 @@ for country in ALL_COUNTRIES:
         flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']
     fischer_tropsch_p = flows['hyd_se','pet_fe']
     biomass_liquid_p = flows['blq_pe','pet_fe']
+    biogas_p = flows['bgl_pe','gaz_se']
     value = fischer_tropsch_p + biomass_liquid_p.sum()
     for en_code in ['pet']:
         flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']-value
@@ -190,7 +191,7 @@ for country in ALL_COUNTRIES:
     grouped_fec_se = fec_carrier_se.groupby(level='Source', axis=1).sum()
     fec_se = grouped_fec_se
     for en_code in ['gaz']:
-        flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']
+        flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p
         
     # ## Direct transfer of primary energies to their corresponding networks
     # for (en_code,network) in [('gaz','gaz'),('blq','lqf')]:
@@ -301,8 +302,30 @@ for country in ALL_COUNTRIES:
     
      # flows[('prod', en_code + '_pe', '')] = prod_values
      flows[('imp', en_code + '_pe', '')] = imp_values
+    
+    sec_imports = flows.columns.get_level_values('Target').isin(SE_NODES)
+    sec_imports = flows.loc[:, sec_imports]
+    sec_imports = sec_imports.groupby(level='Target', axis=1).sum()
+    for en_code in ['elc','hyd']:
+        values_exp = sec_imports[en_code + '_se'] - fec_se[en_code + '_se']
+        values_imp = fec_se[en_code + '_se'] - sec_imports[en_code + '_se']
+        values_imp = values_imp.clip(lower=0)
+        values_exp = values_exp.clip(lower=0)
+        flows[('imp',en_code + '_se', '')] = values_imp
+        flows[(en_code+'_se','exp','')] = values_exp
+        
+    other_imports = flows.columns.get_level_values('Target').isin(FE_NODES)
+    other_imports = flows.loc[:, other_imports]
+    other_imports = other_imports.groupby(level='Target', axis=1).sum() 
+    for en_code in ['amm','met']:
+        values_exp = other_imports[en_code + '_fe'] - fec_pe[en_code + '_fe']
+        values_imp = fec_pe[en_code + '_fe'] - other_imports[en_code + '_fe']
+        values_imp = values_imp.clip(lower=0)
+        values_exp = values_exp.clip(lower=0)
+        flows[('imp',en_code + '_fe', '')] = values_imp
+        flows[(en_code+'_fe','exp','')] = values_exp
 
-    # ## (Re)balancing all primary and secondary energies with imports/exports
+    ## (Re)balancing all primary and secondary energies with imports/exports
     # for node in PE_NODES + SE_NODES:
     #     sf.balance_node(flows, node)
     
@@ -394,7 +417,7 @@ for country in ALL_COUNTRIES:
 # for network in tot_se_imports.columns:
 #     tot_se_import_mix[network] = sf.share_percent(tot_se_import_mix[network])
 
-# # Net import/export balances
+# Net import/export balances
 # def imp_exp_balance(df,perimeter,imp_flow,exp_flow):
 #     if imp_flow in df[perimeter].columns and exp_flow in df[perimeter].columns:
 #             excess = df[perimeter][exp_flow] - df[perimeter][imp_flow]
@@ -403,7 +426,7 @@ for country in ALL_COUNTRIES:
 #             deficit[deficit < 0] = 0
 #             df[perimeter][exp_flow] = excess.squeeze()
 #             df[perimeter][imp_flow] = deficit.squeeze()   
-# for perimeter in country_groups:
+# for perimeter in country:
 #     for node in PE_NODES + SE_NODES:
 #         imp_flow = ('imp',node,'')
 #         exp_flow = (node,'exp','')
@@ -647,8 +670,8 @@ def generate_results(flows, tot_results, country, se_import_mix):
 
     ## Primary energy consumption
     # Primary production + imports 
-    pec = calculate_pec(flows)
-    pec_breakdown = sf.share_primary_category(pec, NODES)
+    # pec = calculate_pec(flows)
+    # pec_breakdown = sf.share_primary_category(pec, NODES)
     # pec_eu = calculate_pec(flows_imp_eu) if eu_bunker_change else pec
     # pec_eu = sf.subtract_cons_from_node(pec_eu, flows_imp_eu, 'neind', end_nodes=PE_NODES).drop(columns=['sth_pe','pac_pe'], errors="ignore") # Removing ambient heat & non-energy consumption
     # heatpower_columns = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe', 'pac_pe','cms_pe', 'gaz_pe', 'pet_pe','ura_pe']
