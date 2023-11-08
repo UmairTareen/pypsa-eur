@@ -1285,7 +1285,7 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
         merged_emissions.fillna(0,inplace=True)
 
         selected_entries_cf = pd.DataFrame()
-        with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:  # Use 'a' to append to the existing file
+        with pd.ExcelWriter(filename, engine='openpyxl', mode='a',if_sheet_exists='replace') as writer:  # Use 'a' to append to the existing file
             for entry in entries_to_select_c:
                 selected_cf = merged_emissions[merged_emissions['label'] == entry].copy()  # Create a copy of the DataFrame
 
@@ -1301,7 +1301,7 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
                 selected_entries_cf = pd.concat([selected_entries_cf, selected_cf])
 
         # Write the concatenated DataFrame to a new sheet
-            selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False,if_sheet_exists='replace')
+            selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
 
         print(f'Excel file "{filename}" updated with the emissions data.')
 
