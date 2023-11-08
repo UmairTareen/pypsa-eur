@@ -82,7 +82,7 @@ tot_co2 = {}
 print("\nEnergy system (network graph) creation\n")
 
 for country in ALL_COUNTRIES:
-    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs_{country}.xlsx")
+    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
