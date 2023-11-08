@@ -1287,7 +1287,7 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
                 selected_entries_cf = pd.concat([selected_entries_cf, selected_cf])
 
         # Write the concatenated DataFrame to a new sheet
-            selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
+            selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False,if_sheet_exists='replace')
 
         print(f'Excel file "{filename}" updated with the emissions data.')
 
