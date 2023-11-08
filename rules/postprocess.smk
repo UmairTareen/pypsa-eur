@@ -150,7 +150,7 @@ rule prepare_sepia:
         ),
         
     output:
-        excelfile=expand(RESULTS + "sepia/inputs_{country}.xlsx", country=config["countries"]),
+        excelfile=expand(RESULTS + "SEPIA/inputs_{country}.xlsx", country=config["countries"]),
     threads: 1
     resources:
         mem_mb=10000,
