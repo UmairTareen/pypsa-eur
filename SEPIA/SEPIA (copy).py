@@ -364,8 +364,13 @@ for country in ALL_COUNTRIES:
         flows_co2[(en_code + '_ghg', 'atm', '')] = value_met
     for en_code in ['oil']:
         value_so = (demand_side_emm['wati'] - fec['met_fe']) * co2_intensity_oil
-        value_naph = flows[('hyd_fe', 'neind', '')].squeeze()
-        value_naph = (demand_side_emm['neind'] - value_naph) * co2_intensity_oil
+        value_naph, value_ker = (
+          flows[('hyd_fe', 'neind', '')].squeeze().rename_axis(None),
+          flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None))
+        value_tot = value_naph + value_ker.sum()
+        
+        value_naph = (demand_side_emm['neind'] - value_tot) * co2_intensity_oil
+        flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
         flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
         
         
