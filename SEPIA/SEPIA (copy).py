@@ -136,7 +136,7 @@ for country in ALL_COUNTRIES:
     data = data.loc[:,~data.columns.duplicated()] # Remove duplicate indicators
     data_co2 = data_co2.rename(columns=dict(zip(INDICATORS['Value_Code'],INDICATORS.index)))
     data_co2 = data_co2.loc[:,~data_co2.columns.duplicated()]
-    
+    data_ghg = data_co2.copy()
     # unfound_inputs_ghg = []
     # unfound_inputs_ghg.extend(sf.unfound_indicators(data_ghg,PROCESSES_3,'Value_Code'))
     # if len(unfound_inputs_ghg)>0:
@@ -156,9 +156,9 @@ for country in ALL_COUNTRIES:
     # data.loc[data['pcenrwst'] == 0, 'pcenrwst'] = 0.5
     
     #Computing missing co2 emissions
-    shipping_methanol = data_co2["emmmet"]
-    data_co2["emmmetwati"] = shipping_methanol
-    data_ghg = data_co2.copy()
+    # shipping_methanol = data_co2["emmmet"]
+    # data_co2["emmmetwati"] = shipping_methanol
+    
 
     ## Creating flows and efficiencies DataFrames and filling values which do not require calculation, directly from input data
     proc_without_calc = PROCESSES[PROCESSES['Value_Code'].isin(data.columns)] # indicator is not empty and found in data
@@ -329,7 +329,6 @@ for country in ALL_COUNTRIES:
         values_exp = values_exp.clip(lower=0)
         flows[('imp',en_code + '_fe', '')] = values_imp
         flows[(en_code+'_fe','exp','')] = values_exp
-
     ## (Re)balancing all primary and secondary energies with imports/exports
     # for node in PE_NODES + SE_NODES:
     #     sf.balance_node(flows, node)
@@ -338,28 +337,44 @@ for country in ALL_COUNTRIES:
     tot_emm_s = tot_emm_s.groupby(level='Source', axis=1).sum() 
     co2_intensity_oil = 0.26
     co2_intensity_gas = 0.2
+    demand_side_emm = flows.columns.get_level_values('Target').isin(DS_NODES)
+    demand_side_emm = flows.loc[:, demand_side_emm]
+    demand_side_emm = demand_side_emm.groupby(level='Target', axis=1).sum() 
     for en_code in ['fol']:
-        values_oil_emm = fec_p['pet_pe'] 
+        values_oil_emm = fec_p['pet_pe']
         flows_co2[(en_code + '_ghg', 'oil_ghg', '')] = values_oil_emm * co2_intensity_oil
+        
     for en_code in ['fgs']:
         values_gas_emm = fec_p['gaz_pe'] 
         flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
     tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
     tot_emm = flows_co2.loc[:, tot_emm]
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
-    for en_code in ['oil']:
-        values_oil = tot_emm['oil_ghg'] - tot_emm_s['oil_ghg'] 
-        flows_co2[(en_code + '_ghg', 'atm', 'oil')] = values_oil
+    # for en_code in ['oil']:
+    #     values_oil = tot_emm['oil_ghg'] - tot_emm_s['oil_ghg'] 
+    #     flows_co2[(en_code + '_ghg', 'atm', 'oil')] = values_oil
     tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
     tot_emm = flows_co2.loc[:, tot_emm]
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum()
     for en_code in ['net']:
         values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] 
         flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm
-    
+    for en_code in ['met']:
+        value_met = tot_emm['met_ghg']
+        flows_co2[(en_code + '_ghg', 'atm', '')] = value_met
+    for en_code in ['oil']:
+        value_so = (demand_side_emm['wati'] - fec['met_fe']) * co2_intensity_oil
+        value_naph = flows[('hyd_fe', 'neind', '')].squeeze()
+        value_naph = (demand_side_emm['neind'] - value_naph) * co2_intensity_oil
+        flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
+        
+        
     for en_code in ['ind']:
         values_oilg = tot_emm['oil_ghg']
         flows_ghg[(en_code + '_ghg', 'pet_pe',  'oil')] = values_oilg
+    for en_code in ['wati']:
+        flows_ghg[(en_code + '_ghg', 'oth_pe',  '')] =value_met
+        flows_ghg[(en_code + '_ghg', 'pet_pe',  '')] =value_so
         
     # other_imports = other_imports.groupby(level='Source', axis=1).sum() 
     # ## Splitting renewable and non-renewable parts of waste
