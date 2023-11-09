@@ -136,7 +136,7 @@ for country in ALL_COUNTRIES:
     data = data.loc[:,~data.columns.duplicated()] # Remove duplicate indicators
     data_co2 = data_co2.rename(columns=dict(zip(INDICATORS['Value_Code'],INDICATORS.index)))
     data_co2 = data_co2.loc[:,~data_co2.columns.duplicated()]
-    data_ghg = data_co2.copy()
+    
     # unfound_inputs_ghg = []
     # unfound_inputs_ghg.extend(sf.unfound_indicators(data_ghg,PROCESSES_3,'Value_Code'))
     # if len(unfound_inputs_ghg)>0:
@@ -154,6 +154,11 @@ for country in ALL_COUNTRIES:
     # data['pchydirg'] = data['pchydirg'] *119930*0.08988/(50020*0.6512)
     # # Default renewable share in waste is 50%
     # data.loc[data['pcenrwst'] == 0, 'pcenrwst'] = 0.5
+    
+    #Computing missing co2 emissions
+    shipping_methanol = data_co2["emmmet"]
+    data_co2["emmmetwati"] = shipping_methanol
+    data_ghg = data_co2.copy()
 
     ## Creating flows and efficiencies DataFrames and filling values which do not require calculation, directly from input data
     proc_without_calc = PROCESSES[PROCESSES['Value_Code'].isin(data.columns)] # indicator is not empty and found in data
@@ -328,7 +333,35 @@ for country in ALL_COUNTRIES:
     ## (Re)balancing all primary and secondary energies with imports/exports
     # for node in PE_NODES + SE_NODES:
     #     sf.balance_node(flows, node)
+    tot_emm_s = flows_co2.columns.get_level_values('Source').isin(GHG_SECTORS)
+    tot_emm_s = flows_co2.loc[:, tot_emm_s]
+    tot_emm_s = tot_emm_s.groupby(level='Source', axis=1).sum() 
+    co2_intensity_oil = 0.26
+    co2_intensity_gas = 0.2
+    for en_code in ['fol']:
+        values_oil_emm = fec_p['pet_pe'] 
+        flows_co2[(en_code + '_ghg', 'oil_ghg', '')] = values_oil_emm * co2_intensity_oil
+    for en_code in ['fgs']:
+        values_gas_emm = fec_p['gaz_pe'] 
+        flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
+    tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
+    tot_emm = flows_co2.loc[:, tot_emm]
+    tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
+    for en_code in ['oil']:
+        values_oil = tot_emm['oil_ghg'] - tot_emm_s['oil_ghg'] 
+        flows_co2[(en_code + '_ghg', 'atm', 'oil')] = values_oil
+    tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
+    tot_emm = flows_co2.loc[:, tot_emm]
+    tot_emm = tot_emm.groupby(level='Target', axis=1).sum()
+    for en_code in ['net']:
+        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] 
+        flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm
     
+    for en_code in ['ind']:
+        values_oilg = tot_emm['oil_ghg']
+        flows_ghg[(en_code + '_ghg', 'pet_pe',  'oil')] = values_oilg
+        
+    # other_imports = other_imports.groupby(level='Source', axis=1).sum() 
     # ## Splitting renewable and non-renewable parts of waste
     # for level in [0,1]:
     #     flows_wst = flows.columns[(flows.columns.get_level_values(level) == 'wst_pe')]
@@ -338,7 +371,8 @@ for country in ALL_COUNTRIES:
     #         flows[flows_ren_wst[i]] = flows[flows_wst[i]] * data['pcenrwst']
     #         flows[flows_fos_wst[i]] = flows[flows_wst[i]] -  flows[flows_ren_wst[i]]
     #     flows = flows.drop(flows_wst, axis=1)
-
+    
+    
     ## Flows cleanup : deleting flows/columns, which are too small
     # flows = flows.drop(flows.columns[flows.max()<1E-4], axis=1)
 
@@ -368,6 +402,7 @@ for country in ALL_COUNTRIES:
     
     # ## Adding country debug results to total debug DataFrame
     # tot_debug = pd.concat([tot_debug, country_debug], axis=1)
+    
     
     # ## Calculating secondary energy export mix
     # for network in SE_NODES:
