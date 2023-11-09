@@ -1289,7 +1289,7 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
 
     # Fill missing values with 0
         merged_emissions.fillna(0,inplace=True)
-        country_filename = ''.join(filename)[:-5] + country + ".xlsx"
+        country_filename = ''.join(filename)[:-12] + country + ".xlsx"
 
         selected_entries_cf = pd.DataFrame()
         with pd.ExcelWriter(country_filename, engine='openpyxl', mode='a',if_sheet_exists='overlay') as writer:  # Use 'a' to append to the existing file
