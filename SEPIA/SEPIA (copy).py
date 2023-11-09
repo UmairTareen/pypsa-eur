@@ -337,6 +337,7 @@ for country in ALL_COUNTRIES:
     tot_emm_s = tot_emm_s.groupby(level='Source', axis=1).sum() 
     co2_intensity_oil = 0.26
     co2_intensity_gas = 0.2
+    co2_intensity_met = 0.2
     demand_side_emm = flows.columns.get_level_values('Target').isin(DS_NODES)
     demand_side_emm = flows.loc[:, demand_side_emm]
     demand_side_emm = demand_side_emm.groupby(level='Target', axis=1).sum() 
@@ -347,32 +348,40 @@ for country in ALL_COUNTRIES:
     for en_code in ['fgs']:
         values_gas_emm = fec_p['gaz_pe'] 
         flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
+    
+    for en_code in ['oil']:
+        value_so = flows[('pet_fe', 'wati', '')].squeeze().rename_axis(None) * co2_intensity_oil
+        value_naph = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
+        value_ker = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
+        value_tra = flows[('pet_fe', 'tra', '')].squeeze().rename_axis(None) * co2_intensity_oil
+        value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) * co2_intensity_oil
+        value_tot =  (value_naph + value_ker) * co2_intensity_oil
+        flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
+        flows_co2[(en_code + '_ghg', 'atm', 'oil')] = value_tot
+        flows_co2[(en_code + '_ghg', 'atm', 'tra')] = value_tra
+        flows_co2[(en_code + '_ghg', 'atm', 'agr')] = value_agr
     tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
     tot_emm = flows_co2.loc[:, tot_emm]
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
-    tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
-    tot_emm = flows_co2.loc[:, tot_emm]
-    tot_emm = tot_emm.groupby(level='Target', axis=1).sum()
-    for en_code in ['net']:
-        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] 
-        flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm
     for en_code in ['met']:
         value_met = tot_emm['met_ghg']
         flows_co2[(en_code + '_ghg', 'atm', '')] = value_met
-    for en_code in ['oil']:
-        value_so = (demand_side_emm['wati'] - fec['met_fe']) * co2_intensity_oil
-        value_naph = flows[('hyd_fe', 'neind', '')].squeeze().rename_axis(None)
-        value_ker = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
-        value_tot = (demand_side_emm['neind'] - value_naph + value_ker) * co2_intensity_oil
-        flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
-        flows_co2[(en_code + '_ghg', 'atm', 'oil')] = value_tot
+        imp_met = flows[('imp', en_code + '_fe', '')].squeeze().rename_axis(None) * co2_intensity_met
+        flows_co2[('imp' + '_ghg', 'atm', 'met')] = imp_met
+    tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
+    tot_emm = flows_co2.loc[:, tot_emm]
+    tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
+    for en_code in ['net']:
+        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] 
+        flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm   
         
-        
-    for en_code in ['ind']:
-        values_oilg = tot_emm['oil_ghg']
-        flows_ghg[(en_code + '_ghg', 'pet_pe',  'oil')] = values_oilg
+    for en_code in ['pet']:
+        flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
+        flows_ghg[('agr_ghg',  en_code + '_pe', '')] = value_agr
+        flows_ghg[('tra_ghg',  en_code + '_pe', '')] = value_tra
     for en_code in ['wati']:
         flows_ghg[(en_code + '_ghg', 'oth_pe',  '')] =value_met
+        flows_ghg[(en_code + '_ghg', 'oth_pe',  'met')] =imp_met
         flows_ghg[(en_code + '_ghg', 'pet_pe',  '')] =value_so
         
     # other_imports = other_imports.groupby(level='Source', axis=1).sum() 
