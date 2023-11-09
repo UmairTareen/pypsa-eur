@@ -373,7 +373,12 @@ for country in ALL_COUNTRIES:
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
     for en_code in ['net']:
         values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] 
-        flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm   
+        flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm  
+    for en_code in ['luf']:
+        if flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None).sum()<0:
+            value_lulucf = flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None)*-1
+            flows_co2[(en_code + '_ghg','atm', '')] = value_lulucf
+            
         
     for en_code in ['pet']:
         flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot

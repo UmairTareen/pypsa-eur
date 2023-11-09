@@ -902,7 +902,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      .filter(like=country)).sum()
      collection.append(
         pd.Series(
-            dict(label="Fischer-Tropsch", source="co2 stored", target="oil", value=value)
+            dict(label="Fischer-Tropsch", source="co2 stored", target="oil", value=value*0.928)
         )
          )
 
