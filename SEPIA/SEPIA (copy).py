@@ -88,11 +88,11 @@ for country in ALL_COUNTRIES:
     ##Import country data
     country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
     #file = pd.ExcelFile(os.path.join(DIRNAME,'Inputs',country_input_file), engine="openpyxl")
-    data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:F")
+    data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
     data.reset_index(drop=True, inplace=False)
     data=data.T
     
-    data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:F")
+    data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
     data_co2.reset_index(drop=True, inplace=False)
     data_co2=data_co2.T
     # data = data.rename_axis('Year')
@@ -329,6 +329,15 @@ for country in ALL_COUNTRIES:
         values_exp = values_exp.clip(lower=0)
         flows[('imp',en_code + '_fe', '')] = values_imp
         flows[(en_code+'_fe','exp','')] = values_exp
+    
+    # dm_avi = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
+    # dm_neind = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
+    # dm_tot = dm_avi + dm_neind.sum()
+    # for en_code in ['pet']:
+    #     pet_exp = other_imports[en_code + '_fe'] - dm_tot
+    #     pet_exp = pet_exp.clip(lower=0)
+    #     flows[(en_code + '_fe','exp', '')] = pet_exp
+        
     ## (Re)balancing all primary and secondary energies with imports/exports
     # for node in PE_NODES + SE_NODES:
     #     sf.balance_node(flows, node)
@@ -355,11 +364,14 @@ for country in ALL_COUNTRIES:
         value_ker = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
         value_tra = flows[('pet_fe', 'tra', '')].squeeze().rename_axis(None) * co2_intensity_oil
         value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) * co2_intensity_oil
-        value_tot =  (value_naph + value_ker) * co2_intensity_oil
+        value_tot =  value_naph * co2_intensity_oil
+        value_avi =  value_ker * co2_intensity_oil
         flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
         flows_co2[(en_code + '_ghg', 'atm', 'oil')] = value_tot
         flows_co2[(en_code + '_ghg', 'atm', 'tra')] = value_tra
         flows_co2[(en_code + '_ghg', 'atm', 'agr')] = value_agr
+        flows_co2[(en_code + '_ghg', 'atm', 'avi')] = value_avi
+    
     tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
     tot_emm = flows_co2.loc[:, tot_emm]
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
@@ -384,6 +396,7 @@ for country in ALL_COUNTRIES:
         flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
         flows_ghg[('agr_ghg',  en_code + '_pe', '')] = value_agr
         flows_ghg[('tra_ghg',  en_code + '_pe', '')] = value_tra
+        flows_ghg[('avi_ghg',  en_code + '_pe', '')] = value_avi
     for en_code in ['wati']:
         flows_ghg[(en_code + '_ghg', 'oth_pe',  '')] =value_met
         flows_ghg[(en_code + '_ghg', 'oth_pe',  'met')] =imp_met
@@ -582,9 +595,9 @@ def generate_results(flows, tot_results, country, se_import_mix):
     # Local coverage ratios per carrier : (cons - imports) / (cons - exports)
     # Adding heat deficit & excess to imports & exports
     # cov_exports = sf.node_consumption(flows, ['exp','exc'], direction='backwards', splitby='target')
-    selected_columns_E = flows_bk.columns.get_level_values('Source').isin(EE_NODES)
+    selected_columns_E = flows_bk.columns.get_level_values('Target').isin(EE_NODES)
     export_carrier = flows_bk.loc[:, selected_columns_E]
-    grouped_export = export_carrier.groupby(level='Target', axis=1).sum()
+    grouped_export = export_carrier.groupby(level='Source', axis=1).sum()
     cov_exports = grouped_export
     selected_columns_I = flows_bk.columns.get_level_values('Source').isin(II_NODES)
     import_carrier = flows_bk.loc[:, selected_columns_I]
@@ -593,8 +606,11 @@ def generate_results(flows, tot_results, country, se_import_mix):
     
     impexp_carriers = list(set(cov_imports.columns.to_list() + cov_exports.columns.to_list())) # Carriers with imports and/or exports only
     # merged_carriers = pd.concat([grouped_export, grouped_import], axis=1).fillna(0)
-
-    ps_cons = sf.node_consumption(flows_bk, impexp_carriers)
+    target_flows_list = ['elc_se', 'cms_pe', 'met_fe', 'hyd_se', 'gaz_pe', 'amm_fe', 'enc_pe', 'vap_se', 'pet_pe']
+    ps_cons = pd.DataFrame()
+    for target_flow in target_flows_list:
+     flows_sum = flows.xs(target_flow, level='Target', axis=1, drop_level=True).sum(axis=1)
+     ps_cons[target_flow] = flows_sum
     cov_ratios = 100 * ps_cons.subtract(cov_imports, fill_value=0).filter(impexp_carriers) / ps_cons.subtract(cov_exports, fill_value=0).filter(impexp_carriers)
     
   # interval_time = sf.calc_time('Aggregated consumptions', interval_time)
@@ -653,17 +669,18 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_pet = ['enc_pe','hyd_se']
     ren_pet = result_pet[ren_pet].sum(axis=1)
     ren_cov_ratios['pet_fe'] = (ren_pet/result_pet_t)*100
+    ren_cov_ratios['pet_fe'] = ren_cov_ratios['pet_fe'].clip(upper=100)
     
-    hyd_columns = ['elc_se','gaz_se']
+    hyd_columns = ['elc_se','gaz_se','imp']
     filtered_columns = [col for col in flows_bk.columns if col[0] in hyd_columns and col[1] == 'hyd_se']
     result_hyd = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
     result_hyd_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
-    ren_hyd = ['elc_se']
+    ren_hyd = ['elc_se','imp']
     ren_hyd = result_hyd[ren_hyd].sum(axis=1)
     ren_cov_ratios['hyd_fe'] = (ren_hyd/result_hyd_t)*100
     
     bm_columns = ['enc_pe']
-    filtered_columns = [col for col in flows_bk.columns if col[0] in bm_columns and col[1] in ['gaz_se', 'lqf_se', 'elc_se','vap_se']]
+    filtered_columns = [col for col in flows_bk.columns if col[0] in bm_columns and col[1] in ['gaz_se', 'lqf_se', 'elc_se','vap_se','enc_fe']]
     result_bm = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
     result_bm_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
     ren_bm = ['enc_pe']
@@ -686,19 +703,19 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_am = result_am[ren_am].sum(axis=1)
     ren_cov_ratios['pac_fe'] = (ren_am/result_am_t)*100
     
-    nh_columns = ['elc_se','hyd_se']
+    nh_columns = ['elc_se','hyd_se','imp']
     filtered_columns = [col for col in flows_bk.columns if col[0] in nh_columns and col[1] in ['amm_fe']]
     result_nh = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
     result_nh_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
-    ren_nh = ['elc_se','hyd_se']
+    ren_nh = ['elc_se','hyd_se','imp']
     ren_nh = result_nh[ren_nh].sum(axis=1)
     ren_cov_ratios['amm_fe'] = (ren_nh/result_nh_t)*100
     
-    me_columns = ['elc_se','hyd_se']
+    me_columns = ['elc_se','hyd_se','imp']
     filtered_columns = [col for col in flows_bk.columns if col[0] in me_columns and col[1] in ['met_fe']]
     result_me = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
     result_me_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
-    ren_me = ['elc_se','hyd_se']
+    ren_me = ['elc_se','hyd_se','imp']
     ren_me = result_me[ren_me].sum(axis=1)
     ren_cov_ratios['met_fe'] = (ren_me/result_me_t)*100
     
@@ -851,10 +868,10 @@ def generate_results(flows, tot_results, country, se_import_mix):
     # GHG
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += sf.combine_charts([('by sector',ghg_sector),('by source',ghg_source),('cumulated since 2030 by sector',sf.cumul(ghg_sector,2030)),('cumulated since 2030 by source',sf.cumul(ghg_source,2030))], MAIN_PARAMS, NODES, 'All GHG emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
+    html_items['MAIN'] += sf.combine_charts([('by sector',ghg_sector),('by source',ghg_source),('cumulated since 2030 by sector',sf.cumul(ghg_sector,2020)),('cumulated since 2020 by source',sf.cumul(ghg_source,2020))], MAIN_PARAMS, NODES, 'All GHG emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
     if show_total:
         html_items['MAIN'] += sf.combine_charts([('total',tot_results[('ghg_source','percap')]),('energy only',tot_results[('ghg_en','percap')]),('non-energy only',tot_results[('ghg_nes','percap')])], MAIN_PARAMS, country_list, 'GHG emissions per capita -', 'map', results_xls_writer, 'tCO<sub>2</sub>eq/cap/year', reverse=True)
-    html_items['MAIN'] += sf.combine_charts([('cumulated since 2030',sf.cumul(ghg_source,2030)),('yearly emissions',ghg_source)], MAIN_PARAMS, NODES, 'CO2 only emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>')
+    html_items['MAIN'] += sf.combine_charts([('cumulated since 2020',sf.cumul(ghg_source,2020)),('yearly emissions',ghg_source)], MAIN_PARAMS, NODES, 'CO2 only emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>')
 
     # Sankeys
     id_section += 1
@@ -888,8 +905,9 @@ def generate_results(flows, tot_results, country, se_import_mix):
         combinations += [(NODES.loc[energy,'Label'], sf.node_consumption(flows_bk, energy, direction='forward', splitby='target'))]
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
     combinations = []
+    grouped_flows = flows.T.groupby(['Source', 'Target', 'Type']).sum().T
     for energy in SE_NODES:
-        df = sf.node_consumption(flows, energy, direction='backwards', splitby='target')
+        df = sf.node_consumption(grouped_flows, energy, direction='backward', splitby='source')
         combinations += [(NODES.loc[energy,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'sec_mix.'+energy, False)
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
@@ -903,7 +921,6 @@ def generate_results(flows, tot_results, country, se_import_mix):
     #     combinations += [(NODES.loc[energy,'Label']+ " - separated losses", df)]
     # html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Internal and final uses -', 'areachart', results_xls_writer)
     # html_items['MAIN'] += '<p>The above chart illustrates final and internal (non final) uses of a given secondary energy carrier. Losses are either included in each internal use, or separated (in both case, the total is the same):</p><ul><li><b>"Included losses"</b>: transformation & network losses are attributed to each internal use & final demand sectors</li><li><b>"Separated losses"</b>: losses are grouped as a separate category</li></ul>'
-
     # Energy consumption
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
