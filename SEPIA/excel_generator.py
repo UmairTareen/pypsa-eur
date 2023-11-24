@@ -342,7 +342,9 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'gas for industry CC_2','SMR_2','SMR CC_2','methanolisation_3','urban central heat','oil','oil_2','biomass to liquid','biomass to liquid_2',
                      'residential rural water tanks charger_2','residential rural water tanks discharger_2','battery charger','battery charger_2',
                      'battery discharger','battery discharger_2','H2 turbine','H2 turbine_2','Fischer-Tropsch','Fischer-Tropsch_2','Fischer-Tropsch_3',
-                     'urban central gas CHP','urban central gas CHP_2','urban central gas CHP_3','OCGT','OCGT_2','biogas to gas'] # Add moe entries if needed
+                     'urban central gas CHP','urban central gas CHP_2','urban central gas CHP_3','OCGT','OCGT_2','biogas to gas','BioSNG','Sabatier',
+                     'urban central solid biomass CHP CC','urban central solid biomass CHP CC_2','urban central solid biomass CHP CC_3',
+                     'DAC','DAC_2','DAC_3'] # Add moe entries if needed
 
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
@@ -518,6 +520,14 @@ entry_label_mapping = {
     'OCGT': {'label': 'Gas-fired power generation', 'source': 'TWh', 'target': 'proelcgazoc'},
     'OCGT_2': {'label': 'Gas-fired power generation losses', 'source': 'TWh', 'target': 'proelcgazoclo'},
     'biogas to gas': {'label': 'biogas to gas', 'source': 'TWh', 'target': 'prodombgr'},
+    'BioSNG': {'label': 'BioSNG', 'source': 'TWh', 'target': 'probiosng'},
+    'Sabatier': {'label': 'Sabatier', 'source': 'TWh', 'target': 'presaba'},
+    'urban central solid biomass CHP CC': {'label': 'Power output from solid biomass CHP plants', 'source': 'TWh', 'target': 'prbelccbmcc'},
+    'urban central solid biomass CHP CC_2': {'label': 'Heat output from solid biomass CHP plants', 'source': 'TWh', 'target': 'prbelccbmcch'},
+    'urban central solid biomass CHP CC_3': {'label': 'losses solid biomass CHP plants', 'source': 'TWh', 'target': 'prbelccbmccl'},
+    'DAC': {'label': 'DAC', 'source': 'TWh', 'target': 'predacelc'},
+    'DAC_2': {'label': 'DAC', 'source': 'TWh', 'target': 'predache'},
+    'DAC_3': {'label': 'DAC', 'source': 'TWh', 'target': 'predachee'},
 }
 
 
@@ -591,10 +601,22 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      collection.append(
         pd.Series(dict(label="OCGT", source="gas", target="co2 atmosphere", value=value))
      )
+     
+     value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="OCGT").filter(like=country)
+     ).sum() * 0.2
+     collection.append(
+         pd.Series(dict(label="OCGT", source="gas", target="co2 atmosphere", value=value))
+     )
 
      value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="CCGT").filter(like=country)).sum()
      collection.append(
         pd.Series(dict(label="CCGT", source="gas", target="co2 atmosphere", value=value))
+     )
+     
+     value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="CCGT").filter(like=country)
+     ).sum() * 0.2
+     collection.append(
+         pd.Series(dict(label="CCGT", source="gas", target="co2 atmosphere", value=value))
      )
      
 
@@ -602,10 +624,22 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      collection.append(
         pd.Series(dict(label="lignite", source="coal", target="co2 atmosphere", value=value))
      )
+     
+     value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="lignite").filter(like=country)
+     ).sum() * 0.41
+     collection.append(
+         pd.Series(dict(label="lignite", source="coal", target="co2 atmosphere", value=value))
+     )
 
      value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="coal").filter(like=country)).sum()
      collection.append(
         pd.Series(dict(label="coal", source="coal", target="co2 atmosphere", value=value))
+     )
+     
+     value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="coal").filter(like=country)
+     ).sum() * 0.34
+     collection.append(
+         pd.Series(dict(label="coal", source="coal", target="co2 atmosphere", value=value))
      )
 
      # Sabatier
@@ -920,7 +954,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      .filter(like=country)).sum()
      collection.append(
         pd.Series(
-            dict(label="Fischer-Tropsch", source="co2 stored", target="oil", value=value*1.077)
+            dict(label="Fischer-Tropsch", source="co2 stored", target="oil", value=value)
         )
          )
 
@@ -943,12 +977,12 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
     # urban central gas CHP CC
      if "p4" in n.links_t:
       tech = "urban central gas CHP CC"
-      value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
+      value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech).filter(like=country)).sum()
       collection.append(
         pd.Series(dict(label=tech, source="gas", target="co2 atmosphere", value=value))
       )
 
-      value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
+      value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech).filter(like=country)).sum()
       collection.append(
         pd.Series(dict(label=tech, source="gas", target="co2 stored", value=value))
       )
@@ -973,14 +1007,14 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
       # urban solid biomass CHP CC
       tech = "urban central solid biomass CHP CC"
 
-      value = (n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech)).sum()
+      value = (n.snapshot_weightings.generators @ n.links_t.p3.filter(like=tech).filter(like=country)).sum()
       collection.append(
         pd.Series(
             dict(label=tech, source="co2 atmosphere", target="BECCS", value=value)
         )
        )
 
-      value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech)).sum()
+      value = -(n.snapshot_weightings.generators @ n.links_t.p4.filter(like=tech).filter(like=country)).sum()
       collection.append(
         pd.Series(
             dict(label=tech, source="BECCS", target="co2 stored", value=value)
@@ -1128,22 +1162,21 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      cf = cf.loc[(cf.value >= 0.1)]
      # LULUCF
      if planning_horizon != 2020:
-      clever_AFOLUB = (
-         pd.read_csv("../data/clever_AFOLUB_"+str(planning_horizon)+".csv", index_col=0)).T
-      V = clever_AFOLUB.loc['Total CO2 emissions from the LULUCF sector'].filter(like=country).sum()
+      LULUCF = (
+         pd.read_csv("../resources/co2_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0)).T
+      V = LULUCF.loc['LULUCF'].filter(like=country).sum()
       V=-V
       row = pd.DataFrame(
       [
         dict(
             label="LULUCF",
-            source="co2 stored",
+            source="co2 atmosphere",
             target="LULUCF",
             value=V,
         )
        ]
        )
       cf = pd.concat([cf, row], axis=0)
-
      suffix_counter = {}
 
      def generate_new_label(label):
@@ -1176,7 +1209,9 @@ entries_to_select_c = ['process emissions','process emissions CC','process emiss
                       'gas for industry CC_3','gas for industry CC_2','solid biomass for industry CC','solid biomass for industry CC_2',
                       'urban central solid biomass CHP','urban central solid biomass CHP_2','coal','solid biomass biomass to liquid',
                        'solid biomass biomass to liquid_2','biogas to gas','biogas to gas_2','urban central gas CHP','Fischer-Tropsch',
-                       'OCGT','SMR'
+                       'OCGT','SMR','urban central solid biomass CHP CC','urban central solid biomass CHP CC_2','DAC','co2 sequestration',
+                       'solid biomass solid biomass to gas','solid biomass solid biomass to gas CC','solid biomass solid biomass to gas CC_2',
+                       'solid biomass solid biomass to gas CC_3','solid biomass solid biomass to gas CC_4','Sabatier'
                        ] # Add moe entries if needed
 
 entry_label_mapping_c = {
@@ -1233,6 +1268,16 @@ entry_label_mapping_c = {
     'urban central gas CHP': {'label': 'urban central gas CHP', 'source': 'MtCO2', 'target': 'emmgaschp'},
     'Fischer-Tropsch': {'label': 'Fischer-Tropsch', 'source': 'MtCO2', 'target': 'emmfischer'},
     'SMR': {'label': 'SMR emissions', 'source': 'MtCO2', 'target': 'emmsmrsm'},
+    'urban central solid biomass CHP CC': {'label': 'urban central solid biomass CHP', 'source': 'MtCO2', 'target': 'emmbmchpcc'},
+    'urban central solid biomass CHP CC_2': {'label': 'urban central solid biomass CHP', 'source': 'MtCO2', 'target': 'emmbmchpatmcc'},
+    'DAC': {'label': 'DAC', 'source': 'MtCO2', 'target': 'emmdac'},
+    'co2 sequestration': {'label': 'co2 sequestration', 'source': 'MtCO2', 'target': 'emmseq'},
+    'solid biomass solid biomass to gas': {'label': 'solid biomass solid biomass to gas', 'source': 'MtCO2', 'target': 'emmbmsng'},
+    'solid biomass solid biomass to gas CC': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngcc'},
+    'solid biomass solid biomass to gas CC_2': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngccc'},
+    'solid biomass solid biomass to gas CC_3': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngccca'},
+    'solid biomass solid biomass to gas CC_4': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngcccb'},
+    'Sabatier': {'label': 'Sabatier"', 'source': 'MtCO2', 'target': 'emmsaba'},
 }
 def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_country.xlsx'):
     '''
@@ -1343,10 +1388,9 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
         # Convert the result back to a list
         different_elements_list_c = list(different_elements_c)
         print("Different elements between the list and the Emissions dataFrame:", different_elements_list_c)
-
-
-
-
+        
+    
+        
 
 if __name__ == "__main__":
     if "snakemake" not in globals():

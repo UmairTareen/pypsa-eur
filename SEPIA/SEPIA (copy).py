@@ -82,7 +82,7 @@ tot_co2 = {}
 print("\nEnergy system (network graph) creation\n")
 
 for country in ALL_COUNTRIES:
-    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs{country}.xlsx")
+    datafile = os.path.join(DIRNAME, f"../resultssuff/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
@@ -95,6 +95,11 @@ for country in ALL_COUNTRIES:
     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
     data_co2.reset_index(drop=True, inplace=False)
     data_co2=data_co2.T
+    
+    # data_costs.columns = ["2020", "2030", "2040", "2050"]
+    # data_costs=data_costs.T
+    # data_costs.reset_index(drop=True, inplace=False)
+    
     # data = data.rename_axis('Year')
     # country_params = pd.read_excel(file, "Parameters", index_col=0, usecols="G,H")
 
@@ -104,7 +109,8 @@ for country in ALL_COUNTRIES:
 #     for sheet in data:
 #         data[sheet] = sf.db_cleanup(data[sheet])
     # data = pd.concat(data.values(), axis=1) # input dataframe
-    data = data.loc[:,~data.columns.duplicated()] # Remove duplicate indicators
+    data = data.loc[:,~data.columns.duplicated()] 
+    data_co2 = data_co2.loc[:,~data_co2.columns.duplicated()]# Remove duplicate indicators
 #     country_params = sf.db_cleanup(country_params, False)['Value'].to_dict()
 #     r = re.compile(r'mrtrch\d+')
     # if MAIN_PARAMS['HEAT_MERIT_ORDER']:
@@ -187,6 +193,8 @@ for country in ALL_COUNTRIES:
     fischer_tropsch_p = flows['hyd_se','pet_fe']
     biomass_liquid_p = flows['blq_pe','pet_fe']
     biogas_p = flows['bgl_pe','gaz_se']
+    biosng_p = flows['enc_pe','gaz_se']
+    meth_p = flows['hyd_se','gaz_se']
     value = fischer_tropsch_p + biomass_liquid_p.sum()
     for en_code in ['pet']:
         flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']-value
@@ -196,7 +204,9 @@ for country in ALL_COUNTRIES:
     grouped_fec_se = fec_carrier_se.groupby(level='Source', axis=1).sum()
     fec_se = grouped_fec_se
     for en_code in ['gaz']:
-        flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p
+        flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p-biosng_p-meth_p
+        
+    
         
     # ## Direct transfer of primary energies to their corresponding networks
     # for (en_code,network) in [('gaz','gaz'),('blq','lqf')]:
@@ -330,6 +340,9 @@ for country in ALL_COUNTRIES:
         flows[('imp',en_code + '_fe', '')] = values_imp
         flows[(en_code+'_fe','exp','')] = values_exp
     
+            
+        
+    
     # dm_avi = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
     # dm_neind = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
     # dm_tot = dm_avi + dm_neind.sum()
@@ -380,17 +393,22 @@ for country in ALL_COUNTRIES:
         flows_co2[(en_code + '_ghg', 'atm', '')] = value_met
         imp_met = flows[('imp', en_code + '_fe', '')].squeeze().rename_axis(None) * co2_intensity_met
         flows_co2[('imp' + '_ghg', 'atm', 'met')] = imp_met
-    tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
-    tot_emm = flows_co2.loc[:, tot_emm]
-    tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
-    for en_code in ['net']:
-        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] 
-        flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm  
+      
     for en_code in ['luf']:
         if flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None).sum()<0:
             value_lulucf = flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None)*-1
             flows_co2[(en_code + '_ghg','atm', '')] = value_lulucf
-            
+    
+    tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
+    tot_emm = flows_co2.loc[:, tot_emm]
+    tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
+    for en_code in ['net']:
+        bm_cap = flows_co2[('atm', 'bec' + '_ghg', '')].squeeze().rename_axis(None)
+        dac_cap = flows_co2[('atm', 'stm', '')].squeeze().rename_axis(None)
+        bm_cap = bm_cap.sum(axis=1)
+        lulucf = flows_co2[('luf' + '_ghg','atm', '')].squeeze().rename_axis(None)
+        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] - bm_cap - lulucf - dac_cap
+        flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm
         
     for en_code in ['pet']:
         flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
@@ -401,7 +419,49 @@ for country in ALL_COUNTRIES:
         flows_ghg[(en_code + '_ghg', 'oth_pe',  '')] =value_met
         flows_ghg[(en_code + '_ghg', 'oth_pe',  'met')] =imp_met
         flows_ghg[(en_code + '_ghg', 'pet_pe',  '')] =value_so
+    
+    for en_code in ['pet']:
+        if flows[('hyd_se',en_code + '_fe',  '')].squeeze().rename_axis(None).sum()>0:
+            pet_pro = flows[('hyd_se', en_code + '_fe', '')].squeeze().rename_axis(None)
+            pet_bm = flows[('blq_pe', en_code + '_fe', '')].squeeze().rename_axis(None)
+            value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) 
+            tot_pet = pet_pro + pet_bm 
+            exp_pet = tot_pet - value_ker - value_naph -  value_agr 
+            flows[(en_code + '_fe', 'exp', '')] = exp_pet
+ 
+    for en_code in ['gaz']:
+        if (
+    (flows[('hyd_se', en_code + '_se',  '')].squeeze().rename_axis(None).sum() > 0) or
+    (flows[('bgl_pe', en_code + '_se',  '')].squeeze().rename_axis(None).sum() > 0)):
+            tot_pro = biogas_p + biosng_p + meth_p
+            gas_dem = flows[(en_code + '_se', en_code + '_fe','')].squeeze().rename_axis(None)
+            gas_los = flows[(en_code + '_se', 'per','')].squeeze().rename_axis(None)
+            if isinstance(gas_los, pd.DataFrame):
+             gas_los = gas_los.sum(axis=1)
+            gas_elc = flows[(en_code + '_se', 'elc_se', '')].squeeze().rename_axis(None)
+            if isinstance(gas_elc, pd.DataFrame):
+             gas_elc = gas_elc.sum(axis=1)
+            gas_vap = flows[(en_code + '_se', 'vap_se', '')].squeeze().rename_axis(None)
+            if isinstance(gas_vap, pd.DataFrame):
+             gas_vap = gas_vap.sum(axis=1)
+            tot_dem = gas_dem + gas_los + gas_elc + gas_vap
+            exp_gas = tot_pro - tot_dem
+            flows[(en_code + '_se', 'exp', '')] = exp_gas
+    for en_code in ['exg']:
+        exp_emm = flows[('gaz' + '_se', 'exp', '')].squeeze().rename_axis(None) * co2_intensity_gas
+        flows_co2[('gas_ghg',en_code + '_ghg', '')] = exp_emm
+    for en_code in ['ext']:
+        exp_emm_p = flows[('pet' + '_fe', 'exp', '')].squeeze().rename_axis(None) * co2_intensity_oil
+        flows_co2[('oil_ghg',en_code + '_ghg', '')] = exp_emm_p
+    
+    
+    atm_sur = tot_emm_s.loc[:,'atm']
+    atm_tar = tot_emm.loc[:,'atm']
+    other_count = atm_sur - atm_tar
+    for en_code in ['oth']:
+        flows_co2[(en_code + '_ghg', 'atm','')] = other_count
         
+    
     # other_imports = other_imports.groupby(level='Source', axis=1).sum() 
     # ## Splitting renewable and non-renewable parts of waste
     # for level in [0,1]:
@@ -653,14 +713,16 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_elc = result_elc[ren_elc].sum(axis=1)
     ren_cov_ratios = pd.DataFrame()
     ren_cov_ratios['elc_fe'] = (ren_elc/result_elc_t)*100
+    ren_cov_ratios['elc_fe'] = ren_cov_ratios['elc_fe'].clip(upper=100)
     
-    gas_columns = ['bgl_pe','enc_pe', 'gaz_pe']
+    gas_columns = ['bgl_pe','enc_pe', 'gaz_pe','hyd_se']
     filtered_columns = [col for col in flows_bk.columns if col[0] in gas_columns and col[1] == 'gaz_se']
     result_gas = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
     result_gas_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
-    ren_gas = ['bgl_pe','enc_pe']
+    ren_gas = ['bgl_pe','enc_pe', 'hyd_se']
     ren_gas = result_gas[ren_gas].sum(axis=1)
     ren_cov_ratios['gaz_fe'] = (ren_gas/result_gas_t)*100
+    ren_cov_ratios['gaz_fe'] = ren_cov_ratios['gaz_fe'].clip(upper=100)
     
     pet_columns = ['pet_pe','enc_pe','hyd_se']
     filtered_columns = [col for col in flows_bk.columns if col[0] in pet_columns and col[1] in ['pet_fe', 'lqf_se']]
@@ -678,6 +740,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_hyd = ['elc_se','imp']
     ren_hyd = result_hyd[ren_hyd].sum(axis=1)
     ren_cov_ratios['hyd_fe'] = (ren_hyd/result_hyd_t)*100
+    ren_cov_ratios['hyd_fe'] = ren_cov_ratios['hyd_fe'].clip(upper=100)
     
     bm_columns = ['enc_pe']
     filtered_columns = [col for col in flows_bk.columns if col[0] in bm_columns and col[1] in ['gaz_se', 'lqf_se', 'elc_se','vap_se','enc_fe']]
@@ -686,6 +749,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_bm = ['enc_pe']
     ren_bm = result_bm[ren_bm].sum(axis=1)
     ren_cov_ratios['enc_fe'] = (ren_bm/result_bm_t)*100
+    ren_cov_ratios['enc_fe'] = ren_cov_ratios['enc_fe'].clip(upper=100)
     
     dh_columns = ['enc_pe','cms_pe','pet_pe','gaz_se','bgl_pe','elc_se','pac_pe','tes_se']
     filtered_columns = [col for col in flows_bk.columns if col[0] in dh_columns and col[1] in ['vap_se']]
@@ -694,6 +758,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_dh = ['enc_pe','bgl_pe','elc_se','pac_pe']
     ren_dh = result_dh[ren_dh].sum(axis=1)
     ren_cov_ratios['vap_fe'] = (ren_dh/result_dh_t)*100
+    ren_cov_ratios['vap_fe'] = ren_cov_ratios['vap_fe'].clip(upper=100)
     
     am_columns = ['pac_pe']
     filtered_columns = [col for col in flows_bk.columns if col[0] in am_columns and col[1] in ['vap_se','pac_fe']]
@@ -702,6 +767,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_am = ['pac_pe']
     ren_am = result_am[ren_am].sum(axis=1)
     ren_cov_ratios['pac_fe'] = (ren_am/result_am_t)*100
+    ren_cov_ratios['pac_fe'] = ren_cov_ratios['pac_fe'].clip(upper=100)
     
     nh_columns = ['elc_se','hyd_se','imp']
     filtered_columns = [col for col in flows_bk.columns if col[0] in nh_columns and col[1] in ['amm_fe']]
@@ -710,6 +776,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_nh = ['elc_se','hyd_se','imp']
     ren_nh = result_nh[ren_nh].sum(axis=1)
     ren_cov_ratios['amm_fe'] = (ren_nh/result_nh_t)*100
+    ren_cov_ratios['amm_fe'] = ren_cov_ratios['amm_fe'].clip(upper=100)
     
     me_columns = ['elc_se','hyd_se','imp']
     filtered_columns = [col for col in flows_bk.columns if col[0] in me_columns and col[1] in ['met_fe']]
@@ -718,9 +785,10 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ren_me = ['elc_se','hyd_se','imp']
     ren_me = result_me[ren_me].sum(axis=1)
     ren_cov_ratios['met_fe'] = (ren_me/result_me_t)*100
+    ren_cov_ratios['met_fe'] = ren_cov_ratios['met_fe'].clip(upper=100)
     
     gfec_breakdown_pct = sf.share_percent(gfec_breakdown,100)
-    ren_cov_ratios['total'] = gfec_breakdown_pct['ren']
+    ren_cov_ratios['total'] = gfec_breakdown_pct['ren'].clip(upper=100)
     # # Share of renewable following EU methodology
     res_share_eu=pd.DataFrame()
     # # No change for overal RES share
@@ -834,9 +902,15 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ghg_sector = ghg_sector.groupby(level='Source', axis=1).sum()
     ghg_sector['lufnes_ghg'] = -ghg_sector['lufnes_ghg']
     ghg_sector['blg_ghg'] = -ghg_sector['blg_ghg']
+    ghg_sector['seq'] = -ghg_sector['seq']
+    ghg_sector['dac_ghg'] = -ghg_sector['dac_ghg']
+    ghg_sector['bec_ghg'] = -ghg_sector['bec_ghg']
     ghg_source = tot_ghg[country].groupby(level='Target', axis=1).sum()
     ghg_source['lufnes_ghg'] = -ghg_source['lufnes_ghg']
     ghg_source['bgl_pe'] = -ghg_source['bgl_pe']
+    ghg_source['seq'] = -ghg_source['seq']
+    ghg_source['dac_ghg'] = -ghg_source['dac_ghg']
+    ghg_source['bec_ghg'] = -ghg_source['bec_ghg']
     
     # tot_results_flows = pd.concat(tot_flows, axis=0, keys=tot_flows.keys())
     # tot_results_flows = tot_results.groupby(level=1).sum()
@@ -930,6 +1004,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
         combinations += [(NODES.loc[sector,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'fec.'+sector)
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
+    
     # if show_total:
     #     html_items['MAIN'] += sf.combine_charts([('Final energy consumption',tot_results[('fec','reduc')])], MAIN_PARAMS, country_list, 'Reduction vs. 2015 -', 'map', results_xls_writer, '%')
     # html_items['MAIN'] += sf.combine_charts([('consumption',pec),('consumption by type',pec_breakdown)], MAIN_PARAMS, NODES, 'Primary energy', 'areachart', results_xls_writer)
