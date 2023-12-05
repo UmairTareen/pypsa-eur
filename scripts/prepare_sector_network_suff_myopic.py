@@ -528,6 +528,7 @@ def patch_electricity_network(n):
 def add_co2_tracking(n, options):
     # minus sign because opposite to how fossil fuels used:
     # CH4 burning puts CH4 down, atmosphere up
+    # countries = spatial.co2.atm
     n.add("Carrier", "co2", co2_emissions=-1.0)
 
     # this tracks CO2 in the atmosphere
@@ -544,7 +545,7 @@ def add_co2_tracking(n, options):
     )
     fn = snakemake.input.co2_totals_name
     LULUCF_totals = pd.read_csv(fn, index_col=0)
-    lt = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
+    lt = ['BE', 'DE', 'FR', 'GB',  'NL']
     column_to_lock = ['LULUCF']
     sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
     sum_results = sum_results * -1e6
@@ -558,6 +559,47 @@ def add_co2_tracking(n, options):
         bus="co2 atmosphere",
     )
     n.add("Carrier", "LULUCF")
+    # n.madd(
+    #     "Bus",
+    #     spatial.co2.atm,
+    #     location=spatial.co2.locations,
+    #     carrier="co2",
+    #     unit="t_co2")
+    # #n.add("Carrier", "LULUCF")
+    # fn = snakemake.input.co2_totals_name
+    # LULUCF_totals = pd.read_csv(fn, index_col=0)
+    # new_row_names = {
+    #     'BE': 'BE1 0 atm',
+    #     'DE': 'DE1 0 atm',
+    #     'FR': 'FR1 0 atm',
+    #     'GB': 'GB0 0 atm',
+    #     'NL': 'NL1 0 atm'}
+    # LULUCF_totals.rename(index=new_row_names, inplace=True)
+    # new_row_index = 'GB2 0 atm'
+    # LULUCF_totals.loc[new_row_index] = 0
+    # LULUCF_totals.loc['NL1 0 atm', ['LULUCF']] = 0
+    # sum_results = LULUCF_totals.loc[countries, 'LULUCF']
+    # sum_results = sum_results.loc[spatial.co2.atm] * -1e6
+        
+    # n.madd(
+    #     "Store",
+    #     spatial.co2.atm,
+    #     e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
+    #     e_nom_max=sum_results,
+    #     carrier="co2 stored",
+    #     capital_cost=0,
+    #     bus=spatial.co2.atm,
+    #      )
+    
+    # n.madd(
+    #     "Link",
+    #     spatial.co2.atm,
+    #     bus0=spatial.co2.atm,
+    #     bus1="co2 atmosphere",
+    #     carrier="co2",
+    #     efficiency=1.0,
+    #     p_nom_extendable=True,
+    # )
 
     # this tracks CO2 stored, e.g. underground
     n.madd(
@@ -590,7 +632,7 @@ def add_co2_tracking(n, options):
     n.madd(
         "Store",
         spatial.co2.nodes,
-        e_nom_extendable=True,
+        e_nom_extendable=False,
         e_nom_max=e_nom_max,
         capital_cost=options["co2_sequestration_cost"],
         carrier="co2 stored",
@@ -2722,7 +2764,7 @@ def add_industry(n, costs):
                 p_nom_extendable=True,
                 bus0=spatial.oil.nodes,
                 bus1=nodes_heat[name] + f" {name}  heat",
-                bus2="co2 atmosphere",
+                bus2=spatial.co2.atm,
                 carrier=f"{name} oil boiler",
                 efficiency=costs.at["decentral oil boiler", "efficiency"],
                 efficiency2=costs.at["oil", "CO2 intensity"],
@@ -2821,10 +2863,7 @@ def add_industry(n, costs):
         ]
         fn = snakemake.input.pop_weighted_energy_totals
         energy_totals = pd.read_csv(fn, index_col=0)
-        lt = ['BE1 0','DE1 0','FR1 0','GB0 0','NL1 0','AT1 0','BG1 0','CH1 0','CZ1 0','DK1 0','EE6 0','ES1 0','FI2 0','GR1 0','HR1 0','HU1 0','IE5 0','IT1 0','LT6 0','LU1 0','LV6 0','NO2 0','PL1 0','PT1 0','RO1 0','SE2 0','SI1 0','SK1 0']
-        column_to_lock = ['electricity residential', 'electricity services', 'total rail', 'electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']
-        energy_totals.loc[lt, column_to_lock] = energy_totals.loc[lt, column_to_lock]
-        sum_result = (energy_totals.loc[lt, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[lt, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']].sum(axis=1))
+        sum_result = (energy_totals.loc[:, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[:, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']].sum(axis=1))
         
         if n.loads_t.p_set[loads_i].empty:
             continue

@@ -135,8 +135,7 @@ def add_co2_sequestration_limit(n, limit=200):
         type="primary_energy",
         carrier_attribute="co2_absorptions",
     )
-
-
+    
 def prepare_network(
     n,
     solve_opts=None,
@@ -200,6 +199,7 @@ def prepare_network(
     if n.stores.carrier.eq("co2 stored").any():
         limit = co2_sequestration_potential
         add_co2_sequestration_limit(n, limit=limit)
+    
 
     return n
 
@@ -410,18 +410,18 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
     # are modelled as stores with initial capacity to model a finite
     # yearly supply; the difference between initial and final capacity
     # is the total local production.
-    local_bio_i = n.stores.loc[
-        n.stores.carrier.isin(["biogas", "solid biomass"])
-        & (n.stores.bus.map(location) != "EU")
-    ].index
-    # Building the following linear expression only works if it's non-empty
-    if len(local_bio_i) > 0:
-        local_bio_first_e = n.model["Store-e"].loc[n.snapshots[0], local_bio_i]
-        local_bio_last_e = n.model["Store-e"].loc[n.snapshots[-1], local_bio_i]
-        local_bio_p = local_bio_first_e - local_bio_last_e
-        local_bio = local_bio_p.groupby(group(n.stores.loc[local_bio_i])).sum()
-    else:
-        local_bio = None
+    # local_bio_i = n.stores.loc[
+    #     n.stores.carrier.isin(["biogas", "solid biomass"])
+    #     & (n.stores.bus.map(location) != "EU")
+    # ].index
+    # #Building the following linear expression only works if it's non-empty
+    # if len(local_bio_i) > 0:
+    #     local_bio_first_e = n.model["Store-e"].loc[n.snapshots[0], local_bio_i]
+    #     local_bio_last_e = n.model["Store-e"].loc[n.snapshots[-1], local_bio_i]
+    #     local_bio_p = local_bio_first_e - local_bio_last_e
+    #     local_bio = local_bio_p.groupby(group(n.stores.loc[local_bio_i])).sum()
+    # else:
+    #     local_bio = None
 
     # Conventional generation in the sector-coupled model. These are
     # modelled as links in order to take the CO2 cycle into account.
@@ -454,40 +454,40 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
     else:
         local_conv_gen = None
 
-    # TODO: should we (in prepare_sector_network.py) model gas
-    # pipeline imports from outside the EU and LNG imports separately
-    # from gas extraction / production? Then we could model gas
-    # extraction as locally produced energy.
+    #TODO: should we (in prepare_sector_network.py) model gas
+    #pipeline imports from outside the EU and LNG imports separately
+    #from gas extraction / production? Then we could model gas
+    #extraction as locally produced energy.
 
-    # Ambient heat for heat pumps
-    heat_pump_i = n.links.filter(like="heat pump", axis="rows").index
-    if len(heat_pump_i) > 0:
-        # To get the ambient heat extracted, we subtract 1 from the
-        # efficiency of the heat pump (where "efficiency" is really COP
-        # for heat pumps).
-        from_ambient = n.links_t["efficiency"].loc[:, heat_pump_i] - 1
-        local_heat_from_ambient_p = n.model["Link-p"].loc[:, heat_pump_i]
-        local_heat_from_ambient = (
-            (local_heat_from_ambient_p * from_ambient)
-            .groupby(group(n.links.loc[heat_pump_i], b="bus1"))
-            .sum()
-            .rename({"bus1": "bus"})
-        )
-        local_heat_from_ambient = (
-            local_heat_from_ambient * n.snapshot_weightings.generators
-        ).sum("snapshot")
-    else:
-        local_heat_from_ambient = None
+    #Ambient heat for heat pumps
+    # heat_pump_i = n.links.filter(like="heat pump", axis="rows").index
+    # if len(heat_pump_i) > 0:
+    #     # To get the ambient heat extracted, we subtract 1 from the
+    #     # efficiency of the heat pump (where "efficiency" is really COP
+    #     # for heat pumps).
+    #     from_ambient = n.links_t["efficiency"].loc[:, heat_pump_i] - 1
+    #     local_heat_from_ambient_p = n.model["Link-p"].loc[:, heat_pump_i]
+    #     local_heat_from_ambient = (
+    #         (local_heat_from_ambient_p * from_ambient)
+    #         .groupby(group(n.links.loc[heat_pump_i], b="bus1"))
+    #         .sum()
+    #         .rename({"bus1": "bus"})
+    #     )
+    #     local_heat_from_ambient = (
+    #         local_heat_from_ambient * n.snapshot_weightings.generators
+    #     ).sum("snapshot")
+    # else:
+    #     local_heat_from_ambient = None
 
-    # Total locally produced energy
+    #Total locally produced energy
     local_energy = sum(
         e
         for e in [
             local_gen,
             local_hydro,
-            local_bio,
+            # local_bio,
             local_conv_gen,
-            local_heat_from_ambient,
+            # local_heat_from_ambient,
         ]
         if e is not None
     )
@@ -525,44 +525,44 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
     # counted as "local demand".
     link_import_carriers = [
         # Pipeline imports / exports
-        "H2 pipeline",
-        "H2 pipeline retrofitted",
-        "gas pipeline",
-        "gas pipeline new",
-        # Solid biomass
-        "solid biomass transport",
+        # "H2 pipeline",
+        # "H2 pipeline retrofitted",
+        # "gas pipeline",
+        # "gas pipeline new",
+        # # Solid biomass
+        # "solid biomass transport",
         # DC electricity
         "DC",
-        # Oil (imports / exports between spatial nodes and "EU" node)
-        "Fischer-Tropsch",
-        "biomass to liquid",
-        "residential rural oil boiler",
-        "services rural oil boiler",
-        "residential urban decentral oil boiler",
-        "services urban decentral oil boiler",
-        "oil",  # Oil powerplant (from `prepare_sector_network.add_generation`)
-        # Gas (imports / exports between spatial nodes and "EU" node,
-        # only cross-region if gas is not spatially resolved)
-        "Sabatier",
-        "helmeth",
-        "SMR CC",
-        "SMR",
-        "biogas to gas",
-        "BioSNG",
-        "residential rural gas boiler",
-        "services rural gas boiler",
-        "residential urban decentral gas boiler",
-        "services urban decentral gas boiler",
-        "urban central gas boiler",
-        "urban central gas CHP",
-        "urban central gas CHP CC",
-        "residential rural micro gas CHP",
-        "services rural micro gas CHP",
-        "residential urban decentral micro gas CHP",
-        "services urban decentral micro gas CHP",
-        "allam",
-        "OCGT",
-        "CCGT",
+        # # Oil (imports / exports between spatial nodes and "EU" node)
+        # "Fischer-Tropsch",
+        # "biomass to liquid",
+        # "residential rural oil boiler",
+        # "services rural oil boiler",
+        # "residential urban decentral oil boiler",
+        # "services urban decentral oil boiler",
+        # "oil",  # Oil powerplant (from `prepare_sector_network.add_generation`)
+        # # Gas (imports / exports between spatial nodes and "EU" node,
+        # # only cross-region if gas is not spatially resolved)
+        # "Sabatier",
+        # "helmeth",
+        # "SMR CC",
+        # "SMR",
+        # "biogas to gas",
+        # "BioSNG",
+        # "residential rural gas boiler",
+        # "services rural gas boiler",
+        # "residential urban decentral gas boiler",
+        # "services urban decentral gas boiler",
+        # "urban central gas boiler",
+        # "urban central gas CHP",
+        # "urban central gas CHP CC",
+        # "residential rural micro gas CHP",
+        # "services rural micro gas CHP",
+        # "residential urban decentral micro gas CHP",
+        # "services urban decentral micro gas CHP",
+        # # "allam",
+        # "OCGT",
+        # "CCGT",
     ]
     links_cross_region_i = (
         n.links.loc[(group(n.links, b="bus0") != group(n.links, b="bus1")).to_numpy()]
@@ -588,23 +588,23 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
 
     # Gas imports by pipeline from outside of Europe, LNG terminal or
     # gas production (all modelled as generators).
-    gas_import_i = n.generators.loc[n.generators.carrier == "gas"].index
-    if len(gas_import_i) > 0:
-        gas_import_p = (
-            n.model["Generator-p"]
-            .loc[:, gas_import_i]
-            .groupby(group(n.generators.loc[gas_import_i]))
-            .sum()
-        )
-        gas_imports = (gas_import_p * n.snapshot_weightings.generators).sum("snapshot")
-    else:
-        gas_imports = None
+    # gas_import_i = n.generators.loc[n.generators.carrier == "gas"].index
+    # if len(gas_import_i) > 0:
+    #     gas_import_p = (
+    #         n.model["Generator-p"]
+    #         .loc[:, gas_import_i]
+    #         .groupby(group(n.generators.loc[gas_import_i]))
+    #         .sum()
+    #     )
+    #     gas_imports = (gas_import_p * n.snapshot_weightings.generators).sum("snapshot")
+    # else:
+    #     gas_imports = None
 
     imported_energy = sum(
-        i for i in [line_imports, link_imports, gas_imports] if i is not None
+        i for i in [line_imports, link_imports] if i is not None
     )
 
-    local_factor = 1 - 1 / level
+    local_factor = level - 1
 
     n.model.add_constraints(
         local_factor * local_energy + imported_energy <= 0, name="equity_min"
