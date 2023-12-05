@@ -292,11 +292,12 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
       if suffix_counter[label] > 1: 
         return f"{label}_{suffix_counter[label]}"
       return label
+     
+     connections['label'] = connections['label'].apply(generate_new_label)
      if country == 'BE' and planning_horizon !=2020:
       new_value = n.links_t.p0['BE1 0 BEV charger'].sum() / 1e6
       connections.loc[connections.label.str.contains("BEV charger"), "value"] = new_value
-     connections['label'] = connections['label'].apply(generate_new_label)
-     connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
+      connections.loc[connections.label.str.contains("BEV charger_2"), "value"] = new_value*0.11
      connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
      results_dict[country] = connections
      # new_value = n.links_t.p0['BE1 0 BEV charger'].sum() / 1e6
