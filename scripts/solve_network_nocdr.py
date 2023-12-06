@@ -111,8 +111,7 @@ def _add_land_use_constraint_m(n, planning_horizons, config):
             ].rename(lambda x: x[:-4] + current_horizon)
 
     n.generators.p_nom_max.clip(lower=0, inplace=True)
-
-
+         
 def add_co2_sequestration_limit(n, limit=200):
     """
     Add a global constraint on the amount of Mt CO2 that can be sequestered.
@@ -135,6 +134,7 @@ def add_co2_sequestration_limit(n, limit=200):
         type="primary_energy",
         carrier_attribute="co2_absorptions",
     )
+    
     
 def prepare_network(
     n,
@@ -171,7 +171,7 @@ def prepare_network(
             carrier="load",
             sign=1,  # Adjust sign to measure p and p_nom in kW instead of MW
             marginal_cost=3000,  # Eur/MWh
-            p_nom=1e6,  # MW
+            p_nom=1,  # MW
         )
 
     if solve_opts.get("noisy_costs"):
@@ -200,9 +200,14 @@ def prepare_network(
         limit = co2_sequestration_potential
         add_co2_sequestration_limit(n, limit=limit)
     
+    n.generators.loc["BE1 0 solar-2030", "p_nom_max"] = 8354
+    n.generators.loc["BE1 0 onwind-2030", "p_nom_max"] = 2862
+    n.generators.loc["BE1 0 offwind-ac-2030", "p_nom_max"] = 2117
+    n.generators.loc["BE1 0 offwind-dc-2030", "p_nom_max"] = 1500
+    if "BE1 0 nuclear-1980" in n.links.index:
+     n.links.loc["BE1 0 nuclear-1980", "p_nom"] = 2000
 
     return n
-
 
 def add_CCL_constraints(n, config):
     """
