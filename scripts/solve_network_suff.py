@@ -200,6 +200,14 @@ def prepare_network(
     if n.stores.carrier.eq("co2 stored").any():
         limit = co2_sequestration_potential
         add_co2_sequestration_limit(n, limit=limit)
+        
+    n.generators.loc["BE1 0 solar-2030", "p_nom_max"] = 8000
+    n.generators.loc["BE1 0 solar rooftop-2030", "p_nom_max"] = 2000
+    n.generators.loc["BE1 0 onwind-2030", "p_nom_max"] = 3225
+    n.generators.loc["BE1 0 offwind-ac-2030", "p_nom_max"] = 2517
+    n.generators.loc["BE1 0 offwind-dc-2030", "p_nom_max"] = 2000
+    if "BE1 0 nuclear-1980" in n.links.index:
+     n.links.loc["BE1 0 nuclear-1980", "p_nom"] = 2000
 
     return n
 

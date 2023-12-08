@@ -165,7 +165,5 @@ if __name__ == "__main__":
     # TODO: This has to fixed in PPM, some powerplants are still duplicated
     cumcount = ppl.groupby(["bus", "Fueltype"]).cumcount() + 1
     ppl.Name = ppl.Name.where(cumcount == 1, ppl.Name + " " + cumcount.astype(str))
-    ppl.loc[ppl['Name'] == 'Doel', 'Capacity'] = 2000
-    ppl.loc[ppl['Name'] == 'Doel', 'DateOut'] = 2035
 
     ppl.reset_index(drop=True).to_csv(snakemake.output[0])

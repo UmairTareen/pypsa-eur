@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: ucf-8 -*-
+
 """
 Created on Wed Apr 19 08:57:23 2023
 
@@ -24,7 +23,7 @@ path = os.path.join(os.path.dirname(__file__), '../data/')
 PATH = os.path.join(os.path.dirname(__file__), '../')
 skip_cols = [0,1, 2, 3]
 keep_cols = [i for i in range(34) if i not in skip_cols]
-year= 2030
+year= 2050
 
 countriess = [
     "FR",
@@ -130,7 +129,7 @@ def build_Clever_Residential(countriess, year):
     return totals.T
 clever_residential = build_Clever_Residential(countriess, year) 
 clever_residential = clever_residential.loc[:, clever_residential.columns.notna()]
-clever_residential.to_csv("/home/umair/pypsa-eur/data/clever_residential_2030.csv")
+clever_residential.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_residential_{year}.csv")
 
 def build_CLEVER_tertiary_data_per_country(countriess):
     
@@ -218,11 +217,11 @@ for country_code in ['BE', 'DE', 'FR', 'GB', 'NL']:
     clever_Tertairy.loc[country_code, 'Total Final energy consumption for cooking in the tertiary sector'] = clever_Tertairy.loc[country_code, 'Total final energy consumption in the tertiary sector'] * perc_total_cooking_total
     clever_Tertairy.loc[country_code, 'Final electricity consumption for cooking in the tertiary sector'] = clever_Tertairy.loc[country_code, 'Total Final energy consumption for cooking in the tertiary sector'] * perc_total_cooking
     
-    clever_Tertairy.loc[country_code, "Thermal_uses_tertiary"] = clever_Tertairy.loc[country_code, "Total final energy consumption for space heating in the tertiary sector (with climatic corrections) "] + clever_Tertairy.loc[country_code, "Final electricity consumption for cooling in the tertiary sector"] + clever_Tertairy.loc[country_code, "Total final energy consumption for hot water in the tertiary sector"] + clever_Tertairy.loc[country_code, "Total Final energy consumption for cooking in the tertiary sector"] + clever_Tertairy.loc[country_code, "Final energy consumption from heating networks in the tertiary sector"].sum()
+    clever_Tertairy.loc[country_code, "Thermal_uses_tertiary"] = clever_Tertairy.loc[country_code, "Total final energy consumption for space heating in the tertiary sector (with climatic corrections) "] + clever_Tertairy.loc[country_code, "Total final energy consumption for hot water in the tertiary sector"].sum()
     
 
 clever_Tertairy = clever_Tertairy.loc[:, clever_Tertairy.columns.notna()]
-clever_Tertairy.to_csv("/home/umair/pypsa-eur/data/clever_Tertairy_2030.csv")
+clever_Tertairy.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Tertairy_{year}.csv")
 
 def build_CLEVER_transport_data_per_country(countriess):
     
@@ -303,7 +302,7 @@ def build_Clever_Transport(countriess, year):
     return totals.T  
 clever_Transport = build_Clever_Transport(countriess, year)
 clever_Transport = clever_Transport.loc[:, clever_Transport.columns.notna()]
-clever_Transport.to_csv("/home/umair/pypsa-eur/data/clever_Transport_2030.csv") 
+clever_Transport.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Transport_{year}.csv") 
 
 def build_CLEVER_agriculture_data_per_country(countriess):
     '''
@@ -368,7 +367,7 @@ def build_Clever_Agriculture(countriess, year):
     return totals.T 
 clever_Agriculture = build_Clever_Agriculture(countriess, year) 
 clever_Agriculture = clever_Agriculture.loc[:, clever_Agriculture.columns.notna()]
-clever_Agriculture.to_csv("/home/umair/pypsa-eur/data/clever_Agriculture_2030.csv") 
+clever_Agriculture.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Agriculture_{year}.csv") 
 
 def build_CLEVER_AFOLUB_data_per_country(countriess):
     
@@ -426,7 +425,7 @@ def build_Clever_AFOLUB(countriess, year):
     return totals.T
 clever_AFOLUB = build_Clever_AFOLUB(countriess, year) 
 clever_AFOLUB = clever_AFOLUB.loc[:, clever_AFOLUB.columns.notna()]
-clever_AFOLUB.to_csv("/home/umair/pypsa-eur/data/clever_AFOLUB_2030.csv") 
+clever_AFOLUB.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_AFOLUB_{year}.csv") 
 
 def build_CLEVER_macro_data_per_country(countriess):
     
@@ -487,7 +486,7 @@ def build_Clever_Macro(countriess, year):
     return totals.T 
 clever_Macro = build_Clever_Macro(countriess, year)
 clever_Macro = clever_Macro.loc[:, clever_Macro.columns.notna()]
-clever_Macro.to_csv("/home/umair/pypsa-eur/data/clever_Macro_2030.csv")  
+clever_Macro.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Macro_{year}.csv")  
 
 
 def build_CLEVER_industry_data_per_country(countriess):
@@ -561,6 +560,6 @@ def build_Clever_Industry(countriess, year):
     return totals.T  
 clever_Industry = build_Clever_Industry(countriess, year) 
 clever_Industry = clever_Industry.loc[:, clever_Industry.columns.notna()]
-clever_Industry.to_csv("/home/umair/pypsa-eur/data/clever_Industry_2030.csv")  
+clever_Industry.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Industry_{year}.csv")  
     
 

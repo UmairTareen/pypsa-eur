@@ -82,7 +82,7 @@ tot_co2 = {}
 print("\nEnergy system (network graph) creation\n")
 
 for country in ALL_COUNTRIES:
-    datafile = os.path.join(DIRNAME, f"../resultssuff/sepia/inputs{country}.xlsx")
+    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
@@ -109,6 +109,7 @@ for country in ALL_COUNTRIES:
 #     for sheet in data:
 #         data[sheet] = sf.db_cleanup(data[sheet])
     # data = pd.concat(data.values(), axis=1) # input dataframe
+    data["presgazcfg"] = data["presgazcfg"] - data["presvapcfagr"]
     data = data.loc[:,~data.columns.duplicated()] 
     data_co2 = data_co2.loc[:,~data_co2.columns.duplicated()]# Remove duplicate indicators
 #     country_params = sf.db_cleanup(country_params, False)['Value'].to_dict()
@@ -672,6 +673,17 @@ def generate_results(flows, tot_results, country, se_import_mix):
      flows_sum = flows.xs(target_flow, level='Target', axis=1, drop_level=True).sum(axis=1)
      ps_cons[target_flow] = flows_sum
     cov_ratios = 100 * ps_cons.subtract(cov_imports, fill_value=0).filter(impexp_carriers) / ps_cons.subtract(cov_exports, fill_value=0).filter(impexp_carriers)
+    value_gaz = flows_bk[('gaz_pe', 'gaz_se', '')].squeeze().rename_axis(None)
+    value_biogas = flows_bk[('bgl_pe', 'gaz_se', '')].squeeze().rename_axis(None)
+    value_bl = flows_bk[('enc_pe', 'gaz_se', '')].squeeze().rename_axis(None)
+    value_hy = flows_bk[('hyd_se', 'gaz_se', '')].squeeze().rename_axis(None)
+    value_total = ((value_biogas + value_bl + value_hy)/(value_gaz + value_biogas + value_bl + value_hy))*100
+    cov_ratios['gaz_se'] = value_total
+    value_petr = flows_bk[('pet_pe', 'pet_fe', '')].squeeze().rename_axis(None)
+    value_biml = flows_bk[('blq_pe', 'pet_fe', '')].squeeze().rename_axis(None)
+    value_fish = flows_bk[('hyd_se', 'pet_fe', '')].squeeze().rename_axis(None)
+    value_toltal = ((value_biml + value_fish)/(value_petr + value_biml + value_fish))*100
+    cov_ratios['pet_fe'] = value_toltal
     
   # interval_time = sf.calc_time('Aggregated consumptions', interval_time)
     
