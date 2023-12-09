@@ -31,7 +31,9 @@ import matplotlib.pyplot as plt
 with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
-scenario = 'bau'
+scenario = 'suff'
+
+folder = '/home/sylvain/temp/'
 
 def rename_techs(label):
     prefix_to_remove = [
@@ -190,7 +192,7 @@ def assign_carriers(n):
         n.lines["carrier"] = "AC"
         
         
-def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix="../results/postnetworks/elec_"):
+def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_"):
 
     filename = f"{prefix}s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
 
@@ -238,7 +240,7 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
     results_dict = {}
 
     for planning_horizon in planning_horizons:
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix="../results/postnetworks/elec_")
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_")
         n = pypsa.Network(filename)
 
         cap_ac = pd.DataFrame(index=['BE', 'DE', 'FR', 'NL'])
@@ -281,7 +283,7 @@ results = calculate_transmission_values("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", 
 def costs(countries):
     costs = {}
     for country in countries:
-      df=pd.read_csv("../results/csvs/nodal_costs.csv", index_col=2)
+      df=pd.read_csv(folder+"results" + scenario + "/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 2:]
       df = df.iloc[9:, :]
       df.index = df.index.str[:2]
@@ -292,7 +294,7 @@ def costs(countries):
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
 
-      cf = pd.read_csv("../resultsreff/csvs/nodal_costs.csv", index_col=2)
+      cf = pd.read_csv(folder+"resultsreff/csvs/nodal_costs.csv", index_col=2)
       cf = cf.iloc[:, 2:]
       cf = cf.iloc[4:, :]
       cf.index = cf.index.str[:2]
@@ -351,8 +353,8 @@ for country, dataframe in costs.items():
 def capacities(countries, results):
     capacities = {}
     for country in countries:
-      df=pd.read_csv("../resultsreff/csvs/nodal_capacities.csv", index_col=1)
-      cf = pd.read_csv("../results/csvs/nodal_capacities.csv", index_col=1)
+      df=pd.read_csv(folder+"resultsreff/csvs/nodal_capacities.csv", index_col=1)
+      cf = pd.read_csv(folder+"results"+scenario+"/csvs/nodal_capacities.csv", index_col=1)
       df = df.iloc[:, 1:]
       df = df.iloc[4:, :]
       df.index = df.index.str[:2]
@@ -415,7 +417,7 @@ for country, dataframe in capacities.items():
 
 
 
-def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons):
+def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Power Dispatch (Winter Week)"):
     tech_colors = config["plotting"]["tech_colors"]
     colors = tech_colors 
     colors["fossil oil and gas"] = colors["oil"]
@@ -431,7 +433,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons):
 
      for planning_horizon in planning_horizons:
         tab = pn.Tabs()
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix="../results/postnetworks/elec_")
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_")
         n = pypsa.Network(filename)
 
         assign_location(n)
@@ -518,8 +520,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons):
 
         supplyn = pd.concat((supplyn, negative_supplyn), axis=1)
 
-        start = "2013-02-01"
-        stop = "2013-02-07"
+
 
         threshold = 0.1
 
@@ -564,7 +565,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons):
            color=[colors[tech] for tech in positive_supplyn.columns],
            line_dash='solid', line_width=0,
            xlabel='Time', ylabel='Power [GW]',
-           title=f"Power Dispatch (Winter Week) - {country} - {planning_horizon}",
+           title=title + " - " + country + ' - ' + str(planning_horizon),
            width=1200, height=600,
            responsive=False,
            stacked=True,)
@@ -588,7 +589,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons):
             # Add the tab for the planning horizon to the main Tabs
         tabs.append((f"{planning_horizon}", tab))
         
-     html_filename = f"dispatch_plots_{country}.html"
+     html_filename = title + " - " + country + '.html'
      output_folder = 'output_charts' # Set your desired output folder
      os.makedirs(output_folder, exist_ok=True)
      html_filepath = os.path.join(output_folder, html_filename)
@@ -596,6 +597,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons):
 
 # Call the function
 plot_series_power("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons)
+plot_series_power("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Power Dispatch (Summer Week)")
 
 def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons):
     tech_colors = config["plotting"]["tech_colors"]
@@ -609,7 +611,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons):
 
      for planning_horizon in planning_horizons:
         tab = pn.Tabs()
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix="../results/postnetworks/elec_")
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_")
         n = pypsa.Network(filename)
 
         assign_location(n)
@@ -825,7 +827,7 @@ def create_combined_chart_country(costs, capacities, country, output_folder='out
     combined_html += f"<div><h2>{country} - Capacities Chart</h2>{capacities_chart.to_html()}</div>"
 
     # Save the Panel object to HTML
-    plot_series_file_path = os.path.join(output_folder, f"dispatch_plots_{country}.html")
+    plot_series_file_path = os.path.join(output_folder, f"Power Dispatch (Winter Week) - {country}.html")
     plot_series_heat_file_path = os.path.join(output_folder, f"dispatch_plots_heat_{country}.html")
 
     # Include the saved HTML in the combined HTML
@@ -850,7 +852,7 @@ for country in costs.keys():
     
 for country in costs.keys():
     combined_file_path = os.path.join('output_charts', f"dispatch_plots_heat_{country}.html")
-    plot_series_file_path = os.path.join('output_charts', f"dispatch_plots_{country}.html")
+    plot_series_file_path = os.path.join('output_charts', f"Power Dispatch (Winter Week) - {country}.html")
     
     if os.path.exists(combined_file_path):
         os.remove(combined_file_path)
