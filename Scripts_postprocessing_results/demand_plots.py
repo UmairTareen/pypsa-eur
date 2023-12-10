@@ -12,7 +12,7 @@ from pypsa.descriptors import get_switchable_as_dense as as_dense
 with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
-folder = '/home/sylvain/temp/'
+folder = '/home/umair/pypsa-eur_repository/'
 
 n=pypsa.Network(folder + "resultsreff/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2020.nc")
 
@@ -21,9 +21,9 @@ m_2=pypsa.Network(folder + "resultsbau/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-
 m_3=pypsa.Network(folder + "resultsbau/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2050.nc")
 
 
-p_1=pypsa.Network(folder + "resultssuff/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2030.nc")
-p_2=pypsa.Network(folder + "resultssuff/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2040.nc")
-p_3=pypsa.Network(folder + "resultssuff/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2050.nc")
+p_1=pypsa.Network(folder + "resultssuff/postnetworks/elec_s_6_lv1.5__EQ0.7c-1H-T-H-B-I-A-dist1_2030.nc")
+p_2=pypsa.Network(folder + "resultssuff/postnetworks/elec_s_6_lv1.5__EQ0.7c-1H-T-H-B-I-A-dist1_2040.nc")
+p_3=pypsa.Network(folder + "resultssuff/postnetworks/elec_s_6_lv1.5__EQ0.7c-1H-T-H-B-I-A-dist1_2050.nc")
 
 
 #%%
@@ -130,7 +130,7 @@ H2_nonenergy = {}
 H2_industry = {}
 
 for year in years:
-    df = pd.read_csv(f"../data/clever_Industry_{year}.csv", index_col=0).loc[countries].T
+    df = pd.read_csv(f"../data/clever_Industry_{year}.csv", index_col=0).loc['BE'].T
     H2_nonenergy[year] = df.loc["Non-energy consumption of hydrogen for the feedstock production"].sum()
     H2_industry[year] = df.loc["Total Final hydrogen consumption in industry"].sum()
     hydrogen_consumption[year] = {
@@ -138,22 +138,23 @@ for year in years:
         "H2_industry": H2_industry[year]
     }
 
-nf = demandn_by_region.sum()
-mf1 = demandm1_by_region.sum()
-mf2 = demandm2_by_region.sum()
-mf3 = demandm3_by_region.sum()
-pf1 = demandp1_by_region.sum()
-pf2 = demandp2_by_region.sum()
-pf3 = demandp3_by_region.sum()
+
+nf = demandn_by_region.loc['BE1 0'].copy().rename('2020')
+mf1 = demandm1_by_region.loc['BE1 0'].copy().rename('2030')
+mf2 = demandm2_by_region.loc['BE1 0'].copy().rename('2040')
+mf3 = demandm3_by_region.loc['BE1 0'].copy().rename('2050')
+pf1 = demandp1_by_region.loc['BE1 0'].copy().rename('2030')
+pf2 = demandp2_by_region.loc['BE1 0'].copy().rename('2040')
+pf3 = demandp3_by_region.loc['BE1 0'].copy().rename('2050')
 
 csv_paths = [
-    "/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resourcesreff/energy_totals.csv",
-    "/home/umair/pypsa-eur_repository/simulations/myopic simulations/resourcesbau/energy_totals.csv",
-    "/home/umair/pypsa-eur_repository/simulations/myopic simulations/resourcesbau/energy_totals.csv",
-    "/home/umair/pypsa-eur_repository/simulations/myopic simulations/resourcesbau/energy_totals.csv",
-    "/home/umair/pypsa-eur_repository/simulations/myopic simulations/resourcessuff/energy_totals_s_6_2030.csv",
-    "/home/umair/pypsa-eur_repository/simulations/myopic simulations/resourcessuff/energy_totals_s_6_2040.csv",
-    "/home/umair/pypsa-eur_repository/simulations/myopic simulations/resourcessuff/energy_totals_s_6_2050.csv"
+    "/home/umair/pypsa-eur_repository/resourcesreff/energy_totals.csv",
+    "/home/umair/pypsa-eur_repository/resourcesbau/energy_totals.csv",
+    "/home/umair/pypsa-eur_repository/resourcesbau/energy_totals.csv",
+    "/home/umair/pypsa-eur_repository/resourcesbau/energy_totals.csv",
+    "/home/umair/pypsa-eur_repository/resourcessuff/energy_totals_s_6_2030.csv",
+    "/home/umair/pypsa-eur_repository/resourcessuff/energy_totals_s_6_2040.csv",
+    "/home/umair/pypsa-eur_repository/resourcessuff/energy_totals_s_6_2050.csv"
 ]
 
 scenario_names = ["Reff", "BAU-2030","BAU-2040","BAU-2050", "SUff-2030", "SUff-2040", "SUff-2050",
@@ -162,8 +163,10 @@ scenario_names = ["Reff", "BAU-2030","BAU-2040","BAU-2050", "SUff-2030", "SUff-2
 residential_tertiary_heat = {}
 
 for path, name in zip(csv_paths, scenario_names):
-    df = pd.read_csv(path).T
-    del df[5]
+    df = pd.read_csv(path, index_col=0).T
+    df = df['BE']
+
+    # del df[5]
     residentialspace_elec = df.loc["electricity residential space"].sum()
     tertiaryspace_elec = df.loc["electricity services space"].sum()
     residentialwater_elec = df.loc["electricity residential water"].sum()
@@ -176,7 +179,7 @@ for path, name in zip(csv_paths, scenario_names):
         residentialcooking_elec + tertiarycooking_elec
     )
 
-dataframes = [nf, mf1,mf2,mf3, pf1,pf2,pf3, rf1,rf2,rf3]
+dataframes = [nf, mf1,mf2,mf3, pf1,pf2,pf3]
 
 
 for df, name in zip(dataframes, scenario_names):
@@ -211,14 +214,125 @@ for df in dataframes:
         if row_label in df.index:
             df.drop(row_label, inplace=True)
 
-dataaframes = [pf1,pf2, pf3, rf1,rf2, rf3]
-years = ['2040', '2050']
+dataaframes = [pf1, pf2, pf3]
+years = ['2030', '2040', '2050']
 
-for df in dataaframes:
-    for year in years:
+for df, year in zip(dataaframes, years):
         df.loc["H2 for industry"] = H2_industry[year]
         df.loc["H2 for non-energy"] = H2_nonenergy[year]
-            
+
+
+ind_2020 = pd.read_csv("../resourcesreff/industrial_energy_demand_elec_s_6_2020.csv", index_col=0).loc['BE1 0']
+ind_2030 = pd.read_csv("../resourcesbau/industrial_energy_demand_elec_s_6_2030.csv", index_col=0).loc['BE1 0']
+ind_2040 = pd.read_csv("../resourcesbau/industrial_energy_demand_elec_s_6_2040.csv", index_col=0).loc['BE1 0']
+ind_2050 = pd.read_csv("../resourcesbau/industrial_energy_demand_elec_s_6_2050.csv", index_col=0).loc['BE1 0']
+ind_2030_suff = pd.read_csv("../resourcessuff/industrial_energy_demand_elec_s_6_2030.csv", index_col=0).loc['BE1 0']
+ind_2040_suff = pd.read_csv("../resourcessuff/industrial_energy_demand_elec_s_6_2040.csv", index_col=0).loc['BE1 0']
+ind_2050_suff = pd.read_csv("../resourcessuff/industrial_energy_demand_elec_s_6_2050.csv", index_col=0).loc['BE1 0']
+nf.loc["naphtha for industry"] = ind_2020["naphtha"] 
+nf.loc["solid biomass for industry"] = ind_2020["solid biomass"] 
+nf.loc["NH3"] = ind_2020["ammonia"]  
+mf1.loc["naphtha for industry"] = ind_2030["naphtha"]  
+mf1.loc["NH3"] = ind_2030["ammonia"] 
+mf2.loc["naphtha for industry"] = ind_2040["naphtha"]  
+mf2.loc["NH3"] = ind_2040["ammonia"] 
+mf3.loc["naphtha for industry"] = ind_2050["naphtha"]  
+mf3.loc["NH3"] = ind_2050["ammonia"] 
+pf1.loc["NH3"] = ind_2030["ammonia"] 
+pf2.loc["NH3"] = ind_2040["ammonia"] 
+pf3.loc["NH3"] = ind_2050["ammonia"] 
+pf1.loc["naphtha for industry"] = ind_2030_suff["naphtha"] 
+pf2.loc["naphtha for industry"] = ind_2040_suff["naphtha"] 
+pf3.loc["naphtha for industry"] = ind_2050_suff["naphtha"] 
+
+
+demands_2020 = n.loads_t.p_set.filter(like='BE')
+land_transport_oil = demands_2020['BE1 0 land transport oil'].sum() / 1e6
+nf.loc["land transport oil"] = land_transport_oil
+
+# Load energy demand data
+energy_demand = pd.read_csv("../resourcesreff/energy_totals.csv", index_col=0).T['BE']
+
+# update values in the 'nf'
+nf.loc["agriculture machinery oil"] = energy_demand.loc["total agriculture machinery"].sum()
+nf.loc["kerosene for aviation"] = energy_demand.loc["total international aviation"].sum()
+nf.loc["shipping oil"] = (energy_demand.loc["total domestic navigation"].sum() +
+                          energy_demand.loc["total international navigation"].sum())
+
+demands_2030_bau = m_1.loads_t.p_set.filter(like='BE')
+land_transport_oil = demands_2030_bau['BE1 0 land transport oil'].sum() / 1e6
+mf1.loc["land transport oil"] = land_transport_oil
+
+demands_2040_bau = m_2.loads_t.p_set.filter(like='BE')
+land_transport_oil = demands_2040_bau['BE1 0 land transport oil'].sum() / 1e6
+mf2.loc["land transport oil"] = land_transport_oil
+
+energy_demand_bau = pd.read_csv("../resourcesbau/energy_totals_s_6_2030.csv", index_col=0).T
+energy_demand_bau = energy_demand_bau['BE']
+agriculture_machinery_oil_bau = energy_demand_bau.loc["total agriculture machinery"].sum()
+aviation_p_bau = energy_demand_bau.loc["total international aviation"].sum()
+navig_d_30 = energy_demand_bau.loc["total domestic navigation"].sum()
+navig_i_30 = energy_demand_bau.loc["total international navigation"].sum()
+navigation_30 = navig_d_30 + navig_i_30.sum()
+
+mf1.loc["agriculture machinery oil"] = agriculture_machinery_oil_bau
+mf1.loc["kerosene for aviation"] = aviation_p_bau
+mf1.loc["shipping oil"] = navigation_30 * 0.7
+mf1.loc["shipping methanol"] = navigation_30 * 0.3
+
+mf2.loc["agriculture machinery oil"] = agriculture_machinery_oil_bau
+mf2.loc["kerosene for aviation"] = aviation_p_bau
+mf2.loc["shipping oil"] = navigation_30 * 0.3
+mf2.loc["shipping methanol"] = navigation_30 * 0.7
+
+mf3.loc["agriculture machinery oil"] = agriculture_machinery_oil_bau
+mf3.loc["kerosene for aviation"] = aviation_p_bau
+mf3.loc["shipping oil"] = navigation_30 * 0.0
+mf3.loc["shipping methanol"] = navigation_30 * 1
+
+demands_2030_suff=p_1.loads_t.p_set.filter(like='BE')
+land_transport_oil =demands_2030_suff['BE1 0 land transport oil'].sum()/1e6
+pf1.loc["land transport oil"] = land_transport_oil
+demands_2040_suff=p_2.loads_t.p_set.filter(like='BE')
+land_transport_oil =demands_2040_suff['BE1 0 land transport oil'].sum()/1e6
+pf2.loc["land transport oil"] = land_transport_oil
+energy_demand_suff_2030 = pd.read_csv("../resourcessuff/energy_totals_s_6_2030.csv", index_col=0).T
+energy_demand_suff_2030 = energy_demand_suff_2030['BE']
+agriculture_machinery_oil_suff =energy_demand_suff_2030.loc["total agriculture machinery"].sum()
+aviation_p_suff = energy_demand_suff_2030.loc["total international aviation"].sum() 
+navig_d_30s = energy_demand_suff_2030.loc["total domestic navigation"].sum()
+navig_i_30s =energy_demand_suff_2030.loc["total international navigation"].sum()
+navigation_30s = navig_d_30s+ navig_i_30s.sum()
+pf1.loc["agriculture machinery oil"] = agriculture_machinery_oil_suff
+pf1.loc["kerosene for aviation"] = aviation_p_suff
+pf1.loc["shipping oil"] = navigation_30s * 0.7
+pf1.loc["shipping methanol"] = navigation_30s * 0.3
+
+energy_demand_suff_2040 = pd.read_csv("../resourcessuff/energy_totals_s_6_2040.csv", index_col=0).T
+energy_demand_suff_2040 = energy_demand_suff_2040['BE']
+agriculture_machinery_oil_suff =energy_demand_suff_2040.loc["total agriculture machinery"].sum()
+aviation_p_suff = energy_demand_suff_2040.loc["total international aviation"].sum() 
+navig_d_40s = energy_demand_suff_2040.loc["total domestic navigation"].sum()
+navig_i_40s =energy_demand_suff_2040.loc["total international navigation"].sum()
+navigation_40s = navig_d_40s+ navig_i_40s.sum()
+pf2.loc["agriculture machinery oil"] = agriculture_machinery_oil_suff
+pf2.loc["kerosene for aviation"] = aviation_p_suff
+pf2.loc["shipping oil"] = navigation_40s * 0.3
+pf2.loc["shipping methanol"] = navigation_40s * 0.7
+
+energy_demand_suff_2050 = pd.read_csv("../resourcessuff/energy_totals_s_6_2050.csv", index_col=0).T
+energy_demand_suff_2050 = energy_demand_suff_2050['BE']
+agriculture_machinery_oil_suff =energy_demand_suff_2050.loc["total agriculture machinery"].sum()
+aviation_p_suff = energy_demand_suff_2050.loc["total international aviation"].sum() 
+navig_d_50s = energy_demand_suff_2050.loc["total domestic navigation"].sum()
+navig_i_50s =energy_demand_suff_2050.loc["total international navigation"].sum()
+navigation_50s = navig_d_50s+ navig_i_50s.sum()
+pf3.loc["agriculture machinery oil"] = agriculture_machinery_oil_suff
+pf3.loc["kerosene for aviation"] = aviation_p_suff
+pf3.loc["shipping oil"] = navigation_50s * 0.0
+pf3.loc["shipping methanol"] = navigation_50s * 1
+        
+          
 for df in dataframes:
     df.index = pd.MultiIndex.from_tuples([(mapping[i], i) for i in df.index])
     df.drop("emissions", inplace=True)
@@ -248,7 +362,7 @@ order = [
 ]
 
 fig, ax = plt.subplots(figsize=(10, 13), )
-pd.DataFrame(nf.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
+pd.DataFrame(nf.groupby(level=0).sum().loc[order]).T.plot.bar(
     ax=ax,
     position=4.8,
     width=0.2,
@@ -257,7 +371,7 @@ pd.DataFrame(nf.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
     edgecolor="k",
     legend=True,
 )
-pd.DataFrame(mf1.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
+pd.DataFrame(mf1.groupby(level=0).sum().loc[order]).T.plot.bar(
     ax=ax,
     position=3.4,
     width=0.2,
@@ -268,7 +382,7 @@ pd.DataFrame(mf1.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
     legend=False,
     
   )
-pd.DataFrame(mf2.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
+pd.DataFrame(mf2.groupby(level=0).sum().loc[order]).T.plot.bar(
     ax=ax,
     position=2,
     width=0.2,
@@ -279,7 +393,7 @@ pd.DataFrame(mf2.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
     legend=False,
     
 )
-pd.DataFrame(mf3.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
+pd.DataFrame(mf3.groupby(level=0).sum().loc[order]).T.plot.bar(
     ax=ax,
     position=0.6,
     width=0.2,
@@ -289,7 +403,7 @@ pd.DataFrame(mf3.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
     edgecolor="k",
     legend=False,
 )
-pd.DataFrame(pf1.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
+pd.DataFrame(pf1.groupby(level=0).sum().loc[order]).T.plot.bar(
     ax=ax,
     position=-0.8,
     width=0.2,
@@ -300,7 +414,7 @@ pd.DataFrame(pf1.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
     legend=False,
     
 )
-pd.DataFrame(pf2.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
+pd.DataFrame(pf2.groupby(level=0).sum().loc[order]).T.plot.bar(
     ax=ax,
     position=-2.2,
     width=0.2,
@@ -311,7 +425,7 @@ pd.DataFrame(pf2.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
     legend=False,
     
 )
-pd.DataFrame(pf3.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
+pd.DataFrame(pf3.groupby(level=0).sum().loc[order]).T.plot.bar(
     ax=ax,
     position=-3.6,
     width=0.2,
@@ -326,11 +440,11 @@ pd.DataFrame(pf3.groupby(level=0).sum().loc[order], columns=[""]).T.plot.bar(
 plt.ylabel("Final energy and non-energy demand [TWh/a]", fontsize=20)
 
 plt.xlim(-1, 1)
-plt.ylim(0, 8000)
+plt.ylim(0, 1000)
 plt.xticks(x, x_labels, rotation='vertical')
 plt.rc('xtick',labelsize=20)
 plt.rc('ytick',labelsize=20)
-ax.bar_label(ax.containers[48], fmt='%.1f',label_type='edge', fontsize=15)
+# ax.bar_label(ax.containers[48], fmt='%.1f',label_type='edge', fontsize=15)
 a = ax.get_legend_handles_labels()  # a = [(h1 ... h2) (l1 ... l2)]  non unique
 b = {l:h for h,l in zip(*a)}        # b = {l1:h1, l2:h2}             unique
 c = [*zip(*b.items())]              # c = [(l1 l2) (h1 h2)]
@@ -339,7 +453,7 @@ plt.legend(*d, ncol=1, fontsize=14)
 plt.show()
 
 #%%
-frames = [nf, rf1,rf2,rf3]
+frames = [nf, mf1,mf2,mf3]
 gf= pd.concat(frames, axis=1)
 gf = gf.groupby(level=0).sum()
 gf = gf.rename(columns={0: '2020', 1: '2030', 2: '2040', 3: '2050'})
@@ -395,7 +509,7 @@ fig, ax = plt.subplots(figsize=(35, 30))
 
 x= [0.075,0.19,0.3,0.43,0.53,0.64,0.75,1.075,1.19,1.3,1.43,1.53,1.64,1.75,2.075,2.19,2.3,2.43,2.53,2.64,2.75,3.075,3.19,3.3,3.43,3.53,3.64,3.75,4.075,4.19,4.3,4.43,4.53,4.64,4.75,5.075,5.19,5.3,5.43,5.53,5.64,5.75,6.075,6.19,6.3,6.43,6.53,6.64,6.75]
 # x_labels = ['BAU','2030','electricity            ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','heat             ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','oil             ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','biomass            ','2040','2050','2050 (NO-CCS)','BAU-2050', 'BAU','2030','methane            ','2040','2050','2050 (NO-CCS)','BAU-2050','BAU','2030','hydrogen            ','2040','2050','2050 (NO-CCS)','BAU-2050']
-x_labels = ['Reff', 'BAU-2030','BAU-2040', 'Electricity       /BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Heat       /BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Oil       /BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Biomass       /BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Methane       /BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Hydrogen       /BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Non-energy       /BAU-2050','Suff-2030','Suff-2040','Suff-2050']
+x_labels = ['Reff', 'BAU-2030','BAU-2040', 'Electricity       BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Heat       BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Oil       BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Biomass       BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Methane       BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Hydrogen       BAU-2050','Suff-2030','Suff-2040','Suff-2050','Reff', 'BAU-2030','BAU-2040', 'Non-energy       BAU-2050','Suff-2030','Suff-2040','Suff-2050']
 nf.unstack().loc[order].loc[order].plot.bar(
     ax=ax, stacked=True, edgecolor="k",position=-0.5, width=.075,legend=False,color=colors,
 )
@@ -419,7 +533,7 @@ pf3.unstack().loc[order].plot.bar(
 )
 plt.ylabel("Final energy and non-energy demand [TWh/a]", fontsize=20)
 plt.xlim(0, 7)
-plt.ylim(0, 3500)
+plt.ylim(0, 200)
 
 
 plt.xticks(x, x_labels, rotation='vertical', fontsize=18)
