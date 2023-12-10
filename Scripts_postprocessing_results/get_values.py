@@ -26,7 +26,7 @@ from plot_summary import preferred_order, rename_techs
 
 
 file = '/home/sylvain/svn/pypsa-eur/results/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2020.nc'
-file = '/home/sylvain/temp/resultsbau/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2050.nc'
+#file = '/home/sylvain/temp/resultsbau/postnetworks/elec_s_6_lvopt__EQ0.7c-1H-T-H-B-I-A-dist1_2050.nc'
 
 n= pypsa.Network(file)
 
@@ -35,9 +35,20 @@ n= pypsa.Network(file)
 with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
+# DC lines:
+idx = n.links[(n.links.carrier=='DC') & (n.links.bus1 =='BE1 0') ].index
+dclines = pd.DataFrame(index=idx,columns=['from','to','capacity (MW)'])
+dclines['from'] = n.links.bus0[idx]
+dclines['to'] = n.links.bus1[idx]
+dclines['capacity (MW)'] = n.links.p_nom_opt[idx]
+print(dclines)
 
-print('DC lines for BE:')
-print(n.links.p_nom_opt[(n.links.carrier=='DC') & (n.links.bus1 =='BE1 0') ])
-print('AC lines for BE:')
-print(n.lines.s_nom_opt[n.lines.bus0=='BE1 0'])
+# AC lines:
+idx = n.lines[n.lines.bus0=='BE1 0'].index
+aclines = pd.DataFrame(index=idx,columns=['from','to','capacity (MW)'])
+aclines['from'] = n.lines.bus0[idx]
+aclines['to'] = n.lines.bus1[idx]
+aclines['capacity (MW)'] = n.lines.s_nom_opt[idx]
+print(aclines)
+
 a = 1

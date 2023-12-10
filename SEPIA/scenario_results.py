@@ -48,7 +48,7 @@ def scenario_costs():
     costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
     costs_ncdr = costs_ncdr[['tech', 'Total']]
     costs_ncdr['Total'] = costs_ncdr['Total'] / 3
-    costs_ncdr = costs_ncdr.rename(columns={'Total': 'Sufficienty'})
+    costs_ncdr = costs_ncdr.rename(columns={'Total': 'Sufficiency'})
     
     combined_df = pd.merge(costs_reff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
     # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
