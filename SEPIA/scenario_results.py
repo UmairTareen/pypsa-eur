@@ -25,15 +25,15 @@ tech_colors = config["plotting"]["tech_colors"]
 
 def scenario_costs():
  for country in countries:
-    costs_bau = pd.read_csv(f"csvs/{country}_costs_BAU.csv")
+    costs_bau = pd.read_csv(f"csvs/{country}_costs_bau.csv")
     # costs_suff = pd.read_csv(f"csvs/{country}_costs_suff.csv")
-    costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
+    costs_ncdr = pd.read_csv(f"csvs/{country}_costs_suff.csv")
     costs_reff = costs_bau[['tech', '2020']]
     costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
     # costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
-    costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
+    costs_reff = costs_reff.rename(columns={'2020': 'Reference'})
     
     costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
     costs_bau = costs_bau[['tech', 'Total']]
@@ -48,7 +48,7 @@ def scenario_costs():
     costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
     costs_ncdr = costs_ncdr[['tech', 'Total']]
     costs_ncdr['Total'] = costs_ncdr['Total'] / 3
-    costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
+    costs_ncdr = costs_ncdr.rename(columns={'Total': 'Sufficienty'})
     
     combined_df = pd.merge(costs_reff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
     # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
@@ -79,9 +79,9 @@ def scenario_costs():
 #%%
 def scenario_capacities():
  for country in countries:
-    caps_bau = pd.read_csv(f"csvs/{country}_capacities_BAU.csv")
+    caps_bau = pd.read_csv(f"csvs/{country}_capacities_bau.csv")
     # caps_suff = pd.read_csv(f"csvs/{country}_capacities_suff.csv")
-    caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
+    caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_suff.csv")
     caps_reff = caps_bau[['tech', '2020']]
     caps_bau = caps_bau[['tech', '2030', '2040', '2050']]
     # caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
