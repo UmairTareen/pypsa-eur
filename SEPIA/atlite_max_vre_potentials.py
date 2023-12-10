@@ -51,14 +51,38 @@ GRID_CODE,CLC_CODE,LABEL1,LABEL2,LABEL3,RGB
 
 """
 
-import geopandas as gpd
-import atlite
+#import geopandas as gpd
+#import atlite
 import xarray as xr
 import plotly.graph_objects as go
 import plotly.offline as pyo
-from atlite.gis import shape_availability, ExclusionContainer
+#from atlite.gis import shape_availability, ExclusionContainer
 from plotly.subplots import make_subplots
 
+offwind_ac = xr.open_dataset('../resources/profile_offwind-ac.nc')
+
+data = xr.open_dataset('../results/prenetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc')
+pmax = data.generators_p_nom_max
+pnow = data.generators_p_nom
+
+bus = 'BE1 0'
+
+wind_generators = [gen for gen in pmax.generators_i.values if 'wind' in gen and bus in gen]
+solar_generators = [gen for gen in pmax.generators_i.values if bus + ' solar' in gen]
+
+for gen in wind_generators+solar_generators:
+    max_power = pmax.sel(generators_i=gen).max().item()
+    print(f"Maximum power for {gen}: {max_power}")
+
+for gen in  wind_generators+solar_generators:
+    power = pnow.sel(generators_i=gen).max().item()
+    print(f"Installed power for {gen}: {power}")
+
+
+
+
+
+'''
 def plot_onshore_wind_potential(shapes, cutout, excluder):
     cap_per_sqkm = 3
     area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
@@ -166,41 +190,4 @@ def max_combined_capacities():
 
 max_combined_capacities()
 
-#
-# world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-# eez_path = "../data/bundle/eez/World_EEZ_v8_2014.shp"
-# eez = gpd.read_file(eez_path)
-# country = 'Belgium'
-# # Load CORINE raster file for onshore wind
-#
-# shapes = world[world.name == country].set_index('name')
-# world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-#
-# CORINE = '../resources/natura.tiff'
-# excluder_onshore = atlite.ExclusionContainer()
-# excluder_onshore.add_raster(CORINE,
-#                             codes=[12],#, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32],
-#                             invert=False)
-# shapes_crs_onshore = shapes.geometry.to_crs(excluder_onshore.crs)
-#
-# # Create a cutout for onshore wind, offshore wind, and solar PV
-# cutout = atlite.Cutout('../cutouts/europe-2013-era5.nc')
-#
-# onshore_wind = plot_onshore_wind_potential(shapes, cutout, excluder_onshore)
-#
-# df_onshore = onshore_wind.to_pandas().div(1e3).reset_index()
-#
-# fig = make_subplots(rows=3, cols=1, shared_xaxes=True,
-#                     subplot_titles=['Onshore Wind Potential [GW]', 'Offshore Wind Potential [GW]',
-#                                     'Solar Potential [GW]'])
-#
-# for col in df_onshore.columns[1:]:
-#     fig.add_scatter(x=df_onshore['time'], y=df_onshore[col], mode='lines', name='Onshore Wind', line_color='green',
-#                     row=1, col=1)
-#
-# fig.update_layout(xaxis_title='Time')
-# fig.update_xaxes(tickformat="%b")
-#
-# fig.show()
-#
-# fig.write_html(f"output_charts/{country}_combined_potentials.html")
+'''
