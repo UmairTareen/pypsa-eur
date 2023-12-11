@@ -47,7 +47,7 @@ include: "rules/collect.smk"
 include: "rules/retrieve.smk"
 include: "rules/build_electricity.smk"
 include: "rules/solve_electricity.smk"
-include: "rules/postprocess_nocdr_myopic.smk"
+include: "rules/postprocess.smk"
 include: "rules/validate.smk"
 
 

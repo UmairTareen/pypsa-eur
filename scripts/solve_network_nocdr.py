@@ -38,7 +38,6 @@ from _helpers import configure_logging, update_config_with_sector_opts
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
-from prepare_sector_network import emission_sectors_from_opts
 
 
 def add_land_use_constraint(n, planning_horizons, config):
@@ -159,7 +158,7 @@ def prepare_network(
         # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
         # TODO: retrieve color and nice name from config
         n.add("Carrier", "load", color="#dd2e23", nice_name="Load shedding")
-        buses_i = n.buses.index
+        buses_i = n.buses.query("carrier == 'AC'").index
         if not np.isscalar(load_shedding):
             # TODO: do not scale via sign attribute (use Eur/MWh instead of Eur/kWh)
             load_shedding = 3000  # Eur/MWh
@@ -208,6 +207,8 @@ def prepare_network(
     n.generators.loc["BE1 0 offwind-dc-2030", "p_nom_max"] = 2000
     if "BE1 0 nuclear-1980" in n.links.index:
      n.links.loc["BE1 0 nuclear-1980", "p_nom"] = 2000
+    if "BE1 0 solar-2050" in n.links.index:
+     n.generators.loc["BE1 0 gas", "marginal_cost"] = 150.1
 
     return n
 
@@ -876,96 +877,7 @@ def add_pipe_retrofit_constraint(n):
 #     fischer_x = n.links.query("carrier == 'Fischer-Tropsch' and p_nom_extendable").index
 #     methanol_x = n.links.query("carrier == 'methanolisation' and p_nom_extendable").index
 #     methane_x = n.links.query("carrier == 'methanation' and p_nom_extendable").index
-def add_co2limit_country(n, limit_countries, nyears=1.0):
-    """
-    Add a set of emissions limit constraints for specified countries.
-    The countries and emissions limits are specified in the config file entry 'co2_budget_country_{investment_year}'.
-    Parameters
-    ----------
-    n : pypsa.Network
-    config : dict
-    limit_countries : dict
-    nyears: float, optional
-        Used to scale the emissions constraint to the number of snapshots of the base network.
-    """
-    logger.info(f"Adding CO2 budget limit for each country as per unit of 1990 levels")
 
-    countries = n.config["countries"]
-
-    # TODO: import function from prepare_sector_network? Move to common place?
-    sectors = emission_sectors_from_opts(opts)
-
-    # convert Mt to tCO2
-    co2_totals = 1e6 * pd.read_csv(snakemake.input.co2_totals_name, index_col=0)
-
-    co2_limit_countries = co2_totals.loc[countries, sectors].sum(axis=1)
-    co2_limit_countries = co2_limit_countries.loc[
-        co2_limit_countries.index.isin(limit_countries.keys())
-    ]
-
-    co2_limit_countries *= co2_limit_countries.index.map(limit_countries) * nyears
-
-    p = n.model["Link-p"]  # dimension: (time, component)
-
-    # NB: Most country-specific links retain their locational information in bus1 (except for DAC, where it is in bus2, and process emissions, where it is in bus0)
-    country = n.links.bus1.map(n.buses.location).map(n.buses.country)
-    country_DAC = (
-        n.links[n.links.carrier == "DAC"]
-        .bus2.map(n.buses.location)
-        .map(n.buses.country)
-    )
-    country[country_DAC.index] = country_DAC
-    country_process_emissions = (
-        n.links[n.links.carrier.str.contains("process emissions")]
-        .bus0.map(n.buses.location)
-        .map(n.buses.country)
-    )
-    country[country_process_emissions.index] = country_process_emissions
-
-    lhs = []
-    for port in [col[3:] for col in n.links if col.startswith("bus")]:
-        if port == str(0):
-            efficiency = (
-                n.links["efficiency"].apply(lambda x: 1.0).rename("efficiency0")
-            )
-        elif port == str(1):
-            efficiency = n.links["efficiency"]
-        else:
-            efficiency = n.links[f"efficiency{port}"]
-        mask = n.links[f"bus{port}"].map(n.buses.carrier).eq("co2")
-
-        idx = n.links[mask].index
-
-        international = n.links.carrier.map(
-            lambda x: 0.4 if x in ["kerosene for aviation", "shipping oil"] else 1.0
-        )
-        grouping = country.loc[idx]
-
-        if not grouping.isnull().all():
-            expr = (
-                (p.loc[:, idx] * efficiency[idx] * international[idx])
-                .groupby(grouping, axis=1)
-                .sum()
-                * n.snapshot_weightings.generators
-            ).sum(dims="snapshot")
-            lhs.append(expr)
-
-    lhs = sum(lhs)  # dimension: (country)
-    lhs = lhs.rename({list(lhs.dims.keys())[0]: "snapshot"})
-    rhs = pd.Series(co2_limit_countries)  # dimension: (country)
-
-    for ct in lhs.indexes["snapshot"]:
-        n.model.add_constraints(
-            lhs.loc[ct] <= rhs[ct],
-            name=f"GlobalConstraint-co2_limit_per_country{ct}",
-        )
-        n.add(
-            "GlobalConstraint",
-            f"co2_limit_per_country{ct}",
-            constant=rhs[ct],
-            sense="<=",
-            type="",
-        )
 def extra_functionality(n, snapshots):
     """
     Collects supplementary constraints which will be passed to
@@ -998,16 +910,6 @@ def extra_functionality(n, snapshots):
                 logging.warning(f"Invalid EQ option: {o}")
     add_battery_constraints(n)
     add_pipe_retrofit_constraint(n)
-    if n.config["sector"]["co2_budget_national"]:
-        # prepare co2 constraint
-        nhours = n.snapshot_weightings.generators.sum()
-        nyears = nhours / 8760
-        investment_year = int(snakemake.wildcards.planning_horizons[-4:])
-        limit_countries = snakemake.config["co2_budget_national"][investment_year]
-
-        # add co2 constraint for each country
-        logger.info(f"Add CO2 limit for each country")
-        add_co2limit_country(n, limit_countries, nyears)
 
 
 def solve_network(n, config, solving, opts="", **kwargs):
