@@ -37,7 +37,7 @@ file = pd.ExcelFile(os.path.join(DIRNAME, r'SEPIA_config.xlsx'), engine="openpyx
 CONFIG = pd.read_excel(file, ["MAIN_PARAMS","NODES","PROCESSES","PROCESSES_2","PROCESSES_3","IMPORT_MIX","INDICATORS"], index_col=0)
 
 # Simulation data:
-datafile = os.path.join(DIRNAME, "../results/sepia/inputs.xlsx")
+
 
 # Main settings (cf. SEPIA_config for description of all setting constants)
 MAIN_PARAMS = CONFIG["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
@@ -79,6 +79,7 @@ tot_flows = {} # Energy flow DataFrames
 print("\nEnergy system (network graph) creation\n")
 
 for country in ALL_COUNTRIES:
+    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data

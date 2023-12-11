@@ -542,22 +542,22 @@ def add_co2_tracking(n, options):
         carrier="co2",
         bus="co2 atmosphere",
     )
-    fn = snakemake.input.co2_totals_name
-    LULUCF_totals = pd.read_csv(fn, index_col=0)
-    lt = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
-    column_to_lock = ['LULUCF']
-    sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
-    sum_results = sum_results * -1e6
-    n.madd(
-        "Store",
-        spatial.co2.LULUCF,
-        e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
-        e_nom_max=sum_results,
-        carrier="LULUCF",
-        capital_cost=0,
-        bus="co2 atmosphere",
-    )
-    n.add("Carrier", "LULUCF")
+    #fn = snakemake.input.co2_totals_name
+    #LULUCF_totals = pd.read_csv(fn, index_col=0)
+    #lt = ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
+    #column_to_lock = ['LULUCF']
+    #sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
+    #sum_results = sum_results * -1e6
+    #n.madd(
+        #"Store",
+        #spatial.co2.LULUCF,
+        #e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
+        #e_nom_max=sum_results,
+        #carrier="LULUCF",
+        #capital_cost=0,
+        #bus="co2 atmosphere",
+    #)
+    #n.add("Carrier", "LULUCF")
 
     # this tracks CO2 stored, e.g. underground
     n.madd(

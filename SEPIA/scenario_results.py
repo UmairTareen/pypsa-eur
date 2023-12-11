@@ -23,15 +23,14 @@ with open("../config/config.yaml") as file:
 countries = ['BE', 'DE', 'FR', 'GB', 'NL']
 tech_colors = config["plotting"]["tech_colors"]
 
-def scenario_costs():
- for country in countries:
-    costs_bau = pd.read_csv(f"csvs/{country}_costs_BAU.csv")
-    # costs_suff = pd.read_csv(f"csvs/{country}_costs_suff.csv")
-    costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
+def scenario_costs(country):
+    costs_bau = pd.read_csv(f"csvs/{country}_costs_bau.csv")
+    costs_suff = pd.read_csv(f"csvs/{country}_costs_suff.csv")
+    # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     costs_reff = costs_bau[['tech', '2020']]
     costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
-    # costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
-    costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
+    costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
+    # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
     costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
@@ -40,19 +39,19 @@ def scenario_costs():
     costs_bau['Total'] = costs_bau['Total'] / 3
     costs_bau = costs_bau.rename(columns={'Total': 'BAU'})
     
-    # costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
-    # costs_suff = costs_suff[['tech', 'Total']]
-    # costs_suff['Total'] = costs_suff['Total'] / 3
-    # costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
+    costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
+    costs_suff = costs_suff[['tech', 'Total']]
+    costs_suff['Total'] = costs_suff['Total'] / 3
+    costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
     
-    costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
-    costs_ncdr = costs_ncdr[['tech', 'Total']]
-    costs_ncdr['Total'] = costs_ncdr['Total'] / 3
-    costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
+    # costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
+    # costs_ncdr = costs_ncdr[['tech', 'Total']]
+    # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
+    # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
     
     combined_df = pd.merge(costs_reff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
-    # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
-    combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
+    # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
@@ -62,6 +61,8 @@ def scenario_costs():
     colors = config["plotting"]["tech_colors"]
     colors["AC Transmission"] = "#FF3030"
     colors["DC Transmission"] = "#104E8B"
+    colors["AC Transmission lines"] = "#FF3030"
+    colors["DC Transmission lines"] = "#104E8B"
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -77,32 +78,34 @@ def scenario_costs():
     
     
 #%%
-def scenario_capacities():
- for country in countries:
-    caps_bau = pd.read_csv(f"csvs/{country}_capacities_BAU.csv")
-    # caps_suff = pd.read_csv(f"csvs/{country}_capacities_suff.csv")
-    caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
+def scenario_capacities(country):
+    caps_bau = pd.read_csv(f"csvs/{country}_capacities_bau.csv")
+    caps_suff = pd.read_csv(f"csvs/{country}_capacities_suff.csv")
+    # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
     caps_reff = caps_bau[['tech', '2020']]
     caps_bau = caps_bau[['tech', '2030', '2040', '2050']]
-    # caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
-    caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
+    caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
+    # caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
     
     caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
     
     caps_bau = caps_bau[['tech', '2050']]
     caps_bau = caps_bau.rename(columns={'2050': 'BAU'})
     
+    caps_suff = caps_suff[['tech', '2050']]
+    caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
+    
     # caps_suff['Total'] = caps_suff[['2030', '2040', '2050']].sum(axis=1)
     # caps_suff = caps_suff[['tech', 'Total']]
     # caps_suff['Total'] = caps_suff['Total'] / 3
     # caps_suff = caps_suff.rename(columns={'Total': 'Suff'})
     
-    caps_ncdr = caps_ncdr[['tech', '2050']]
-    caps_ncdr = caps_ncdr.rename(columns={'2050': 'Ncdr'})
+    # caps_ncdr = caps_ncdr[['tech', '2050']]
+    # caps_ncdr = caps_ncdr.rename(columns={'2050': 'Ncdr'})
     
     combined_df = pd.merge(caps_reff, caps_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
-    # combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
-    combined_df = pd.merge(combined_df, caps_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
+    # combined_df = pd.merge(combined_df, caps_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
@@ -112,6 +115,8 @@ def scenario_capacities():
     colors = config["plotting"]["tech_colors"]
     colors["AC Transmission"] = "#FF3030"
     colors["DC Transmission"] = "#104E8B"
+    colors["AC Transmission lines"] = "#FF3030"
+    colors["DC Transmission lines"] = "#104E8B"
     
     fig = go.Figure()
     groups = [
@@ -146,7 +151,7 @@ def scenario_capacities():
             fig.update_yaxes(title_text=unit, row=2, col=1)
 
     # Update layout
-    fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}_2050", yaxis_title=unit)
+    fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit)
     
     return fig
 
@@ -158,11 +163,11 @@ def create_combined_scenario_chart_country(country, output_folder='scenario_char
     combined_html = "<html><head><title>Combined Plots</title></head><body>"
 
     # Create bar chart
-    bar_chart = scenario_costs()
+    bar_chart = scenario_costs(country)
     combined_html += f"<div><h2>{country} - Bar Chart</h2>{bar_chart.to_html()}</div>"
 
     # Create capacities chart
-    capacities_chart = scenario_capacities()
+    capacities_chart = scenario_capacities(country)
     combined_html += f"<div><h2>{country} - Capacities Chart</h2>{capacities_chart.to_html()}</div>"
 
     combined_html += "</body></html>"

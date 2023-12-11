@@ -317,6 +317,7 @@ def plot_map(
     #         labels,
     #         legend_kw=legend_kw,
     #     )
+    
 plot_map(
         n,
         components=["generators", "links", "stores", "storage_units"],

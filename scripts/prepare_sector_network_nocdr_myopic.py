@@ -76,13 +76,13 @@ def define_spatial(nodes, options):
         spatial.co2.locations = nodes
         spatial.co2.vents = nodes + " co2 vent"
         spatial.co2.process_emissions = nodes + " process emissions"
-        spatial.co2.LULUCF = ["LULUCF"]
+        # spatial.co2.LULUCF = ["LULUCF"]
     else:
         spatial.co2.nodes = ["co2 stored"]
         spatial.co2.locations = ["EU"]
         spatial.co2.vents = ["co2 vent"]
         spatial.co2.process_emissions = ["process emissions"]
-        spatial.co2.LULUCF = ["LULUCF"]
+        # spatial.co2.LULUCF = ["LULUCF"]
 
     spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
 
@@ -130,13 +130,35 @@ def define_spatial(nodes, options):
 
     # methanol
     spatial.methanol = SimpleNamespace()
-    spatial.methanol.nodes = ["EU methanol"]
-    spatial.methanol.locations = ["EU"]
+    if options["co2_budget_national"]:
+        spatial.methanol.nodes = nodes + " methanol"
+        spatial.methanol.locations = nodes
+        spatial.methanol.shipping = nodes + " shipping methanol"
+    else:
+        spatial.methanol.nodes = ["EU methanol"]
+        spatial.methanol.locations = ["EU"]
+        spatial.methanol.shipping = ["EU shipping methanol"]
 
     # oil
     spatial.oil = SimpleNamespace()
-    spatial.oil.nodes = ["EU oil"]
-    spatial.oil.locations = ["EU"]
+    if options["co2_budget_national"]:
+        spatial.oil.nodes = nodes + " oil"
+        spatial.oil.locations = nodes
+        spatial.oil.naphtha = nodes + " naphtha for industry"
+        spatial.oil.naphtha_process_emissions = nodes + " naphtha process emissions"
+        spatial.oil.kerosene = nodes + " kerosene for aviation"
+        spatial.oil.shipping = nodes + " shipping oil"
+        spatial.oil.agriculture_machinery = nodes + " agriculture machinery oil"
+        spatial.oil.land_transport = nodes + " land transport oil"
+    else:
+        spatial.oil.nodes = ["EU oil"]
+        spatial.oil.locations = ["EU"]
+        spatial.oil.naphtha = ["EU naphtha for industry"]
+        spatial.oil.naphtha_process_emissions = ["EU naphtha process emissions"]
+        spatial.oil.kerosene = ["EU kerosene for aviation"]
+        spatial.oil.shipping = ["EU shipping oil"]
+        spatial.oil.agriculture_machinery = ["EU agriculture machinery oil"]
+        spatial.oil.land_transport = nodes + " land transport oil"
 
     # uranium
     spatial.uranium = SimpleNamespace()
@@ -528,6 +550,7 @@ def patch_electricity_network(n):
 def add_co2_tracking(n, options):
     # minus sign because opposite to how fossil fuels used:
     # CH4 burning puts CH4 down, atmosphere up
+    # countries = spatial.co2.atm
     n.add("Carrier", "co2", co2_emissions=-1.0)
 
     # this tracks CO2 in the atmosphere
@@ -542,20 +565,63 @@ def add_co2_tracking(n, options):
         carrier="co2",
         bus="co2 atmosphere",
     )
-    fn = snakemake.input.co2_totals_name
-    LULUCF_totals = pd.read_csv(fn, index_col=0)
-    sum_results = LULUCF_totals.loc[:, ['LULUCF']].sum()
-    sum_results = sum_results * -1e6
-    n.madd(
-        "Store",
-        spatial.co2.LULUCF,
-        e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
-        e_nom_max=sum_results,
-        carrier="LULUCF",
-        capital_cost=0,
-        bus="co2 atmosphere",
-    )
-    n.add("Carrier", "LULUCF")
+    # fn = snakemake.input.co2_totals_name
+    # LULUCF_totals = pd.read_csv(fn, index_col=0)
+    # lt = ['BE', 'DE', 'FR', 'GB',  'NL']
+    # column_to_lock = ['LULUCF']
+    # sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
+    # sum_results = sum_results * -1e6
+    # n.madd(
+    #     "Store",
+    #     spatial.co2.LULUCF,
+    #     e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
+    #     e_nom_max=sum_results,
+    #     carrier="LULUCF",
+    #     capital_cost=0,
+    #     bus="co2 atmosphere",
+    # )
+    # n.add("Carrier", "LULUCF")
+    # n.madd(
+    #     "Bus",
+    #     spatial.co2.atm,
+    #     location=spatial.co2.locations,
+    #     carrier="co2",
+    #     unit="t_co2")
+    # #n.add("Carrier", "LULUCF")
+    # fn = snakemake.input.co2_totals_name
+    # LULUCF_totals = pd.read_csv(fn, index_col=0)
+    # new_row_names = {
+    #     'BE': 'BE1 0 atm',
+    #     'DE': 'DE1 0 atm',
+    #     'FR': 'FR1 0 atm',
+    #     'GB': 'GB0 0 atm',
+    #     'NL': 'NL1 0 atm'}
+    # LULUCF_totals.rename(index=new_row_names, inplace=True)
+    # new_row_index = 'GB2 0 atm'
+    # LULUCF_totals.loc[new_row_index] = 0
+    # LULUCF_totals.loc['NL1 0 atm', ['LULUCF']] = 0
+    # sum_results = LULUCF_totals.loc[countries, 'LULUCF']
+    # sum_results = sum_results.loc[spatial.co2.atm] * -1e6
+        
+    # n.madd(
+    #     "Store",
+    #     spatial.co2.atm,
+    #     e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
+    #     e_nom_max=sum_results,
+    #     carrier="co2 stored",
+    #     capital_cost=0,
+    #     bus=spatial.co2.atm,
+    #      )
+    
+    # n.madd(
+    #     "Link",
+    #     spatial.co2.atm,
+    #     bus0=spatial.co2.atm,
+    #     bus1="co2 atmosphere",
+    #     carrier="co2",
+    #     efficiency=1.0,
+    #     p_nom_extendable=True,
+    # )
 
     # this tracks CO2 stored, e.g. underground
     n.madd(
@@ -1489,8 +1555,9 @@ def add_land_transport(n, costs):
         n.madd(
             "Bus",
             nodes,
-            location=nodes,
+            
             suffix=" EV battery",
+            location=nodes,
             carrier="Li ion",
             unit="MWh_el",
         )
@@ -1590,28 +1657,32 @@ def add_land_transport(n, costs):
         ice_efficiency = options["transport_internal_combustion_efficiency"]
 
         n.madd(
-            "Load",
-            nodes,
-            suffix=" land transport oil",
-            bus=spatial.oil.nodes,
+            "Bus",
+            spatial.oil.land_transport,
+            location=nodes,
             carrier="land transport oil",
-            p_set=ice_share * transport[nodes],
+            unit="MWh_LHV",
         )
 
-        co2 = (
-            ice_share
-            #/ ice_efficiency
-            * transport[nodes].sum().sum()
-            / nhours
-            * costs.at["oil", "CO2 intensity"]
-        )
-
-        n.add(
+        n.madd(
             "Load",
-            "land transport oil emissions",
-            bus="co2 atmosphere",
-            carrier="land transport oil emissions",
-            p_set=-co2,
+            spatial.oil.land_transport,
+            bus=spatial.oil.land_transport,
+            carrier="land transport oil",
+            p_set=ice_share
+            * transport[nodes].rename(columns=lambda x: x + " land transport oil"),
+        )
+
+        n.madd(
+            "Link",
+            spatial.oil.land_transport,
+            bus0=spatial.oil.nodes,
+            bus1=spatial.oil.land_transport,
+            bus2="co2 atmosphere",
+            carrier="land transport oil",
+            efficiency=ice_efficiency,
+            efficiency2=costs.at["oil", "CO2 intensity"],
+            p_nom_extendable=True,
         )
 
 
@@ -2441,9 +2512,14 @@ def add_industry(n, costs):
         efficiency=1.0,
     )
 
+    if len(spatial.biomass.industry_cc) <= 1 and len(spatial.co2.nodes) > 1:
+        link_names = nodes + " " + spatial.biomass.industry_cc
+    else:
+        link_names = spatial.biomass.industry_cc
+
     n.madd(
         "Link",
-        spatial.biomass.industry_cc,
+        link_names,
         bus0=spatial.biomass.nodes,
         bus1=spatial.biomass.industry,
         bus2="co2 atmosphere",
@@ -2631,48 +2707,73 @@ def add_industry(n, costs):
         efficiency = (
             options["shipping_oil_efficiency"] / options["shipping_methanol_efficiency"]
         )
-        p_set_methanol = shipping_methanol_share * p_set.sum() * efficiency
+        # need to aggregate potentials if methanol not nodally resolved
+        if options["co2_budget_national"]:
+            p_set_methanol = shipping_methanol_share * p_set * efficiency
+        else:
+            p_set_methanol = shipping_methanol_share * p_set.sum() * efficiency
+
+        n.madd(
+            "Bus",
+            spatial.methanol.shipping,
+            location=spatial.methanol.locations,
+            carrier="shipping methanol",
+            unit="MWh_LHV",
+        )
 
         n.madd(
             "Load",
-            spatial.methanol.nodes,
-            suffix=" shipping methanol",
-            bus=spatial.methanol.nodes,
+            spatial.methanol.shipping,
+            bus=spatial.methanol.shipping,
             carrier="shipping methanol",
             p_set=p_set_methanol,
         )
 
-        # CO2 intensity methanol based on stoichiometric calculation with 22.7 GJ/t methanol (32 g/mol), CO2 (44 g/mol), 277.78 MWh/TJ = 0.218 t/MWh
-        co2 = p_set_methanol / options["MWh_MeOH_per_tCO2"]
-
-        n.add(
-            "Load",
-            "shipping methanol emissions",
-            bus="co2 atmosphere",
-            carrier="shipping methanol emissions",
-            p_set=-co2,
+        n.madd(
+            "Link",
+            spatial.methanol.shipping,
+            bus0=spatial.methanol.nodes,
+            bus1=spatial.methanol.shipping,
+            bus2="co2 atmosphere",
+            carrier="shipping methanol",
+            p_nom_extendable=True,
+            efficiency2=1
+            / options[
+                "MWh_MeOH_per_tCO2"
+            ],  # CO2 intensity methanol based on stoichiometric calculation with 22.7 GJ/t methanol (32 g/mol), CO2 (44 g/mol), 277.78 MWh/TJ = 0.218 t/MWh
         )
-
     if shipping_oil_share:
-        p_set_oil = shipping_oil_share * p_set.sum()
+        # need to aggregate potentials if oil not nodally resolved
+        if options["co2_budget_national"]:
+            p_set_oil = shipping_oil_share * p_set
+        else:
+            p_set_oil = shipping_oil_share * p_set.sum()
+
+        n.madd(
+            "Bus",
+            spatial.oil.shipping,
+            location=spatial.oil.locations,
+            carrier="shipping oil",
+            unit="MWh_LHV",
+        )
 
         n.madd(
             "Load",
-            spatial.oil.nodes,
-            suffix=" shipping oil",
-            bus=spatial.oil.nodes,
+            spatial.oil.shipping,
+            bus=spatial.oil.shipping,
             carrier="shipping oil",
             p_set=p_set_oil,
         )
 
-        co2 = p_set_oil * costs.at["oil", "CO2 intensity"]
-
-        n.add(
-            "Load",
-            "shipping oil emissions",
-            bus="co2 atmosphere",
-            carrier="shipping oil emissions",
-            p_set=-co2,
+        n.madd(
+            "Link",
+            spatial.oil.shipping,
+            bus0=spatial.oil.nodes,
+            bus1=spatial.oil.shipping,
+            bus2="co2 atmosphere",
+            carrier="shipping oil",
+            p_nom_extendable=True,
+            efficiency2=costs.at["oil", "CO2 intensity"],
         )
 
     if "oil" not in n.buses.carrier.unique():
@@ -2747,52 +2848,132 @@ def add_industry(n, costs):
     )
 
     demand_factor = options.get("HVC_demand_factor", 1)
-    p_set = demand_factor * industrial_demand.loc[nodes, "naphtha"].sum() / nhours
     if demand_factor != 1:
         logger.warning(f"Changing HVC demand by {demand_factor*100-100:+.2f}%.")
 
+    # NB: CO2 gets released again to atmosphere when plastics decay
+    # except for the process emissions when naphtha is used for petrochemicals, which can be captured with other industry process emissions
+    # convert process emissions from feedstock from MtCO2 to energy demand
+    # need to aggregate potentials if oil not nodally resolved
+    if options["co2_budget_national"]:
+        p_set_plastics = (
+            demand_factor
+            * (
+                industrial_demand.loc[nodes, "naphtha"]
+                - industrial_demand.loc[nodes, "process emission from feedstock"]
+                / costs.at["oil", "CO2 intensity"]
+            )
+            / nhours
+        )
+    else:
+        p_set_plastics = (
+            demand_factor
+            * (
+                industrial_demand.loc[nodes, "naphtha"]
+                - industrial_demand.loc[nodes, "process emission from feedstock"]
+                / costs.at["oil", "CO2 intensity"]
+            ).sum()
+            / nhours
+        )
+    if options["co2_budget_national"]:
+        p_set_process_emissions = (
+            demand_factor
+            * (
+                industrial_demand.loc[nodes, "process emission from feedstock"]
+                / costs.at["oil", "CO2 intensity"]
+            )
+            / nhours
+        )
+    else:
+        p_set_process_emissions = (
+            demand_factor
+            * (
+                industrial_demand.loc[nodes, "process emission from feedstock"]
+                / costs.at["oil", "CO2 intensity"]
+            ).sum()
+            / nhours
+        )
+
+    n.madd(
+        "Bus",
+        spatial.oil.naphtha,
+        location=spatial.oil.locations,
+        carrier="naphtha for industry",
+        unit="MWh_LHV",
+    )
     n.madd(
         "Load",
-        ["naphtha for industry"],
+        spatial.oil.naphtha,
+        bus=spatial.oil.naphtha,
+        carrier="naphtha for industry",
+        p_set=p_set_plastics,
+    )
+
+    n.madd(
+        "Load",
+        spatial.oil.naphtha_process_emissions,
         bus=spatial.oil.nodes,
         carrier="naphtha for industry",
-        p_set=p_set,
+        p_set=p_set_process_emissions,
+    )
+
+    n.madd(
+        "Link",
+        spatial.oil.naphtha,
+        bus0=spatial.oil.nodes,
+        bus1=spatial.oil.naphtha,
+        bus2="co2 atmosphere",
+        carrier="naphtha for industry",
+        p_nom_extendable=True,
+        efficiency2=costs.at["oil", "CO2 intensity"],
     )
 
     demand_factor = options.get("aviation_demand_factor", 1)
-    all_aviation = ["total international aviation", "total domestic aviation"]
-    p_set = (
-        demand_factor
-        * pop_weighted_energy_totals.loc[nodes, all_aviation].sum(axis=1).sum()
-        * 1e6
-        / nhours
-    )
     if demand_factor != 1:
         logger.warning(f"Changing aviation demand by {demand_factor*100-100:+.2f}%.")
 
+    all_aviation = ["total international aviation", "total domestic aviation"]
+    # need to aggregate potentials if oil not nodally resolved
+    if options["co2_budget_national"]:
+        p_set = (
+            demand_factor
+            * pop_weighted_energy_totals.loc[nodes, all_aviation].sum(axis=1)
+            * 1e6
+            / nhours
+        )
+    else:
+        p_set = (
+            demand_factor
+            * pop_weighted_energy_totals.loc[nodes, all_aviation].sum(axis=1).sum()
+            * 1e6
+            / nhours
+        )
+
+    n.madd(
+        "Bus",
+        spatial.oil.kerosene,
+        location=spatial.oil.locations,
+        carrier="kerosene for aviation",
+        unit="MWh_LHV",
+    )
+
     n.madd(
         "Load",
-        ["kerosene for aviation"],
-        bus=spatial.oil.nodes,
+        spatial.oil.kerosene,
+        bus=spatial.oil.kerosene,
         carrier="kerosene for aviation",
         p_set=p_set,
     )
 
-    # NB: CO2 gets released again to atmosphere when plastics decay or kerosene is burned
-    # except for the process emissions when naphtha is used for petrochemicals, which can be captured with other industry process emissions
-    # tco2 per hour
-    co2_release = ["naphtha for industry", "kerosene for aviation"]
-    co2 = (
-        n.loads.loc[co2_release, "p_set"].sum() * costs.at["oil", "CO2 intensity"]
-        #- industrial_demand.loc[nodes, "process emission from feedstock"].sum() / nhours
-    )
-
-    n.add(
-        "Load",
-        "oil emissions",
-        bus="co2 atmosphere",
-        carrier="oil emissions",
-        p_set=-co2,
+    n.madd(
+        "Link",
+        spatial.oil.kerosene,
+        bus0=spatial.oil.nodes,
+        bus1=spatial.oil.kerosene,
+        bus2="co2 atmosphere",
+        carrier="kerosene for aviation",
+        p_nom_extendable=True,
+        efficiency2=costs.at["oil", "CO2 intensity"],
     )
 
     # TODO simplify bus expression
@@ -2994,9 +3175,9 @@ def add_agriculture(n, costs):
             f"Total agriculture machinery shares sum up to {total_share:.2%}, corresponding to increased or decreased demand assumptions."
         )
 
-    machinery_nodal_energy = pop_weighted_energy_totals.loc[
-        nodes, "total agriculture machinery"
-    ]
+    machinery_nodal_energy = (
+        pop_weighted_energy_totals.loc[nodes, "total agriculture machinery"] * 1e6
+    )
 
     if electric_share > 0:
         efficiency_gain = (
@@ -3010,36 +3191,41 @@ def add_agriculture(n, costs):
             suffix=" agriculture machinery electric",
             bus=nodes,
             carrier="agriculture machinery electric",
-            p_set=electric_share
-            / efficiency_gain
-            * machinery_nodal_energy
-            * 1e6
-            / nhours,
+            p_set=electric_share / efficiency_gain * machinery_nodal_energy / nhours,
         )
 
     if oil_share > 0:
+        # need to aggregate potentials if oil not nodally resolved
+        if options["co2_budget_national"]:
+            p_set = oil_share * machinery_nodal_energy / nhours
+        else:
+            p_set = oil_share * machinery_nodal_energy.sum() / nhours
+
+        n.madd(
+            "Bus",
+            spatial.oil.agriculture_machinery,
+            location=spatial.oil.locations,
+            carrier="agriculture machinery oil",
+            unit="MWh_LHV",
+        )
+
         n.madd(
             "Load",
-            ["agriculture machinery oil"],
-            bus=spatial.oil.nodes,
+            spatial.oil.agriculture_machinery,
+            bus=spatial.oil.agriculture_machinery,
             carrier="agriculture machinery oil",
-            p_set=oil_share * machinery_nodal_energy.sum() * 1e6 / nhours,
+            p_set=p_set,
         )
 
-        co2 = (
-            oil_share
-            * machinery_nodal_energy.sum()
-            * 1e6
-            / nhours
-            * costs.at["oil", "CO2 intensity"]
-        )
-
-        n.add(
-            "Load",
-            "agriculture machinery oil emissions",
-            bus="co2 atmosphere",
-            carrier="agriculture machinery oil emissions",
-            p_set=-co2,
+        n.madd(
+            "Link",
+            spatial.oil.agriculture_machinery,
+            bus0=spatial.oil.nodes,
+            bus1=spatial.oil.agriculture_machinery,
+            bus2="co2 atmosphere",
+            carrier="agriculture machinery oil",
+            p_nom_extendable=True,
+            efficiency2=costs.at["oil", "CO2 intensity"],
         )
 
 

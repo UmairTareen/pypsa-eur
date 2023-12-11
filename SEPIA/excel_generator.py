@@ -345,7 +345,7 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'battery discharger','battery discharger_2','H2 turbine','H2 turbine_2','Fischer-Tropsch','Fischer-Tropsch_2','Fischer-Tropsch_3',
                      'urban central gas CHP','urban central gas CHP_2','urban central gas CHP_3','OCGT','OCGT_2','biogas to gas','BioSNG','Sabatier',
                      'urban central solid biomass CHP CC','urban central solid biomass CHP CC_2','urban central solid biomass CHP CC_3',
-                     'DAC','DAC_2','DAC_3'] # Add moe entries if needed
+                     'DAC','DAC_2','DAC_3','H2 for shipping'] # Add moe entries if needed
 
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
@@ -440,6 +440,7 @@ entry_label_mapping = {
     'kerosene for aviation': {'label': 'aviation oil demand', 'source': 'TWh', 'target': 'preslqfcfavi'},
     'shipping oil': {'label': 'shipping oil', 'source': 'TWh', 'target': 'preslqfcffrewati'},
     'shipping methanol': {'label': 'shipping methanol', 'source': 'TWh', 'target': 'presngvcffrewati'},
+    'H2 for shipping': {'label': 'shipping methanol', 'source': 'TWh', 'target': 'preshydwati'},
     'solid biomass for industry': {'label': 'solid biomass for Industry', 'source': 'TWh', 'target': 'presenccfind'},
     'solid biomass for industry CC': {'label': 'solid biomass for Industry CC', 'source': 'TWh', 'target': 'presenccfindd'},
     'gas for industry': {'label': 'gas for Industry', 'source': 'TWh', 'target': 'presgazcfind'},
@@ -1406,7 +1407,7 @@ if __name__ == "__main__":
         snakemake.params.scenario["clusters"] = [6]
         snakemake.params.scenario["opts"] = [""]
         snakemake.params.scenario["sector_opts"] = ["EQ0.7c-1H-T-H-B-I-A-dist1"]
-        snakemake.params.scenario["ll"] = ["vopt"]
+        snakemake.params.scenario["ll"] = ["v1.5"]
         snakemake.params.scenario["planning_horizons"] = [2020, 2030, 2040, 2050]
 
     # List the input files for  this script:

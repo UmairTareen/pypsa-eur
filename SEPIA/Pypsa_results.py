@@ -199,7 +199,7 @@ def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix
 
 # Example usage:
 planning_horizons = [2020, 2030, 2040, 2050]
-filename = build_filename("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons[0])
+filename = build_filename("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "v1.5", planning_horizons[0])
 
 # Check if the file exists
 if os.path.exists(filename):
@@ -276,7 +276,7 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
         }
 
     return results_dict
-results = calculate_transmission_values("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons)
+results = calculate_transmission_values("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "v1.5", planning_horizons)
 
 def costs(countries):
     costs = {}
@@ -595,7 +595,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons):
      tabs.save(html_filepath)
 
 # Call the function
-plot_series_power("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons)
+plot_series_power("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "v1.5", planning_horizons)
 
 def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons):
     tech_colors = config["plotting"]["tech_colors"]
@@ -727,7 +727,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons):
      tabs.save(html_filepath)
 
 # Call the function
-plot_series_heat("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons)
+plot_series_heat("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "v1.5", planning_horizons)
 
 def create_bar_chart(costs, country, output_folder='output_charts', unit='Billion Euros/year'):
     # Create output folder if it doesn't exist

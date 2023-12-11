@@ -34,9 +34,9 @@ scenario:
   simpl:
   - ''
   ll:
-  - vopt
+  - v1.5
   clusters:
-  - 32
+  - 6
   #- 128
   #- 256
   #- 512
@@ -44,7 +44,7 @@ scenario:
   opts:
   - ''
   sector_opts:
-  - 1H-T-H-B-I-A-dist1
+  - EQ0.7c-1H-T-H-B-I-A-dist1
   planning_horizons:
   # - 2020
   - 2030
@@ -52,7 +52,7 @@ scenario:
   - 2050
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
-countries: ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
+countries: ['BE', 'DE', 'FR', 'GB', 'NL']
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#snapshots
 snapshots:
@@ -630,7 +630,7 @@ solving:
       parallel: "on"
       random_seed: 123
     gurobi-default:
-      threads: 32
+      threads: 4
       method: 2 # barrier
       crossover: 0
       BarConvTol: 1.e-6
@@ -669,7 +669,7 @@ solving:
     cbc-default: {} # Used in CI
     glpk-default: {} # Used in CI
 
-  mem: 400000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
+  mem: 60000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
   walltime: "12:00:00"
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#plotting

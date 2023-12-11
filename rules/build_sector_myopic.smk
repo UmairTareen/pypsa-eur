@@ -262,7 +262,7 @@ rule build_energy_totals:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_energy_totals_myopic.py"
+        "../scripts/build_energy_totals.py"
 
 
 rule build_biomass_potentials:
@@ -445,7 +445,7 @@ rule build_industrial_production_per_country:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_industrial_production_per_country_myopic.py"
+        "../scripts/build_industrial_production_per_country.py"
 
 
 rule build_industrial_production_per_country_tomorrow:

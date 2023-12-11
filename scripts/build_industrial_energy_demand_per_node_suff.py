@@ -24,8 +24,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "build_industrial_energy_demand_per_node",
             simpl="",
-            clusters=6, #48
-            planning_horizons=2050, #2030
+            clusters=48, #48
+            planning_horizons=2030, #2030
         )
     
     #params = snakemake.params.energy
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         nodal_df.loc[country, 'coal'] = clever_Industry.loc[country, 'Total Final energy consumption from solid fossil fuels (coal ...) in industry']
         nodal_df.loc[country, 'solid biomass'] = clever_Industry.loc[country, 'Total Final energy consumption from solid biomass in industry']
         nodal_df.loc[country, 'methane'] = clever_Industry.loc[country, 'Total Final energy consumption from gas grid / gas consumed locally in industry']
-        #nodal_df.loc[country, 'low-temperature heat'] = clever_Industry.loc[country, 'Total Final heat consumption in industry']
+        nodal_df.loc[country, 'low-temperature heat'] = clever_Industry.loc[country, 'Total Final heat consumption in industry']
         nodal_df.loc[country, 'hydrogen'] = clever_Industry.loc[country, 'Total Final hydrogen consumption in industry'] + clever_Industry.loc[country, 'Non-energy consumption of hydrogen for the feedstock production'].sum()
         nodal_df.loc[country, 'naphtha'] = clever_Industry.loc[country, 'Non-energy consumption of oil for the feedstock production']
     

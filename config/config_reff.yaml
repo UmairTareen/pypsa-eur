@@ -36,7 +36,7 @@ scenario:
   ll:
   - v1.0
   clusters:
-  - 32
+  - 6
   #- 128
   #- 256
   #- 512
@@ -44,7 +44,7 @@ scenario:
   opts:
   - ''
   sector_opts:
-  - Co2L0.7-12H-T-H-B-I-A-dist1
+  - Co2L0.7-1H-T-H-B-I-A-dist1
   planning_horizons:
   #- 2020
   #- 2030
@@ -53,7 +53,7 @@ scenario:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 #countries: ['AL', 'AT', 'BA', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'ME', 'MK', 'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'SE', 'SI', 'SK']
-countries: ['BE', 'DE', 'FR', 'GB', 'NL','LU','IE','CH', 'ES','DK','AT','CZ','HU','IT','EE','FI','GR','HR','LT','LV','SE','NO','BG','RO','PL','SI', 'SK','PT']
+countries: ['BE', 'DE', 'FR', 'GB', 'NL']
 #countries: ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#snapshots
@@ -240,7 +240,7 @@ lines:
   s_nom_max: .inf
   max_extension: .inf
   length_factor: 1.25
-  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+  under_construction: 'zero' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
   dynamic_line_rating:
     activate: true
     cutout: europe-2013-era5
@@ -254,7 +254,7 @@ links:
   p_nom_max: .inf
   max_extension: .inf
   include_tyndp: true
-  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+  under_construction: 'zero' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#transformers
 transformers:
@@ -478,7 +478,7 @@ sector:
   - onshore  # more than 50 km from sea
   - nearshore    # within 50 km of sea
     # - offshore
-  ammonia: true
+  ammonia: false
   min_part_load_fischer_tropsch: 0.9
   min_part_load_methanolisation: 0.5
   use_fischer_tropsch_waste_heat: false

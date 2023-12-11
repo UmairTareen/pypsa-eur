@@ -36,7 +36,7 @@ def prepare_sankey(n):
                 df.loc[i, column_name] = target_label
      return df.groupby(cols_misc).sum().reset_index()
 
-    file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
+    # file_industrial_demand = snakemake.input.industrial_energy_demand_per_node
     energy = snakemake.input.energy_name
     countries = snakemake.params.countries
     clever_industry = snakemake.input.clever_industry
@@ -46,9 +46,9 @@ def prepare_sankey(n):
     include_losses = True
     
     n=network.copy()
-    feedstock_emissions = (
-        pd.read_csv(file_industrial_demand, index_col=0)["process emission from feedstock"].sum() * 1e6
-      )  # t
+    # feedstock_emissions = (
+    #     pd.read_csv(file_industrial_demand, index_col=0)["process emission from feedstock"].sum() * 1e6
+    #   )  # t
     energy_demand = (
             pd.read_csv(energy, index_col=0)).T
     clever_industry = (
@@ -152,30 +152,34 @@ def prepare_sankey(n):
     # Subtract the raiway demand from electricity demand
     value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"] 
     load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"] = value - Rail_demand
-    for i in range(4):
-        n.links[f"total_e{i}"] = (n.snapshot_weightings.generators @ n.links_t[f"p{i}"]).div(1e6)  # TWh
-        n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
+    p_values = [int(key[1:]) for key in n.links_t.keys() if key.startswith("p") and key[1:].isdigit()]
+    max_i = max(p_values, default=-1) + 1
+    for i in range(max_i):
+       n.links[f"total_e{i}"] = (
+           n.snapshot_weightings.generators @ n.links_t[f"p{i}"]
+       ).div(
+           1e6
+       )  # TWh
+       n.links[f"carrier_bus{i}"] = n.links[f"bus{i}"].map(n.buses.carrier)
 
+    def calculate_losses(x):
+       energy_ports = x.loc[
+           x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
+       ].index.str.replace("carrier_bus", "total_e")
+       return -x.loc[energy_ports].sum()
 
-    def calculate_losses(x, include_losses=include_losses):
-        
-        if include_losses:
-            energy_ports = x.loc[
-            x.index.str.contains("carrier_bus") & ~x.str.contains("co2", na=False)
-            ].index.str.replace("carrier_bus", "total_e")
-            return -x.loc[energy_ports].sum()
-        else:
-            return 0
-
-    n.links["total_e4"] = n.links.apply(calculate_losses, include_losses=include_losses, axis=1)  # e4 and bus 4 for bAU 2050
-    n.links["carrier_bus4"] = "losses"
+    n.links[f"total_e{max_i}"] = n.links.apply(calculate_losses, axis=1)   #e4 and bus 4 for bAU 2050
+    n.links[f"carrier_bus{max_i}"] = "losses"
 
     df = pd.concat(
-    [
-        n.links.groupby(["carrier", "carrier_bus0", "carrier_bus" + str(i)]).sum(numeric_only=True)["total_e" + str(i)]
-        for i in range(1, 5)
-    ]
+       [
+           n.links.groupby(["carrier", "carrier_bus0", "carrier_bus" + str(i)]).sum()[
+               "total_e" + str(i)
+           ]
+           for i in range(1, max_i + 1)
+       ]
     ).reset_index()
+    df.columns = columns
     df.columns = columns
 
     # fix heat pump energy balance
@@ -326,9 +330,9 @@ def prepare_sankey(n):
                 'target': 'Non-energy',
                 'value': H2_nonenergyy}
 
-    connections = connections.append(new_row1, ignore_index=True)
+    # connections = connections.append(new_row1, ignore_index=True)
 
-    connections = connections.append(new_row2, ignore_index=True)
+    # connections = connections.append(new_row2, ignore_index=True)
 
     connections = connections.loc[
     ~(connections.source == connections.target)
@@ -557,11 +561,11 @@ def prepare_carbon_sankey(n):
     collection.append(
     pd.Series(dict(label="SMR CC", source="gas", target="co2 atmosphere", value=value))
      )
-
-    value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like="SMR CC")).sum()
-    collection.append(
-    pd.Series(dict(label="SMR CC", source="gas", target="co2 stored", value=value))
-     )
+    if "p3" in n.links_t:
+     value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like="SMR CC")).sum()
+     collection.append(
+     pd.Series(dict(label="SMR CC", source="gas", target="co2 stored", value=value))
+      )
 
     # gas boiler
     gas_boilers = [
@@ -649,19 +653,20 @@ def prepare_carbon_sankey(n):
       )
 
 
-    #solid biomass to gas 
-    value = (
-    n.snapshot_weightings.generators @ n.links_t.p3.filter(regex="solid biomass solid biomass to gas$")
+    #solid biomass to gas
+    if "p3" in n.links_t:
+     value = (
+     n.snapshot_weightings.generators @ n.links_t.p3.filter(regex="solid biomass solid biomass to gas$")
      ).sum()
-    collection.append(
-    pd.Series(
+     collection.append(
+     pd.Series(
         dict(
             label="solid biomass solid biomass to gas", source="solid biomass", target="gas", value=value# CO2 stored in bioSNG from cost data
         )
          )
           )
-    collection.append(
-    pd.Series(dict(label="solid biomass solid biomass to gas", source="co2 atmosphere", target="solid biomass", value=value ))
+     collection.append(
+     pd.Series(dict(label="solid biomass solid biomass to gas", source="co2 atmosphere", target="solid biomass", value=value ))
      )
 
     value = (
@@ -692,11 +697,12 @@ def prepare_carbon_sankey(n):
 
 
     #methanolisation
-    value = (
-    n.snapshot_weightings.generators @ n.links_t.p3.filter(like="methanolisation")
+    if "p3" in n.links_t:
+     value = (
+     n.snapshot_weightings.generators @ n.links_t.p3.filter(like="methanolisation")
      ).sum()
-    collection.append(
-    pd.Series(
+     collection.append(
+     pd.Series(
         dict(
             label="methanolisation", source="co2 stored", target="methanol", value=value  # C02 intensity of gas from cost data
         )
@@ -715,11 +721,12 @@ def prepare_carbon_sankey(n):
      )
 
     #urban central gas CHP
-    value = -(
-    n.snapshot_weightings.generators @ n.links_t.p3.filter(like="urban central gas CHP")
+    if "p3" in n.links_t:
+     value = -(
+     n.snapshot_weightings.generators @ n.links_t.p3.filter(like="urban central gas CHP")
      ).sum()
-    collection.append(
-    pd.Series(
+     collection.append(
+     pd.Series(
         dict(
             label="urban central gas CHP",
             source="gas",
@@ -993,8 +1000,8 @@ if __name__ == "__main__":
             opts="",
             clusters="6",
             ll="vopt",
-            sector_opts="1H-T-H-B-I-A-dist1",
-            planning_horizons="2050",
+            sector_opts="EQ0.7c-12H-T-H-B-I-A-dist1",
+            planning_horizons="2030",
         )
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     planning_horizons = int(snakemake.wildcards.planning_horizons)

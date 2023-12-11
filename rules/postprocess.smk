@@ -162,6 +162,37 @@ rule prepare_sepia:
         "../envs/environment.yaml"
     script:
         "../SEPIA/excel_generator.py"
+        
+rule prepare_results:
+    params:
+        countries=config["countries"],
+        planning_horizons=config["scenario"]["planning_horizons"],
+        sector_opts=config["scenario"]["sector_opts"],
+        emissions_scope=config["energy"]["emissions"],
+        eurostat_report_year=config["energy"]["eurostat_report_year"],
+        plotting=config["plotting"],
+        scenario=config["scenario"],
+        RDIR=RDIR,
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        
+    output:
+        htmlfile=expand(RESULTS + "pypsa_results/outputs.html", country=config["countries"]),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "prepare_results.log",
+    benchmark:
+        BENCHMARKS + "prepare_results",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/Pypsa_results.py"
 
 
 rule plot_summary:

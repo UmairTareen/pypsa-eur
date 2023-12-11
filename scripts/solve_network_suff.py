@@ -208,6 +208,8 @@ def prepare_network(
     n.generators.loc["BE1 0 offwind-dc-2030", "p_nom_max"] = 2000
     if "BE1 0 nuclear-1980" in n.links.index:
      n.links.loc["BE1 0 nuclear-1980", "p_nom"] = 2000
+    if "BE1 0 solar-2050" in n.links.index:
+     n.generators.loc["BE1 0 gas", "marginal_cost"] = 150.1
 
     return n
 
