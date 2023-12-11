@@ -20,7 +20,7 @@ remote:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: ""
+  name: "reff"
   disable_progressbar: false
   shared_resources: false
   shared_cutouts: true

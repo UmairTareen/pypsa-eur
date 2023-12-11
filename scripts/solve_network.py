@@ -51,9 +51,6 @@ def _add_land_use_constraint(n):
     # warning: this will miss existing offwind which is not classed AC-DC and has carrier 'offwind'
 
     for carrier in ["solar", "onwind", "offwind-ac", "offwind-dc"]:
-        extendable_i = (n.generators.carrier == carrier) & n.generators.p_nom_extendable
-        n.generators.loc[extendable_i, "p_nom_min"] = 0
-
         ext_i = (n.generators.carrier == carrier) & ~n.generators.p_nom_extendable
         existing = (
             n.generators.loc[ext_i, "p_nom"]
@@ -70,7 +67,7 @@ def _add_land_use_constraint(n):
     if len(existing_large):
         logger.warning(
             f"Existing capacities larger than technical potential for {existing_large},\
-                        adjust technical potential to existing capacities"
+                       adjust technical potential to existing capacities"
         )
         n.generators.loc[existing_large, "p_nom_max"] = n.generators.loc[
             existing_large, "p_nom_min"
@@ -116,11 +113,15 @@ def _add_land_use_constraint_m(n, planning_horizons, config):
     n.generators.p_nom_max.clip(lower=0, inplace=True)
 
 
-def add_co2_sequestration_limit(n, limit=200):
+def add_co2_sequestration_limit(n, config, limit=200):
     """
     Add a global constraint on the amount of Mt CO2 that can be sequestered.
     """
-    n.carriers.loc["co2 stored", "co2_absorptions"] = -1
+    if config["run"]["name"] == "ncdr":
+        value = 0
+    else:
+        value = -1
+    n.carriers.loc["co2 stored", "co2_absorptions"] = value                       #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><sequestration
     n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
 
     limit = limit * 1e6
@@ -202,7 +203,16 @@ def prepare_network(
 
     if n.stores.carrier.eq("co2 stored").any():
         limit = co2_sequestration_potential
-        add_co2_sequestration_limit(n, limit=limit)
+        add_co2_sequestration_limit(n, config, limit=limit)
+    
+    if foresight != "overnight":
+     n.generators.loc["BE1 0 solar-2030", "p_nom_max"] = 8000
+     n.generators.loc["BE1 0 solar rooftop-2030", "p_nom_max"] = 2000
+     n.generators.loc["BE1 0 onwind-2030", "p_nom_max"] = 3225
+     n.generators.loc["BE1 0 offwind-ac-2030", "p_nom_max"] = 2517
+     n.generators.loc["BE1 0 offwind-dc-2030", "p_nom_max"] = 2000
+     if "BE1 0 nuclear-1980" in n.links.index:
+      n.links.loc["BE1 0 nuclear-1980", "p_nom"] = 2000
 
     return n
 
@@ -613,7 +623,6 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
         local_factor * local_energy + imported_energy <= 0, name="equity_min"
     )
 
-
 def add_BAU_constraints(n, config):
     """
     Add a per-carrier minimal overall capacity.
@@ -864,6 +873,12 @@ def add_pipe_retrofit_constraint(n):
 
     n.model.add_constraints(lhs == rhs, name="Link-pipe_retrofit")
 
+# def add_co2_storage_constraint(n):
+    
+#     co2_storage_x = n.stores.query("carrier == 'co2 stored' and e_nom_extendable").index
+#     fischer_x = n.links.query("carrier == 'Fischer-Tropsch' and p_nom_extendable").index
+#     methanol_x = n.links.query("carrier == 'methanolisation' and p_nom_extendable").index
+#     methane_x = n.links.query("carrier == 'methanation' and p_nom_extendable").index
 
 def extra_functionality(n, snapshots):
     """
@@ -901,52 +916,53 @@ def extra_functionality(n, snapshots):
 
 def solve_network(n, config, solving, opts="", **kwargs):
     set_of_options = solving["solver"]["options"]
+    solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
+    solver_name = solving["solver"]["name"]
     cf_solving = solving["options"]
-
-    kwargs["solver_options"] = (
-        solving["solver_options"][set_of_options] if set_of_options else {}
-    )
-    kwargs["solver_name"] = solving["solver"]["name"]
-    kwargs["extra_functionality"] = extra_functionality
-    kwargs["transmission_losses"] = cf_solving.get("transmission_losses", False)
-    kwargs["linearized_unit_commitment"] = cf_solving.get(
-        "linearized_unit_commitment", False
-    )
-    kwargs["assign_all_duals"] = cf_solving.get("assign_all_duals", False)
-
-    rolling_horizon = cf_solving.pop("rolling_horizon", False)
-    skip_iterations = cf_solving.pop("skip_iterations", False)
-    if not n.lines.s_nom_extendable.any():
-        skip_iterations = True
-        logger.info("No expandable lines found. Skipping iterative solving.")
+    track_iterations = cf_solving.get("track_iterations", False)
+    min_iterations = cf_solving.get("min_iterations", 4)
+    max_iterations = cf_solving.get("max_iterations", 6)
+    transmission_losses = cf_solving.get("transmission_losses", 0)
+    assign_all_duals = cf_solving.get("assign_all_duals", False)
 
     # add to network for extra_functionality
     n.config = config
     n.opts = opts
 
-    if rolling_horizon:
-        kwargs["horizon"] = cf_solving.get("horizon", 365)
-        kwargs["overlap"] = cf_solving.get("overlap", 0)
-        n.optimize.optimize_with_rolling_horizon(**kwargs)
-        status, condition = "", ""
-    elif skip_iterations:
-        status, condition = n.optimize(**kwargs)
-        #n.model.print_infeasibilities()
+    skip_iterations = cf_solving.get("skip_iterations", False)
+    if not n.lines.s_nom_extendable.any():
+        skip_iterations = True
+        logger.info("No expandable lines found. Skipping iterative solving.")
+
+    if skip_iterations:
+        status, condition = n.optimize(
+            solver_name=solver_name,
+            transmission_losses=transmission_losses,
+            assign_all_duals=assign_all_duals,
+            extra_functionality=extra_functionality,
+            **solver_options,
+            **kwargs,
+        )
     else:
-        kwargs["track_iterations"] = (cf_solving.get("track_iterations", False),)
-        kwargs["min_iterations"] = (cf_solving.get("min_iterations", 4),)
-        kwargs["max_iterations"] = (cf_solving.get("max_iterations", 6),)
         status, condition = n.optimize.optimize_transmission_expansion_iteratively(
-            **kwargs
+            solver_name=solver_name,
+            track_iterations=track_iterations,
+            min_iterations=min_iterations,
+            max_iterations=max_iterations,
+            transmission_losses=transmission_losses,
+            assign_all_duals=assign_all_duals,
+            extra_functionality=extra_functionality,
+            **solver_options,
+            **kwargs,
         )
 
-    if status != "ok" and not rolling_horizon:
+    if status != "ok":
         logger.warning(
             f"Solving status '{status}' with termination condition '{condition}'"
         )
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
-        
+
     return n
 
 
@@ -955,13 +971,14 @@ if __name__ == "__main__":
         from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
-            "solve_network",
+            "solve_sector_network",
+            configfiles="test/config.overnight.yaml",
             simpl="",
-            opts="Ept",
-            clusters="37",
-            ll="v1.0",
-            sector_opts="",
-            planning_horizons="2020",
+            opts="",
+            clusters="5",
+            ll="v1.5",
+            sector_opts="CO2L0-24H-T-H-B-I-A-solar+p3-dist1",
+            planning_horizons="2030",
         )
     configure_logging(snakemake)
     if "sector_opts" in snakemake.wildcards.keys():
@@ -978,7 +995,6 @@ if __name__ == "__main__":
     np.random.seed(solve_opts.get("seed", 123))
 
     n = pypsa.Network(snakemake.input.network)
-
     n = prepare_network(
         n,
         solve_opts,

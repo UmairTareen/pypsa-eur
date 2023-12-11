@@ -76,13 +76,11 @@ def define_spatial(nodes, options):
         spatial.co2.locations = nodes
         spatial.co2.vents = nodes + " co2 vent"
         spatial.co2.process_emissions = nodes + " process emissions"
-        spatial.co2.LULUCF = ["LULUCF"]
     else:
         spatial.co2.nodes = ["co2 stored"]
         spatial.co2.locations = ["EU"]
         spatial.co2.vents = ["co2 vent"]
         spatial.co2.process_emissions = ["process emissions"]
-        spatial.co2.LULUCF = ["LULUCF"]
 
     spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
 

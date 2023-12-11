@@ -27,18 +27,12 @@ DIRNAME = os.path.dirname(__file__)
 file = pd.ExcelFile(os.path.join(DIRNAME, r'COUNTRIES.xlsx'), engine="openpyxl")
 COUNTRIES = pd.read_excel(file, "COUNTRIES", index_col=0)
 COUNTRIES = COUNTRIES[COUNTRIES['Input_File'].notna()]
-# EU_COUNTRIES = COUNTRIES[COUNTRIES['EU_member']].index.to_list()
 ALL_COUNTRIES = COUNTRIES.index.to_list()
 country_groups = {'ALL':ALL_COUNTRIES}
-# if len(EU_COUNTRIES)>0: country_groups['EU'] = EU_COUNTRIES
 
 ## Import config data (nodes, processes, general settings etc.)
 file = pd.ExcelFile(os.path.join(DIRNAME, r'SEPIA_config.xlsx'), engine="openpyxl")
 CONFIG = pd.read_excel(file, ["MAIN_PARAMS","NODES","PROCESSES","PROCESSES_2","PROCESSES_3","IMPORT_MIX","INDICATORS"], index_col=0)
-
-# Simulation data:
-
-
 
 # Main settings (cf. SEPIA_config for description of all setting constants)
 MAIN_PARAMS = CONFIG["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
@@ -82,47 +76,34 @@ tot_co2 = {}
 print("\nEnergy system (network graph) creation\n")
 
 for country in ALL_COUNTRIES:
-    datafile = os.path.join(DIRNAME, f"../resultssuff/sepia/inputs{country}.xlsx")
+    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
     country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
-    #file = pd.ExcelFile(os.path.join(DIRNAME,'Inputs',country_input_file), engine="openpyxl")
+    
+    "load energy input data for Sepia"
     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
     data.reset_index(drop=True, inplace=False)
     data=data.T
     
+    
+    "load co2 input data for Sepia"
     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
     data_co2.reset_index(drop=True, inplace=False)
     data_co2=data_co2.T
     
-    # data_costs.columns = ["2020", "2030", "2040", "2050"]
-    # data_costs=data_costs.T
-    # data_costs.reset_index(drop=True, inplace=False)
-    
-    # data = data.rename_axis('Year')
-    # country_params = pd.read_excel(file, "Parameters", index_col=0, usecols="G,H")
 
     interval_time = sf.calc_time('Excel file reading', interval_time)
 
-#     ## Data cleanup
-#     for sheet in data:
-#         data[sheet] = sf.db_cleanup(data[sheet])
-    # data = pd.concat(data.values(), axis=1) # input dataframe
+    "subtract agriculture heating demand from residential and tertiary sector"
     data["presgazcfg"] = data["presgazcfg"] - data["presvapcfagr"]
+    
+    "Remove any duplicated data"
     data = data.loc[:,~data.columns.duplicated()] 
     data_co2 = data_co2.loc[:,~data_co2.columns.duplicated()]# Remove duplicate indicators
-#     country_params = sf.db_cleanup(country_params, False)['Value'].to_dict()
-#     r = re.compile(r'mrtrch\d+')
-    # if MAIN_PARAMS['HEAT_MERIT_ORDER']:
-    #     # heat_prod_processes = ([country_params[key] for key in list(filter(r.match, country_params.keys()))])
-    #     for process in PROCESSES['Input_Label'][~PROCESSES['Input_Label'] * ~PROCESSES['Input_Label'].isnull()]:
-    #         print("! Warning: {} not found in heat processes.".format(process))
-    # else:
-    #     heat_prod_processes = PROCESSES['Input_Label'][~PROCESSES['Input_Label'].isnull()]
-    # pcs_pci = country_params['pcspci']
-    
-    # Consistency check : are all indicators found in input data?
+
+    "Consider the coding used in sepia config and put unfound demands from pypsa file to zero"
     unfound_inputs = []
     unfound_inputs.extend(sf.unfound_indicators(data,PROCESSES,'Value_Code'))
     unfound_inputs.extend(sf.unfound_indicators(data,PROCESSES,'Efficiency_Code'))
@@ -144,40 +125,18 @@ for country in ALL_COUNTRIES:
     data_co2 = data_co2.rename(columns=dict(zip(INDICATORS['Value_Code'],INDICATORS.index)))
     data_co2 = data_co2.loc[:,~data_co2.columns.duplicated()]
     data_ghg = data_co2.copy()
-    # unfound_inputs_ghg = []
-    # unfound_inputs_ghg.extend(sf.unfound_indicators(data_ghg,PROCESSES_3,'Value_Code'))
-    # if len(unfound_inputs_ghg)>0:
-    #     data_ghg = data_ghg.reindex(columns=[*data_ghg.columns.tolist(), *unfound_inputs_ghg], fill_value=0)
-    #     print("! Warning: the following indicators have not been found (they have been filled with 0): "+", ".join(unfound_inputs)+" !!!")
-    # If electricity production is available we use it, otherwise we try to calculate from capacity & load factor
-    # for en_code in ['enm','eon','eof','spv','ght']:
-    #     data_filter = data['pro'+en_code].eq(0) & data['cai'+en_code].notnull() & data['fch'+en_code].notnull()
-    #     data.loc[data_filter,'pro'+en_code] = data['cai'+en_code] * data['fch'+en_code] * 8.760
-    # We use total elec losses if defined, otherwise we use disagragated values (transmission + distribution + storage if available)
-    # data.loc[data['perreselc'] == 0, 'perreselc'] = data['pertraelc'] + data['perdiselc'] + data.get('perstorelc',0)
-    # # We group fatal heat from wastewater & industry
-    # data.loc[data['prbrchfat'] == 0, 'prbrchfat'] = data['prbrchepu'] + data['prbrchind']
-    # # Converting max volumetric share of H2 into max energy share
-    # data['pchydirg'] = data['pchydirg'] *119930*0.08988/(50020*0.6512)
-    # # Default renewable share in waste is 50%
-    # data.loc[data['pcenrwst'] == 0, 'pcenrwst'] = 0.5
-    
-    #Computing missing co2 emissions
-    # shipping_methanol = data_co2["emmmet"]
-    # data_co2["emmmetwati"] = shipping_methanol
     
 
-    ## Creating flows and efficiencies DataFrames and filling values which do not require calculation, directly from input data
+    ## Creating flows filling values which do not require calculation, directly from input data
     proc_without_calc = PROCESSES[PROCESSES['Value_Code'].isin(data.columns)] # indicator is not empty and found in data
     flows = pd.DataFrame(data[proc_without_calc.Value_Code].values, index=data.index, columns=pd.MultiIndex.from_tuples(list(zip(proc_without_calc.Source, proc_without_calc.Target, proc_without_calc.Type)), names=('Source','Target','Type')))
     proc_without_calc_co2 = PROCESSES_2[PROCESSES_2['Value_Code'].isin(data_co2.columns)] # indicator is not empty and found in data
     flows_co2 = pd.DataFrame(data_co2[proc_without_calc_co2.Value_Code].values, index=data_co2.index, columns=pd.MultiIndex.from_tuples(list(zip(proc_without_calc_co2.Source, proc_without_calc_co2.Target, proc_without_calc_co2.Type)), names=('Source','Target','Type')))
     proc_without_calc_ghg = PROCESSES_3[PROCESSES_3['Value_Code'].isin(data_ghg.columns)] # indicator is not empty and found in data
     flows_ghg = pd.DataFrame(data_ghg[proc_without_calc_ghg.Value_Code].values, index=data_ghg.index, columns=pd.MultiIndex.from_tuples(list(zip(proc_without_calc_ghg.Source, proc_without_calc_ghg.Target, proc_without_calc_ghg.Type)), names=('Source','Target','Type')))
-#     proc_with_eff = PROCESSES[PROCESSES['Efficiency_Code'].isin(data.columns)]
-#     efficiencies = pd.DataFrame(data[proc_with_eff.Efficiency_Code].values, index=data.index, columns=pd.MultiIndex.from_tuples(list(zip(proc_with_eff.Source, proc_with_eff.Target, proc_with_eff.Type)), names=('Source','Target','Type')))
 
-    # Net final energy consumption
+
+    "Attaching production from primary and secondary energies to final energy demands"
     selected_columns = flows.columns.get_level_values('Source').isin(FE_NODES)
     fec_carrier = flows.loc[:, selected_columns]
     grouped_fec = fec_carrier.groupby(level='Source', axis=1).sum()
@@ -208,94 +167,7 @@ for country in ALL_COUNTRIES:
         flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p-biosng_p-meth_p
         
     
-        
-    # ## Direct transfer of primary energies to their corresponding networks
-    # for (en_code,network) in [('gaz','gaz'),('blq','lqf')]:
-    #     flows[(en_code+'_pe',network+'_se','')] = flows[('prod',en_code+'_pe','')]
-
-    # ## Heat : applying merit order, and downsizing heat output if needed
-    # heat_dem = fec['vap_fe'] + flows[('vap_se','per')]
-    # for heat_proc_label in heat_prod_processes:
-    #     if heat_proc_label not in PROCESSES['Input_Label'].values:
-    #         print("! Warning: "+heat_proc_label+" not found in config file")
-    #         continue
-    #     heat_proc = PROCESSES.query("Input_Label == '" + heat_proc_label +"'").iloc[0]  # using iloc to get the first found item in PROCESSES corresponding to "heat_proc_label"
-    #     heat_source = heat_proc.Source
-    #     heat_proc_type = heat_proc.Type
-    #     heat_proc = (heat_source,'vap_se',heat_proc_type)
-    #     productible = flows[heat_proc].copy()
-        # if MAIN_PARAMS['HEAT_MERIT_ORDER']: flows[heat_proc] = pd.concat([productible,heat_dem], axis=1).min(axis=1) # Minimum of productible and heat demand
-        # heat_dem -= flows[heat_proc]
-#         usage_ratio = (flows[heat_proc] / productible).fillna(1)
-#         if usage_ratio[usage_ratio<1].count() > 0: country_debug[('usage_ratio',heat_proc_label,country)] = usage_ratio * 100
-#         if heat_proc in efficiencies.columns: # Energy involving transformation losses
-#             loss_proc = (heat_source,'per',heat_proc_type)
-#             if heat_proc_type == 'chp':
-#                 power_proc = (heat_source,'elc_se',heat_proc_type)
-#                 if MAIN_PARAMS['HEAT_MERIT_ORDER']: flows[power_proc] *= usage_ratio # Correcting power output from real heat produced
-#                 primary_cons = flows[power_proc] / efficiencies[power_proc]
-#                 flows[loss_proc] = primary_cons - flows[heat_proc] - flows[power_proc]
-#             else:
-#                 primary_cons = flows[heat_proc] / efficiencies[heat_proc]
-#                 if heat_source != 'pac_pe':
-#                     flows[loss_proc] = primary_cons - flows[heat_proc]
-#                 else:
-#                     # For centralised solar thermal, we replace part of the pumped heat by electricity (according to pump efficiency)
-#                     flows[('elc_se','vap_se',heat_proc_type)] = primary_cons
-#                     flows[heat_proc] -= primary_cons
-#             if loss_proc in flows.columns and (flows[loss_proc] < 0).any():
-#                 print("! Warning: total efficiency above 100% for process '{}'. Assuming 100% efficiency instead.".format(heat_proc_label))
-#             if (primary_cons == np.inf).any():
-#                 print("! Warning: null efficiencies with non null prod values for process '{}'.".format(heat_proc_label))
-
-#     sf.balance_node(flows,'vap_se','def','exc')
-#     if flows[('def','vap_se','')].sum() > 0.1:
-#         # print("! Warning: insufficient heat production on district heating networks !")
-#         country_debug[('missing_heat','',country)] = flows[('def','vap_se','')]
-#     if flows[('vap_se','exc','')].sum() > 0.1:
-#         # print("! Warning: excess heat production on district heating networks !")
-#         country_debug[('excess_heat','',country)] = flows[('vap_se','exc','')]
-
-#     ## Liquid motor fuels
-#     if MAIN_PARAMS['BIOFUEL_SHARE']:
-#         flows[('blq_pe','lqf_se','')] = fec['lqf_fe'] * data['pcenrcfcltra']
-#         sf.balance_node(flows, 'blq_pe', exp='lqf_se') # If local liquid fuel production > demand from motor fuels, excess is still mixed and will go to exports
-#     else:
-#         flows[('blq_pe','lqf_se','')] = flows[('prod','blq_pe','')]
-#     sf.balance_node(flows, 'lqf_se')
-
-#     ## Transformation losses, other than cogeneration and boilers (handled previously)
-#     eff_columns = efficiencies.columns
-#     for (source, target, proc_type) in eff_columns[~eff_columns.get_level_values('Type').isin(['chp','rch'])]: # filtering processes types, which are NOT 'chp' or 'rch'
-#         if (efficiencies[(source,target,proc_type)] > 1).any():
-#             print("! Warning: efficiency above 100% for process '{}'. Assuming 100% efficiency instead.".format(proc_type))
-#         else:
-#             flows[(source,'per',proc_type)] = flows[(source,target,proc_type)] * (1/efficiencies[(source,target,proc_type)] - 1)
-#         if (flows[(source,'per',proc_type)] == np.inf).any():
-#             print("! Warning: null efficiencies with non null prod values for process '{0}' going grom '{1}' to '{2}'.".format(proc_type, source, target))
-    
-#     # Setting negative flows to 0 (happens when efficiencies exceed 100%)
-#     flows[flows < 0] = 0
-    
-#     ## Default reffinery consumption (if not specified in final demand of energy industry), calculated from primary oil consumption without non-energy
-#     if 0 in data['gazcfens'].unique() or 0 in data['petcfens'].unique():
-#         print("Info: gaz and/or oil consumption of energy industry have 0 values, calculating them from primary oil consumption.")
-#         pec_pet = sf.node_consumption(flows, 'pet_pe').squeeze() + flows.get(('imp','lqf_se',''),0) - flows.get(('pet_fe','neind',''),0) # we consider imported liquid motor fuels as fossil
-#         flows.loc[data['gazcfens'] == 0, ('gaz_fe','ens','')] = pec_pet * data['defgazcfens']
-#         flows.loc[data['petcfens'] == 0, ('pet_fe','ens','')] = pec_pet * data['defpetcfens']
-#         # Readjusting primary/secondary consumptions
-#         flows[('gaz_se','gaz_fe','ntw')] += sf.node_consumption(flows, 'gaz_fe').squeeze() - fec['gaz_fe']
-#         flows[('pet_pe','pet_fe','')] += sf.node_consumption(flows, 'pet_fe').squeeze() - fec['pet_fe']
-
-#     ## Direct hydrogen injection in gas grid : all excess H2, below a given volumetric share of gas network
-#     gas_on_grid = pd.concat([sf.node_consumption(flows, 'gaz_se', 'forward'), sf.node_consumption(flows, 'gaz_se', 'backwards')], axis=1).max(axis=1) # Max of in and out flows on gas network
-#     sf.balance_node(flows, 'hyd_se', exp='gaz_se', procexp='irg')
-#     flows[('hyd_se','gaz_se','irg')] = pd.concat([gas_on_grid * (1/(1-data['pchydirg']) - 1), flows[('hyd_se','gaz_se','irg')]], axis=1).min(axis=1)
-
-    ## Local (renewable) production
-    # gas_threshold = 2000  # TWh
-    # oil_threshold = 1500  #TWh
-    
+    "Attaching local production and imports"
     selected_columns_p = flows.columns.get_level_values('Source').isin(PE_NODES)
     fec_carrier_p = flows.loc[:, selected_columns_p]
     grouped_fec_p = fec_carrier_p.groupby(level='Source', axis=1).sum()
@@ -304,19 +176,11 @@ for country in ALL_COUNTRIES:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe']
     for en_code in ['gaz']:
      values = fec_p[en_code + '_pe']
-     # prod_values = values.clip(upper=gas_threshold)
-     # imp_values = values - prod_values
      imp_values = values
-    
-     # flows[('prod', en_code + '_pe', '')] = prod_values
      flows[('imp', en_code + '_pe', '')] = imp_values
     for en_code in ['pet']:
      values = fec_p[en_code + '_pe']
-     # prod_values = values.clip(upper=oil_threshold)
-     # imp_values = values - prod_values
      imp_values = values
-    
-     # flows[('prod', en_code + '_pe', '')] = prod_values
      flows[('imp', en_code + '_pe', '')] = imp_values
     
     sec_imports = flows.columns.get_level_values('Target').isin(SE_NODES)
@@ -342,22 +206,12 @@ for country in ALL_COUNTRIES:
         flows[(en_code+'_fe','exp','')] = values_exp
     
             
-        
-    
-    # dm_avi = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
-    # dm_neind = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
-    # dm_tot = dm_avi + dm_neind.sum()
-    # for en_code in ['pet']:
-    #     pet_exp = other_imports[en_code + '_fe'] - dm_tot
-    #     pet_exp = pet_exp.clip(lower=0)
-    #     flows[(en_code + '_fe','exp', '')] = pet_exp
-        
-    ## (Re)balancing all primary and secondary energies with imports/exports
-    # for node in PE_NODES + SE_NODES:
-    #     sf.balance_node(flows, node)
+    "preparing co2 emissions for carbon sankey"
     tot_emm_s = flows_co2.columns.get_level_values('Source').isin(GHG_SECTORS)
     tot_emm_s = flows_co2.loc[:, tot_emm_s]
     tot_emm_s = tot_emm_s.groupby(level='Source', axis=1).sum() 
+    
+    "using co2 intensities from pypsa and compuing it from demands as on pypsa they are solved on EU level"
     co2_intensity_oil = 0.26
     co2_intensity_gas = 0.2
     co2_intensity_met = 0.2
@@ -394,7 +248,8 @@ for country in ALL_COUNTRIES:
         flows_co2[(en_code + '_ghg', 'atm', '')] = value_met
         imp_met = flows[('imp', en_code + '_fe', '')].squeeze().rename_axis(None) * co2_intensity_met
         flows_co2[('imp' + '_ghg', 'atm', 'met')] = imp_met
-      
+    
+    "Including LULUCF"
     for en_code in ['luf']:
         if flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None).sum()<0:
             value_lulucf = flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None)*-1
@@ -462,120 +317,18 @@ for country in ALL_COUNTRIES:
     for en_code in ['oth']:
         flows_co2[(en_code + '_ghg', 'atm','')] = other_count
         
-    
-    # other_imports = other_imports.groupby(level='Source', axis=1).sum() 
-    # ## Splitting renewable and non-renewable parts of waste
-    # for level in [0,1]:
-    #     flows_wst = flows.columns[(flows.columns.get_level_values(level) == 'wst_pe')]
-    #     flows_ren_wst = flows_wst.set_levels(flows_wst.levels[level].str.replace('wst_pe', 'wst_ren_pe'), level=level)
-    #     flows_fos_wst = flows_wst.set_levels(flows_wst.levels[level].str.replace('wst_pe', 'wst_fos_pe'), level=level)
-    #     for i in range(len(flows_wst)):
-    #         flows[flows_ren_wst[i]] = flows[flows_wst[i]] * data['pcenrwst']
-    #         flows[flows_fos_wst[i]] = flows[flows_wst[i]] -  flows[flows_ren_wst[i]]
-    #     flows = flows.drop(flows_wst, axis=1)
-    
-    
-    ## Flows cleanup : deleting flows/columns, which are too small
-    # flows = flows.drop(flows.columns[flows.max()<1E-4], axis=1)
 
     interval_time = sf.calc_time('Energy system (network graph) creation', interval_time)
     
-    ## Storing energy flows, non-energy GHG values and other relevant DB values
+    ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
     tot_ghg[country] = flows_ghg
     tot_co2[country] = flows_co2
     
     country_results = pd.DataFrame()
-    # data_pop=data.copy()
-    # data_pop['pop'] = 525000
-    # country_results[('pop')] = data_pop['pop']
-    # ghg_nes = data.loc[:,list('ghg'+sector+'nes' for sector in ['agr','ind','wst','oth'])]
-    # ghg_nes.columns = ['agr','ind','wst','oth']
-    # # Splitting AFOLUB into agr and LULUCF
-    # ghg_nes['luf'] = sum(data['ghg'+ghg+'luf'] for ghg in ['co2','ch4','n2o','oth'])
-    # ghg_nes['agr'] -= ghg_nes['luf']
-    # country_results = sf.add_indicator_to_results(country_results, ghg_nes, 'ghg_nes')
-    # country_results[('ghgco2_nes','total')] = data['ghgco2luf'] + data['ghgco2agr'] + data['ghgindnes'] # Non-energy related CO2 emissions (waste and "other" are neglected, industrial process emissions are considered 100% CO2)
-    # country_results[('ghgch4_nes','total')] = data['ghgch4luf'] + data['ghgch4agr'] + data['ghgwstnes'] # Non-energy related CH4 emissions (industrial process and "other" are neglected, waste emissions are considered 100% CH4)
-   
-    # # Adding country results to total results DataFrame
-    # country_results.columns = pd.MultiIndex.from_tuples(map(lambda x: (x[0], x[1], country), country_results.columns), names=('Indicator','Sub_indicator','Country'))
     tot_results = pd.concat([tot_results, country_results], axis=1)
-    
-    # ## Adding country debug results to total debug DataFrame
-    # tot_debug = pd.concat([tot_debug, country_debug], axis=1)
-    
-    
-    # ## Calculating secondary energy export mix
-    # for network in SE_NODES:
-    #     if (network,'exp','') in flows.columns:
-    #         # Evaluating share of primary sources in secondary energy "network"
-    #         primary_exports = sf.node_consumption(sf.shares_from_node(flows,network,PE_NODES),PE_NODES)
-    #         # Multiplying by the ratio of exports / total energy going through "network"
-    #         exports_ratio = flows[(network,'exp','')].squeeze() / sf.node_consumption(flows, network).sum(axis=1)
-    #         # Breakdown of primary energies by categories
-    #         primary_exports_breakdown = sf.share_primary_category(primary_exports.multiply(exports_ratio,axis=0), NODES)
-    #         tot_se_export_mix[network] = tot_se_export_mix[network].add(primary_exports_breakdown, fill_value=0)
 
-# ## Interterritorial analysis
-# print("\nInterterritorial flows analysis\n")
 
-# Concatenation of country flow DataFrames and other indicators
-# for perimeter in country_groups:
-#     country_list = country_groups[perimeter]
-#     for country in country_list:
-#         tot_flows[perimeter] = tot_flows[country] if perimeter not in tot_flows else tot_flows[perimeter].add(tot_flows[country], fill_value=0)
-#     for (indicator,subindicator) in tot_results.columns.droplevel("Country"):
-#         tot_results[(indicator,subindicator,perimeter)] = tot_results[[(indicator, subindicator, country) for country in country_list]].sum(axis=1)
-    
-# ## Secondary energy import mix calculation
-# tot_imports = sf.node_consumption(tot_flows['ALL'], 'imp', splitby='target')
-# tot_se_imports = tot_imports.filter(SE_NODES)
-# tot_se_excess = tot_se_export_mix.groupby(level='Network',axis=1).sum().sub(tot_se_imports,fill_value=0)
-# tot_se_deficit = - tot_se_excess
-# tot_se_excess[tot_se_excess < 0] = 0
-# tot_se_deficit[tot_se_deficit < 0] = 0
-# # Intra-EU imports : total imports - deficit
-# intra_eu_imports = tot_se_imports.sub(tot_se_deficit,fill_value=0)
-# # Extra-eu imports : total_imports - intra-eu imports
-# extra_eu_imports = tot_se_imports.sub(intra_eu_imports,fill_value=0)
-# # Intra-EU export mix : conversion from TWh to %
-# for network in tot_se_export_mix.columns.get_level_values(0):
-#     tot_se_export_mix[network] = sf.share_percent(tot_se_export_mix[network])
-# # Import mix in TWh : intra-eu imports (TWh) x intra-eu export mix (%) + extra-eu imports (TWh) x IMPORT_MIX (%)
-# for network in tot_se_imports.columns:
-#     # intra-eu imports x intra-eu export mix
-#     tot_se_import_mix[network] = tot_se_export_mix[network].mul(intra_eu_imports[network], axis=0)
-#     # extra-eu imports x IMPORT_MIX
-#     tot_se_import_mix[network] = tot_se_import_mix[network].add(IMPORT_MIX[network].mul(extra_eu_imports[network], axis=0), fill_value=0)
-# sf.consistency_check(tot_se_import_mix,tot_se_imports,'Debug: max difference between secondary energy imports and breakdown by category (should be 0)')
-
-# # Weighted average import mix in %
-# for network in tot_se_imports.columns:
-#     tot_se_import_mix[network] = sf.share_percent(tot_se_import_mix[network])
-
-# Net import/export balances
-# def imp_exp_balance(df,perimeter,imp_flow,exp_flow):
-#     if imp_flow in df[perimeter].columns and exp_flow in df[perimeter].columns:
-#             excess = df[perimeter][exp_flow] - df[perimeter][imp_flow]
-#             deficit = - excess
-#             excess[excess < 0] = 0
-#             deficit[deficit < 0] = 0
-#             df[perimeter][exp_flow] = excess.squeeze()
-#             df[perimeter][imp_flow] = deficit.squeeze()   
-# for perimeter in country:
-#     for node in PE_NODES + SE_NODES:
-#         imp_flow = ('imp',node,'')
-#         exp_flow = (node,'exp','')
-#         imp_exp_balance(tot_flows,perimeter,imp_flow,exp_flow)
-#     imp_exp_balance(tot_flows,perimeter,('def','vap_se',''),('vap_se','exc',''))
-
-# print("\nIndicator calculation\n")
-
-### Function to generate results
-# Writes output result files and fills the tot_results dataFrame
-# proc_labels = PROCESSES.set_index(['Source','Target','Type'])#[['Label']]
-# links = pd.concat([flows.T, proc_labels], axis=1)
 def generate_results(flows, tot_results, country, se_import_mix):
     xls_file_name = 'ChartData_'+country+'.xlsx'
     results_xls_writer = pd.ExcelWriter(open(os.path.join(DIRNAME,'Results',xls_file_name), 'wb'), engine="openpyxl")
@@ -599,63 +352,28 @@ def generate_results(flows, tot_results, country, se_import_mix):
     country_results = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[]], codes=[[],[]], names=['Indicator','Sub_indicator']))
     global interval_time
 
-    ## Changes in bunker perimeter as required (if EU : we override settings)
-    sectors_to_remove = []
-    # aviation_bunker = MAIN_PARAMS['INT_AVIATION_EU27'] if country=='EU' else MAIN_PARAMS['INT_AVIATION']
-    # maritime_bunker = MAIN_PARAMS['INT_MARITIME_EU27'] if country=='EU' else MAIN_PARAMS['INT_MARITIME']
-    # if not aviation_bunker: sectors_to_remove += ['avi']
-    # if not maritime_bunker: sectors_to_remove += ['wati']
-    # eu_bunker_change = True if (not aviation_bunker or maritime_bunker) else False
     flows_bk =  flows.copy()
     
-    # tot_results = tot_results.groupby('identifier').sum().reset_index()
-    # tot_results = tot_results.groupby('year').sum().reset_index()
-    # # flows_ghg = flows_ghg.copy()
-    # for sector in sectors_to_remove:
-    #     flows_bk = flows_bk.sub(sf.shares_from_node(flows_bk,sector,include_losses=True),fill_value=0)
-    #     # We cleanup remaining flows connected to removed sector, and negative values
-    #     flows_bk = flows_bk.drop(flows_bk.columns[flows_bk.columns.get_level_values('Target') == sector], axis=1)
-    #     flows_bk[flows_bk < 0] = 0
-    # # Force include aviation bunkers and remove marine bunkers for EU indicators, regardless of settings (if not already the case)
-    # if eu_bunker_change:
-    #     flows_bk_eu = flows.sub(sf.shares_from_node(flows,'wati',include_losses=True),fill_value=0)
-    #     # We cleanup remaining flows connected to removed sector, and negative values
-    #     flows_bk_eu = flows_bk_eu.drop(flows_bk_eu.columns[flows_bk_eu.columns.get_level_values('Target') == 'wati'], axis=1)
-    #     flows_bk_eu[flows_bk_eu < 0] = 0
-    # else:
-    #     flows_bk_eu = flows_bk
-    
-    ## Aggregated consumptions and productions
-    # Net final energy consumption by energy carrier and sector
+  
     selected_columns = flows_bk.columns.get_level_values('Source').isin(FE_NODES)
-
-# Sum the selected columns to calculate the FEC carrier
+    # Sum the selected columns to calculate the FEC carrier
     fec_carrier = flows_bk.loc[:, selected_columns]
     grouped_fec = fec_carrier.groupby(level='Source', axis=1).sum()
     fec_carrier = grouped_fec
     selected_columns = flows_bk.columns.get_level_values('Target').isin(DS_NODES)
 
-# Create a new DataFrame containing only the selected columns
+    # Create a new DataFrame containing only the selected columns
     fec_sector = flows_bk.loc[:, selected_columns]
 
-# Group the columns by 'Target' (nodes) and sum each group separately
+    # Group the columns by 'Target' (nodes) and sum each group separately
     grouped_fec_sec = fec_sector.groupby(level='Target', axis=1).sum()
     fec_sector = grouped_fec_sec
 
-        
-    # # Gross final energy consumption (net + network losses)
+      
+    "preparing data for local production area charts"
     gross_fec_carrier = fec_carrier.copy()
-    # for en_code in ['elc','gaz','vap']:
-    #     gross_fec_carrier[en_code+'_fe'] = gross_fec_carrier.get(en_code+'_fe',0)
     gross_net_ratio = gross_fec_carrier / fec_carrier
-    
-    # # Primary energy production
-    # pep = sf.node_consumption(flows_bk, 'prod', splitby='target')
-    # pep_breakdown = sf.share_primary_category(pep, NODES)
 
-    # Local coverage ratios per carrier : (cons - imports) / (cons - exports)
-    # Adding heat deficit & excess to imports & exports
-    # cov_exports = sf.node_consumption(flows, ['exp','exc'], direction='backwards', splitby='target')
     selected_columns_E = flows_bk.columns.get_level_values('Target').isin(EE_NODES)
     export_carrier = flows_bk.loc[:, selected_columns_E]
     grouped_export = export_carrier.groupby(level='Source', axis=1).sum()
@@ -685,13 +403,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     value_toltal = ((value_biml + value_fish)/(value_petr + value_biml + value_fish))*100
     cov_ratios['pet_fe'] = value_toltal
     
-  # interval_time = sf.calc_time('Aggregated consumptions', interval_time)
-    
-    # # Alternative flows dataframe, using import mixes
-    # flows_imp = flows_with_imports(flows_bk, se_import_mix)
-    # flows_imp_eu = flows_with_imports(flows_bk_eu, se_import_mix) if eu_bunker_change else flows_imp
-    
-    # Share of renewables in gross final energy consumption using network graph exploration
+    "preparing data for renewable share in each energy vector"
     ren_cov_ratios=pd.DataFrame()
     gfec_breakdown=pd.DataFrame()
     flows_from_node_cum=pd.DataFrame()
@@ -801,114 +513,10 @@ def generate_results(flows, tot_results, country, se_import_mix):
     
     gfec_breakdown_pct = sf.share_percent(gfec_breakdown,100)
     ren_cov_ratios['total'] = gfec_breakdown_pct['ren'].clip(upper=100)
-    # # Share of renewable following EU methodology
-    res_share_eu=pd.DataFrame()
-    # # No change for overal RES share
-    # res_share_eu['total'] =  ren_cov_ratios_eu['total']
-    # # RES-E is calculated as gross ren. production / gross final consumption (including internal uses), renewable imports are not taken into account
-    # cons_at_primary = sf.share_primary_category(sf.node_consumption(sf.shares_from_node(flows,'elc_se',PE_NODES),PE_NODES+['imp']), NODES)
-    # res_share_eu['elc_fe'] = 100 * cons_at_primary.get('ren',0) / (cons_at_primary.sum(axis=1))
-    # # RES-T
-    # ## TD : improve multiplication factors, remove non-compliant biofuels, remove international freight, remove kerosene, use RES-E from 2 years ago (capped to 100%) 
-    # denominator_tra = sf.node_consumption(flows,['tra','avi'],'backwards','target')
-    # denominator_tra['lqf_fe'] += flows.get(('lqf_fe','agr',''),0) # Adding liquid fuels used in agriculture
-    # numerator_tra = denominator_tra.multiply(ren_cov_ratios_eu,fill_value=0)
-    # for (energy,multiplicator) in [('elc',3),('lqf',1.5)]:
-    #     denominator_tra[energy+'_fe'] = denominator_tra.get(energy+'_fe',0) + numerator_tra[energy+'_fe'] * (multiplicator-1) / 100
-    #     numerator_tra[energy+'_fe'] *= multiplicator
-    # res_share_eu['tra'] = numerator_tra.sum(axis=1) / denominator_tra.sum(axis=1)
-    # # RES-H&C is calculated as renewable share of final energies except electricity & transportation uses
-    # # TD : remove non-compliant biofuels
-    # denominator_hc = fec_carrier.subtract(denominator_tra, fill_value=0).drop(columns=['elc_fe','lqf_fe'], errors="ignore")
-    # numerator_hc = denominator_hc.multiply(ren_cov_ratios_eu, fill_value=0)
-    # res_share_eu['chfcli'] = numerator_hc.sum(axis=1) / denominator_hc.sum(axis=1)
-
-    # Detailled breakdown of net final energy consumption per primary energy (and secondary imports)
-    # fec_breakdown = sf.node_consumption(flows_from_node_cum,PE_NODES+SI_NODES)
     
     interval_time = sf.calc_time('Graph analysis (consumption breakdown)', interval_time)
 
-    ## Primary energy consumption
-    # Primary production + imports 
-    # pec = calculate_pec(flows)
-    # pec_breakdown = sf.share_primary_category(pec, NODES)
-    # pec_eu = calculate_pec(flows_imp_eu) if eu_bunker_change else pec
-    # pec_eu = sf.subtract_cons_from_node(pec_eu, flows_imp_eu, 'neind', end_nodes=PE_NODES).drop(columns=['sth_pe','pac_pe'], errors="ignore") # Removing ambient heat & non-energy consumption
-    # heatpower_columns = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe', 'pac_pe','cms_pe', 'gaz_pe', 'pet_pe','ura_pe']
-    # filtered_columns = [col for col in flows_bk.columns if col[0] in tot_columns and col[1] == 'elc_se']
-    # result_elc = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
-    # result_elc_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
-    # ren_elc = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe']
-    # ren_elc = result_elc[ren_elc].sum(axis=1)
-    # ren_cov_ratios = pd.DataFrame()
-    # ren_cov_ratios['elc_fe'] = (ren_elc/result_elc_t)*100
-    # ## GHG emissions
-    # ghg_sector=pd.DataFrame() # GHG emissions by sector (CRF nomenclature)
-    # ghg_sector_2=pd.DataFrame() # GHG emissions by sector with power & heat allocated to other sectors
-    # ghg_sector_eu=ghg_sector # GHG emissions by sector on the EU perimeter, by default equivalent to ghg_sector
-    # ghg_source=pd.DataFrame() # GHG emissions by source (primary energies / non-energy)
-    # ghg_source_CO2=pd.DataFrame() # Same for CO2-only emissions
-    # ghg_source_CH4=pd.DataFrame() # Same for CH4-only emissions
-    # # Share of power & heat use (used to allocate power & heat emissions to final demand)
-    # elc_vap_uses = {}
-    # for ntw in ['elc_se','vap_se']:
-    #     elc_vap_uses[ntw] = sf.node_consumption(sf.shares_from_node(flows_imp,ntw,DS_NODES,'forward',include_losses=True,normalised=True),DS_NODES+['exp','exc'],'backwards')
-    # # Fuel combustion emission: (primary energy consumption - non energy uses) x emission factors
-    # for primary_node in GHG_ENERGIES.index:
-    #     flow_sector = sf.shares_from_node(flows_imp,primary_node,['elc_se','vap_se'],'forward',include_losses=True)
-    #     pec_ghg_sector = sf.node_consumption(flow_sector, DS_NODES+['elc_se','vap_se','exp'], 'backwards')
-    #     if pec_ghg_sector.empty: continue
-    #     country_results = sf.add_indicator_to_results(country_results, pec_ghg_sector, 'pec_uses.'+primary_node, False)
-
-    #     # Removing feedstocks and exports...
-    #     pec_ghg_sector = pec_ghg_sector.drop(['neind','exp'], axis=1, errors='ignore')
-    #     # ...except when originating from fossil methane-sourced hydrogen (attributed to energy industry)
-    #     if primary_node == 'gaz_pe': pec_ghg_sector['ens'] = pec_ghg_sector.get('ens',0) + flow_sector.get(('hyd_fe','neind',''),0) + flow_sector.get(('hyd_se','exp',''),0)
-
-    #     # Power and heat emissions allocation to final demand sectors
-    #     pec_ghg_sector_2 = pec_ghg_sector.drop(['elc_se','vap_se'], axis=1, errors='ignore')
-    #     for ntw in ['elc_se','vap_se']:
-    #         # Readjusting to actual primary consumption of power & heat production
-    #         adj_elc_vap_uses = elc_vap_uses[ntw].mul(pec_ghg_sector.get(ntw,0),axis=0)
-    #         pec_ghg_sector_2 = pd.concat([pec_ghg_sector_2,adj_elc_vap_uses], axis=1).groupby(axis=1, level=0).sum()
-       
-    #     # Merging power and heat
-    #     pec_ghg_sector['elc_vap'] = pec_ghg_sector.get('elc_se',0) + pec_ghg_sector.get('vap_se',0)
-    #     pec_ghg_sector = pec_ghg_sector.drop(['elc_se','vap_se'], axis=1, errors='ignore')
-        
-    #     # Applying emission factors and adding to total GHG dataframes
-    #     ghg_en_sector = pec_ghg_sector * NODES.loc[primary_node,'Emission_Factor']
-    #     ghg_en_sector_2 = pec_ghg_sector_2 * NODES.loc[primary_node,'Emission_Factor']
-    #     ghg_source[primary_node] = ghg_en_sector.sum(axis=1)
-    #     ghg_source_CO2[primary_node] = (pec_ghg_sector * NODES.loc[primary_node,'Emission_Factor_CO2']).sum(axis=1)
-    #     ghg_source_CH4[primary_node] = (pec_ghg_sector * NODES.loc[primary_node,'Emission_Factor_CH4']).sum(axis=1)
-    #     country_results = sf.add_indicator_to_results(country_results, ghg_en_sector, 'ghg_en.'+primary_node, False)
-    #     ghg_sector = pd.concat([ghg_sector,ghg_en_sector], axis=1).groupby(axis=1, level=0).sum()
-    #     ghg_sector_2 = pd.concat([ghg_sector_2,ghg_en_sector_2], axis=1).groupby(axis=1, level=0).sum()
-    # if eu_bunker_change:
-    #     if aviation_bunker:
-    #         ghg_sector_eu = ghg_sector.drop('wati', axis=1, errors='ignore')
-    #     else:
-    #         for primary_node in GHG_ENERGIES.index:
-    #             flow_sector = sf.shares_from_node(flows_imp_eu,primary_node,['elc_se','vap_se'],'forward',include_losses=True)
-    #             pec_ghg_sector_eu = sf.node_consumption(flow_sector, DS_NODES+['elc_se','vap_se','exp'], 'backwards')
-    #             if pec_ghg_sector_eu.empty: continue
-    #             pec_ghg_sector_eu = pec_ghg_sector_eu.drop(['neind','exp'], axis=1, errors='ignore')
-    #             if primary_node == 'gaz_pe': pec_ghg_sector_eu['ens'] = pec_ghg_sector_eu.get('ens',0) + flow_sector.get(('hyd_fe','neind',''),0) + flow_sector.get(('hyd_se','exp',''),0)
-    #             pec_ghg_sector_eu['elc_vap'] = pec_ghg_sector_eu.get('elc_se',0) + pec_ghg_sector_eu.get('vap_se',0)
-    #             pec_ghg_sector_eu = pec_ghg_sector_eu.drop(['elc_se','vap_se'], axis=1, errors='ignore')
-    #             ghg_en_sector_eu = pec_ghg_sector_eu * NODES.loc[primary_node,'Emission_Factor']
-    #             ghg_sector_eu = pd.concat([ghg_sector_eu,ghg_en_sector_eu], axis=1).groupby(axis=1, level=0).sum()
-    # country_results[('ghg_en','total')] = ghg_sector.sum(axis=1)
-    # # Adding non-energy emissions
-    # ghg_nes = tot_results[[('ghg_nes',sector,country) for sector in ['agr','ind','wst','oth','luf']]].rename(columns=lambda x:x+'nes')
-    # ghg_nes.columns = ghg_nes.columns.droplevel(['Indicator','Country'])
-    # ghg_sector = ghg_cleanup(ghg_sector,ghg_nes)
-    # ghg_sector_2 = ghg_cleanup(ghg_sector_2,ghg_nes)
-    # ghg_sector_eu = ghg_cleanup(ghg_sector_eu,ghg_nes) if eu_bunker_change else ghg_sector
-    # ghg_source['nes'] = ghg_nes.sum(axis=1)
-    # ghg_source_CO2['nes'] = tot_results[('ghgco2_nes','total',country)]
-    # ghg_source_CH4['nes'] = tot_results[('ghgch4_nes','total',country)]
+    "Preparing data foe emission charts"
     flows_co2 = tot_co2[country]
     ghg_sector = tot_ghg[country]
     ghg_sector = ghg_sector.groupby(level='Source', axis=1).sum()
@@ -923,26 +531,15 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ghg_source = ghg_source.drop('seq', axis=1)
     ghg_source = ghg_source.drop('dac_ghg', axis=1)
     ghg_source = ghg_source.drop('bec_ghg', axis=1)
+    
+    #multiplying by 10 for cumulative emissions
     ghg_source.loc['2030'] *= 10
     ghg_source.loc['2040'] *= 10
     ghg_source.loc['2050'] *= 10
     
-    # tot_results_flows = pd.concat(tot_flows, axis=0, keys=tot_flows.keys())
-    # tot_results_flows = tot_results.groupby(level=1).sum()
-    # tot_results_co2 = pd.concat(tot_co2, axis=0, keys=tot_co2.keys())
-    # tot_results_co2 = tot_results_co2.groupby(level=1).sum()
     
     ## Start HTML output
     html_items = {}
-    # html_items['COUNTRY'] = country_label_w_flag
-
-    # html_items['INTRO'] = f'This page provides detailed data visualisation of the trajectory for {country_label}, as suggested by the <a href="https://clever-energy-scenario.eu/">CLEVER project</a>. To access pathways for another country (or EU perimeter), you may use the dropdown menu in the top right menu. You may also <a href="{xls_file_name}" target="_blank">click here</a> to download the raw data behind all graphs shown below.'
-
-    # html_items['DISCLAIMER'] = '<b>DISCLAIMER:</b> this document is work in progress, including the result of the "V0" (the first EU aggregation of some bottom-up national trajectories and top-down normalised trajectories for remaining countries). Those trajectories will continue to be harmonised and reinforced.<br /><span style="font-weight:bold;color:red">Results shown below are not to be disseminated to third parties</span>.' if MAIN_PARAMS['DRAFT'] else 'This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License <img alt="Creative Commons License" style="display: inline; vertical-align: middle;" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a>'
-    # License => https://creativecommons.org/choose/results-one?license_code=by&amp;jurisdiction=&amp;version=4.0&amp;lang=en
-
-    # html_items['METHODO'] = '<p>Methodological notes: unless specified, calculations below have been made <b><span style="color:red">' + ('without' if 'avi' in sectors_to_remove else 'with') + '</span> international aviation and <span style="color:red">' + ('without' if 'wati' in sectors_to_remove else 'with') + '</span> international maritime transport</b>.'
-    # if MAIN_PARAMS['DRAFT']: html_items['METHODO'] += 'The mix of imported energy carriers is '+('calculated from other european trajectories' if MAIN_PARAMS['USE_IMPORT_MIX'] else 'considered fossil-sourced by default') +'. The share of biofuels in liquid fuels is '+('defined by a dashboard indicator' if MAIN_PARAMS['BIOFUEL_SHARE'] else 'adjusted, according to available biofuel')+'.</p>'
     
     id_section = -1
     sections = [('ghg','GHG'),('sankey','Sankey diagram'),('carbon sankey','Carbon Sankey diagram'),('res','Renewable energy share'),('carrier','Energy carrier balance'),('cons','Energy consumption'),('eu','EU indicators & objectives')]
@@ -1002,14 +599,6 @@ def generate_results(flows, tot_results, country, se_import_mix):
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
     # html_items['MAIN'] += '<p>The above chart describes the contribution of misc. technologies (and possibly imports) to the production of a given secondary energy carrier.</p>'
     combinations = []
-    # for energy in SE_NODES + ['enc_pe']:
-    #     df = sf.node_consumption(sf.shares_from_node(flows_bk,energy,SE_NODES,'forward',include_losses=True),DS_NODES+SE_NODES+['per','exp','exc'],'backwards')
-    #     combinations += [(NODES.loc[energy,'Label']+ " - included losses", df)]
-    #     country_results = sf.add_indicator_to_results(country_results, df, 'sec_uses.'+energy)
-    #     df = sf.node_consumption(sf.shares_from_node(flows_bk,energy,SE_NODES,'forward',include_losses=False),DS_NODES+SE_NODES+['per','exp','exc'],'backwards')
-    #     combinations += [(NODES.loc[energy,'Label']+ " - separated losses", df)]
-    # html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Internal and final uses -', 'areachart', results_xls_writer)
-    # html_items['MAIN'] += '<p>The above chart illustrates final and internal (non final) uses of a given secondary energy carrier. Losses are either included in each internal use, or separated (in both case, the total is the same):</p><ul><li><b>"Included losses"</b>: transformation & network losses are attributed to each internal use & final demand sectors</li><li><b>"Separated losses"</b>: losses are grouped as a separate category</li></ul>'
     # Energy consumption
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
@@ -1020,39 +609,6 @@ def generate_results(flows, tot_results, country, se_import_mix):
         country_results = sf.add_indicator_to_results(country_results, df, 'fec.'+sector)
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
     
-    # if show_total:
-    #     html_items['MAIN'] += sf.combine_charts([('Final energy consumption',tot_results[('fec','reduc')])], MAIN_PARAMS, country_list, 'Reduction vs. 2015 -', 'map', results_xls_writer, '%')
-    # html_items['MAIN'] += sf.combine_charts([('consumption',pec),('consumption by type',pec_breakdown)], MAIN_PARAMS, NODES, 'Primary energy', 'areachart', results_xls_writer)
-
-    ## EU indicators & objectives
-    # targets = {}
-    # targets_res = {'total':{},'elc_fe':{},'tra':{},'chfcli':{}}
-    # id_section += 1
-    # html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    # html_items['MAIN'] += '<p>In this section, indicators are calculated according to Eurostat methodology, and compared with official EU objectives (when available).</p>'
-    # if eu_bunker_change: html_items['MAIN'] += '<p><b>Caution</b>: the perimeter for bunkers is different in this section than above graphs - international aviation is included, international maritime transport is excluded.</p>'
-    # # GHG
-    # if country == 'EU': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[3622,3497,2027]}
-    # html_items['MAIN'] += sf.combine_charts([('yearly emissions', ghg_sector_eu, targets)], MAIN_PARAMS, NODES, 'All GHG emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>eq')
-
-    # # RES
-    # if country == 'EUR':
-    #     targets_res['total'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[17.8,19.9,42.5]}
-    #     targets_res['elc_fe'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[29.66,34.09,65,69]}
-    #     targets_res['tra'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[6.75,8.8,28,32]}
-    #     targets_res['chfcli'] = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030,2030],'y':[20.31,22.43,38,46]}
-    # html_items['MAIN'] += sf.combine_charts([(label,res_share_eu[[indicator]],targets_res[indicator]) for (label,indicator) in [('all energies','total'),('electricity','elc_fe'),('transportation','tra'),('heating & cooling','chfcli')]], MAIN_PARAMS, NODES, 'Renewable energy share -', 'linechart', results_xls_writer, '%')
-    # html_items['MAIN'] += '<ul><li><b>Overall RES</b> has not been adapted.</li><li>The <b>RES-E</b> (share of renewables in power sector) has been adapted to follow Eurostat methodology and is calculated as gross renewable production / gross final consumption (including internal uses such as electrolysis and e-fuels). It may thus be above 100% (in case of high share of renewables, and exports). Renewable power imports are not included in the numerator.</li><li><b>RES-T</b> (share of renewable in transportation) only <u>partially follows</u> Eurostat methodology. Main differences: multipliers are approximated (3x for electricity use as a whole, 1.5x for biofuels), non compliant biofuels not excluded, international freight and kerosene not excluded, RES-E calculated from current year mix (not 2 years ago).</li><li><b>RES-H&C</b> (share of renewable in heating & cooling) follows Eurostat methodology: share of renewables in final energies excluding electricity and transportation uses.</li></ul>'
-
-    # # Final energy consumption
-    # if country == 'EUR': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[10912,11253,8882]}
-    # html_items['MAIN'] += sf.combine_charts([('All energies',fec_sector_eu,targets)], MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
-    # html_items['MAIN'] += '<p>This indicator is equivalent to Eurostat\'s "Final energy consumption (Europe 2020-2030)", it is equal to the final energy consumption calculated previously, without ambient heat, non-energy consumption, international maritime consumption and the energy sector (except blast furnaces).</p>'
-
-    # Primary energy consumption 
-    # if country == 'EUR': targets = {'title':'ESTAT / EU objective','mode':'markers','x':[2015,2019,2030],'y':[15731,15745,11544]}
-    # html_items['MAIN'] += sf.combine_charts([('consumption',pec,targets)], MAIN_PARAMS, NODES, 'Primary energy', 'areachart',  results_xls_writer)
-    # # html_items['MAIN'] += '<p>This indicator is equivalent to Eurostat\'s "Primary energy consumption (Europe 2020-2030)", it is equal to the primary energy consumption calculated previously, without ambient heat and non-energy consumption.</p>'
     
     interval_time = sf.calc_time('Plotting & file writting', interval_time)
 
@@ -1060,11 +616,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     # Multidimensionnal indicators not already defined above (some indicators have several nomenclatures: by energy / sector / origin etc.)
     for (indicator,df) in [('fec',fec_carrier),('fec',fec_sector),('cov_ratio',cov_ratios),('ren_cov_ratio',ren_cov_ratios),('ghg_sector',ghg_sector),('ghg_source',ghg_source)]:
         country_results = sf.add_indicator_to_results(country_results, df, indicator)
-    # Per capita indicators
-    # for indicator in ['fec','ghg_sector','ghg_source']:
-    #     country_results[(indicator,'percap')] = country_results[(indicator,'total')] * 1000 / tot_results[('pop','total',country)]
-    # country_results['ghg_nes','percap'] = ghg_source['nes'] * 1000 / tot_results[('pop','total',country)]
-    # Relative reduction
+    
     for indicator in ['fec','ghg_sector']:
         country_results[(indicator,'reduc')] = sf.reduction_rate(country_results[(indicator,'total')],100)
     
@@ -1084,11 +636,6 @@ def generate_results(flows, tot_results, country, se_import_mix):
     with open(os.path.join(DIRNAME,'Results','Results_'+country+'.html'), 'w') as f:
         f.write(html_output)
     
-    # Adding country results to total results DataFrame
-    # country_results.columns = pd.MultiIndex.from_tuples(map(lambda x: (x[0], x[1], country), country_results.columns))
-    # tot_results = pd.concat(tot_flows, axis=0, keys=tot_flows.keys())
-    # tot_results = tot_results.groupby(level=1).sum()
-    # tot_results = pd.concat([tot_results, country_results], axis=1)
     
     # Table of content for ChartData
     toc = results_xls_writer.book.create_sheet('TOC')
@@ -1109,39 +656,6 @@ def generate_results(flows, tot_results, country, se_import_mix):
     results_xls_writer.close()
     return tot_results
 
-# def flows_with_imports(flows, se_import_mix):
-#     flows_imp = flows.copy()
-#     for network in SE_NODES:
-#         if ('imp',network,'') in flows_imp.columns:
-#             flows_imp = flows_imp.drop([('imp',network,'')], axis=1)
-#             for cat in CATEGORIES:
-#                 if network == 'gaz_se' and cat == 'fos': # If fossil gas import, we add it to the existing primary gas node
-#                     flows_imp[('gaz_pe','gaz_se','')] = flows_imp.get(('gaz_pe','gaz_se',''),0) + flows[('imp','gaz_se','')] * se_import_mix[('gaz_se',cat)]
-#                     sf.balance_node(flows_imp, 'gaz_pe')
-#                 elif network == 'lqf_se' and cat == 'fos': # If fossil liquid fuel import, we add it to the existing primary petroleum node
-#                     flows_imp[('pet_pe','lqf_se','')] = flows_imp.get(('pet_pe','lqf_se',''),0) + flows[('imp','lqf_se','')] * se_import_mix[('lqf_se',cat)]
-#                     sf.balance_node(flows_imp, 'pet_pe')
-#                 elif (network,cat) in se_import_mix.columns:
-#                     flows_imp[('imp_'+cat,network,'')] = flows[('imp',network,'')] * se_import_mix[(network,cat)]
-#     for cat in CATEGORIES:
-#         sf.balance_node(flows_imp, 'imp_'+cat)
-#     return flows_imp
-# def calculate_res(flows_bk, gross_net_ratio,gfec_breakdown):
-#     ren_cov_ratios=pd.DataFrame()
-#     gfec_breakdown_carrier=pd.DataFrame()
-#     for final_node in FE_NODES:
-#         # Share paths from final energy to primary energy nodes
-#         selected_columns_cr = flows_bk.columns.get_level_values('Source').isin(PE_NODES)
-#         flows_from_node = flows_bk.loc[:, selected_columns_cr]
-#         flows_from_node = flows_from_node.groupby(level='Source', axis=1).sum()
-#         cons_at_primary = sf.node_consumption(flows_from_node,PE_NODES+SI_NODES)
-#         # Adding network losses for gross final consumption
-#         if final_node in gross_net_ratio.columns: cons_at_primary = cons_at_primary.multiply(gross_net_ratio[final_node], axis=0)
-#         ren_cov_ratios[final_node] = sf.share_percent(gfec_breakdown,100).get('ren',0)
-#         gfec_breakdown = pd.concat([gfec_breakdown,gfec_breakdown_carrier], axis=1).groupby(axis=1, level=0).sum()
-#     gfec_breakdown_pct = sf.share_percent(gfec_breakdown,100)
-#     ren_cov_ratios['total'] = gfec_breakdown_pct['ren']
-#     return ren_cov_ratios
 
 def calculate_pec(flows):
     pec = sf.node_consumption(flows, PE_NODES)
@@ -1152,17 +666,10 @@ def calculate_pec(flows):
     pec = sf.subtract_cons_from_node(pec, flows, 'exp', ['elc_se','hyd_se','vap_se'], PE_NODES)
     return pec
 
-#   # Adding energy and non-energy GHGs + renaming, sorting and removing empty sectors
-# def ghg_cleanup(ghg_sector,ghg_nes):
-#     ghg_sector = pd.concat([ghg_sector,ghg_nes], axis=1)
-#     ghg_sector = ghg_sector.rename(columns=lambda x:x+'_ghg').reindex(columns=GHG_SECTORS)
-#     ghg_sector = ghg_sector.drop(ghg_sector.columns[ghg_sector.fillna(0).max()==0], axis=1)
-#     return ghg_sector
 
 ## Iterating through all countries + Europe
 for country in ALL_COUNTRIES:
     se_import_mix = tot_se_import_mix if MAIN_PARAMS['USE_IMPORT_MIX'] and country in ALL_COUNTRIES else IMPORT_MIX
-    # tot_results = generate_results(flows, country)
     tot_results = generate_results(tot_flows[country], tot_results, country, se_import_mix)
 
 # Raw csv results

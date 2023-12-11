@@ -58,7 +58,7 @@ include: "rules/validate.smk"
 
 if config["foresight"] == "overnight":
 
-    include: "rules/solve_overnight_reff.smk"
+    include: "rules/solve_overnight.smk"
 
 
 if config["foresight"] == "myopic":
