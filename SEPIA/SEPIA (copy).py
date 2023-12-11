@@ -82,7 +82,7 @@ tot_co2 = {}
 print("\nEnergy system (network graph) creation\n")
 
 for country in ALL_COUNTRIES:
-    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs{country}.xlsx")
+    datafile = os.path.join(DIRNAME, f"../resultssuff/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
@@ -918,11 +918,14 @@ def generate_results(flows, tot_results, country, se_import_mix):
     ghg_sector['dac_ghg'] = -ghg_sector['dac_ghg']
     ghg_sector['bec_ghg'] = -ghg_sector['bec_ghg']
     ghg_source = tot_ghg[country].groupby(level='Target', axis=1).sum()
-    ghg_source['lufnes_ghg'] = -ghg_source['lufnes_ghg']
-    ghg_source['bgl_pe'] = -ghg_source['bgl_pe']
-    ghg_source['seq'] = -ghg_source['seq']
-    ghg_source['dac_ghg'] = -ghg_source['dac_ghg']
-    ghg_source['bec_ghg'] = -ghg_source['bec_ghg']
+    ghg_source = ghg_source.drop('lufnes_ghg', axis=1)
+    ghg_source = ghg_source.drop('bgl_pe', axis=1)
+    ghg_source = ghg_source.drop('seq', axis=1)
+    ghg_source = ghg_source.drop('dac_ghg', axis=1)
+    ghg_source = ghg_source.drop('bec_ghg', axis=1)
+    ghg_source.loc['2030'] *= 10
+    ghg_source.loc['2040'] *= 10
+    ghg_source.loc['2050'] *= 10
     
     # tot_results_flows = pd.concat(tot_flows, axis=0, keys=tot_flows.keys())
     # tot_results_flows = tot_results.groupby(level=1).sum()
@@ -954,7 +957,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     # GHG
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += sf.combine_charts([('by sector',ghg_sector),('by source',ghg_source),('cumulated since 2030 by sector',sf.cumul(ghg_sector,2020)),('cumulated since 2020 by source',sf.cumul(ghg_source,2020))], MAIN_PARAMS, NODES, 'All GHG emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
+    html_items['MAIN'] += sf.combine_charts([('by sector',ghg_sector),('by source',ghg_source),('cumulated since 2020 by sector',sf.cumul(ghg_sector,2020)),('cumulated since 2020 by source',sf.cumul(ghg_source,2020))], MAIN_PARAMS, NODES, 'All GHG emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
     if show_total:
         html_items['MAIN'] += sf.combine_charts([('total',tot_results[('ghg_source','percap')]),('energy only',tot_results[('ghg_en','percap')]),('non-energy only',tot_results[('ghg_nes','percap')])], MAIN_PARAMS, country_list, 'GHG emissions per capita -', 'map', results_xls_writer, 'tCO<sub>2</sub>eq/cap/year', reverse=True)
     html_items['MAIN'] += sf.combine_charts([('cumulated since 2020',sf.cumul(ghg_source,2020)),('yearly emissions',ghg_source)], MAIN_PARAMS, NODES, 'CO2 only emissions', 'areachart', results_xls_writer, 'MtCO<sub>2</sub>')

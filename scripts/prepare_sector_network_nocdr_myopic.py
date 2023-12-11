@@ -528,6 +528,7 @@ def patch_electricity_network(n):
 def add_co2_tracking(n, options):
     # minus sign because opposite to how fossil fuels used:
     # CH4 burning puts CH4 down, atmosphere up
+    # countries = spatial.co2.atm
     n.add("Carrier", "co2", co2_emissions=-1.0)
 
     # this tracks CO2 in the atmosphere
@@ -544,7 +545,9 @@ def add_co2_tracking(n, options):
     )
     fn = snakemake.input.co2_totals_name
     LULUCF_totals = pd.read_csv(fn, index_col=0)
-    sum_results = LULUCF_totals.loc[:, ['LULUCF']].sum()
+    lt = ['BE', 'DE', 'FR', 'GB',  'NL']
+    column_to_lock = ['LULUCF']
+    sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
     sum_results = sum_results * -1e6
     n.madd(
         "Store",
@@ -556,6 +559,47 @@ def add_co2_tracking(n, options):
         bus="co2 atmosphere",
     )
     n.add("Carrier", "LULUCF")
+    # n.madd(
+    #     "Bus",
+    #     spatial.co2.atm,
+    #     location=spatial.co2.locations,
+    #     carrier="co2",
+    #     unit="t_co2")
+    # #n.add("Carrier", "LULUCF")
+    # fn = snakemake.input.co2_totals_name
+    # LULUCF_totals = pd.read_csv(fn, index_col=0)
+    # new_row_names = {
+    #     'BE': 'BE1 0 atm',
+    #     'DE': 'DE1 0 atm',
+    #     'FR': 'FR1 0 atm',
+    #     'GB': 'GB0 0 atm',
+    #     'NL': 'NL1 0 atm'}
+    # LULUCF_totals.rename(index=new_row_names, inplace=True)
+    # new_row_index = 'GB2 0 atm'
+    # LULUCF_totals.loc[new_row_index] = 0
+    # LULUCF_totals.loc['NL1 0 atm', ['LULUCF']] = 0
+    # sum_results = LULUCF_totals.loc[countries, 'LULUCF']
+    # sum_results = sum_results.loc[spatial.co2.atm] * -1e6
+        
+    # n.madd(
+    #     "Store",
+    #     spatial.co2.atm,
+    #     e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
+    #     e_nom_max=sum_results,
+    #     carrier="co2 stored",
+    #     capital_cost=0,
+    #     bus=spatial.co2.atm,
+    #      )
+    
+    # n.madd(
+    #     "Link",
+    #     spatial.co2.atm,
+    #     bus0=spatial.co2.atm,
+    #     bus1="co2 atmosphere",
+    #     carrier="co2",
+    #     efficiency=1.0,
+    #     p_nom_extendable=True,
+    # )
 
     # this tracks CO2 stored, e.g. underground
     n.madd(
@@ -2720,7 +2764,7 @@ def add_industry(n, costs):
                 p_nom_extendable=True,
                 bus0=spatial.oil.nodes,
                 bus1=nodes_heat[name] + f" {name}  heat",
-                bus2="co2 atmosphere",
+                bus2=spatial.co2.atm,
                 carrier=f"{name} oil boiler",
                 efficiency=costs.at["decentral oil boiler", "efficiency"],
                 efficiency2=costs.at["oil", "CO2 intensity"],
@@ -2910,7 +2954,6 @@ def add_industry(n, costs):
             carrier="NH3",
             p_set=p_set,
         )
-
 
 def add_waste_heat(n):
     # TODO options?

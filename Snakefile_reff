@@ -52,7 +52,7 @@ include: "rules/retrieve.smk"
 include: "rules/build_electricity.smk"
 include: "rules/build_sector_reff.smk"
 include: "rules/solve_electricity.smk"
-include: "rules/postprocess_reff.smk"
+include: "rules/postprocess.smk"
 include: "rules/validate.smk"
 
 

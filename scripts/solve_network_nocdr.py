@@ -171,7 +171,7 @@ def prepare_network(
             carrier="load",
             sign=1,  # Adjust sign to measure p and p_nom in kW instead of MW
             marginal_cost=3000,  # Eur/MWh
-            p_nom=1,  # MW
+            p_nom=1e6,  # MW
         )
 
     if solve_opts.get("noisy_costs"):
@@ -207,6 +207,8 @@ def prepare_network(
     n.generators.loc["BE1 0 offwind-dc-2030", "p_nom_max"] = 2000
     if "BE1 0 nuclear-1980" in n.links.index:
      n.links.loc["BE1 0 nuclear-1980", "p_nom"] = 2000
+    if "BE1 0 solar-2050" in n.links.index:
+     n.generators.loc["BE1 0 gas", "marginal_cost"] = 150.1
 
     return n
 
@@ -617,6 +619,8 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
     )
 
 
+        
+        
 def add_BAU_constraints(n, config):
     """
     Add a per-carrier minimal overall capacity.

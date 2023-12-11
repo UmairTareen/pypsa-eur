@@ -100,38 +100,6 @@ rule make_summary:
     script:
         "../scripts/make_summary.py"
 
-rule plot_sankey:
-    params:
-        plotting=config["plotting"],
-        countries=config["countries"],
-        planning_horizons=config["scenario"]["planning_horizons"],
-    input:
-        network=RESULTS
-        + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
-        industrial_energy_demand_per_node=RESOURCES
-        + "industrial_energy_demand_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
-        energy_name=RESOURCES + "energy_totals.csv",
-        clever_industry = "data/clever_Industry_{planning_horizons}.csv",
-        
-    output:
-        sankey=RESULTS
-        + "sankey/sankey_{planning_horizons}.html",
-        sankey_carbon=RESULTS
-        + "sankey/sankey_carbon_{planning_horizons}.html",
-        sankey_csv = RESULTS + "sankey/sankey_csv_{planning_horizons}.csv",
-        sankey_carbon_csv = RESULTS + "sankey/sankey_carbon_csv_{planning_horizons}.csv",
-    threads: 1
-    resources:
-        mem_mb=10000,
-    log:
-        LOGS + "plot_sankey_{planning_horizons}.log",
-    benchmark:
-        BENCHMARKS + "plot_sankey_{planning_horizons}"
-    conda:
-        "../envs/environment.yaml"
-    script:
-        "../scripts/plot_sankey.py"
-
 rule prepare_sepia:
     params:
         countries=config["countries"],
@@ -162,6 +130,37 @@ rule prepare_sepia:
         "../envs/environment.yaml"
     script:
         "../SEPIA/excel_generator.py"
+        
+rule prepare_results:
+    params:
+        countries=config["countries"],
+        planning_horizons=config["scenario"]["planning_horizons"],
+        sector_opts=config["scenario"]["sector_opts"],
+        emissions_scope=config["energy"]["emissions"],
+        eurostat_report_year=config["energy"]["eurostat_report_year"],
+        plotting=config["plotting"],
+        scenario=config["scenario"],
+        RDIR=RDIR,
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        
+    output:
+        htmlfile=expand(RESULTS + "pypsa_results/outputs.html", country=config["countries"]),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "prepare_results.log",
+    benchmark:
+        BENCHMARKS + "prepare_results",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/Pypsa_results.py"
 
 
 rule plot_summary:
