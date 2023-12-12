@@ -18,8 +18,13 @@ import numpy as np
 import pandas as pd
 from _helpers import mute_print
 from tqdm import tqdm
+import os
 
 cc = coco.CountryConverter()
+
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+paths = os.path.join(os.path.dirname(__file__), '../data/')
 
 tj_to_ktoe = 0.0238845
 ktoe_to_twh = 0.01163
@@ -289,8 +294,26 @@ if __name__ == "__main__":
     eurostat_dir = snakemake.input.eurostat
 
     demand = industry_production(countries, year, eurostat_dir, jrc_dir)
-
+    config=snakemake.config 
+    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+      def clever_industry_data():
+          years = snakemake.params.industry["sufficiency_scenario"]
+          pf= pd.read_csv(f'{paths}/clever_Industry_{years}.csv',index_col=0)
+          return pf
+    
+      clever_Industry = clever_industry_data()
+      for country in countries:
+        demand.loc[country, 'Integrated steelworks'] = clever_Industry.loc[country, 'Production of crude steel']
+        demand.loc[country, 'Cement'] = clever_Industry.loc[country, 'Production of cement']
+        demand.loc[country, 'Glass production'] = clever_Industry.loc[country, 'Production of glass']
+        demand.loc[country, 'Other chemicals'] = clever_Industry.loc[country, 'Production of high value chemicals ']
+        demand.loc[country, 'Paper production'] = clever_Industry.loc[country, 'Production of paper']
+    else:
+        demand = demand
     separate_basic_chemicals(demand, year)
+    #for country in countrries:
+        #demand.loc[country, 'Ammonia'] = clever_Industry.loc[country, 'Production of ammonia']
+    
 
     fn = snakemake.output.industrial_production_per_country
     demand.to_csv(fn, float_format="%.2f")

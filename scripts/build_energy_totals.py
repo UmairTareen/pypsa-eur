@@ -16,6 +16,7 @@ from functools import partial
 import country_converter as coco
 import geopandas as gpd
 import numpy as np
+import os
 import pandas as pd
 from _helpers import mute_print
 from tqdm import tqdm
@@ -23,6 +24,9 @@ from tqdm import tqdm
 cc = coco.CountryConverter()
 
 idx = pd.IndexSlice
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+paths = os.path.join(os.path.dirname(__file__), '../data/')
 
 
 def cartesian(s1, s2):
@@ -729,33 +733,126 @@ def build_transport_data(countries, population, idees):
     return transport_data
 
 
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake
 
-        snakemake = mock_snakemake("build_energy_totals")
+        snakemake = mock_snakemake(
+            "build_energy_totals",
+            simpl="",
+            clusters=48,
+            planning_horizons=2030,
+        )
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
+    
+    if snakemake.config['foresight'] == 'overnight':
+        years = snakemake.params.planning_horizons
+    elif snakemake.config['foresight'] == 'myopic':
+        years = int(snakemake.wildcards.planning_horizons)
+    config=snakemake.config   
+    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+     def clever_residential_data(years):
+        df= pd.read_csv(f'{paths}/clever_residential_{years}.csv',index_col=0)
+        return df
 
-    params = snakemake.params.energy
+     def clever_tertiary_data(years):
+        df= pd.read_csv(f'{paths}/clever_Tertairy_{years}.csv',index_col=0)
+        return df
 
+     def clever_transport_data(years):
+        df= pd.read_csv(f'{paths}/clever_Transport_{years}.csv',index_col=0)
+        return df
+
+     def clever_agriculture_data(years):
+        df= pd.read_csv(f'{paths}/clever_Agriculture_{years}.csv',index_col=0)
+        return df
+
+     def clever_AFOLUB_data(years):
+        df= pd.read_csv(f'{paths}/clever_AFOLUB_{years}.csv',index_col=0)
+        return df
+
+     def clever_macro_data(years):
+        df= pd.read_csv(f'{paths}/clever_Macro_{years}.csv',index_col=0)
+        return df
+    
+     clever_residential = clever_residential_data(years)
+     clever_Transport = clever_transport_data(years)
+     clever_Tertairy = clever_tertiary_data(years)
+     clever_Agriculture = clever_agriculture_data(years)
+     clever_AFOLUB = clever_AFOLUB_data(years)
+     clever_Macro = clever_macro_data(years)
+    
+    countries = snakemake.params.countries
     nuts3 = gpd.read_file(snakemake.input.nuts3_shapes).set_index("index")
     population = nuts3["pop"].groupby(nuts3.country).sum()
+    
+    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+     for country in countries:
+        population.loc[country] = clever_Macro.loc[country, 'Total population']
+    else:
+        population =population 
 
-    countries = snakemake.params.countries
     idees_countries = pd.Index(countries).intersection(eu28)
 
-    data_year = params["energy_totals_year"]
+    data_year = snakemake.params.energy["energy_totals_year"]
     report_year = snakemake.params.energy["eurostat_report_year"]
     input_eurostat = snakemake.input.eurostat
     eurostat = build_eurostat(input_eurostat, countries, report_year, data_year)
     swiss = build_swiss(data_year)
     idees = build_idees(idees_countries, data_year)
-
+    
     energy = build_energy_totals(countries, eurostat, swiss, idees)
+    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+     for country in countries:
+        energy.loc[country, 'total road'] = clever_Transport.loc[country, 'Total_Road']
+        energy.loc[country, 'electricity road'] = clever_Transport.loc[country, 'Electricity_Road']
+        energy.loc[country, 'total passenger cars'] = clever_Transport.loc[country, 'Total final energy consumption in passenger road mobility']
+        energy.loc[country, 'electricity passenger cars'] = clever_Transport.loc[country, 'Final electricity consumption for passenger road mobility']
+        energy.loc[country, 'total rail'] = clever_Transport.loc[country, 'Total_rail']
+        energy.loc[country, 'electricity rail'] = clever_Transport.loc[country, 'Electricity_rail']
+        energy.loc[country, 'total rail passenger'] = clever_Transport.loc[country, 'Total final energy consumption in rail passenger transport']
+        energy.loc[country, 'electricity rail passenger'] = clever_Transport.loc[country, 'Final electricity consumption in rail passenger transport']
+        energy.loc[country, 'total rail freight'] = clever_Transport.loc[country, 'Total final energy consumption in rail freight transport']
+        energy.loc[country, 'electricity rail freight'] = clever_Transport.loc[country, 'Final electricity consumption in rail freight transport']
+        energy.loc[country, 'total aviation passenger'] = clever_Transport.loc[country, 'Total final energy consumption for air travel']
+        energy.loc[country, 'total international aviation'] = clever_Transport.loc[country, 'Total final energy consumption for air travel']
+        energy.loc[country, 'total domestic aviation'] = clever_Transport.loc[country, 'Final liquid fuels consumption on domestic flights']*0
+        energy.loc[country, 'total domestic navigation'] = clever_Transport.loc[country, 'Final energy consumption from liquid fuels in national water freight transport']
+        energy.loc[country, 'total international navigation'] = clever_Transport.loc[country, 'Final energy consumption from liquid fuels in international water freight transport']
+        energy.loc[country, 'total residential space'] = clever_residential.loc[country, 'Total final energy consumption for space heating in the residential sector']
+        energy.loc[country, 'electricity residential space'] = clever_residential.loc[country, 'Final electricity consumption for space heating in the residential sector']
+        energy.loc[country, 'total residential water'] = clever_residential.loc[country, 'Total final energy consumption for domestic hot water']
+        energy.loc[country, 'electricity residential water'] = clever_residential.loc[country, 'Final electricity consumption for domestic hot water']
+        energy.loc[country, 'total residential cooking'] = clever_residential.loc[country, 'Total final energy consumption for domestic cooking']
+        energy.loc[country, 'electricity residential cooking'] = clever_residential.loc[country, 'Final electricity consumption for domestic cooking']
+        energy.loc[country, 'total residential'] = clever_residential.loc[country, 'Total final energy consumption in the residential sector']
+        energy.loc[country, 'electricity residential'] = clever_residential.loc[country, 'Final electricity consumption in the residential sector']
+        energy.loc[country, 'derived heat residential'] = clever_residential.loc[country, 'Final energy consumption from heating networks in the residential sector']
+        energy.loc[country, 'thermal uses residential'] = clever_residential.loc[country, 'Thermal_uses_residential']
+        energy.loc[country, 'total services space'] = clever_Tertairy.loc[country, 'Total final energy consumption for space heating in the tertiary sector (with climatic corrections) ']
+        energy.loc[country, 'electricity services space'] = clever_Tertairy.loc[country, 'Final electricity consumption for space heating in the tertiary sectorr']
+        energy.loc[country, 'total services water'] = clever_Tertairy.loc[country, 'Total final energy consumption for hot water in the tertiary sector']
+        energy.loc[country, 'electricity services water'] = clever_Tertairy.loc[country, 'Final electricity consumption for hot water in the tertiary sector']
+        energy.loc[country, 'total services cooking'] = clever_Tertairy.loc[country, 'Total Final energy consumption for cooking in the tertiary sector']
+        energy.loc[country, 'electricity services cooking'] = clever_Tertairy.loc[country, 'Final electricity consumption for cooking in the tertiary sector']
+        energy.loc[country, 'total services'] = clever_Tertairy.loc[country, 'Total final energy consumption in the tertiary sector']
+        energy.loc[country, 'electricity services'] = clever_Tertairy.loc[country, 'Final electricity consumption in the tertiary sector']
+        energy.loc[country, 'derived heat services'] = clever_Tertairy.loc[country, 'Final energy consumption from heating networks in the tertiary sector']
+        energy.loc[country, 'thermal uses services'] = clever_Tertairy.loc[country, 'Thermal_uses_tertiary']
+        energy.loc[country, 'total agriculture'] = clever_Agriculture.loc[country, 'Total Final energy consumption in agriculture']
+        energy.loc[country, 'total agriculture electricity'] = clever_Agriculture.loc[country, 'Final electricity consumption in agriculture']
+        energy.loc[country, 'total agriculture machinery'] = clever_Agriculture.loc[country, 'Final oil consumption in agriculture']
+        energy.loc[country, 'total agriculture heat'] = clever_Agriculture.loc[country, 'Total_agriculture_heat']
+        
+    else:
+        energy = energy
+    
     energy.to_csv(snakemake.output.energy_name)
 
-    base_year_emissions = params["base_emissions_year"]
+    base_year_emissions = snakemake.params.energy["base_emissions_year"]
     emissions_scope = snakemake.params.energy["emissions"]
     eea_co2 = build_eea_co2(snakemake.input.co2, base_year_emissions, emissions_scope)
     eurostat_co2 = build_eurostat_co2(
@@ -763,6 +860,15 @@ if __name__ == "__main__":
     )
 
     co2 = build_co2_totals(countries, eea_co2, eurostat_co2)
+    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+     for country in countries:
+        co2.loc[country, 'agriculture'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from agriculture'] + clever_Macro.loc[country, 'Total net GHG emissions from non-energy sources in agriculture']
+        co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']
+        co2.loc[country, 'industrial non-elec'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in industry (process emissions)']
+        co2.loc[country, 'waste management'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in waste management']
+        co2.loc[country, 'other'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in other sectors (industrial product use)']
+    else:
+        co2 = co2
     co2.to_csv(snakemake.output.co2_name)
 
     transport = build_transport_data(countries, population, idees)

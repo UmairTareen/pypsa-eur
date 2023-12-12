@@ -262,7 +262,7 @@ rule build_energy_totals:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_energy_totals_clever.py"
+        "../scripts/build_energy_totals.py"
 
 
 rule build_biomass_potentials:
@@ -526,7 +526,7 @@ rule build_industrial_production_per_node:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_industrial_production_per_node_suff.py"
+        "../scripts/build_industrial_production_per_node.py"
 
 
 rule build_industrial_energy_demand_per_node:
@@ -555,7 +555,7 @@ rule build_industrial_energy_demand_per_node:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_industrial_energy_demand_per_node_myopic.py"
+        "../scripts/build_industrial_energy_demand_per_node.py"
 
 
 rule build_industrial_energy_demand_per_country_today:
@@ -685,7 +685,7 @@ rule build_transport_demand:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_transport_demand_myopic.py"
+        "../scripts/build_transport_demand.py"
         
         
 rule build_shipping_demand:

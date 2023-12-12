@@ -680,7 +680,7 @@ rule build_transport_demand:
     conda:
         "../envs/environment.yaml"
     script:
-        "../scripts/build_transport_demand_myopic.py"
+        "../scripts/build_transport_demand.py"
         
         
 rule build_shipping_demand:
