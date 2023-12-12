@@ -39,7 +39,7 @@ def assign_locations(n):
                 c.df.loc[names, "location"] = names.str[:i]
 
 
-def calculate_nodal_cfs(n, label, nodal_cfs):
+def calculate_nodal_cfs(n, label, nodal_cfs, config):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         (n.branch_components ^ {"Line", "Transformer"})
@@ -72,7 +72,7 @@ def calculate_nodal_cfs(n, label, nodal_cfs):
     return nodal_cfs
 
 
-def calculate_cfs(n, label, cfs):
+def calculate_cfs(n, label, cfs, config):
     for c in n.iterate_components(
         n.branch_components
         | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
@@ -101,7 +101,7 @@ def calculate_cfs(n, label, cfs):
     return cfs
 
 
-def calculate_nodal_costs(n, label, nodal_costs):
+def calculate_nodal_costs(n, label, nodal_costs, config):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
@@ -145,7 +145,7 @@ def calculate_nodal_costs(n, label, nodal_costs):
     return nodal_costs
 
 
-def calculate_costs(n, label, costs):
+def calculate_costs(n, label, costs, config):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -230,7 +230,7 @@ def calculate_cumulative_cost():
     return cumulative_cost
 
 
-def calculate_nodal_capacities(n, label, nodal_capacities):
+def calculate_nodal_capacities(n, label, nodal_capacities, config):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
@@ -247,7 +247,7 @@ def calculate_nodal_capacities(n, label, nodal_capacities):
     return nodal_capacities
 
 
-def calculate_capacities(n, label, capacities):
+def calculate_capacities(n, label, capacities, config):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -265,7 +265,7 @@ def calculate_capacities(n, label, capacities):
     return capacities
 
 
-def calculate_curtailment(n, label, curtailment):
+def calculate_curtailment(n, label, curtailment, config):
     avail = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
         .sum()
@@ -279,7 +279,7 @@ def calculate_curtailment(n, label, curtailment):
     return curtailment
 
 
-def calculate_energy(n, label, energy):
+def calculate_energy(n, label, energy, config):
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
             c_energies = (
@@ -291,7 +291,11 @@ def calculate_energy(n, label, energy):
             )
         else:
             c_energies = pd.Series(0.0, c.df.carrier.unique())
-            for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
+            if config["run"]["name"] == "ncdr" or config["run"]["name"] == "reff":
+                x = 2
+            else:
+                x = 3
+            for port in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
                 totals = (
                     c.pnl["p" + port]
                     .multiply(n.snapshot_weightings.generators, axis=0)
@@ -313,7 +317,7 @@ def calculate_energy(n, label, energy):
     return energy
 
 
-def calculate_supply(n, label, supply):
+def calculate_supply(n, label, supply, config):
     """
     Calculate the max dispatch of each component at the buses aggregated by
     carrier.
@@ -344,7 +348,11 @@ def calculate_supply(n, label, supply):
             supply.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            for end in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
+            if config["run"]["name"] == "ncdr" or config["run"]["name"] == "reff":
+                x = 2
+            else:
+                x = 3
+            for end in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
                 items = c.df.index[c.df["bus" + end].map(bus_map).fillna(False)]
 
                 if len(items) == 0:
@@ -364,7 +372,7 @@ def calculate_supply(n, label, supply):
     return supply
 
 
-def calculate_supply_energy(n, label, supply_energy):
+def calculate_supply_energy(n, label, supply_energy, config):
     """
     Calculate the total energy supply/consuption of each component at the buses
     aggregated by carrier.
@@ -396,7 +404,11 @@ def calculate_supply_energy(n, label, supply_energy):
             supply_energy.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            for end in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
+            if config["run"]["name"] == "ncdr" or config["run"]["name"] == "reff":
+                x = 2
+            else:
+                x = 3
+            for end in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
                 items = c.df.index[c.df["bus" + str(end)].map(bus_map).fillna(False)]
 
                 if len(items) == 0:
@@ -418,7 +430,7 @@ def calculate_supply_energy(n, label, supply_energy):
     return supply_energy
 
 
-def calculate_metrics(n, label, metrics):
+def calculate_metrics(n, label, metrics, config):
     metrics_list = [
         "line_volume",
         "line_volume_limit",
@@ -452,7 +464,7 @@ def calculate_metrics(n, label, metrics):
     return metrics
 
 
-def calculate_prices(n, label, prices):
+def calculate_prices(n, label, prices, config):
     prices = prices.reindex(prices.index.union(n.buses.carrier.unique()))
 
     # WARNING: this is time-averaged, see weighted_prices for load-weighted average
@@ -461,7 +473,7 @@ def calculate_prices(n, label, prices):
     return prices
 
 
-def calculate_weighted_prices(n, label, weighted_prices):
+def calculate_weighted_prices(n, label, weighted_prices, config):
     # Warning: doesn't include storage units as loads
 
     weighted_prices = weighted_prices.reindex(
@@ -542,7 +554,7 @@ def calculate_weighted_prices(n, label, weighted_prices):
     return weighted_prices
 
 
-def calculate_market_values(n, label, market_values):
+def calculate_market_values(n, label, market_values, config):
     # Warning: doesn't include storage units
 
     carrier = "AC"
@@ -597,7 +609,7 @@ def calculate_market_values(n, label, market_values):
     return market_values
 
 
-def calculate_price_statistics(n, label, price_statistics):
+def calculate_price_statistics(n, label, price_statistics, config):
     price_statistics = price_statistics.reindex(
         price_statistics.index.union(
             pd.Index(["zero_hours", "mean", "standard_deviation"])
@@ -627,7 +639,7 @@ def calculate_price_statistics(n, label, price_statistics):
     return price_statistics
 
 
-def make_summaries(networks_dict):
+def make_summaries(networks_dict, config):
     outputs = [
         "nodal_costs",
         "nodal_capacities",
@@ -664,7 +676,7 @@ def make_summaries(networks_dict):
         assign_locations(n)
 
         for output in outputs:
-            df[output] = globals()["calculate_" + output](n, label, df[output])
+            df[output] = globals()["calculate_" + output](n, label, df[output], config)
 
     return df
 
@@ -701,8 +713,8 @@ if __name__ == "__main__":
         snakemake.params.costs,
         Nyears,
     )
-
-    df = make_summaries(networks_dict)
+    config=snakemake.config
+    df = make_summaries(networks_dict, config)
 
     df["metrics"].loc["total costs"] = df["costs"].sum()
 

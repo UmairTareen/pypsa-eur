@@ -118,11 +118,13 @@ def add_co2_sequestration_limit(n, config, limit=200):
     Add a global constraint on the amount of Mt CO2 that can be sequestered.
     """
     if config["run"]["name"] == "ncdr":
-        value = 0
+        limit = 0
+        n.carriers.loc["co2 stored", "co2_absorptions"] = 0
+        n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
     else:
-        value = -1
-    n.carriers.loc["co2 stored", "co2_absorptions"] = value                       #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><sequestration
-    n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
+        limit = limit
+        n.carriers.loc["co2 stored", "co2_absorptions"] = -1
+        n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
 
     limit = limit * 1e6
     for o in opts:

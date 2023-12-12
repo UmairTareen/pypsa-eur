@@ -54,12 +54,12 @@ include: "rules/validate.smk"
 if config["foresight"] == "overnight":
 
     include: "rules/solve_overnight.smk"
-    include: "rules/build_sector_nocdr.smk"
+    include: "rules/build_sector.smk"
 
 
 if config["foresight"] == "myopic":
 
-    include: "rules/solve_myopic_nocdr.smk"
+    include: "rules/solve_myopic.smk"
     include: "rules/build_sector_nocdr_myopic.smk"
 
 
