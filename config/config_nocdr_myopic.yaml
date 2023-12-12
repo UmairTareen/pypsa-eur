@@ -564,6 +564,7 @@ industry:
   MWh_CH4_per_tMeOH: 10.25
   hotmaps_locate_missing: false
   reference_year: 2015
+  scenario: 2030
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#costs
 costs:

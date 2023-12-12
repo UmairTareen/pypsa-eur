@@ -653,13 +653,13 @@ if __name__ == "__main__":
 
     options = snakemake.params.sector
     opts = snakemake.wildcards.sector_opts.split("-")
-
+    config = snakemake.config
     baseyear = snakemake.params.baseyear
 
     n = pypsa.Network(snakemake.input.network)
 
     # define spatial resolution of carriers
-    spatial = define_spatial(n.buses[n.buses.carrier == "AC"].index, options)
+    spatial = define_spatial(n.buses[n.buses.carrier == "AC"].index, options, config)
     add_build_year_to_new_assets(n, baseyear)
 
     Nyears = n.snapshot_weightings.generators.sum() / 8760.0

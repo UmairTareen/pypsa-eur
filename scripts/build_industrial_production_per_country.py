@@ -280,7 +280,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake
 
-        snakemake = mock_snakemake("build_industrial_production_per_country")
+        snakemake = mock_snakemake(
+            "build_industrial_production_per_country")
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
 
@@ -297,7 +298,7 @@ if __name__ == "__main__":
     config=snakemake.config 
     if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
       def clever_industry_data():
-          years = snakemake.params.industry["sufficiency_scenario"]
+          years = snakemake.params.industry["scenario"]
           pf= pd.read_csv(f'{paths}/clever_Industry_{years}.csv',index_col=0)
           return pf
     
