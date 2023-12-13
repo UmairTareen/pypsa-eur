@@ -744,10 +744,6 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     
-    if snakemake.config['foresight'] == 'overnight':
-        years = snakemake.params.planning_horizons
-    elif snakemake.config['foresight'] == 'myopic':
-        years = int(snakemake.wildcards.planning_horizons)
     config=snakemake.config   
     if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
      def clever_residential_data():

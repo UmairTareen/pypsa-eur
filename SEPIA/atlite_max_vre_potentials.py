@@ -59,9 +59,9 @@ import plotly.offline as pyo
 #from atlite.gis import shape_availability, ExclusionContainer
 from plotly.subplots import make_subplots
 
-offwind_ac = xr.open_dataset('../resources/profile_offwind-ac.nc')
+offwind_ac = xr.open_dataset('../resources/bau/profile_offwind-ac.nc')
 
-data = xr.open_dataset('../results/prenetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc')
+data = xr.open_dataset('../results/bau/prenetworks/elec_s_6_lvopt__EQ0.7c-12H-T-H-B-I-A-dist1_2050.nc')
 pmax = data.generators_p_nom_max
 pnow = data.generators_p_nom
 

@@ -116,6 +116,8 @@ rule prepare_sepia:
             + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
             **config["scenario"]
         ),
+        clever_industry = "data/clever_Industry_{planning_horizons}.csv",
+        costs = "data/costs_{planning_horizons}.csv",
         
     output:
         excelfile=expand(RESULTS + "sepia/inputs.xlsx", country=config["countries"]),

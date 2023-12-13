@@ -442,7 +442,7 @@ rule build_industrial_production_per_country:
         ammonia_production=RESOURCES + "ammonia_production.csv",
         jrc="data/bundle-sector/jrc-idees-2015",
         eurostat="data/bundle-sector/eurostat-energy_balances-may_2018_edition",
-        clever_industry = "data/clever_Industry_{planning_horizons}.csv",
+        clever_industry = "data/clever_Industry_2030.csv",
     output:
         industrial_production_per_country=RESOURCES
         + "industrial_production_per_country.csv",

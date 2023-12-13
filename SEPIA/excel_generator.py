@@ -7,7 +7,7 @@ import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 import logging
 
-scenario = "bau"
+scenario = "ncdr"
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
@@ -47,14 +47,15 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     for country in countries:
      filename = build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
      n = pypsa.Network(filename)
+     config = snakemake.config
      
      energy_demand =pd.read_csv(f"../resources/{scenario}/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
      
      if planning_horizon == 2020:
          H2_nonenergyy =0
-     else:     
-      clever_industry = (
-         pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).T
+     else:
+      fn = snakemake.input.clever_industry
+      clever_industry = pd.read_csv(fn ,index_col=0).T
 
       H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].filter(like=country).sum()
       H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
@@ -79,17 +80,17 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      avaition = aviation_p.filter(like=country).sum()
      navigation = navig_d.filter(like=country).sum() + navig_i.filter(like=country).sum()
      if planning_horizon == 2020:
-        navigation_oil = navigation
-        navigation_methanol = 0
+        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2020]
+        navigation_methanol = navigation * config["sector"]["shipping_methanol_share"][2020]
      if planning_horizon == 2030:
-        navigation_oil = navigation * 0.7
-        navigation_methanol = navigation * 0.3
+        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2030]
+        navigation_methanol = navigation * config["sector"]["shipping_methanol_share"][2030]
      elif planning_horizon == 2040:
-        navigation_oil = navigation * 0.3
-        navigation_methanol = navigation * 0.7
+        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2040]
+        navigation_methanol = navigation *config["sector"]["shipping_methanol_share"][2040]
      elif planning_horizon == 2050:
-        navigation_oil = navigation * 0
-        navigation_methanol = navigation * 1
+        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2050]
+        navigation_methanol = navigation * config["sector"]["shipping_methanol_share"][2050]
      naphta = naphta_t.filter(like=country).sum()
      collection.append(
         pd.Series(
@@ -324,7 +325,7 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      if country == 'BE' and planning_horizon !=2020:
       new_value = n.links_t.p0['BE1 0 BEV charger'].sum() / 1e6
       connections.loc[connections.label.str.contains("BEV charger"), "value"] = new_value
-      connections.loc[connections.label.str.contains("BEV charger_2"), "value"] = new_value*0.11
+      connections.loc[connections.label.str.contains("BEV charger_2"), "value"] = new_value * (1-config["sector"]["bev_charge_efficiency"])
      connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
      results_dict[country] = connections
 
@@ -569,6 +570,8 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
     for country in countries:
      filename = build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
      n = pypsa.Network(filename)
+     fn = snakemake.input.costs
+     options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
 
      collection = []
 
@@ -631,7 +634,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      )
      
      value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="OCGT").filter(like=country)
-     ).sum() * 0.2
+     ).sum() * options.loc[("gas", "CO2 intensity"), "value"]
      collection.append(
          pd.Series(dict(label="OCGT", source="gas", target="co2 atmosphere", value=value))
      )
@@ -642,7 +645,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      )
      
      value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="CCGT").filter(like=country)
-     ).sum() * 0.2
+     ).sum() * options.loc[("gas", "CO2 intensity"), "value"]
      collection.append(
          pd.Series(dict(label="CCGT", source="gas", target="co2 atmosphere", value=value))
      )
@@ -654,7 +657,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      )
      
      value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="lignite").filter(like=country)
-     ).sum() * 0.41
+     ).sum() * options.loc[("lignite", "CO2 intensity"), "value"]
      collection.append(
          pd.Series(dict(label="lignite", source="coal", target="co2 atmosphere", value=value))
      )
@@ -665,7 +668,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      )
      
      value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="coal").filter(like=country)
-     ).sum() * 0.34
+     ).sum() * options.loc[("coal", "CO2 intensity"), "value"]
      collection.append(
          pd.Series(dict(label="coal", source="coal", target="co2 atmosphere", value=value))
      )
@@ -754,13 +757,13 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
                 label="solid biomass for industry",
                 source="solid biomass",
                 target="co2 atmosphere",
-                value=value * 0.37,
+                value=value * options.loc[("solid biomass", "CO2 intensity"), "value"],
             )
              )
               )
      collection.append(
         pd.Series(dict(label="solid biomass for industry", source="co2 atmosphere", target="solid biomass",
-                       value=value * 0.37))
+                       value=value * options.loc[("solid biomass", "CO2 intensity"), "value"]))
      )
      # solid biomass for industry CC
      if "p3" in n.links_t:
@@ -852,7 +855,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      collection.append(
         pd.Series(
             dict(
-                label="solid biomass solid biomass to gas", source="solid biomass", target="gas", value=value * 0.23
+                label="solid biomass solid biomass to gas", source="solid biomass", target="gas", value=value * options.loc[("BioSNG", "CO2 stored"), "value"]
                 # CO2 stored in bioSNG from cost data
             )
              )
@@ -868,13 +871,13 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
                 label="solid biomass solid biomass to gas CC",
                 source="solid biomass",
                 target="gas",
-                value=value * 0.23,
+                value=value * options.loc[("BioSNG", "CO2 stored"), "value"],
             )
              )
               )
      collection.append(
         pd.Series(dict(label="solid biomass solid biomass to gas CC", source="co2 atmosphere", target="solid biomass",
-                       value=value * 0.23))
+                       value=value * options.loc[("BioSNG", "CO2 stored"), "value"]))
      )
      value = -(
             n.snapshot_weightings.generators @ n.links_t.p2.filter(like="solid biomass solid biomass to gas CC")
@@ -897,13 +900,13 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech).filter(like=country)).sum()
      collection.append(
         pd.Series(
-            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * options.loc[("solid biomass", "CO2 intensity"), "value"])
          )
           )
      collection.append(
         pd.Series(
             dict(label="residential urban decentral biomass boiler", source="co2 atmosphere", target="solid biomass",
-                 value=value * 0.37))
+                 value=value * options.loc[("solid biomass", "CO2 intensity"), "value"]))
      )
      # services urban decentral biomass boiler
      tech = "services urban decentral biomass boiler"
@@ -911,12 +914,12 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech).filter(like=country)).sum()
      collection.append(
         pd.Series(
-            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * options.loc[("solid biomass", "CO2 intensity"), "value"])
         )
          )
      collection.append(
         pd.Series(dict(label="services urban decentral biomass boiler", source="co2 atmosphere", target="solid biomass",
-                       value=value * 0.37))
+                       value=value * options.loc[("solid biomass", "CO2 intensity"), "value"]))
      )
      # residential rural biomass boiler
      tech = "residential rural biomass boiler"
@@ -924,12 +927,12 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech).filter(like=country)).sum()
      collection.append(
         pd.Series(
-            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * options.loc[("solid biomass", "CO2 intensity"), "value"])
         )
          )
      collection.append(
         pd.Series(dict(label="residential rural biomass boiler", source="co2 atmosphere", target="solid biomass",
-                       value=value * 0.37))
+                       value=value * options.loc[("solid biomass", "CO2 intensity"), "value"]))
      )
     # services rural biomass boiler
      tech = "services rural biomass boiler"
@@ -937,12 +940,12 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      value = (n.snapshot_weightings.generators @ n.links_t.p0.filter(like=tech).filter(like=country)).sum()
      collection.append(
         pd.Series(
-            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * 0.37)
+            dict(label=tech, source="solid biomass", target="co2 atmosphere", value=value * options.loc[("solid biomass", "CO2 intensity"), "value"])
         )
          )
      collection.append(
         pd.Series(dict(label="services rural biomass boiler", source="co2 atmosphere", target="solid biomass",
-                       value=value * 0.37))
+                       value=value * options.loc[("solid biomass", "CO2 intensity"), "value"]))
      )
      # Solid biomass to liquid
      value = -(
@@ -951,14 +954,14 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      collection.append(
         pd.Series(
             dict(
-                label="solid biomass biomass to liquid", source="solid biomass", target="oil", value=value * 0.26
+                label="solid biomass biomass to liquid", source="solid biomass", target="oil", value=value * options.loc[("BtL", "CO2 stored"), "value"]
                 # C02 stored in oil by BTL from costs data 2050
             )
              )
               )
      collection.append(
         pd.Series(dict(label="solid biomass biomass to liquid", source="co2 atmosphere", target="solid biomass",
-                       value=value * 0.26))
+                       value=value *options.loc[("BtL", "CO2 stored"), "value"]))
       )
      # # solid biomass liquid to  CC
      if "p3" in n.links_t:
@@ -1021,13 +1024,13 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      collection.append(
         pd.Series(
             dict(label="urban central solid biomass CHP", source="solid biomass", target="co2 atmosphere",
-                 value=value * 0.37)
+                 value=value * options.loc[("solid biomass", "CO2 intensity"), "value"])
         )
           )
      collection.append(
         pd.Series(
             dict(label="urban central solid biomass CHP", source="co2 atmosphere", target="solid biomass",
-                 value=value * 0.37)
+                 value=value * options.loc[("solid biomass", "CO2 intensity"), "value"])
         )
          )
      
@@ -1135,7 +1138,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      # fossil gas
      value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas").filter(like=country)).div(
         1e6
-     ).sum() * 0.2
+     ).sum() * options.loc[("gas", "CO2 intensity"), "value"]
      row = pd.DataFrame(
         [dict(label="fossil gas", source="fossil gas", target="gas", value=value)]
      )
@@ -1146,7 +1149,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      # co2_intensity = 0.27  # t/MWh
      value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="oil").filter(like=country)).div(
         1e6
-     ).sum() * 0.26
+     ).sum() * options.loc[("oil", "CO2 intensity"), "value"]
      row = pd.DataFrame(
         [dict(label="fossil oil", source="fossil oil", target="oil", value=value)]
      )
