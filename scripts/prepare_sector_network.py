@@ -635,7 +635,7 @@ def add_co2_tracking(n, options, config):
     n.madd(
         "Store",
         spatial.co2.nodes,
-        e_nom_extendable=False,
+        e_nom_extendable=True,
         e_nom_max=e_nom_max,
         capital_cost=options["co2_sequestration_cost"],
         carrier="co2 stored",
@@ -1645,24 +1645,33 @@ def add_land_transport(n, costs):
             )
 
         ice_efficiency = options["transport_internal_combustion_efficiency"]
-
+        if config["run"]["name"] == "suff" or config["run"]["name"] == "ncdr":
+            value = ice_share * transport[nodes]
+        else:
+            value = ice_share / ice_efficiency * transport[nodes]
         n.madd(
             "Load",
             nodes,
             suffix=" land transport oil",
             bus=spatial.oil.nodes,
             carrier="land transport oil",
-            p_set=ice_share * transport[nodes],
+            p_set=value,
         )
-
-        co2 = (
+        if config["run"]["name"] == "suff" or config["run"]["name"] == "ncdr":
+         co2 = (
             ice_share
-            #/ ice_efficiency
             * transport[nodes].sum().sum()
             / nhours
             * costs.at["oil", "CO2 intensity"]
-        )
-
+         )
+        else:
+         co2 = (
+            ice_share
+            / ice_efficiency
+            * transport[nodes].sum().sum()
+            / nhours
+            * costs.at["oil", "CO2 intensity"]
+         )
         n.add(
             "Load",
             "land transport oil emissions",
