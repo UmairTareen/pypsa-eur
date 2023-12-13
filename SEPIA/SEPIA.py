@@ -9,7 +9,7 @@ __version__ = "1.8"
 __email__ = "adrien.jacob@negawatt.org"
 
 import SEPIA_functions as sf # Custom functions
-
+import shutil
 import pandas as pd # Read/analyse data
 import numpy as np # for np.inf
 import re # Regex
@@ -18,12 +18,11 @@ import time # For performance measurement
 import datetime # For current time
 import warnings # to manage user warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl') # Disable warning from openpyxl
-
 start_time = interval_time = time.time()
-scenario = "ncdr"
+scenario = "bau"
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
-path = os.path.join(os.path.dirname(__file__), f'../results/{scenario}')
+path = os.path.join(os.path.dirname(__file__), f'../results/{scenario}/')
 
 DIRNAME = os.path.dirname(__file__)
 
@@ -79,8 +78,20 @@ tot_co2 = {}
 # Energy system (network graph) creation for all countries
 print("\nEnergy system (network graph) creation\n")
 
+def move_folder(source_path, destination_path):
+    try:
+        
+        shutil.move(source_path, destination_path)
+        print(f"Folder moved successfully from {source_path} to {destination_path}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+source_folder = '../results/sepia'
+destination_folder = f'../results/{scenario}/'
+move_folder(source_folder, destination_folder)
+
 for country in ALL_COUNTRIES:
-    datafile = os.path.join(DIRNAME, f"../results/sepia/inputs{country}.xlsx")
+    datafile = os.path.join(DIRNAME, f"../results/{scenario}/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
     print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
@@ -335,7 +346,9 @@ for country in ALL_COUNTRIES:
 
 def generate_results(flows, tot_results, country, se_import_mix):
     xls_file_name = 'ChartData_'+country+'.xlsx'
-    results_xls_writer = pd.ExcelWriter(open(os.path.join(DIRNAME,'Results',xls_file_name), 'wb'), engine="openpyxl")
+    if not os.path.exists(os.path.join(path, 'htmls')):
+     os.makedirs(os.path.join(path, 'htmls'))
+    results_xls_writer = pd.ExcelWriter(open(os.path.join(path,'htmls',xls_file_name), 'wb'), engine="openpyxl")
 
     if country in ALL_COUNTRIES:
         country_label = COUNTRIES.loc[country,'Label']
@@ -637,7 +650,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
         html_output = f.read()
     for label in html_items:
         html_output = html_output.replace('{{'+label+'}}', html_items[label])
-    with open(os.path.join(DIRNAME,'Results','Results_'+country+'.html'), 'w') as f:
+    with open(os.path.join(path,'htmls','Results_'+country+'.html'), 'w') as f:
         f.write(html_output)
     
     
@@ -681,8 +694,6 @@ for (filename, df) in [('Results_bigtable',tot_results),('Debug',tot_debug)]:
     if not df.empty:
         df = df.stack("Country").round(4)
         df.columns = df.columns.map('.'.join).str.strip('.')
-        if not os.path.exists(os.path.join(path, 'htmls')):
-         os.makedirs(os.path.join(path, 'htmls'))
         df.to_csv(os.path.join(path,'htmls',filename+'.csv'),encoding='utf-8',sep=';',decimal=',')
 interval_time = sf.calc_time('File writing', interval_time)
 

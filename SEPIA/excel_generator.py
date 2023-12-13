@@ -2,10 +2,37 @@
 
 import pandas as pd # Read/analyse data
 import pypsa
+import os
+import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 import logging
 
-def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix="../results/postnetworks/elec_"):
+scenario = "bau"
+def prepare_files(simpl, cluster, opt, sector_opt, ll):
+    """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
+
+    file_name = 'elec_s_6_lv1.0__Co2L0.7-12H-T-H-B-I-A-dist1_2020.nc'
+    new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
+    source_directory = '../results/reff/postnetworks/'
+    destination_directory = f'../results/{scenario}/postnetworks/'
+    source_path = os.path.join(source_directory, file_name)
+    destination_path = os.path.join(destination_directory, new_file_name)
+    shutil.copy(source_path, destination_path)
+    
+    # CSV files
+    csv_source_directory = '../resources/reff/'
+    csv_destination_directory = f'../resources/{scenario}/'
+    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
+
+    for csv_file in csv_files:
+        source_csv_path = os.path.join(csv_source_directory, csv_file)
+        destination_csv_path = os.path.join(csv_destination_directory, csv_file)
+        shutil.copy(source_csv_path, destination_csv_path)
+
+prepare_files(simpl="", cluster="6", opt="", sector_opt="EQ0.7c-12H-T-H-B-I-A-dist1", ll="vopt")
+    
+    
+def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix=f"../results/{scenario}/postnetworks/elec_"):
     return prefix+"s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
         simpl=simpl,
         cluster=cluster,
@@ -20,18 +47,18 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     for country in countries:
      filename = build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon)
      n = pypsa.Network(filename)
-     if planning_horizon == 2020:
-         energy_demand =pd.read_csv("../resources/energy_totals.csv", index_col=0).T
-         H2_nonenergyy =0
-     else:
-      energy_demand =pd.read_csv("../resources/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
      
+     energy_demand =pd.read_csv(f"../resources/{scenario}/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
+     
+     if planning_horizon == 2020:
+         H2_nonenergyy =0
+     else:     
       clever_industry = (
          pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).T
 
       H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].filter(like=country).sum()
       H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
-     industry_demand =pd.read_csv("../resources/industrial_energy_demand_elec_s_"+str(cluster)+"_"+str(planning_horizon)+".csv",index_col=0).T
+     industry_demand =pd.read_csv(f"../resources/{scenario}/industrial_energy_demand_elec_s_"+str(cluster)+"_"+str(planning_horizon)+".csv",index_col=0).T
      Rail_demand = energy_demand.loc["total rail"].filter(like=country).sum()
      agriculture_machinery_oil =energy_demand.loc["total agriculture machinery"]
 
@@ -300,7 +327,6 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
       connections.loc[connections.label.str.contains("BEV charger_2"), "value"] = new_value*0.11
      connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
      results_dict[country] = connections
-     # new_value = n.links_t.p0['BE1 0 BEV charger'].sum() / 1e6
 
     return results_dict
 #%%
@@ -1165,7 +1191,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      # LULUCF
      if planning_horizon != 2020:
       LULUCF = (
-         pd.read_csv("../resources/co2_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0)).T
+         pd.read_csv(f"../resources/{scenario}/co2_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0)).T
       V = LULUCF.loc['LULUCF'].filter(like=country).sum()
       V=-V
       row = pd.DataFrame(
@@ -1406,8 +1432,8 @@ if __name__ == "__main__":
         snakemake.params.scenario["simpl"] = [""]
         snakemake.params.scenario["clusters"] = [6]
         snakemake.params.scenario["opts"] = [""]
-        snakemake.params.scenario["sector_opts"] = ["EQ0.7c-1H-T-H-B-I-A-dist1"]
-        snakemake.params.scenario["ll"] = ["v1.5"]
+        snakemake.params.scenario["sector_opts"] = ["EQ0.7c-12H-T-H-B-I-A-dist1"]
+        snakemake.params.scenario["ll"] = ["vopt"]
         snakemake.params.scenario["planning_horizons"] = [2020, 2030, 2040, 2050]
 
     # List the input files for  this script:
