@@ -7,11 +7,6 @@ Build industrial energy demand per model region.
 """
 
 import pandas as pd
-import os
-
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
-paths = os.path.join(os.path.dirname(__file__), '../data/')
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -37,8 +32,8 @@ if __name__ == "__main__":
     config=snakemake.config 
     if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
      def clever_industry_data():
-        years = int(snakemake.wildcards.planning_horizons)
-        df= pd.read_csv(f'{paths}/clever_Industry_{years}.csv',index_col=0)
+        fn = snakemake.input.clever_industry
+        df= pd.read_csv(fn ,index_col=0)
         return df
      clever_Industry = clever_industry_data()   
      new_row_names = {

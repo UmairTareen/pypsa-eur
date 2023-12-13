@@ -16,7 +16,6 @@ from functools import partial
 import country_converter as coco
 import geopandas as gpd
 import numpy as np
-import os
 import pandas as pd
 from _helpers import mute_print
 from tqdm import tqdm
@@ -24,9 +23,6 @@ from tqdm import tqdm
 cc = coco.CountryConverter()
 
 idx = pd.IndexSlice
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
-paths = os.path.join(os.path.dirname(__file__), '../data/')
 
 
 def cartesian(s1, s2):
@@ -754,36 +750,42 @@ if __name__ == "__main__":
         years = int(snakemake.wildcards.planning_horizons)
     config=snakemake.config   
     if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
-     def clever_residential_data(years):
-        df= pd.read_csv(f'{paths}/clever_residential_{years}.csv',index_col=0)
+     def clever_residential_data():
+        fn = snakemake.input.clever_residential
+        df= pd.read_csv(fn ,index_col=0)
         return df
 
-     def clever_tertiary_data(years):
-        df= pd.read_csv(f'{paths}/clever_Tertairy_{years}.csv',index_col=0)
+     def clever_tertiary_data():
+        fn = snakemake.input.clever_Tertairy
+        df= pd.read_csv(fn ,index_col=0)
         return df
 
-     def clever_transport_data(years):
-        df= pd.read_csv(f'{paths}/clever_Transport_{years}.csv',index_col=0)
+     def clever_transport_data():
+        fn = snakemake.input.clever_Transport
+        df= pd.read_csv(fn ,index_col=0)
         return df
 
-     def clever_agriculture_data(years):
-        df= pd.read_csv(f'{paths}/clever_Agriculture_{years}.csv',index_col=0)
+     def clever_agriculture_data():
+        fn = snakemake.input.clever_Agriculture
+        df= pd.read_csv(fn ,index_col=0)
         return df
 
-     def clever_AFOLUB_data(years):
-        df= pd.read_csv(f'{paths}/clever_AFOLUB_{years}.csv',index_col=0)
+     def clever_AFOLUB_data():
+        fn = snakemake.input.clever_AFOLUB
+        df= pd.read_csv(fn ,index_col=0)
         return df
 
-     def clever_macro_data(years):
-        df= pd.read_csv(f'{paths}/clever_Macro_{years}.csv',index_col=0)
+     def clever_macro_data():
+        fn = snakemake.input.clever_Macro
+        df= pd.read_csv(fn ,index_col=0)
         return df
     
-     clever_residential = clever_residential_data(years)
-     clever_Transport = clever_transport_data(years)
-     clever_Tertairy = clever_tertiary_data(years)
-     clever_Agriculture = clever_agriculture_data(years)
-     clever_AFOLUB = clever_AFOLUB_data(years)
-     clever_Macro = clever_macro_data(years)
+     clever_residential = clever_residential_data()
+     clever_Transport = clever_transport_data()
+     clever_Tertairy = clever_tertiary_data()
+     clever_Agriculture = clever_agriculture_data()
+     clever_AFOLUB = clever_AFOLUB_data()
+     clever_Macro = clever_macro_data()
     
     countries = snakemake.params.countries
     nuts3 = gpd.read_file(snakemake.input.nuts3_shapes).set_index("index")

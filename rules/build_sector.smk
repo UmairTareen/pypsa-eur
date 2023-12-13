@@ -248,6 +248,12 @@ rule build_energy_totals:
         idees="data/bundle-sector/jrc-idees-2015",
         district_heat_share="data/district_heat_share.csv",
         eurostat=input_eurostat,
+        clever_residential = "data/clever_residential_{planning_horizons}.csv",
+        clever_Transport = "data/clever_Transport_{planning_horizons}.csv",
+        clever_Agriculture = "data/clever_Agriculture_{planning_horizons}.csv",
+        clever_Tertairy = "data/clever_Tertairy_{planning_horizons}.csv",
+        clever_AFOLUB = "data/clever_AFOLUB_{planning_horizons}.csv",
+        clever_Macro = "data/clever_Macro_{planning_horizons}.csv",
     output:
         energy_name=RESOURCES + "energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
         co2_name=RESOURCES + "co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
@@ -436,6 +442,7 @@ rule build_industrial_production_per_country:
         ammonia_production=RESOURCES + "ammonia_production.csv",
         jrc="data/bundle-sector/jrc-idees-2015",
         eurostat="data/bundle-sector/eurostat-energy_balances-may_2018_edition",
+        clever_industry = "data/clever_Industry_{planning_horizons}.csv",
     output:
         industrial_production_per_country=RESOURCES
         + "industrial_production_per_country.csv",
@@ -510,6 +517,7 @@ rule build_industrial_production_per_node:
         + "industrial_distribution_key_elec_s{simpl}_{clusters}.csv",
         industrial_production_per_country_tomorrow=RESOURCES
         + "industrial_production_per_country_tomorrow_{planning_horizons}.csv",
+        clever_industry = "data/clever_Industry_{planning_horizons}.csv",
     output:
         industrial_production_per_node=RESOURCES
         + "industrial_production_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
@@ -539,6 +547,7 @@ rule build_industrial_energy_demand_per_node:
         + "industrial_production_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
         industrial_energy_demand_per_node_today=RESOURCES
         + "industrial_energy_demand_today_elec_s{simpl}_{clusters}.csv",
+        clever_industry = "data/clever_Industry_{planning_horizons}.csv",
     output:
         industrial_energy_demand_per_node=RESOURCES
         + "industrial_energy_demand_elec_s{simpl}_{clusters}_{planning_horizons}.csv",

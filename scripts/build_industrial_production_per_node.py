@@ -7,13 +7,7 @@ Build industrial production per model region.
 """
 
 from itertools import product
-import os
 import pandas as pd
-
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
-paths = os.path.join(os.path.dirname(__file__), '../data/')
-
 
 # map JRC/our sectors to hotmaps sector, where mapping exist
 sector_mapping = {
@@ -68,8 +62,8 @@ def build_nodal_industrial_production():
     config=snakemake.config 
     if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
      def clever_industry_data():
-        years = int(snakemake.wildcards.planning_horizons)
-        df= pd.read_csv(f'{paths}/clever_Industry_{years}.csv',index_col=0)
+        fn = snakemake.input.clever_industry
+        df= pd.read_csv(fn ,index_col=0)
         return df
      clever_Industry = clever_industry_data()
 

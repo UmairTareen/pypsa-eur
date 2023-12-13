@@ -18,13 +18,8 @@ import numpy as np
 import pandas as pd
 from _helpers import mute_print
 from tqdm import tqdm
-import os
 
 cc = coco.CountryConverter()
-
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
-paths = os.path.join(os.path.dirname(__file__), '../data/')
 
 tj_to_ktoe = 0.0238845
 ktoe_to_twh = 0.01163
@@ -298,9 +293,9 @@ if __name__ == "__main__":
     config=snakemake.config 
     if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
       def clever_industry_data():
-          years = snakemake.params.industry["scenario"]
-          pf= pd.read_csv(f'{paths}/clever_Industry_{years}.csv',index_col=0)
-          return pf
+          fn = snakemake.input.clever_industry
+          df= pd.read_csv(fn ,index_col=0)
+          return df
     
       clever_Industry = clever_industry_data()
       for country in countries:
