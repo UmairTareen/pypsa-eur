@@ -19,7 +19,7 @@ import datetime # For current time
 import warnings # to manage user warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl') # Disable warning from openpyxl
 start_time = interval_time = time.time()
-scenario = "bau"
+scenario = "ncdr"
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 path = os.path.join(os.path.dirname(__file__), f'../results/{scenario}/')
@@ -78,18 +78,6 @@ tot_co2 = {}
 # Energy system (network graph) creation for all countries
 print("\nEnergy system (network graph) creation\n")
 
-def move_folder(source_path, destination_path):
-    try:
-        
-        shutil.move(source_path, destination_path)
-        print(f"Folder moved successfully from {source_path} to {destination_path}")
-    except Exception as e:
-        print(f"Error: {e}")
-
-source_folder = '../results/sepia'
-destination_folder = f'../results/{scenario}/'
-move_folder(source_folder, destination_folder)
-
 for country in ALL_COUNTRIES:
     datafile = os.path.join(DIRNAME, f"../results/{scenario}/sepia/inputs{country}.xlsx")
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
@@ -97,13 +85,13 @@ for country in ALL_COUNTRIES:
     ##Import country data
     country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
     
-    "load energy input data for Sepia"
+    '''load energy input data for Sepia'''
     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
     data.reset_index(drop=True, inplace=False)
     data=data.T
     
     
-    "load co2 input data for Sepia"
+    '''load co2 input data for Sepia'''
     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
     data_co2.reset_index(drop=True, inplace=False)
     data_co2=data_co2.T
@@ -111,14 +99,14 @@ for country in ALL_COUNTRIES:
 
     interval_time = sf.calc_time('Excel file reading', interval_time)
 
-    "subtract agriculture heating demand from residential and tertiary sector"
+    '''subtract agriculture heating demand from residential and tertiary sector'''
     data["presgazcfg"] = data["presgazcfg"] - data["presvapcfagr"]
     
-    "Remove any duplicated data"
+    '''Remove any duplicated data'''
     data = data.loc[:,~data.columns.duplicated()] 
     data_co2 = data_co2.loc[:,~data_co2.columns.duplicated()]# Remove duplicate indicators
 
-    "Consider the coding used in sepia config and put unfound demands from pypsa file to zero"
+    '''Consider the coding used in sepia config and put unfound demands from pypsa file to zero'''
     unfound_inputs = []
     unfound_inputs.extend(sf.unfound_indicators(data,PROCESSES,'Value_Code'))
     unfound_inputs.extend(sf.unfound_indicators(data,PROCESSES,'Efficiency_Code'))
@@ -151,7 +139,7 @@ for country in ALL_COUNTRIES:
     flows_ghg = pd.DataFrame(data_ghg[proc_without_calc_ghg.Value_Code].values, index=data_ghg.index, columns=pd.MultiIndex.from_tuples(list(zip(proc_without_calc_ghg.Source, proc_without_calc_ghg.Target, proc_without_calc_ghg.Type)), names=('Source','Target','Type')))
 
 
-    "Attaching production from primary and secondary energies to final energy demands"
+    '''Attaching production from primary and secondary energies to final energy demands'''
     selected_columns = flows.columns.get_level_values('Source').isin(FE_NODES)
     fec_carrier = flows.loc[:, selected_columns]
     grouped_fec = fec_carrier.groupby(level='Source', axis=1).sum()
@@ -182,7 +170,7 @@ for country in ALL_COUNTRIES:
         flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p-biosng_p-meth_p
         
     
-    "Attaching local production and imports"
+    '''Attaching local production and imports'''
     selected_columns_p = flows.columns.get_level_values('Source').isin(PE_NODES)
     fec_carrier_p = flows.loc[:, selected_columns_p]
     grouped_fec_p = fec_carrier_p.groupby(level='Source', axis=1).sum()
@@ -221,12 +209,12 @@ for country in ALL_COUNTRIES:
         flows[(en_code+'_fe','exp','')] = values_exp
     
             
-    "preparing co2 emissions for carbon sankey"
+    '''preparing co2 emissions for carbon sankey'''
     tot_emm_s = flows_co2.columns.get_level_values('Source').isin(GHG_SECTORS)
     tot_emm_s = flows_co2.loc[:, tot_emm_s]
     tot_emm_s = tot_emm_s.groupby(level='Source', axis=1).sum() 
     
-    "using co2 intensities from pypsa and compuing it from demands as on pypsa they are solved on EU level"
+    '''using co2 intensities from pypsa and compuing it from demands as on pypsa they are solved on EU level'''
     co2_intensity_oil = 0.26
     co2_intensity_gas = 0.2
     co2_intensity_met = 0.2
@@ -264,7 +252,7 @@ for country in ALL_COUNTRIES:
         imp_met = flows[('imp', en_code + '_fe', '')].squeeze().rename_axis(None) * co2_intensity_met
         flows_co2[('imp' + '_ghg', 'atm', 'met')] = imp_met
     
-    "Including LULUCF"
+    '''Including LULUCF'''
     for en_code in ['luf']:
         if flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None).sum()<0:
             value_lulucf = flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None)*-1
@@ -387,7 +375,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     fec_sector = grouped_fec_sec
 
       
-    "preparing data for local production area charts"
+    '''preparing data for local production area charts'''
     gross_fec_carrier = fec_carrier.copy()
     gross_net_ratio = gross_fec_carrier / fec_carrier
 
@@ -420,7 +408,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     value_toltal = ((value_biml + value_fish)/(value_petr + value_biml + value_fish))*100
     cov_ratios['pet_fe'] = value_toltal
     
-    "preparing data for renewable share in each energy vector"
+    '''preparing data for renewable share in each energy vector'''
     ren_cov_ratios=pd.DataFrame()
     gfec_breakdown=pd.DataFrame()
     flows_from_node_cum=pd.DataFrame()
@@ -533,7 +521,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     
     interval_time = sf.calc_time('Graph analysis (consumption breakdown)', interval_time)
 
-    "Preparing data foe emission charts"
+    '''Preparing data foe emission charts'''
     flows_co2 = tot_co2[country]
     ghg_sector = tot_ghg[country]
     ghg_sector = ghg_sector.groupby(level='Source', axis=1).sum()

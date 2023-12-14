@@ -54,8 +54,8 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      if planning_horizon == 2020:
          H2_nonenergyy =0
      else:
-      fn = snakemake.input.clever_industry
-      clever_industry = pd.read_csv(fn ,index_col=0).T
+      clever_industry = (
+         pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).T
 
       H2_nonenergyy = clever_industry.loc["Non-energy consumption of hydrogen for the feedstock production"].filter(like=country).sum()
       H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
@@ -1469,6 +1469,15 @@ if __name__ == "__main__":
         filename=snakemake.output.excelfile,
      )
 
-    # if snakemake.params.foresight == "myopic":
-    #     cumulative_cost = calculate_cumulative_cost()
+def move_folder(source_path, destination_path):
+    try:
+        
+        shutil.move(source_path, destination_path)
+        print(f"Folder moved successfully from {source_path} to {destination_path}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+source_folder = '../results/sepia'
+destination_folder = f'../results/{scenario}/'
+move_folder(source_folder, destination_folder)
 
