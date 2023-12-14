@@ -170,6 +170,14 @@ atlite:
       sarah_dir:
       features: [influx, temperature]
 
+imposed_values: #MW offshore total is 5.7 GW, assuming alrge portion would be ac, 
+  country: 'BE'
+  nuclear: 2000
+  onwind: 5400  
+  offshore_ac: 4000
+  offshore_dc: 1700
+  solar: 12000
+  solar-rooftop: 2000
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
   onwind:
