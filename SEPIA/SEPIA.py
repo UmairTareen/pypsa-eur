@@ -9,12 +9,8 @@ __version__ = "1.8"
 __email__ = "adrien.jacob@negawatt.org"
 
 import SEPIA_functions as sf # Custom functions
-import shutil
 import pandas as pd # Read/analyse data
-import numpy as np # for np.inf
-import re # Regex
 import os # File system
-import time # For performance measurement
 import datetime # For current time
 import warnings # to manage user warnings
 import logging
@@ -29,13 +25,12 @@ path = os.path.join(os.path.dirname(__file__), f'../results/{scenario}/')
 DIRNAME = os.path.dirname(__file__)
 
 def prepare_sepia(countries, filename="../results/sepi.xlsx"):
- start_time = interval_time = time.time()
+
  # Import country data
  file = snakemake.input.countries
  COUNTRIES = pd.read_excel(file, index_col=0)
  # COUNTRIES = COUNTRIES[COUNTRIES['Input_File'].notna()]
  ALL_COUNTRIES = COUNTRIES.index.to_list()
- country_groups = {'ALL':ALL_COUNTRIES}
 
  # Import config data (nodes, processes, general settings etc.)
  file = snakemake.input.sepia_config
@@ -49,10 +44,8 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
  SE_NODES = sf.nodes_by_type(NODES,'SECONDARY_ENERGIES')
  PE_NODES = sf.nodes_by_type(NODES,'PRIMARY_ENERGIES')
  DS_NODES = sf.nodes_by_type(NODES,'DEMAND_SECTORS')
- SI_NODES = sf.nodes_by_type(NODES,'SECONDARY_IMPORTS')
  II_NODES = sf.nodes_by_type(NODES,'IMPORTS')
  EE_NODES = sf.nodes_by_type(NODES,'EXPORTS')
- GHG_ENERGIES = NODES[NODES['Emission_Factor'] > 0]
  GHG_SECTORS = sf.nodes_by_type(NODES,'GHG_SECTORS')
 
  PROCESSES = CONFIG["PROCESSES"].reset_index()
@@ -70,7 +63,6 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
 
  # Aggregated results per Country
  tot_results = pd.DataFrame()
- tot_debug = pd.DataFrame()
  # Aggregated imports and exports per network / category (same structure as IMPORT_MIX)
  tot_se_export_mix = pd.DataFrame(index=IMPORT_MIX.index, columns=pd.MultiIndex.from_product([SE_NODES,CATEGORIES], names=['Network','Category']))
  tot_se_import_mix = tot_se_export_mix.copy()
@@ -84,10 +76,6 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
 
  for country in ALL_COUNTRIES:
     datafile = snakemake.input.excelfile[0]
-    country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
-    # print("||| "+COUNTRIES.loc[country,'Label']+" |||")
-    ##Import country data
-    # country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
     
     '''load energy input data for Sepia'''
     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
@@ -99,9 +87,6 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
     data_co2.reset_index(drop=True, inplace=False)
     data_co2=data_co2.T
-    
-
-    interval_time = sf.calc_time('Excel file reading', interval_time)
 
     '''subtract agriculture heating demand from residential and tertiary sector'''
     data["presgazcfg"] = data["presgazcfg"] - data["presvapcfagr"]
@@ -323,9 +308,6 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
     other_count = atm_sur - atm_tar
     for en_code in ['oth']:
         flows_co2[(en_code + '_ghg', 'atm','')] = other_count
-        
-
-    interval_time = sf.calc_time('Energy system (network graph) creation', interval_time)
     
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
@@ -342,20 +324,8 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
     results_xls_writer = pd.ExcelWriter(file_handle, engine="openpyxl")
 
     if country in ALL_COUNTRIES:
-        # country_label = COUNTRIES.loc[country,'Label']
-        # country_label_w_flag = country_label + ' <img style="height:22px" src="https://flagicons.lipis.dev/flags/4x3/' + country.replace('UK','GB').replace('EL','GR').lower() + '.svg" />'
         show_total = False
         country_list = COUNTRIES
-        # input_file_label = COUNTRIES.loc[country,'Input_File']
-    # else:
-    #     country_label = 'All countries (EU27 + UK, CH & NO)' if country=='ALL' else 'Europe (EU27)'
-    #     country_label_w_flag = country_label
-    #     if country=='EU': country_label_w_flag += '<img style="height:22px" src="https://flagicons.lipis.dev/flags/4x3/eu.svg" />'
-    #     show_total = True
-    #     country_list = COUNTRIES.loc[country_groups[country]]
-    #     input_file_label = '<ul><li>' + '</li><li>'.join(country_list['Input_File']) + '</li></ul>'
-        # tot_results = tot_results.sort_index(axis=1) # To improve performance
-    # print("||| "+country+" |||")
 
     country_results = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[]], codes=[[],[]], names=['Indicator','Sub_indicator']))
     global interval_time
@@ -379,8 +349,6 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
 
       
     '''preparing data for local production area charts'''
-    gross_fec_carrier = fec_carrier.copy()
-    gross_net_ratio = gross_fec_carrier / fec_carrier
 
     selected_columns_E = flows_bk.columns.get_level_values('Target').isin(EE_NODES)
     export_carrier = flows_bk.loc[:, selected_columns_E]
@@ -666,18 +634,6 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
     results_xls_writer.close()
     return tot_results
 
-
- def calculate_pec(flows):
-    pec = sf.node_consumption(flows, PE_NODES)
-    # Adding imports of renewable energy for gas and liquid fuels (fossil imports are already connected to PE_NODES)
-    for energy in ['gaz','lqf']:
-        if ('imp_ren',energy+'_se','') in flows.columns: pec['imp_ren'] = pec.get('imp_ren',0) + flows[('imp_ren',energy+'_se','')]
-    # Subtracting exports of primary and secondary energies (excluding electricity, hydrogen and district heating)
-    pec = sf.subtract_cons_from_node(pec, flows, 'exp', ['elc_se','hyd_se','vap_se'], PE_NODES)
-    return pec
-
-
- ## Iterating through all countries + Europe
  
  for country in ALL_COUNTRIES:
     se_import_mix = tot_se_import_mix if MAIN_PARAMS['USE_IMPORT_MIX'] and country in ALL_COUNTRIES else IMPORT_MIX
@@ -695,10 +651,6 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     countries = snakemake.params.countries
-    
-    # file_name = 'ChartData_'+country+'.xlsx'
-    # file_handle = open(xls_file_name, 'wb')
-    # results_xls_writer = pd.ExcelWriter(file_handle, engine="openpyxl")
     
     prepare_sepia(
         countries,  # Pass the current country as a list
