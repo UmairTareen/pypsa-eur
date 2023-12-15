@@ -635,7 +635,7 @@ def add_co2_tracking(n, options, config):
     n.madd(
         "Store",
         spatial.co2.nodes,
-        e_nom_extendable=True,
+        e_nom_extendable=False,
         e_nom_max=e_nom_max,
         capital_cost=options["co2_sequestration_cost"],
         carrier="co2 stored",
@@ -1027,6 +1027,7 @@ def insert_electricity_distribution_grid(n, costs, config):
         value = False
     else:
         value = True
+
     n.madd(
         "Generator",
         solar,
@@ -1481,7 +1482,7 @@ def add_storage_and_grids(n, costs, config):
             bus1=nodes + " H2",
             bus2="co2 atmosphere",
             bus3=spatial.co2.nodes,
-            p_nom_extendable=value,#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SMR CC
+            p_nom_extendable=value,
             carrier="SMR CC",
             efficiency=costs.at["SMR CC", "efficiency"],
             efficiency2=costs.at["gas", "CO2 intensity"] * (1 - options["cc_fraction"]),
@@ -1505,7 +1506,7 @@ def add_storage_and_grids(n, costs, config):
         )
 
 
-def add_land_transport(n, costs):
+def add_land_transport(n, costs, config):
     # TODO options?
 
     logger.info("Add land transport")
@@ -1623,15 +1624,17 @@ def add_land_transport(n, costs):
         )
 
     if fuel_cell_share > 0:
+        if config["run"]["name"] == "suff" or config["run"]["name"] == "ncdr":
+            value = fuel_cell_share * transport[nodes]
+        else:
+            value = fuel_cell_share / options["transport_fuel_cell_efficiency"] * transport[nodes]
         n.madd(
             "Load",
             nodes,
             suffix=" land transport fuel cell",
             bus=nodes + " H2",
             carrier="land transport fuel cell",
-            p_set=fuel_cell_share
-            #/ options["transport_fuel_cell_efficiency"]
-            * transport[nodes],
+            p_set=value,
         )
 
     if ice_share > 0:
@@ -1657,6 +1660,7 @@ def add_land_transport(n, costs):
             carrier="land transport oil",
             p_set=value,
         )
+
         if config["run"]["name"] == "suff" or config["run"]["name"] == "ncdr":
          co2 = (
             ice_share
@@ -1672,6 +1676,7 @@ def add_land_transport(n, costs):
             / nhours
             * costs.at["oil", "CO2 intensity"]
          )
+
         n.add(
             "Load",
             "land transport oil emissions",
@@ -2973,10 +2978,6 @@ def add_industry(n, costs, config):
     )
 
     # assume enough local waste heat for CC
-    if config["run"]["name"] == "reff":
-        value = False
-    else:
-        value = True
     n.madd(
         "Link",
         spatial.co2.locations,
@@ -2985,7 +2986,7 @@ def add_industry(n, costs, config):
         bus1="co2 atmosphere",
         bus2=spatial.co2.nodes,
         carrier="process emissions CC",
-        p_nom_extendable=value,
+        p_nom_extendable=True,
         capital_cost=costs.at["cement capture", "fixed"],
         efficiency=1 - costs.at["cement capture", "capture_rate"],
         efficiency2=costs.at["cement capture", "capture_rate"],
@@ -3010,6 +3011,7 @@ def add_industry(n, costs, config):
             carrier="NH3",
             p_set=p_set,
         )
+
 
 def add_waste_heat(n):
     # TODO options?
@@ -3403,12 +3405,12 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake(
             "prepare_sector_network",
-            configfiles="config/config_nocdr_myopic.yaml",
+            configfiles="test/config.overnight.yaml",
             simpl="",
             opts="",
-            clusters="6",
-            ll="vopt",
-            sector_opts="1H-T-H-B-I-A-dist1",
+            clusters="5",
+            ll="v1.5",
+            sector_opts="CO2L0-24H-T-H-B-I-A-solar+p3-dist1",
             planning_horizons="2030",
         )
 
@@ -3417,8 +3419,6 @@ if __name__ == "__main__":
     update_config_with_sector_opts(snakemake.config, snakemake.wildcards.sector_opts)
 
     options = snakemake.params.sector
-    
-    config = snakemake.config
 
     opts = snakemake.wildcards.sector_opts.split("-")
 
@@ -3429,6 +3429,7 @@ if __name__ == "__main__":
     pop_layout = pd.read_csv(snakemake.input.clustered_pop_layout, index_col=0)
     nhours = n.snapshot_weightings.generators.sum()
     nyears = nhours / 8760
+    config = snakemake.config
 
     costs = prepare_costs(
         snakemake.input.costs,
@@ -3477,7 +3478,7 @@ if __name__ == "__main__":
         options["district_heating"]["progress"] = 0.0
 
     if "T" in opts:
-        add_land_transport(n, costs)
+        add_land_transport(n, costs, config)
 
     if "H" in opts:
         add_heat(n, costs, config)

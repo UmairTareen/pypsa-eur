@@ -17,8 +17,10 @@ import os # File system
 import time # For performance measurement
 import datetime # For current time
 import warnings # to manage user warnings
+import logging
+
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl') # Disable warning from openpyxl
-start_time = interval_time = time.time()
+
 scenario = "ncdr"
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -26,64 +28,66 @@ path = os.path.join(os.path.dirname(__file__), f'../results/{scenario}/')
 
 DIRNAME = os.path.dirname(__file__)
 
-## Import country data
-file = pd.ExcelFile(os.path.join(DIRNAME, r'COUNTRIES.xlsx'), engine="openpyxl")
-COUNTRIES = pd.read_excel(file, "COUNTRIES", index_col=0)
-COUNTRIES = COUNTRIES[COUNTRIES['Input_File'].notna()]
-ALL_COUNTRIES = COUNTRIES.index.to_list()
-country_groups = {'ALL':ALL_COUNTRIES}
+def prepare_sepia(countries, filename="../results/sepi.xlsx"):
+ start_time = interval_time = time.time()
+ # Import country data
+ file = snakemake.input.countries
+ COUNTRIES = pd.read_excel(file, index_col=0)
+ # COUNTRIES = COUNTRIES[COUNTRIES['Input_File'].notna()]
+ ALL_COUNTRIES = COUNTRIES.index.to_list()
+ country_groups = {'ALL':ALL_COUNTRIES}
 
-## Import config data (nodes, processes, general settings etc.)
-file = pd.ExcelFile(os.path.join(DIRNAME, r'SEPIA_config.xlsx'), engine="openpyxl")
-CONFIG = pd.read_excel(file, ["MAIN_PARAMS","NODES","PROCESSES","PROCESSES_2","PROCESSES_3","IMPORT_MIX","INDICATORS"], index_col=0)
+ # Import config data (nodes, processes, general settings etc.)
+ file = snakemake.input.sepia_config
+ CONFIG = pd.read_excel(file, ["MAIN_PARAMS","NODES","PROCESSES","PROCESSES_2","PROCESSES_3","IMPORT_MIX","INDICATORS"], index_col=0)
 
-# Main settings (cf. SEPIA_config for description of all setting constants)
-MAIN_PARAMS = CONFIG["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
+ # Main settings (cf. SEPIA_config for description of all setting constants)
+ MAIN_PARAMS = CONFIG["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
 
-NODES = CONFIG["NODES"]
-FE_NODES = sf.nodes_by_type(NODES,'FINAL_ENERGIES')
-SE_NODES = sf.nodes_by_type(NODES,'SECONDARY_ENERGIES')
-PE_NODES = sf.nodes_by_type(NODES,'PRIMARY_ENERGIES')
-DS_NODES = sf.nodes_by_type(NODES,'DEMAND_SECTORS')
-SI_NODES = sf.nodes_by_type(NODES,'SECONDARY_IMPORTS')
-II_NODES = sf.nodes_by_type(NODES,'IMPORTS')
-EE_NODES = sf.nodes_by_type(NODES,'EXPORTS')
-GHG_ENERGIES = NODES[NODES['Emission_Factor'] > 0]
-GHG_SECTORS = sf.nodes_by_type(NODES,'GHG_SECTORS')
+ NODES = CONFIG["NODES"]
+ FE_NODES = sf.nodes_by_type(NODES,'FINAL_ENERGIES')
+ SE_NODES = sf.nodes_by_type(NODES,'SECONDARY_ENERGIES')
+ PE_NODES = sf.nodes_by_type(NODES,'PRIMARY_ENERGIES')
+ DS_NODES = sf.nodes_by_type(NODES,'DEMAND_SECTORS')
+ SI_NODES = sf.nodes_by_type(NODES,'SECONDARY_IMPORTS')
+ II_NODES = sf.nodes_by_type(NODES,'IMPORTS')
+ EE_NODES = sf.nodes_by_type(NODES,'EXPORTS')
+ GHG_ENERGIES = NODES[NODES['Emission_Factor'] > 0]
+ GHG_SECTORS = sf.nodes_by_type(NODES,'GHG_SECTORS')
 
-PROCESSES = CONFIG["PROCESSES"].reset_index()
-PROCESSES['Type'].fillna('', inplace=True)
-PROCESSES_2 = CONFIG["PROCESSES_2"].reset_index()
-PROCESSES_2['Type'].fillna('', inplace=True)
-PROCESSES_3 = CONFIG["PROCESSES_3"].reset_index()
-PROCESSES_3['Type'].fillna('', inplace=True)
+ PROCESSES = CONFIG["PROCESSES"].reset_index()
+ PROCESSES['Type'].fillna('', inplace=True)
+ PROCESSES_2 = CONFIG["PROCESSES_2"].reset_index()
+ PROCESSES_2['Type'].fillna('', inplace=True)
+ PROCESSES_3 = CONFIG["PROCESSES_3"].reset_index()
+ PROCESSES_3['Type'].fillna('', inplace=True)
 
-IMPORT_MIX = CONFIG["IMPORT_MIX"].set_index('Category', append=True).T.interpolate(limit_direction='backward')
+ IMPORT_MIX = CONFIG["IMPORT_MIX"].set_index('Category', append=True).T.interpolate(limit_direction='backward')
 
-INDICATORS = CONFIG["INDICATORS"]
+ INDICATORS = CONFIG["INDICATORS"]
 
-CATEGORIES = ['ren','fos','nuk']
+ CATEGORIES = ['ren','fos','nuk']
 
-# Aggregated results per Country
-tot_results = pd.DataFrame()
-tot_debug = pd.DataFrame()
-# Aggregated imports and exports per network / category (same structure as IMPORT_MIX)
-tot_se_export_mix = pd.DataFrame(index=IMPORT_MIX.index, columns=pd.MultiIndex.from_product([SE_NODES,CATEGORIES], names=['Network','Category']))
-tot_se_import_mix = tot_se_export_mix.copy()
-# Dictionnaries storing results of the next section : "Country" => Value
-tot_flows = {} # Energy flow DataFrames
-tot_ghg = {}
-tot_co2 = {}
+ # Aggregated results per Country
+ tot_results = pd.DataFrame()
+ tot_debug = pd.DataFrame()
+ # Aggregated imports and exports per network / category (same structure as IMPORT_MIX)
+ tot_se_export_mix = pd.DataFrame(index=IMPORT_MIX.index, columns=pd.MultiIndex.from_product([SE_NODES,CATEGORIES], names=['Network','Category']))
+ tot_se_import_mix = tot_se_export_mix.copy()
+ # Dictionnaries storing results of the next section : "Country" => Value
+ tot_flows = {} # Energy flow DataFrames
+ tot_ghg = {}
+ tot_co2 = {}
 
-# Energy system (network graph) creation for all countries
-print("\nEnergy system (network graph) creation\n")
+ # Energy system (network graph) creation for all countries
+ print("\nEnergy system (network graph) creation\n")
 
-for country in ALL_COUNTRIES:
-    datafile = os.path.join(DIRNAME, f"../results/{scenario}/sepia/inputs{country}.xlsx")
+ for country in ALL_COUNTRIES:
+    datafile = snakemake.input.excelfile[0]
     country_debug = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[],[]], codes=[[],[],[]], names=['Indicator','Sub_indicator','Country']))
-    print("||| "+COUNTRIES.loc[country,'Label']+" |||")
+    # print("||| "+COUNTRIES.loc[country,'Label']+" |||")
     ##Import country data
-    country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
+    # country_input_file = COUNTRIES.loc[country,'Input_File']+'.xlsx'
     
     '''load energy input data for Sepia'''
     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
@@ -332,27 +336,26 @@ for country in ALL_COUNTRIES:
     tot_results = pd.concat([tot_results, country_results], axis=1)
 
 
-def generate_results(flows, tot_results, country, se_import_mix):
-    xls_file_name = 'ChartData_'+country+'.xlsx'
-    if not os.path.exists(os.path.join(path, 'htmls')):
-     os.makedirs(os.path.join(path, 'htmls'))
-    results_xls_writer = pd.ExcelWriter(open(os.path.join(path,'htmls',xls_file_name), 'wb'), engine="openpyxl")
+ def generate_results(flows, tot_results, country, se_import_mix):
+    xls_file_name = snakemake.output.excelfile[0]
+    file_handle = open(xls_file_name, 'wb')
+    results_xls_writer = pd.ExcelWriter(file_handle, engine="openpyxl")
 
     if country in ALL_COUNTRIES:
-        country_label = COUNTRIES.loc[country,'Label']
-        country_label_w_flag = country_label + ' <img style="height:22px" src="https://flagicons.lipis.dev/flags/4x3/' + country.replace('UK','GB').replace('EL','GR').lower() + '.svg" />'
+        # country_label = COUNTRIES.loc[country,'Label']
+        # country_label_w_flag = country_label + ' <img style="height:22px" src="https://flagicons.lipis.dev/flags/4x3/' + country.replace('UK','GB').replace('EL','GR').lower() + '.svg" />'
         show_total = False
         country_list = COUNTRIES
-        input_file_label = COUNTRIES.loc[country,'Input_File']
-    else:
-        country_label = 'All countries (EU27 + UK, CH & NO)' if country=='ALL' else 'Europe (EU27)'
-        country_label_w_flag = country_label
-        if country=='EU': country_label_w_flag += '<img style="height:22px" src="https://flagicons.lipis.dev/flags/4x3/eu.svg" />'
-        show_total = True
-        country_list = COUNTRIES.loc[country_groups[country]]
-        input_file_label = '<ul><li>' + '</li><li>'.join(country_list['Input_File']) + '</li></ul>'
+        # input_file_label = COUNTRIES.loc[country,'Input_File']
+    # else:
+    #     country_label = 'All countries (EU27 + UK, CH & NO)' if country=='ALL' else 'Europe (EU27)'
+    #     country_label_w_flag = country_label
+    #     if country=='EU': country_label_w_flag += '<img style="height:22px" src="https://flagicons.lipis.dev/flags/4x3/eu.svg" />'
+    #     show_total = True
+    #     country_list = COUNTRIES.loc[country_groups[country]]
+    #     input_file_label = '<ul><li>' + '</li><li>'.join(country_list['Input_File']) + '</li></ul>'
         # tot_results = tot_results.sort_index(axis=1) # To improve performance
-    print("||| "+country+" |||")
+    # print("||| "+country+" |||")
 
     country_results = pd.DataFrame(columns=pd.MultiIndex(levels=[[],[]], codes=[[],[]], names=['Indicator','Sub_indicator']))
     global interval_time
@@ -519,7 +522,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     gfec_breakdown_pct = sf.share_percent(gfec_breakdown,100)
     ren_cov_ratios['total'] = gfec_breakdown_pct['ren'].clip(upper=100)
     
-    interval_time = sf.calc_time('Graph analysis (consumption breakdown)', interval_time)
+    # interval_time = sf.calc_time('Graph analysis (consumption breakdown)', interval_time)
 
     '''Preparing data foe emission charts'''
     flows_co2 = tot_co2[country]
@@ -615,7 +618,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
     
     
-    interval_time = sf.calc_time('Plotting & file writting', interval_time)
+    # interval_time = sf.calc_time('Plotting & file writting', interval_time)
 
     # Indicator calculation for inter-territorial analysis
     # Multidimensionnal indicators not already defined above (some indicators have several nomenclatures: by energy / sector / origin etc.)
@@ -629,16 +632,18 @@ def generate_results(flows, tot_results, country, se_import_mix):
     if MAIN_PARAMS['HTML_TEMPLATE'] == "raw":
         id_section += 1
         html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-        html_items['MAIN'] += '<p>Input data taken from: <b>'+input_file_label+'</b></p>'
+        # html_items['MAIN'] += '<p>Input data taken from: <b>'+input_file_label+'</b></p>'
     current_time = datetime.datetime.now().strftime("%d/%m/%Y %Hh%M")
     html_items['MAIN'] += f'<p style="text-align:right;font-size:small;">SEPIA v{__version__} @ {current_time}</p>'
     
     ## Writing HTML file
-    with open(os.path.join(DIRNAME,'Template',MAIN_PARAMS['HTML_TEMPLATE']+'.html')) as f:
+    template = snakemake.input.template
+    with open(template) as f:
         html_output = f.read()
     for label in html_items:
         html_output = html_output.replace('{{'+label+'}}', html_items[label])
-    with open(os.path.join(path,'htmls','Results_'+country+'.html'), 'w') as f:
+    filename = snakemake.output.htmlfile[0]
+    with open(filename, 'w') as f:
         f.write(html_output)
     
     
@@ -662,7 +667,7 @@ def generate_results(flows, tot_results, country, se_import_mix):
     return tot_results
 
 
-def calculate_pec(flows):
+ def calculate_pec(flows):
     pec = sf.node_consumption(flows, PE_NODES)
     # Adding imports of renewable energy for gas and liquid fuels (fossil imports are already connected to PE_NODES)
     for energy in ['gaz','lqf']:
@@ -672,17 +677,30 @@ def calculate_pec(flows):
     return pec
 
 
-## Iterating through all countries + Europe
-for country in ALL_COUNTRIES:
+ ## Iterating through all countries + Europe
+ 
+ for country in ALL_COUNTRIES:
     se_import_mix = tot_se_import_mix if MAIN_PARAMS['USE_IMPORT_MIX'] and country in ALL_COUNTRIES else IMPORT_MIX
     tot_results = generate_results(tot_flows[country], tot_results, country, se_import_mix)
 
-# Raw csv results
-for (filename, df) in [('Results_bigtable',tot_results),('Debug',tot_debug)]:
-    if not df.empty:
-        df = df.stack("Country").round(4)
-        df.columns = df.columns.map('.'.join).str.strip('.')
-        df.to_csv(os.path.join(path,'htmls',filename+'.csv'),encoding='utf-8',sep=';',decimal=',')
-interval_time = sf.calc_time('File writing', interval_time)
 
-sf.calc_time('Total run',start_time)
+
+
+if __name__ == "__main__":
+    if "snakemake" not in globals():
+        from _helpers import mock_snakemake
+
+        snakemake = mock_snakemake(
+            "generate_sepia")
+
+    logging.basicConfig(level=snakemake.config["logging"]["level"])
+    countries = snakemake.params.countries
+    
+    # file_name = 'ChartData_'+country+'.xlsx'
+    # file_handle = open(xls_file_name, 'wb')
+    # results_xls_writer = pd.ExcelWriter(file_handle, engine="openpyxl")
+    
+    prepare_sepia(
+        countries,  # Pass the current country as a list
+        filename=snakemake.output.excelfile,
+      )

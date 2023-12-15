@@ -132,6 +132,30 @@ rule prepare_sepia:
     script:
         "../SEPIA/excel_generator.py"
         
+rule generate_sepia:
+    params:
+        countries=config["countries"],
+    input:
+        countries = "SEPIA/COUNTRIES.xlsx",
+        sepia_config = "SEPIA/SEPIA_config.xlsx",
+        template = "SEPIA/Template/CLEVER.html",
+        excelfile=expand(RESULTS + "ncdr/sepia/inputs{country}.xlsx", country=config["countries"]),
+        
+    output:
+        excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=config["countries"]),
+        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=config["countries"]),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "generate_sepia.log",
+    benchmark:
+        BENCHMARKS + "generate_sepia",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/SEPIA.py"
+        
 rule prepare_results:
     params:
         countries=config["countries"],
