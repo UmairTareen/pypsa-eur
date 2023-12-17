@@ -10,27 +10,22 @@ __email__ = "adrien.jacob@negawatt.org"
 
 import SEPIA_functions as sf # Custom functions
 import pandas as pd # Read/analyse data
-import os # File system
 import datetime # For current time
-import warnings # to manage user warnings
 import logging
-
-warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl') # Disable warning from openpyxl
+import shutil
 
 scenario = "ncdr"
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
-path = os.path.join(os.path.dirname(__file__), f'../results/{scenario}/')
 
-DIRNAME = os.path.dirname(__file__)
 
-def prepare_sepia(countries, filename="../results/sepi.xlsx"):
+def prepare_sepia(countries):
+ '''This function prepares data from excel files for sepia visulaisation'''
 
  # Import country data
  file = snakemake.input.countries
  COUNTRIES = pd.read_excel(file, index_col=0)
- # COUNTRIES = COUNTRIES[COUNTRIES['Input_File'].notna()]
- ALL_COUNTRIES = COUNTRIES.index.to_list()
+ ALL_COUNTRIES = snakemake.params.countries
+ fn = snakemake.input.costs
+ options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
 
  # Import config data (nodes, processes, general settings etc.)
  file = snakemake.input.sepia_config
@@ -54,18 +49,10 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
  PROCESSES_2['Type'].fillna('', inplace=True)
  PROCESSES_3 = CONFIG["PROCESSES_3"].reset_index()
  PROCESSES_3['Type'].fillna('', inplace=True)
-
- IMPORT_MIX = CONFIG["IMPORT_MIX"].set_index('Category', append=True).T.interpolate(limit_direction='backward')
-
  INDICATORS = CONFIG["INDICATORS"]
-
- CATEGORIES = ['ren','fos','nuk']
 
  # Aggregated results per Country
  tot_results = pd.DataFrame()
- # Aggregated imports and exports per network / category (same structure as IMPORT_MIX)
- tot_se_export_mix = pd.DataFrame(index=IMPORT_MIX.index, columns=pd.MultiIndex.from_product([SE_NODES,CATEGORIES], names=['Network','Category']))
- tot_se_import_mix = tot_se_export_mix.copy()
  # Dictionnaries storing results of the next section : "Country" => Value
  tot_flows = {} # Energy flow DataFrames
  tot_ghg = {}
@@ -73,9 +60,12 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
 
  # Energy system (network graph) creation for all countries
  print("\nEnergy system (network graph) creation\n")
+ print("ALL_COUNTRIES:", ALL_COUNTRIES)
+ print("snakemake.input.excelfile:", snakemake.input.excelfile)
 
  for country in ALL_COUNTRIES:
-    datafile = snakemake.input.excelfile[0]
+    datafile = snakemake.input.excelfile[ALL_COUNTRIES.index(country)]
+    datafile = str(datafile)
     
     '''load energy input data for Sepia'''
     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
@@ -204,9 +194,9 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
     tot_emm_s = tot_emm_s.groupby(level='Source', axis=1).sum() 
     
     '''using co2 intensities from pypsa and compuing it from demands as on pypsa they are solved on EU level'''
-    co2_intensity_oil = 0.26
-    co2_intensity_gas = 0.2
-    co2_intensity_met = 0.2
+    co2_intensity_oil = options.loc[("oil", "CO2 intensity"), "value"]
+    co2_intensity_gas = options.loc[("gas", "CO2 intensity"), "value"]
+    co2_intensity_met = options.loc[("gas", "CO2 intensity"), "value"]
     demand_side_emm = flows.columns.get_level_values('Target').isin(DS_NODES)
     demand_side_emm = flows.loc[:, demand_side_emm]
     demand_side_emm = demand_side_emm.groupby(level='Target', axis=1).sum() 
@@ -318,8 +308,10 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
     tot_results = pd.concat([tot_results, country_results], axis=1)
 
 
- def generate_results(flows, tot_results, country, se_import_mix):
-    xls_file_name = snakemake.output.excelfile[0]
+ def generate_results(flows, tot_results, country):
+    xls_file_name = snakemake.output.excelfile[ALL_COUNTRIES.index(country)]
+    xls_file_name = str(xls_file_name)
+ 
     file_handle = open(xls_file_name, 'wb')
     results_xls_writer = pd.ExcelWriter(file_handle, engine="openpyxl")
 
@@ -585,8 +577,6 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
         country_results = sf.add_indicator_to_results(country_results, df, 'fec.'+sector)
     html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
     
-    
-    # interval_time = sf.calc_time('Plotting & file writting', interval_time)
 
     # Indicator calculation for inter-territorial analysis
     # Multidimensionnal indicators not already defined above (some indicators have several nomenclatures: by energy / sector / origin etc.)
@@ -605,12 +595,14 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
     html_items['MAIN'] += f'<p style="text-align:right;font-size:small;">SEPIA v{__version__} @ {current_time}</p>'
     
     ## Writing HTML file
+    # for country in ALL_COUNTRIES:
     template = snakemake.input.template
     with open(template) as f:
         html_output = f.read()
     for label in html_items:
         html_output = html_output.replace('{{'+label+'}}', html_items[label])
-    filename = snakemake.output.htmlfile[0]
+    filename = snakemake.output.htmlfile[ALL_COUNTRIES.index(country)]
+    filename = str(filename)
     with open(filename, 'w') as f:
         f.write(html_output)
     
@@ -636,11 +628,8 @@ def prepare_sepia(countries, filename="../results/sepi.xlsx"):
 
  
  for country in ALL_COUNTRIES:
-    se_import_mix = tot_se_import_mix if MAIN_PARAMS['USE_IMPORT_MIX'] and country in ALL_COUNTRIES else IMPORT_MIX
-    tot_results = generate_results(tot_flows[country], tot_results, country, se_import_mix)
-
-
-
+    tot_results = generate_results(tot_flows[country], tot_results, country)
+    
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -652,7 +641,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     countries = snakemake.params.countries
     
-    prepare_sepia(
-        countries,  # Pass the current country as a list
-        filename=snakemake.output.excelfile,
-      )
+    prepare_sepia(countries)
+    
+def move_folder(source_paths, destination_path):
+    try:
+        for source_path in source_paths:
+            shutil.move(source_path, destination_path)
+            print(f"Folder moved successfully from {source_path} to {destination_path}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+source_folders = ['../results/sepia', '../results/htmls']
+destination_folder = f'../results/{scenario}/'
+move_folder(source_folders, destination_folder)

@@ -137,9 +137,10 @@ rule generate_sepia:
         countries=config["countries"],
     input:
         countries = "SEPIA/COUNTRIES.xlsx",
+        costs = "data/costs_2050.csv",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         template = "SEPIA/Template/CLEVER.html",
-        excelfile=expand(RESULTS + "ncdr/sepia/inputs{country}.xlsx", country=config["countries"]),
+        excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=config["countries"]),
         
     output:
         excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=config["countries"]),

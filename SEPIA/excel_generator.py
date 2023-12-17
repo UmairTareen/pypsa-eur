@@ -1469,15 +1469,4 @@ if __name__ == "__main__":
         filename=snakemake.output.excelfile,
      )
 
-def move_folder(source_path, destination_path):
-    try:
-        
-        shutil.move(source_path, destination_path)
-        print(f"Folder moved successfully from {source_path} to {destination_path}")
-    except Exception as e:
-        print(f"Error: {e}")
-
-source_folder = '../results/sepia'
-destination_folder = f'../results/{scenario}/'
-move_folder(source_folder, destination_folder)
 
