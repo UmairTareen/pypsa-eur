@@ -548,9 +548,7 @@ def add_co2_tracking(n, options, config):
     if config["run"]["name"] != "reff":
      fn = snakemake.input.co2_totals_name
      LULUCF_totals = pd.read_csv(fn, index_col=0)
-     lt = ['BE', 'DE', 'FR', 'GB',  'NL']
-     column_to_lock = ['LULUCF']
-     sum_results = LULUCF_totals.loc[lt, ['LULUCF']].sum()
+     sum_results = LULUCF_totals.loc[:, ['LULUCF']].sum()
      sum_results = sum_results * -1e6
      n.madd(
         "Store",
@@ -635,7 +633,7 @@ def add_co2_tracking(n, options, config):
     n.madd(
         "Store",
         spatial.co2.nodes,
-        e_nom_extendable=False,
+        e_nom_extendable=True,
         e_nom_max=e_nom_max,
         capital_cost=options["co2_sequestration_cost"],
         carrier="co2 stored",

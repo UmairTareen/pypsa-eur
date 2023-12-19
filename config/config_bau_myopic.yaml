@@ -81,7 +81,7 @@ co2_budget:
   2035: 0.150
   2040: 0.15
   2045: 0.032
-  2050: 0.000
+  2050: 0.00
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:

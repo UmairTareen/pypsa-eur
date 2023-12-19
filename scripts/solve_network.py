@@ -209,63 +209,66 @@ def prepare_network(
 
     return n
 
-def imposed_values_genertion(n, foresight, config):
+def imposed_values_genertion(n, planning_horizons, config):
     ''' This funtion impse values for generation technologies. For example the
     wind offshore, onshore, solar and nuclear capacities are constraint for 
     Belgium for year 2030 considering the values from ELIA'''
-    if foresight == "myopic":
+    if planning_horizons == 2030:
+     def impsed_values():
         
-     # getting values from config file
-     country = config["imposed_values"]["country"]
-     onwind_max = config["imposed_values"]["onwind"]
-     offwind_ac_max = config["imposed_values"]["offshore_ac"]
-     offwind_dc_max = config["imposed_values"]["offshore_dc"]
-     solar_max = config["imposed_values"]["solar"]
-     solar_rooftop_max = config["imposed_values"]["solar-rooftop"]
-     nuclear_max = config["imposed_values"]["nuclear"]
-     suffix = "1 0"
+      # getting values from config file
+      country = config["imposed_values"]["country"]
+      onwind_max = config["imposed_values"]["onwind"]
+      offwind_ac_max = config["imposed_values"]["offshore_ac"]
+      offwind_dc_max = config["imposed_values"]["offshore_dc"]
+      solar_max = config["imposed_values"]["solar"]
+      solar_rooftop_max = config["imposed_values"]["solar-rooftop"]
+      nuclear_max = config["imposed_values"]["nuclear"]
+      suffix = "1 0"
     
-     # preparing data for technoligies considering already installed capacities excluding 2030
-     onwind = n.generators[
+      # preparing data for technoligies considering already installed capacities excluding 2030
+      onwind = n.generators[
         n.generators.index.str.contains(country) & 
         n.generators.index.str.contains('onwind') & 
         ~n.generators.index.str.contains('-2030')
-     ].p_nom.sum()
+      ].p_nom.sum()
     
-     offwind_ac = n.generators[
+      offwind_ac = n.generators[
         n.generators.index.str.contains(country) & 
         n.generators.index.str.contains('offwind-ac') & 
         ~n.generators.index.str.contains('-2030')
-     ].p_nom.sum()
+      ].p_nom.sum()
     
-     offwind_dc = n.generators[
+      offwind_dc = n.generators[
         n.generators.index.str.contains(country) & 
         n.generators.index.str.contains('offwind-dc') & 
         ~n.generators.index.str.contains('-2030')
-     ].p_nom.sum()
+      ].p_nom.sum()
     
-     solar = n.generators[
+      solar = n.generators[
         n.generators.index.str.contains(country) & 
         n.generators.index.str.contains('solar') & 
         ~n.generators.index.str.contains('-2030')
-     ].p_nom.sum()
+      ].p_nom.sum()
      
-     solar_rooftop = n.generators[
+      solar_rooftop = n.generators[
         n.generators.index.str.contains(country) & 
         n.generators.index.str.contains('solar rooftop') & 
         ~n.generators.index.str.contains('-2030')
-     ].p_nom.sum()
+      ].p_nom.sum()
       
-     #imposing values in the model for year 2030
-     n.generators.loc[f"{country}{suffix} solar-2030", "p_nom_max"] = solar_max - solar
-     n.generators.loc[f"{country}{suffix} solar rooftop-2030", "p_nom_max"] = solar_rooftop_max - solar_rooftop
-     n.generators.loc[f"{country}{suffix} onwind-2030", "p_nom_max"] = onwind_max - onwind
-     n.generators.loc[f"{country}{suffix} offwind-ac-2030", "p_nom_max"] = offwind_ac_max - offwind_ac
-     n.generators.loc[f"{country}{suffix} offwind-dc-2030", "p_nom_max"] = offwind_dc_max - offwind_dc
+      #imposing values in the model for year 2030
+      n.generators.loc[f"{country}{suffix} solar-2030", "p_nom_max"] = solar_max - solar
+      n.generators.loc[f"{country}{suffix} solar rooftop-2030", "p_nom_max"] = solar_rooftop_max - solar_rooftop
+      n.generators.loc[f"{country}{suffix} onwind-2030", "p_nom_max"] = onwind_max - onwind
+      n.generators.loc[f"{country}{suffix} offwind-ac-2030", "p_nom_max"] = offwind_ac_max - offwind_ac
+      n.generators.loc[f"{country}{suffix} offwind-dc-2030", "p_nom_max"] = offwind_dc_max - offwind_dc
      
-     #nuclear is grouped by grouping years so imposing value in last grouping year
-     if f"{country}{suffix} nuclear-1980" in n.links.index:
+      #nuclear is grouped by grouping years so imposing value in last grouping year
+      if f"{country}{suffix} nuclear-1980" in n.links.index:
        n.links.loc[f"{country}{suffix} nuclear-1980", "p_nom"] = nuclear_max
+    else:
+       n=n
        
     return n       
     
@@ -1058,7 +1061,7 @@ if __name__ == "__main__":
     n = imposed_values_genertion(
         n,
         config=snakemake.config,
-        foresight=snakemake.params.foresight,)
+        planning_horizons=snakemake.params.planning_horizons,)
 
     n = solve_network(
         n,
