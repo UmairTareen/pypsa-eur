@@ -372,7 +372,7 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'battery discharger','battery discharger_2','H2 turbine','H2 turbine_2','Fischer-Tropsch','Fischer-Tropsch_2','Fischer-Tropsch_3',
                      'urban central gas CHP','urban central gas CHP_2','urban central gas CHP_3','OCGT','OCGT_2','biogas to gas','BioSNG','Sabatier',
                      'urban central solid biomass CHP CC','urban central solid biomass CHP CC_2','urban central solid biomass CHP CC_3',
-                     'DAC','DAC_2','DAC_3','H2 for shipping'] # Add moe entries if needed
+                     'DAC','DAC_2','DAC_3','H2 for shipping', 'fossil oil'] # Add moe entries if needed
 
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
@@ -557,6 +557,7 @@ entry_label_mapping = {
     'DAC': {'label': 'DAC', 'source': 'TWh', 'target': 'predacelc'},
     'DAC_2': {'label': 'DAC', 'source': 'TWh', 'target': 'predache'},
     'DAC_3': {'label': 'DAC', 'source': 'TWh', 'target': 'predachee'},
+    'fossil oil': {'label': 'fossil oil', 'source': 'TWh', 'target': 'prefossiloil'},
 }
 
 
@@ -1053,23 +1054,30 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
          )
 
     # oil emissions
-     value = -(
-            n.snapshot_weightings.generators
-            @ as_dense(n, "Load", "p_set").filter(regex="^oil emissions", axis=1)
-     .filter(like=country)).sum()
+     value = -(n.snapshot_weightings.generators @
+            n.links_t.p2.filter(like=country).filter(like="naphtha for industry")
+     ).sum()
      collection.append(
         pd.Series(
-            dict(label="oil emissions", source="oil", target="co2 atmosphere", value=value)
+            dict(label="naphtha for industry", source="oil", target="co2 atmosphere", value=value)
+        )
+         )
+     
+     #aviation oil emissions
+     value = -(n.snapshot_weightings.generators @
+            n.links_t.p2.filter(like=country).filter(like="kerosene for aviation")
+     ).sum()
+     collection.append(
+        pd.Series(
+            dict(label="kerosene for aviation", source="oil", target="co2 atmosphere", value=value)
         )
          )
 
      # agriculture machinery oil emissions
-     value = -(
-            n.snapshot_weightings.generators
-            @ as_dense(n, "Load", "p_set").filter(
-        like="agriculture machinery oil emissions", axis=1
-     )
-     .filter(like=country)).sum()
+     value = -(n.snapshot_weightings.generators @
+            n.links_t.p2.filter(like=country).filter(
+        like="agriculture machinery oil")
+     ).sum()
      collection.append(
         pd.Series(
             dict(
@@ -1081,12 +1089,10 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
              )
               )
 
-     value = -(
-            n.snapshot_weightings.generators
-            @ as_dense(n, "Load", "p_set").filter(
-        like="land transport oil emissions", axis=1
-     )
-     .filter(like=country)).sum()
+     value = -(n.snapshot_weightings.generators @
+            n.links_t.p2.filter(like=country).filter(
+        like="land transport oil")
+     ).sum()
      collection.append(
         pd.Series(
             dict(
@@ -1098,12 +1104,10 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
              )
               )
 
-     value = -(
-            n.snapshot_weightings.generators
-            @ as_dense(n, "Load", "p_set").filter(
-        like="shipping oil emissions", axis=1
-     )
-     .filter(like=country)).sum()
+     value = -(n.snapshot_weightings.generators @
+            n.links_t.p2.filter(like=country).filter(
+        like="shipping oil")
+     ).sum()
      collection.append(
         pd.Series(
             dict(
@@ -1114,12 +1118,10 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
             )
              )
               )
-     value = -(
-            n.snapshot_weightings.generators
-            @ as_dense(n, "Load", "p_set").filter(
-        like="shipping methanol emissions", axis=1
-     )
-     .filter(like=country)).sum()
+     value = -(n.snapshot_weightings.generators @
+            n.links_t.p2.filter(like=country).filter(
+        like="shipping methanol")
+     ).sum()
      collection.append(
         pd.Series(
             dict(
@@ -1235,7 +1237,7 @@ entries_to_select_c = ['process emissions','process emissions CC','process emiss
                       'residential urban decentral biomass boiler','residential urban decentral biomass boiler_2',
                       'services urban decentral biomass boiler','services urban decentral biomass boiler_2','residential rural biomass boiler',
                       'residential rural biomass boiler_2','services rural biomass boiler','services rural biomass boiler_2',
-                      'oil emissions','agriculture machinery oil emissions','land transport oil emissions','shipping oil emissions',
+                      'kerosene for aviation','agriculture machinery oil emissions','land transport oil emissions','shipping oil emissions',
                       'shipping methanol emissions','LULUCF','fossil gas','fossil oil','net co2 emissions','gas for industry CC',
                       'gas for industry CC_3','gas for industry CC_2','solid biomass for industry CC','solid biomass for industry CC_2',
                       'urban central solid biomass CHP','urban central solid biomass CHP_2','coal','solid biomass biomass to liquid',
@@ -1275,9 +1277,10 @@ entry_label_mapping_c = {
     'residential rural biomass boiler_2': {'label': 'res biomass boiler', 'source': 'MtCO2', 'target': 'emmresbmmatm'},
     'services rural biomass boiler': {'label': 'serv biomass boiler', 'source': 'MtCO2', 'target': 'emmserbmm'},
     'services rural biomass boiler_2': {'label': 'serv biomass boiler', 'source': 'MtCO2', 'target': 'emmserbmmatm'},
-    'oil emissions': {'label': 'oil emissions', 'source': 'MtCO2', 'target': 'emmoil'},
+    'kerosene for aviation': {'label': 'kerosene for aviation', 'source': 'MtCO2', 'target': 'emmavi'},
     'agriculture machinery oil emissions': {'label': 'agriculture machinery oil emissions', 'source': 'MtCO2', 'target': 'emmoilagr'},
     'land transport oil emissions': {'label': 'land transport oil emissions', 'source': 'MtCO2', 'target': 'emmoiltra'},
+    'naphtha for industry': {'label': 'naphtha for industry', 'source': 'MtCO2', 'target': 'emmoil'},
     'shipping oil emissions': {'label': 'shipping oil emissions', 'source': 'MtCO2', 'target': 'emmoilwati'},
     'shipping methanol emissions': {'label': 'shipping methanol emissions', 'source': 'MtCO2', 'target': 'emmmetwati'},
     'LULUCF': {'label': 'LULUCF', 'source': 'MtCO2', 'target': 'emmluf'},

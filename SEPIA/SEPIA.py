@@ -132,14 +132,14 @@ def prepare_sepia(countries):
     fec_pe = grouped_fec_pe
     for en_code in ['pac','enc']:
         flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']
-    fischer_tropsch_p = flows['hyd_se','pet_fe']
-    biomass_liquid_p = flows['blq_pe','pet_fe']
+    # fischer_tropsch_p = flows['hyd_se','pet_fe']
+    # biomass_liquid_p = flows['blq_pe','pet_fe']
     biogas_p = flows['bgl_pe','gaz_se']
     biosng_p = flows['enc_pe','gaz_se']
     meth_p = flows['hyd_se','gaz_se']
-    value = fischer_tropsch_p + biomass_liquid_p.sum()
-    for en_code in ['pet']:
-        flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']-value
+    # value = fischer_tropsch_p + biomass_liquid_p.sum()
+    # for en_code in ['pet']:
+    #     flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']-value
         
     selected_columns_se = flows.columns.get_level_values('Source').isin(SE_NODES)
     fec_carrier_se = flows.loc[:, selected_columns_se]
@@ -215,12 +215,12 @@ def prepare_sepia(countries):
         value_tra = flows[('pet_fe', 'tra', '')].squeeze().rename_axis(None) * co2_intensity_oil
         value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) * co2_intensity_oil
         value_tot =  value_naph * co2_intensity_oil
-        value_avi =  value_ker * co2_intensity_oil
+        # value_avi =  value_ker * co2_intensity_oil
         flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
         flows_co2[(en_code + '_ghg', 'atm', 'oil')] = value_tot
         flows_co2[(en_code + '_ghg', 'atm', 'tra')] = value_tra
         flows_co2[(en_code + '_ghg', 'atm', 'agr')] = value_agr
-        flows_co2[(en_code + '_ghg', 'atm', 'avi')] = value_avi
+        # flows_co2[(en_code + '_ghg', 'atm', 'avi')] = value_avi
     
     tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
     tot_emm = flows_co2.loc[:, tot_emm]
@@ -252,7 +252,7 @@ def prepare_sepia(countries):
         flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
         flows_ghg[('agr_ghg',  en_code + '_pe', '')] = value_agr
         flows_ghg[('tra_ghg',  en_code + '_pe', '')] = value_tra
-        flows_ghg[('avi_ghg',  en_code + '_pe', '')] = value_avi
+        # flows_ghg[('avi_ghg',  en_code + '_pe', '')] = value_avi
     for en_code in ['wati']:
         flows_ghg[(en_code + '_ghg', 'oth_pe',  '')] =value_met
         flows_ghg[(en_code + '_ghg', 'oth_pe',  'met')] =imp_met
@@ -264,7 +264,7 @@ def prepare_sepia(countries):
             pet_bm = flows[('blq_pe', en_code + '_fe', '')].squeeze().rename_axis(None)
             value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) 
             tot_pet = pet_pro + pet_bm 
-            exp_pet = tot_pet - value_ker - value_naph -  value_agr 
+            exp_pet = tot_pet - value_ker - value_naph -  value_agr
             flows[(en_code + '_fe', 'exp', '')] = exp_pet
  
     for en_code in ['gaz']:
@@ -293,11 +293,11 @@ def prepare_sepia(countries):
         flows_co2[('oil_ghg',en_code + '_ghg', '')] = exp_emm_p
     
     
-    atm_sur = tot_emm_s.loc[:,'atm']
-    atm_tar = tot_emm.loc[:,'atm']
-    other_count = atm_sur - atm_tar
-    for en_code in ['oth']:
-        flows_co2[(en_code + '_ghg', 'atm','')] = other_count
+    # atm_sur = tot_emm_s.loc[:,'atm']
+    # atm_tar = tot_emm.loc[:,'atm']
+    # other_count = atm_sur - atm_tar
+    # for en_code in ['oth']:
+    #     flows_co2[(en_code + '_ghg', 'atm','')] = other_count
     
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
