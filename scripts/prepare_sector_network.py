@@ -2888,54 +2888,71 @@ def add_industry(n, costs, config):
     )
 
     demand_factor = options.get("HVC_demand_factor", 1)
-    p_set = demand_factor * industrial_demand.loc[nodes, "naphtha"].sum() / nhours
+    # p_set = demand_factor * industrial_demand.loc[nodes, "naphtha"].sum() / nhours
     if demand_factor != 1:
         logger.warning(f"Changing HVC demand by {demand_factor*100-100:+.2f}%.")
 
     if options["co2_budget_national"]:
-        p_set_plastics = (
-            demand_factor
-            * (
-                industrial_demand.loc[nodes, "naphtha"]
-                - industrial_demand.loc[nodes, "process emission from feedstock"]
-                / costs.at["oil", "CO2 intensity"]
-            )
-            / nhours
-        )
-        p_set_plastics = p_set_plastics.rename(lambda x: f"{x} naphtha for industry")
-        p_set_plastics = p_set_plastics.loc[spatial.oil.naphtha]
+        p_set_naphta = demand_factor * industrial_demand.loc[nodes, "naphtha"] / nhours
+        p_set_naphta = p_set_naphta.rename(lambda x: f"{x} naphtha for industry")
+        p_set_naphta = p_set_naphta.loc[spatial.oil.naphtha]
     else:
-        p_set_plastics = (
-            demand_factor
-            * (
-                industrial_demand.loc[nodes, "naphtha"]
-                - industrial_demand.loc[nodes, "process emission from feedstock"]
-                / costs.at["oil", "CO2 intensity"]
-            ).sum()
-            / nhours
-        )
+        p_set_naphta = demand_factor * industrial_demand.loc[nodes, "naphtha"].sum() / nhours
 
-    if options["co2_budget_national"]:
-        p_set_process_emissions = (
-            demand_factor
-            * (
-                industrial_demand.loc[nodes, "process emission from feedstock"]
-                / costs.at["oil", "CO2 intensity"]
-            )
-            / nhours
-        )
-        p_set_process_emissions = p_set_process_emissions.rename(lambda x: f"{x} naphtha process emissions")
-        p_set_process_emissions = p_set_process_emissions.loc[spatial.oil.naphtha_process_emissions]
-    else:
-        p_set_process_emissions = (
-            demand_factor
-            * (
-                industrial_demand.loc[nodes, "process emission from feedstock"]
-                / costs.at["oil", "CO2 intensity"]
-            ).sum()
-            / nhours
-        )
+    # if options["co2_budget_national"]:
+    #     p_set_process_emissions = (
+    #         demand_factor
+    #         * (
+    #             industrial_demand.loc[nodes, "process emission from feedstock"]
+    #             / costs.at["oil", "CO2 intensity"]
+    #         )
+    #         / nhours
+    #     )
+    #     p_set_process_emissions = p_set_process_emissions.rename(lambda x: f"{x} naphtha process emissions")
+    #     p_set_process_emissions = p_set_process_emissions.loc[spatial.oil.naphtha_process_emissions]
+    # else:
+    #     p_set_process_emissions = (
+    #         demand_factor
+    #         * (
+    #             industrial_demand.loc[nodes, "process emission from feedstock"]
+    #             / costs.at["oil", "CO2 intensity"]
+    #         ).sum()
+    #         / nhours
+    #     )
+    n.madd(
+        "Bus",
+        spatial.oil.naphtha,
+        location=spatial.oil.locations,
+        carrier="naphtha for industry",
+        unit="MWh_LHV",
+    )
 
+    n.madd(
+        "Load",
+        spatial.oil.naphtha,
+        bus=spatial.oil.naphtha,
+        carrier="naphtha for industry",
+        p_set=p_set_naphta,
+    )
+
+    # n.madd(
+    #     "Load",
+    #     spatial.oil.naphtha_process_emissions,
+    #     bus=spatial.oil.nodes,
+    #     carrier="naphtha for industry",
+    #     p_set=p_set_process_emissions,
+    # )
+
+    n.madd(
+        "Link",
+        spatial.oil.naphtha,
+        bus0=spatial.oil.nodes,
+        bus1=spatial.oil.naphtha,
+        bus2="co2 atmosphere",
+        carrier="naphtha for industry",
+        p_nom_extendable=True,
+        efficiency2=costs.at["oil", "CO2 intensity"],
+    )
     # aviation
     demand_factor = options.get("aviation_demand_factor", 1)
     if demand_factor != 1:
