@@ -979,3 +979,5 @@ plotting:
     onshore curtailment: "navy"
     offshore curtailment: "lightskyblue"
     load shedding: "black"
+    load: "black"
+    coal for industry: '#343434'

@@ -305,7 +305,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
         else:
             bus0 = vars(spatial)[carrier[generator]].nodes
             if "EU" not in vars(spatial)[carrier[generator]].locations:
-                bus0 = bus0.intersection(capacity.index + " gas")
+                bus0 = bus0.intersection(capacity.index + " " + carrier[generator])
 
             # check for missing bus
             missing_bus = pd.Index(bus0).difference(n.buses.index)
@@ -653,13 +653,13 @@ if __name__ == "__main__":
 
     options = snakemake.params.sector
     opts = snakemake.wildcards.sector_opts.split("-")
-    config = snakemake.config
+
     baseyear = snakemake.params.baseyear
 
     n = pypsa.Network(snakemake.input.network)
 
     # define spatial resolution of carriers
-    spatial = define_spatial(n.buses[n.buses.carrier == "AC"].index, options, config)
+    spatial = define_spatial(n.buses[n.buses.carrier == "AC"].index, options)
     add_build_year_to_new_assets(n, baseyear)
 
     Nyears = n.snapshot_weightings.generators.sum() / 8760.0

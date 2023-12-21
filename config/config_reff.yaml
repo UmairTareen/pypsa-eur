@@ -84,7 +84,13 @@ co2_budget:
   2040: 0.15
   2045: 0.032
   2050: 0.000
-
+co2_budget_national:
+  2020:
+    'BE': 0.70
+    'DE': 0.70
+    'FR': 0.70
+    'GB': 0.70
+    'NL': 0.70
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   voltages: [220., 300., 380.]
@@ -461,6 +467,7 @@ sector:
   hydrogen_fuel_cell: false
   hydrogen_turbine: false
   SMR: true
+  co2_budget_national: true
   regional_co2_sequestration_potential:
     enable: false
     attribute: 'conservative estimate Mt'
@@ -978,3 +985,5 @@ plotting:
     solar curtailment: "gold"
     onshore curtailment: "navy"
     offshore curtailment: "lightskyblue"
+    load: "black"
+    coal for industry: '#343434'

@@ -11,10 +11,12 @@ rule solve_sector_network:
         co2_sequestration_potential=config["sector"].get(
             "co2_sequestration_potential", 200
         ),
+        countries=config["countries"],
     input:
         network=RESULTS
         + "prenetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
         config=RESULTS + "config.yaml",
+        co2_totals_name=RESOURCES + "co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv",
     output:
         RESULTS
         + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",

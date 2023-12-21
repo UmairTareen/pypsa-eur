@@ -82,7 +82,27 @@ co2_budget:
   2035: 0.150
   2040: 0.15
   2045: 0.032
-  2050: 0.000
+  2050: 0.05
+co2_budget_national:
+  2030:
+    'BE': 0.450
+    'DE': 0.450
+    'FR': 0.450
+    'GB': 0.450
+    'NL': 0.450
+  2040:
+    'BE': 0.15
+    'DE': 0.15
+    'FR': 0.15
+    'GB': 0.15
+    'NL': 0.15
+    
+  2050:
+    'BE': 0.1
+    'DE': 0.1
+    'FR': 0.1
+    'GB': 0.1
+    'NL': 0.1
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   voltages: [220., 300., 380.]
@@ -460,6 +480,7 @@ sector:
   hydrogen_fuel_cell: true
   hydrogen_turbine: true
   SMR: true
+  co2_budget_national: true
   regional_co2_sequestration_potential:
     enable: false
     attribute: 'conservative estimate Mt'
@@ -972,3 +993,5 @@ plotting:
     DC-DC: "#8a1caf"
     DC link: "#8a1caf"
     LULUCF: "greenyellow"
+    load: "black"
+    coal for industry: '#343434'
