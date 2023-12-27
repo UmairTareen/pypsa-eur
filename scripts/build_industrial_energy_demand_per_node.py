@@ -159,7 +159,7 @@ if __name__ == "__main__":
      'SK1 0': 'SK'}
      nodal_df.rename(index=new_row_names, inplace=True)
      for country in countrries:
-        #nodal_df.loc[country, 'ammonia'] = clever_Industry.loc[country, 'Total Final Energy Consumption of the ammonia industry']
+        nodal_df.loc[country, 'ammonia'] = clever_Industry.loc[country, 'Total Final Energy Consumption of the ammonia industry']
         nodal_df.loc[country, 'electricity'] = clever_Industry.loc[country, 'Total Final electricity consumption in industry']
         nodal_df.loc[country, 'coal'] = clever_Industry.loc[country, 'Total Final energy consumption from solid fossil fuels (coal ...) in industry']
         nodal_df.loc[country, 'solid biomass'] = clever_Industry.loc[country, 'Total Final energy consumption from solid biomass in industry']

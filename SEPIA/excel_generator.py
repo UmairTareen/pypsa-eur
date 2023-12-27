@@ -11,7 +11,7 @@ scenario = "ncdr"
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
-    file_name = 'elec_s_6_lv1.0__Co2L0.7-12H-T-H-B-I-A-dist1_2020.nc'
+    file_name = 'elec_s_6_lv1.0__Co2L0.7-1H-T-H-B-I-A-dist1_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
     source_directory = '../results/reff/postnetworks/'
     destination_directory = f'../results/{scenario}/postnetworks/'
@@ -29,7 +29,7 @@ def prepare_files(simpl, cluster, opt, sector_opt, ll):
         destination_csv_path = os.path.join(csv_destination_directory, csv_file)
         shutil.copy(source_csv_path, destination_csv_path)
 
-prepare_files(simpl="", cluster="6", opt="", sector_opt="EQ0.7c-12H-T-H-B-I-A-dist1", ll="vopt")
+prepare_files(simpl="", cluster="6", opt="EQ0.70c", sector_opt="1H-T-H-B-I-A-dist1", ll="vopt")
     
     
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix=f"../results/{scenario}/postnetworks/elec_"):
@@ -61,67 +61,20 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
       H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
      industry_demand =pd.read_csv(f"../resources/{scenario}/industrial_energy_demand_elec_s_"+str(cluster)+"_"+str(planning_horizon)+".csv",index_col=0).T
      Rail_demand = energy_demand.loc["total rail"].filter(like=country).sum()
-     agriculture_machinery_oil =energy_demand.loc["total agriculture machinery"]
-
-     aviation_p = energy_demand.loc["total international aviation"] 
-
-     navig_d = energy_demand.loc["total domestic navigation"]
-
-     navig_i =energy_demand.loc["total international navigation"]
-     naphta_t = industry_demand.loc["naphtha"]
+     
      if planning_horizon == 2020:
-         ammonia = 0
+           ammonia = 0
      else:   
-         ammonia_t = industry_demand.loc["ammonia"]
-         ammonia = ammonia_t.filter(like=country).sum()
+           ammonia_t = industry_demand.loc["ammonia"]
+           ammonia = ammonia_t.filter(like=country).sum()
      
      collection = []
-     agri_oil = agriculture_machinery_oil.filter(like=country).sum()
-     avaition = aviation_p.filter(like=country).sum()
-     navigation = navig_d.filter(like=country).sum() + navig_i.filter(like=country).sum()
-     if planning_horizon == 2020:
-        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2020]
-        navigation_methanol = navigation * config["sector"]["shipping_methanol_share"][2020]
-     if planning_horizon == 2030:
-        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2030]
-        navigation_methanol = navigation * config["sector"]["shipping_methanol_share"][2030]
-     elif planning_horizon == 2040:
-        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2040]
-        navigation_methanol = navigation *config["sector"]["shipping_methanol_share"][2040]
-     elif planning_horizon == 2050:
-        navigation_oil = navigation * config["sector"]["shipping_oil_share"][2050]
-        navigation_methanol = navigation * config["sector"]["shipping_methanol_share"][2050]
-     naphta = naphta_t.filter(like=country).sum()
-     collection.append(
-        pd.Series(
-            dict(label="agriculture machinery oil", source="oil", target="Agriculture", value=agri_oil)
-        )
-     )
-     collection.append(
-        pd.Series(
-            dict(label="kerosene for aviation", source="oil", target="kerosene for aviation", value=avaition)
-        )
-     )
-     collection.append(
-        pd.Series(
-            dict(label="naphtha for industry", source="oil", target="Non-energy", value=naphta)
-        )
-     )
-     collection.append(
-        pd.Series(
-            dict(label="NH3", source="H2", target="ammonia for industry", value=ammonia)
-        )
-     )
      collection.append(
          pd.Series(
-               dict(label="shipping oil", source="oil", target="shipping oil", value=navigation_oil)
+             dict(label="NH3", source="H2", target="ammonia for industry", value=ammonia)
          )
       )
-     collection.append(
-         pd.Series(
-               dict(label="shipping methanol", source="methanol", target="shipping methanol", value=navigation_methanol)
-         )
-      )
+   
      collection = pd.concat(collection, axis=1).T
     
      columns = ["label", "source", "target", "value"]
@@ -259,7 +212,7 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     # make DAC demand
      df.loc[df.label == "DAC", "target"] = "DAC"
 
-     to_concat = [df, gen, su, sto, load,collection]
+     to_concat = [df, gen, su, sto, load, collection]
      connections = pd.concat(to_concat).sort_index().reset_index(drop=True)
 
     # aggregation
@@ -1193,23 +1146,26 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
               )
      cf = pd.concat([cf, row], axis=0)
      cf = cf.loc[(cf.value >= 0.1)]
-     # LULUCF
+      #LULUCF
      if planning_horizon != 2020:
-      LULUCF = (
-         pd.read_csv(f"../resources/{scenario}/co2_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0)).T
-      V = LULUCF.loc['LULUCF'].filter(like=country).sum()
-      V=-V
-      row = pd.DataFrame(
-      [
-        dict(
-            label="LULUCF",
-            source="co2 atmosphere",
-            target="LULUCF",
-            value=V,
+       LULUCF = (
+          pd.read_csv(f"../resources/{scenario}/co2_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0)).T
+       V = LULUCF.loc['LULUCF'].filter(like=country).sum()
+       if country == 'NL':
+        V = 0
+       else:
+        V=-V
+       row = pd.DataFrame(
+       [
+         dict(
+             label="LULUCF",
+             source="co2 atmosphere",
+             target="LULUCF",
+             value=V,
+         )
+        ]
         )
-       ]
-       )
-      cf = pd.concat([cf, row], axis=0)
+       cf = pd.concat([cf, row], axis=0)
      suffix_counter = {}
 
      def generate_new_label(label):
@@ -1437,8 +1393,8 @@ if __name__ == "__main__":
         # Updating the configuration from the standard config file to run in standalone:
         snakemake.params.scenario["simpl"] = [""]
         snakemake.params.scenario["clusters"] = [6]
-        snakemake.params.scenario["opts"] = [""]
-        snakemake.params.scenario["sector_opts"] = ["EQ0.7c-12H-T-H-B-I-A-dist1"]
+        snakemake.params.scenario["opts"] = ["EQ0.70c"]
+        snakemake.params.scenario["sector_opts"] = ["1H-T-H-B-I-A-dist1"]
         snakemake.params.scenario["ll"] = ["vopt"]
         snakemake.params.scenario["planning_horizons"] = [2020, 2030, 2040, 2050]
 

@@ -25,7 +25,7 @@ tech_colors = config["plotting"]["tech_colors"]
 
 def scenario_costs(country):
     costs_bau = pd.read_csv(f"csvs/{country}_costs_bau.csv")
-    costs_suff = pd.read_csv(f"csvs/{country}_costs_suff.csv")
+    costs_suff = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     costs_reff = costs_bau[['tech', '2020']]
     costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
@@ -80,7 +80,7 @@ def scenario_costs(country):
 #%%
 def scenario_capacities(country):
     caps_bau = pd.read_csv(f"csvs/{country}_capacities_bau.csv")
-    caps_suff = pd.read_csv(f"csvs/{country}_capacities_suff.csv")
+    caps_suff = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
     # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
     caps_reff = caps_bau[['tech', '2020']]
     caps_bau = caps_bau[['tech', '2030', '2040', '2050']]

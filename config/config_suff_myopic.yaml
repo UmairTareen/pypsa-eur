@@ -42,9 +42,9 @@ scenario:
   #- 512
   #- 1024
   opts:
-  - ''
+  - EQ0.70c
   sector_opts:
-  - EQ0.7c-1H-T-H-B-I-A-dist1
+  - 1H-T-H-B-I-A-dist1
   planning_horizons:
   # - 2020
   - 2030
@@ -153,9 +153,9 @@ atlite:
 imposed_values: #MW offshore total is 5.7 GW, assuming alrge portion would be ac, 
   country: 'BE'
   nuclear: 2000
-  onwind: 5400  
-  offshore_ac: 4000
-  offshore_dc: 1700
+  onwind: 5300  
+  offshore_ac: 3700
+  offshore_dc: 2000
   solar: 12000
   solar-rooftop: 2000
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable

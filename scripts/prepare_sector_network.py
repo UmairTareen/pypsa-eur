@@ -76,15 +76,11 @@ def define_spatial(nodes, options):
         spatial.co2.locations = nodes
         spatial.co2.vents = nodes + " co2 vent"
         spatial.co2.process_emissions = nodes + " process emissions"
-        # if config["run"]["name"] != "reff":
-        #  spatial.co2.LULUCF = ["LULUCF"]
     else:
         spatial.co2.nodes = ["co2 stored"]
         spatial.co2.locations = ["EU"]
         spatial.co2.vents = ["co2 vent"]
         spatial.co2.process_emissions = ["process emissions"]
-        # if config["run"]["name"] != "reff":
-        #  spatial.co2.LULUCF = ["LULUCF"]
 
     spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
 
@@ -549,7 +545,7 @@ def patch_electricity_network(n):
     n.loads_t.p_set.rename(lambda x: x.strip(), axis=1, inplace=True)
 
 
-def add_co2_tracking(n, options):
+def add_co2_tracking(n, options, config):
     # minus sign because opposite to how fossil fuels used:
     # CH4 burning puts CH4 down, atmosphere up
     # countries = spatial.co2.atm
@@ -567,62 +563,6 @@ def add_co2_tracking(n, options):
         carrier="co2",
         bus="co2 atmosphere",
     )
-    # if config["run"]["name"] != "reff":
-    #  fn = snakemake.input.co2_totals_name
-    #  LULUCF_totals = pd.read_csv(fn, index_col=0)
-    #  sum_results = LULUCF_totals.loc[:, ['LULUCF']].sum()
-    #  sum_results = sum_results * -1e6
-    #  n.madd(
-    #     "Store",
-    #     spatial.co2.LULUCF,
-    #     e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
-    #     e_nom_max=sum_results,
-    #     carrier="LULUCF",
-    #     capital_cost=0,
-    #     bus="co2 atmosphere",
-    #  )
-    #  n.add("Carrier", "LULUCF")
-    # n.madd(
-    #     "Bus",
-    #     spatial.co2.atm,
-    #     location=spatial.co2.locations,
-    #     carrier="co2",
-    #     unit="t_co2")
-    # #n.add("Carrier", "LULUCF")
-    # fn = snakemake.input.co2_totals_name
-    # LULUCF_totals = pd.read_csv(fn, index_col=0)
-    # new_row_names = {
-    #     'BE': 'BE1 0 atm',
-    #     'DE': 'DE1 0 atm',
-    #     'FR': 'FR1 0 atm',
-    #     'GB': 'GB0 0 atm',
-    #     'NL': 'NL1 0 atm'}
-    # LULUCF_totals.rename(index=new_row_names, inplace=True)
-    # new_row_index = 'GB2 0 atm'
-    # LULUCF_totals.loc[new_row_index] = 0
-    # LULUCF_totals.loc['NL1 0 atm', ['LULUCF']] = 0
-    # sum_results = LULUCF_totals.loc[countries, 'LULUCF']
-    # sum_results = sum_results.loc[spatial.co2.atm] * -1e6
-        
-    # n.madd(
-    #     "Store",
-    #     spatial.co2.atm,
-    #     e_nom_extendable=True,  #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LULUCF
-    #     e_nom_max=sum_results,
-    #     carrier="co2 stored",
-    #     capital_cost=0,
-    #     bus=spatial.co2.atm,
-    #      )
-    
-    # n.madd(
-    #     "Link",
-    #     spatial.co2.atm,
-    #     bus0=spatial.co2.atm,
-    #     bus1="co2 atmosphere",
-    #     carrier="co2",
-    #     efficiency=1.0,
-    #     p_nom_extendable=True,
-    # )
 
     # this tracks CO2 stored, e.g. underground
     n.madd(
@@ -651,11 +591,14 @@ def add_co2_tracking(n, options):
         e_nom_max = e_nom_max.rename(index=lambda x: x + " co2 stored")
     else:
         e_nom_max = np.inf
-
+    if config["run"]["name"] == "ncdr":
+        value = False
+    else:
+        value = True
     n.madd(
         "Store",
         spatial.co2.nodes,
-        e_nom_extendable=True,
+        e_nom_extendable=value,
         e_nom_max=e_nom_max,
         capital_cost=options["co2_sequestration_cost"],
         carrier="co2 stored",
@@ -2259,7 +2202,10 @@ def add_biomass(n, costs, config):
         marginal_cost=costs.at["solid biomass", "fuel"],
         e_initial=solid_biomass_potentials_spatial,
     )
-
+    if config["run"]["name"] == "reff":
+        value = False
+    else:
+        value = True
     n.madd(
         "Link",
         spatial.gas.biogas_to_gas,
@@ -2270,7 +2216,7 @@ def add_biomass(n, costs, config):
         capital_cost=costs.loc["biogas upgrading", "fixed"],
         marginal_cost=costs.loc["biogas upgrading", "VOM"],
         efficiency2=-costs.at["gas", "CO2 intensity"],
-        p_nom_extendable=True,
+        p_nom_extendable=value,
     )
 
     if options["biomass_transport"]:
@@ -3577,7 +3523,7 @@ if __name__ == "__main__":
         for carrier in conventional:
             add_carrier_buses(n, carrier)
 
-    add_co2_tracking(n, options)
+    add_co2_tracking(n, options, config)
 
     add_generation(n, costs, config)
 

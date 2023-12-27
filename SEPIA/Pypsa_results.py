@@ -31,9 +31,9 @@ import matplotlib.pyplot as plt
 with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
-scenario = 'suff'
+scenario = 'ncdr'
 
-folder = '/home/sylvain/temp/'
+folder = '/home/umair/pypsa-eur_repository/'
 
 def rename_techs(label):
     prefix_to_remove = [
@@ -192,7 +192,7 @@ def assign_carriers(n):
         n.lines["carrier"] = "AC"
         
         
-def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_"):
+def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results/{scenario}/postnetworks/elec_"):
 
     filename = f"{prefix}s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
 
@@ -201,7 +201,7 @@ def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix
 
 # Example usage:
 planning_horizons = [2020, 2030, 2040, 2050]
-filename = build_filename("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "v1.5", planning_horizons[0])
+filename = build_filename("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons[0])
 
 # Check if the file exists
 if os.path.exists(filename):
@@ -240,7 +240,7 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
     results_dict = {}
 
     for planning_horizon in planning_horizons:
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_")
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+f"results/{scenario}/postnetworks/elec_")
         n = pypsa.Network(filename)
 
         cap_ac = pd.DataFrame(index=['BE', 'DE', 'FR', 'NL'])
@@ -278,12 +278,12 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
         }
 
     return results_dict
-results = calculate_transmission_values("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "v1.5", planning_horizons)
+results = calculate_transmission_values("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons)
 
 def costs(countries):
     costs = {}
     for country in countries:
-      df=pd.read_csv(folder+"results" + scenario + "/csvs/nodal_costs.csv", index_col=2)
+      df=pd.read_csv(folder + f"results/{scenario}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 2:]
       df = df.iloc[9:, :]
       df.index = df.index.str[:2]
@@ -294,7 +294,7 @@ def costs(countries):
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
 
-      cf = pd.read_csv(folder+"resultsreff/csvs/nodal_costs.csv", index_col=2)
+      cf = pd.read_csv(folder+"results/reff/csvs/nodal_costs.csv", index_col=2)
       cf = cf.iloc[:, 2:]
       cf = cf.iloc[4:, :]
       cf.index = cf.index.str[:2]
@@ -307,11 +307,14 @@ def costs(countries):
 
       result_df = pd.merge(cf, df, on='tech', how='outer')
       result_df.fillna(0, inplace=True)
+      mask = ~(result_df['tech'] == 'load shedding')
+      result_df = result_df[mask]
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
-
+            
             costs[country] = result_df.set_index('tech').loc[technologies, years]
+        
 
     return costs
 
@@ -353,8 +356,8 @@ for country, dataframe in costs.items():
 def capacities(countries, results):
     capacities = {}
     for country in countries:
-      df=pd.read_csv(folder+"resultsreff/csvs/nodal_capacities.csv", index_col=1)
-      cf = pd.read_csv(folder+"results"+scenario+"/csvs/nodal_capacities.csv", index_col=1)
+      df=pd.read_csv(folder+"results/reff//csvs/nodal_capacities.csv", index_col=1)
+      cf = pd.read_csv(folder+f"results/{scenario}/csvs/nodal_capacities.csv", index_col=1)
       df = df.iloc[:, 1:]
       df = df.iloc[4:, :]
       df.index = df.index.str[:2]
@@ -433,7 +436,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
 
      for planning_horizon in planning_horizons:
         tab = pn.Tabs()
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_")
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+f"results/{scenario}/postnetworks/elec_")
         n = pypsa.Network(filename)
 
         assign_location(n)
@@ -611,7 +614,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons):
 
      for planning_horizon in planning_horizons:
         tab = pn.Tabs()
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+"results"+scenario+"/postnetworks/elec_")
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=folder+f"results/{scenario}//postnetworks/elec_")
         n = pypsa.Network(filename)
 
         assign_location(n)
@@ -729,7 +732,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons):
      tabs.save(html_filepath)
 
 # Call the function
-plot_series_heat("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "v1.5", planning_horizons)
+plot_series_heat("", 6, "", "EQ0.7c-1H-T-H-B-I-A-dist1", "vopt", planning_horizons)
 
 def create_bar_chart(costs, country, output_folder='output_charts', unit='Billion Euros/year'):
     # Create output folder if it doesn't exist

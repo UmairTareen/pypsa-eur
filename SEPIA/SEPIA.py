@@ -132,14 +132,11 @@ def prepare_sepia(countries):
     fec_pe = grouped_fec_pe
     for en_code in ['pac','enc']:
         flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']
-    # fischer_tropsch_p = flows['hyd_se','pet_fe']
-    # biomass_liquid_p = flows['blq_pe','pet_fe']
+  
     biogas_p = flows['bgl_pe','gaz_se']
     biosng_p = flows['enc_pe','gaz_se']
     meth_p = flows['hyd_se','gaz_se']
-    # value = fischer_tropsch_p + biomass_liquid_p.sum()
-    # for en_code in ['pet']:
-    #     flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']-value
+   
         
     selected_columns_se = flows.columns.get_level_values('Source').isin(SE_NODES)
     fec_carrier_se = flows.loc[:, selected_columns_se]
@@ -222,20 +219,15 @@ def prepare_sepia(countries):
         flows_co2[(en_code + '_ghg', 'atm', 'agr')] = value_agr
         # flows_co2[(en_code + '_ghg', 'atm', 'avi')] = value_avi
     
-    tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
-    tot_emm = flows_co2.loc[:, tot_emm]
-    tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
+    # tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
+    # tot_emm = flows_co2.loc[:, tot_emm]
+    # tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
     for en_code in ['met']:
-        value_met = tot_emm['met_ghg']
-        flows_co2[(en_code + '_ghg', 'atm', '')] = value_met
+        # value_met = tot_emm['met_ghg']
+        # flows_co2[(en_code + '_ghg', 'atm', '')] = value_met
         imp_met = flows[('imp', en_code + '_fe', '')].squeeze().rename_axis(None) * co2_intensity_met
         flows_co2[('imp' + '_ghg', 'atm', 'met')] = imp_met
     
-    '''Including LULUCF'''
-    for en_code in ['luf']:
-        if flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None).sum()<0:
-            value_lulucf = flows_co2[('atm',en_code + '_ghg',  '')].squeeze().rename_axis(None)*-1
-            flows_co2[(en_code + '_ghg','atm', '')] = value_lulucf
     
     tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
     tot_emm = flows_co2.loc[:, tot_emm]
@@ -244,17 +236,16 @@ def prepare_sepia(countries):
         bm_cap = flows_co2[('atm', 'bec' + '_ghg', '')].squeeze().rename_axis(None)
         dac_cap = flows_co2[('atm', 'stm', '')].squeeze().rename_axis(None)
         bm_cap = bm_cap.sum(axis=1)
-        lulucf = flows_co2[('luf' + '_ghg','atm', '')].squeeze().rename_axis(None)
-        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] - bm_cap - lulucf - dac_cap
+        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] - bm_cap - dac_cap
         flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm
         
     for en_code in ['pet']:
         flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
         flows_ghg[('agr_ghg',  en_code + '_pe', '')] = value_agr
         flows_ghg[('tra_ghg',  en_code + '_pe', '')] = value_tra
-        # flows_ghg[('avi_ghg',  en_code + '_pe', '')] = value_avi
+       
     for en_code in ['wati']:
-        flows_ghg[(en_code + '_ghg', 'oth_pe',  '')] =value_met
+        # flows_ghg[(en_code + '_ghg', 'oth_pe',  '')] =value_met
         flows_ghg[(en_code + '_ghg', 'oth_pe',  'met')] =imp_met
         flows_ghg[(en_code + '_ghg', 'pet_pe',  '')] =value_so
     
@@ -293,11 +284,6 @@ def prepare_sepia(countries):
         flows_co2[('oil_ghg',en_code + '_ghg', '')] = exp_emm_p
     
     
-    # atm_sur = tot_emm_s.loc[:,'atm']
-    # atm_tar = tot_emm.loc[:,'atm']
-    # other_count = atm_sur - atm_tar
-    # for en_code in ['oth']:
-    #     flows_co2[(en_code + '_ghg', 'atm','')] = other_count
     
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
@@ -493,12 +479,14 @@ def prepare_sepia(countries):
     ghg_sector['seq'] = -ghg_sector['seq']
     ghg_sector['dac_ghg'] = -ghg_sector['dac_ghg']
     ghg_sector['bec_ghg'] = -ghg_sector['bec_ghg']
+    ghg_sector['blq_ghg'] = -ghg_sector['blq_ghg']
     ghg_source = tot_ghg[country].groupby(level='Target', axis=1).sum()
     ghg_source = ghg_source.drop('lufnes_ghg', axis=1)
     ghg_source = ghg_source.drop('bgl_pe', axis=1)
     ghg_source = ghg_source.drop('seq', axis=1)
     ghg_source = ghg_source.drop('dac_ghg', axis=1)
     ghg_source = ghg_source.drop('bec_ghg', axis=1)
+    ghg_source = ghg_source.drop('blq_pe', axis=1)
     
     #multiplying by 10 for cumulative emissions
     ghg_source.loc['2030'] *= 10

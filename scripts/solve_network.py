@@ -119,9 +119,11 @@ def add_co2_sequestration_limit(n, config, limit=200):
     Add a global constraint on the amount of Mt CO2 that can be sequestered.
     """
     if config["run"]["name"] == "ncdr":
+        limit = 0
         n.carriers.loc["co2 stored", "co2_absorptions"] = 0
         n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
     else:
+        limit = limit
         n.carriers.loc["co2 stored", "co2_absorptions"] = -1
         n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
 
@@ -266,8 +268,7 @@ def imposed_values_genertion(n, foresight, config):
       n.generators.loc[f"{country}{suffix} offwind-dc-2030", "p_nom_max"] = offwind_dc_max - offwind_dc
      
       #nuclear is grouped by grouping years so imposing value in last grouping year
-      if f"{country}{suffix} nuclear-1980" in n.links.index:
-       n.links.loc[f"{country}{suffix} nuclear-1980", "p_nom"] = nuclear_max
+      n.links.loc[f"{country}{suffix} nuclear-1980", "p_nom"] = nuclear_max
        
     return n       
     
@@ -316,7 +317,7 @@ def add_CCL_constraints(n, config):
         )
 
 
-def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
+def add_EQ_constraints(n, level, by_country, config):
     """
     Add equity constraints to the network.
     The equity option specifies a certain level x of equity (as in
@@ -526,7 +527,7 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
     #from gas extraction / production? Then we could model gas
     #extraction as locally produced energy.
 
-    #Ambient heat for heat pumps
+    # #Ambient heat for heat pumps
     # heat_pump_i = n.links.filter(like="heat pump", axis="rows").index
     # if len(heat_pump_i) > 0:
     #     # To get the ambient heat extracted, we subtract 1 from the
@@ -554,7 +555,7 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
             local_hydro,
             # local_bio,
             local_conv_gen,
-            # local_heat_from_ambient,
+            #local_heat_from_ambient,
         ]
         if e is not None
     )
@@ -671,7 +672,7 @@ def add_EQ_constraints(n, level, by_country, config, scaling=1e-1):
         i for i in [line_imports, link_imports] if i is not None
     )
 
-    local_factor = level - 1
+    local_factor = 1 - 1 / level
 
     n.model.add_constraints(
         local_factor * local_energy + imported_energy <= 0, name="equity_min"
@@ -954,8 +955,11 @@ def add_co2limit_country(n, limit_countries, nyears=1.0):
     co2_limit_countries = co2_limit_countries.loc[
         co2_limit_countries.index.isin(limit_countries.keys())
     ]
-
+    lulucf = co2_totals.loc[countries, 'LULUCF']
+    lulucf = lulucf * -1
+    lulucf['NL'] = 0
     co2_limit_countries *= co2_limit_countries.index.map(limit_countries) * nyears
+    co2_limit_countries = co2_limit_countries + lulucf
 
     p = n.model["Link-p"]  # dimension: (time, component)
 
@@ -1040,6 +1044,9 @@ def extra_functionality(n, snapshots):
     reserve = config["electricity"].get("operational_reserve", {})
     if reserve.get("activate"):
         add_operational_reserve_margin(n, snapshots, config)
+    
+    add_battery_constraints(n)
+    add_pipe_retrofit_constraint(n)
     for o in opts:
         if "EQ" in o:
             EQ_regex = "EQ(0\.[0-9]+)(c?)"  # Ex.: EQ0.75c
@@ -1050,8 +1057,6 @@ def extra_functionality(n, snapshots):
                 add_EQ_constraints(n, level, by_country, config)
             else:
                 logging.warning(f"Invalid EQ option: {o}")
-    add_battery_constraints(n)
-    add_pipe_retrofit_constraint(n)
     if n.config["sector"]["co2_budget_national"]:
         # prepare co2 constraint
         nhours = n.snapshot_weightings.generators.sum()
@@ -1062,6 +1067,7 @@ def extra_functionality(n, snapshots):
         # add co2 constraint for each country
         logger.info(f"Add CO2 limit for each country")
         add_co2limit_country(n, limit_countries, nyears)
+    
 
 def solve_network(n, config, solving, opts="", **kwargs):
     set_of_options = solving["solver"]["options"]
