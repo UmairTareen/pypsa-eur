@@ -17,7 +17,7 @@ gurobi.log
 /benchmarks
 /logs
 /notebooks
-/data
+#/data
 /cutouts
 
 doc/_build
