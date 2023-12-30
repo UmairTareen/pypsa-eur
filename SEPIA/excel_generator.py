@@ -513,7 +513,6 @@ entry_label_mapping = {
     'fossil oil': {'label': 'fossil oil', 'source': 'TWh', 'target': 'prefossiloil'},
 }
 
-
 # %%
 def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
     '''

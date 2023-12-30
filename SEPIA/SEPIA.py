@@ -79,7 +79,7 @@ def prepare_sepia(countries):
     data_co2=data_co2.T
 
     '''subtract agriculture heating demand from residential and tertiary sector'''
-    data["presgazcfg"] = data["presgazcfg"] - data["presvapcfagr"]
+    data["prespaccfraa"] = data["prespaccfraa"] - data["presvapcfagr"]
     
     '''Remove any duplicated data'''
     data = data.loc[:,~data.columns.duplicated()] 

@@ -2977,7 +2977,7 @@ def add_industry(n, costs, config):
         if config["run"]["name"] == "suff" or config["run"]["name"] == "ncdr":
          fn = snakemake.input.pop_weighted_energy_totals
          energy_totals = pd.read_csv(fn, index_col=0)
-         sum_result = (energy_totals.loc[:, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[:, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water']].sum(axis=1))
+         sum_result = (energy_totals.loc[:, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[:, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water', 'electricity residential cooking', 'electricity services cooking']].sum(axis=1))
          factor = ((sum_result)
             / (n.loads_t.p_set[loads_i].sum()/1e6)
          )

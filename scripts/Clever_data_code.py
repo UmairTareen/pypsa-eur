@@ -92,7 +92,7 @@ def build_CLEVER_Residential_data_per_country(countriess):
     assert 'Total domestic consumption of specific electricity' in cf
     assert 'Total final energy consumption for cooling in the residential sector' in cf
     
-    cf["Thermal_uses_residential"] = cf["Total final energy consumption for space heating in the residential sector"] + cf["Total final energy consumption for domestic hot water"] + cf["Total final energy consumption for domestic cooking"].sum()
+    cf["Thermal_uses_residential"] = cf["Total final energy consumption for space heating in the residential sector"] + cf["Total final energy consumption for domestic hot water"].sum()
     assert "Thermal_uses_residential" in cf
     
     return cf
@@ -165,7 +165,7 @@ def build_CLEVER_tertiary_data_per_country(countriess):
     assert "Final energy consumption from heating networks in the tertiary sector" in cf
     assert "Total consumption of specific electricity in the tertiary sector" in cf
     
-    cf["Thermal_uses_tertiary"] = cf["Total final energy consumption for space heating in the tertiary sector (with climatic corrections) "] + cf["Total final energy consumption for hot water in the tertiary sector"] + cf["Total Final energy consumption for cooking in the tertiary sector"].sum()
+    cf["Thermal_uses_tertiary"] = cf["Total final energy consumption for space heating in the tertiary sector (with climatic corrections) "] + cf["Total final energy consumption for hot water in the tertiary sector"].sum()
     assert "Thermal_uses_tertiary" in cf
     
     
@@ -246,6 +246,10 @@ def build_CLEVER_transport_data_per_country(countriess):
     cf = cf.apply (pd.to_numeric, errors='coerce')
     cf= cf.astype(float)
     
+    # Energy intensity Mj/tkm for rail freight transport
+    e_freight_train = 0.22 #https://iea.blob.core.windows.net/assets/3ac56807-ef16-44b4-9ab0-2c42b94e3ec7/2B.2_IEA_Howtocalculatetheindicatorsforthetransportsectors.pdf
+    conversion = 0.277 #convert to Twh
+    
     assert "Total final energy consumption in passenger road mobility" in cf
     assert "Total final energy consumption in road freight transport" in cf
     assert "Final electricity consumption for passenger road mobility" in cf
@@ -260,9 +264,10 @@ def build_CLEVER_transport_data_per_country(countriess):
     assert "Final energy consumption from liquid fuels in national water freight transport" in cf
     assert "Final energy consumption from liquid fuels in international water freight transport" in cf
     
+    cf["Rail_freight"] = cf["Tonne-kilometres transported by rail"] * e_freight_train * conversion
     cf["Total_Road"] = cf["Total final energy consumption in passenger road mobility"] + cf["Total final energy consumption in road freight transport"].sum()
     cf["Electricity_Road"] = cf["Final electricity consumption for passenger road mobility"] + cf["Final electricity consumption for road freight transport"].sum()
-    cf["Total_rail"] = cf["Total final energy consumption in rail passenger transport"] + cf["Total final energy consumption in rail freight transport"].sum()
+    cf["Total_rail"] = cf["Total final energy consumption in rail passenger transport"] + cf["Rail_freight"].sum()
     cf["Electricity_rail"] = cf["Final electricity consumption in rail passenger transport"] + cf["Final electricity consumption in rail freight transport"].sum()
     cf["Final liquid fuels consumption on international flights"] = cf["Final liquid fuels consumption on international flights"] *0
     assert "Total_Road" in cf
