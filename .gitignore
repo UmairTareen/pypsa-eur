@@ -40,7 +40,7 @@ dconf
 /data/retro/tabula-calculator-calcsetbuilding.csv
 /data/bundle-sector/nuts*
 data/gas_network/scigrid-gas/
-data/costs_*.csv
+data/bundle
 
 dask-worker-space/
 publications.jrc.ec.europa.eu/
