@@ -123,7 +123,7 @@ def prepare_sepia(countries):
     fec_carrier = flows.loc[:, selected_columns]
     grouped_fec = fec_carrier.groupby(level='Source', axis=1).sum()
     fec = grouped_fec
-    for en_code in ['vap','elc','gaz','hyd']:
+    for en_code in ['vap','elc','gaz']:
         flows[(en_code+'_se',en_code+'_fe','')] = fec[en_code+'_fe']
         
     selected_columns_pe = flows.columns.get_level_values('Source').isin(FE_NODES)

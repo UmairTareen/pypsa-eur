@@ -85,11 +85,11 @@ co2_budget:
   2050: 0.05
 co2_budget_national:
   2030:
-    'BE': 0.450
-    'DE': 0.450
-    'FR': 0.450
-    'GB': 0.450
-    'NL': 0.450
+    'BE': 0.45
+    'DE': 0.45
+    'FR': 0.45
+    'GB': 0.45
+    'NL': 0.45
   2040:
     'BE': 0.15
     'DE': 0.15
@@ -425,13 +425,13 @@ sector:
   shipping_hydrogen_share:
     2020: 0
     2030: 0
-    2040: 0
-    2050: 0
+    2040: 0.3
+    2050: 0.5
   shipping_methanol_share:
     2020: 0
     2030: 0.3
-    2040: 0.7
-    2050: 1
+    2040: 0.4
+    2050: 0.5
   shipping_oil_share:
     2020: 1
     2030: 0.7
@@ -474,7 +474,7 @@ sector:
   methanation: true
   helmeth: false
   coal_cc: false
-  dac: true
+  dac: false
   co2_vent: false
   allam_cycle: false
   hydrogen_fuel_cell: true
