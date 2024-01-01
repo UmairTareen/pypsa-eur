@@ -177,8 +177,9 @@ def prepare_sepia(countries):
     other_imports = flows.loc[:, other_imports]
     other_imports = other_imports.groupby(level='Target', axis=1).sum() 
     for en_code in ['amm','met']:
-        values_exp = other_imports[en_code + '_fe'] - fec_pe[en_code + '_fe']
-        values_imp = fec_pe[en_code + '_fe'] - other_imports[en_code + '_fe']
+        values_elec = flows[('elc_se',en_code + '_fe', '')].squeeze().rename_axis(None)
+        values_exp = other_imports[en_code + '_fe'] - fec_pe[en_code + '_fe'] - values_elec
+        values_imp = fec_pe[en_code + '_fe'] - other_imports[en_code + '_fe'] - values_elec
         values_imp = values_imp.clip(lower=0)
         values_exp = values_exp.clip(lower=0)
         flows[('imp',en_code + '_fe', '')] = values_imp

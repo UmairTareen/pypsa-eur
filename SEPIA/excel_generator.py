@@ -262,23 +262,10 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
 
      connections.replace("AC", "electricity grid", inplace=True)
     
-     suffix_counter = {}
-
-     def generate_new_label(label):
-      if label in suffix_counter:
-        suffix_counter[label] += 1
-      else:
-        suffix_counter[label] = 1
-
-      if suffix_counter[label] > 1: 
-        return f"{label}_{suffix_counter[label]}"
-      return label
-     
-     connections['label'] = connections['label'].apply(generate_new_label)
      if country == 'BE' and planning_horizon !=2020:
       new_value = n.links_t.p0['BE1 0 BEV charger'].sum() / 1e6
-      connections.loc[connections.label.str.contains("BEV charger"), "value"] = new_value
-      connections.loc[connections.label.str.contains("BEV charger_2"), "value"] = new_value * (1-config["sector"]["bev_charge_efficiency"])
+      connections.loc[connections.label.str.contains("BEV charger") & connections.target.str.contains("battery"), "value"] = new_value
+      connections.loc[connections.label.str.contains("BEV charger") & connections.target.str.contains("losses"), "value"] = new_value * (1-config["sector"]["bev_charge_efficiency"])
      connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
      results_dict[country] = connections
 
@@ -308,7 +295,7 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'land transport oil','land transport fuel cell','land transport EV','kerosene for aviation','shipping oil','shipping methanol',
                      'solid biomass for industry','solid biomass for industry CC','gas for industry','gas for industry CC','industry electricity',
                      'low-temperature heat for industry','H2 for industry','naphtha for industry','H2 for non-energy','agriculture machinery oil','agriculture electricity',
-                     'agriculture heat','BEV charger','BEV charger_2','V2G','V2G_2','Haber-Bosch_3','NH3','residential rural water tanks charger','residential rural water tanks discharger',
+                     'agriculture heat','BEV charger','BEV charger_2','V2G','V2G_2','NH3','residential rural water tanks charger','residential rural water tanks discharger',
                      'residential urban decentral water tanks charger','residential urban decentral water tanks discharger','services rural water tanks charger',
                      'services rural water tanks discharger','services urban decentral water tanks charger','services urban decentral water tanks discharger',
                      'urban central air heat pump','urban central air heat pump_2','urban central gas boiler','urban central gas boiler_2',
@@ -316,16 +303,15 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind','offwind',
                      'urban central water tanks discharger','residential urban decentral water tanks charger_2','residential urban decentral water tanks discharger_2',
                      'services rural water tanks charger_2','services rural water tanks discharger_2','services urban decentral water tanks charger_2',
                      'services urban decentral water tanks discharger_2','urban central water tanks charger_2','urban central water tanks discharger_2',
-                     'urban central air heat pump_2_2','urban central air heat pump_3','urban central air heat pump_4','residential rural resistive heater_2_2',
-                     'residential urban decentral resistive heater_2_2','services rural resistive heater_2_2','services urban decentral resistive heater_2_2',
-                     'urban central resistive heater_2_2','residential rural ground heat pump_2_2','residential urban decentral air heat pump_2_2',
-                     'services rural ground heat pump_2_2','services urban decentral air heat pump_2_2','solid biomass for industry CC_2',
+                     'urban central air heat pump_3','urban central air heat pump_4',
+                     'urban central resistive heater_3',
+                     'solid biomass for industry CC_2',
                      'gas for industry CC_2','SMR_2','SMR CC_2','methanolisation_3','urban central heat','oil','oil_2','biomass to liquid','biomass to liquid_2',
                      'residential rural water tanks charger_2','residential rural water tanks discharger_2','battery charger','battery charger_2',
                      'battery discharger','battery discharger_2','H2 turbine','H2 turbine_2','Fischer-Tropsch','Fischer-Tropsch_2','Fischer-Tropsch_3',
                      'urban central gas CHP','urban central gas CHP_2','urban central gas CHP_3','OCGT','OCGT_2','biogas to gas','BioSNG','Sabatier',
                      'urban central solid biomass CHP CC','urban central solid biomass CHP CC_2','urban central solid biomass CHP CC_3',
-                     'DAC','DAC_2','DAC_3','H2 for shipping', 'fossil oil'] # Add moe entries if needed
+                     'DAC','DAC_2','DAC_3','H2 for shipping', 'fossil oil','biomass','nuclear_3'] # Add moe entries if needed
 
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
@@ -337,6 +323,7 @@ entry_label_mapping = {
     'hydro': {'label': 'Total hydropower production', 'source': 'TWh', 'target': 'prohdr'},
     'ror': {'label': 'Total ror production', 'source': 'TWh', 'target': 'prohdror'},
     'nuclear': {'label': 'Nuclear production', 'source': 'TWh', 'target': 'proelcnuc'},
+    'biomass': {'label': 'biomass elec production', 'source': 'TWh', 'target': 'proelcboi'},
     'coal': {'label': 'Coal-fired power generation', 'source': 'TWh', 'target': 'proelccms'},
     'lignite': {'label': 'lignite power generation', 'source': 'TWh', 'target': 'proelign'},
     'CCGT': {'label': 'Gas-fired power generation', 'source': 'TWh', 'target': 'proelcgaz'},
@@ -348,13 +335,14 @@ entry_label_mapping = {
     'SMR': {'label': 'Production of H2 via steam methane reforming', 'source': 'TWh', 'target': 'prohydgaz'},
     'SMR CC': {'label': 'Production of H2 via steam methane reforming', 'source': 'TWh', 'target': 'prohydgazcc'},
     'nuclear_2': {'label': 'Nuclear production', 'source': 'TWh', 'target': 'proelcura'},
+    'nuclear_3': {'label': 'Nuclear losses', 'source': 'TWh', 'target': 'lossnuc'},
     'coal_2': {'label': 'Transformation losses (coal-fired powerplants)', 'source': 'TWh', 'target': 'losscoal'},
     'lignite_2': {'label': 'Transformation losses (coal-fired powerplants)', 'source': 'TWh', 'target': 'losslig'},
     'CCGT_2': {'label': 'Transformation losses (gas-fired powerplants)', 'source': 'TWh', 'target': 'lossgas'},
     'urban central solid biomass CHP_3': {'label': 'Transformation losses (solid biomass CHP plants)', 'source': 'TWh', 'target': 'lossbchp'},
     'H2 Electrolysis_2': {'label': 'Transformation losses (electrolysis)', 'source': 'TWh', 'target': 'losshely'},
     'methanolisation_2': {'label': 'Transformation losses (methanolisation)', 'source': 'TWh', 'target': 'lossmet'},
-    'Haber-Bosch_2': {'label': 'Transformation losses (Production of ammonia from electricity)', 'source': 'TWh', 'target': 'lossef'},
+    'Haber-Bosch_2': {'label': 'Production of ammonia from H2)', 'source': 'TWh', 'target': 'prohydclam'},
     'residential rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh', 'target': 'lossbb'},
     'residential urban decentral biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh', 'target': 'lossbbb'},
     'services rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh', 'target': 'losssb'},
@@ -437,7 +425,6 @@ entry_label_mapping = {
     'BEV charger_2': {'label': 'BEV charging losses', 'source': 'TWh', 'target': 'prebevloss'},
     'V2G': {'label': 'vehicle to grid', 'source': 'TWh', 'target': 'prevtg'},
     'V2G_2': {'label': 'vehicle to grid losses', 'source': 'TWh', 'target': 'prevtgloss'},
-    'Haber-Bosch_3': {'label': 'Production of ammonia from hydrogen', 'source': 'TWh', 'target': 'prohydclam'},
     'NH3': {'label': 'ammonia for industry', 'source': 'TWh', 'target': 'preammind'},
     'residential rural water tanks charger': {'label': 'TES charging', 'source': 'TWh', 'target': 'prechates'},
     'residential rural water tanks discharger': {'label': 'TES discharging', 'source': 'TWh', 'target': 'pretesdis'},
@@ -464,25 +451,16 @@ entry_label_mapping = {
     'services urban decentral water tanks discharger_2': {'label': 'TES discharging losses', 'source': 'TWh', 'target': 'pretesdlosss'},
     'urban central water tanks charger_2': {'label': 'TES charging losses', 'source': 'TWh', 'target': 'predhsclos'},
     'urban central water tanks discharger_2': {'label': 'TES discharging losses', 'source': 'TWh', 'target': 'predhsdlos'},
-    'urban central air heat pump_2_2': {'label': 'Heat energy output from centralised electric heat pumps', 'source': 'TWh', 'target': 'prbrchpee'},
     'urban central air heat pump_3': {'label': 'Heat energy output from centralised electric heat pumps', 'source': 'TWh', 'target': 'prbrchpeee'},
     'urban central air heat pump_4': {'label': 'Heat energy output from centralised electric heat pumps', 'source': 'TWh', 'target': 'prbrchpeeee'},
-    'residential rural resistive heater_2_2': {'label': 'Transformation losses (resistive heaters)', 'source': 'TWh', 'target': 'lossrhx'},
-    'residential urban decentral resistive heater_2_2': {'label': 'Transformation losses (resistive heaters)', 'source': 'TWh', 'target': 'lossrhxx'},
-    'services rural resistive heater_2_2': {'label': 'Transformation losses (resistive heaters)', 'source': 'TWh', 'target': 'lossrhy'},
-    'services urban decentral resistive heater_2_2': {'label': 'Transformation losses (resistive heaters)', 'source': 'TWh', 'target': 'lossrhyy'},
-    'urban central resistive heater_2_2': {'label': 'Losses from centralised resistive heaters', 'source': 'TWh', 'target': 'losselchh'},
-    'residential rural ground heat pump_2_2': {'label': 'Residential and tertiary electric HP for heating', 'source': 'TWh', 'target': 'preehpx'},
-    'residential urban decentral air heat pump_2_2': {'label': 'Residential and tertiary electric HP for heating', 'source': 'TWh', 'target': 'preehpxx'},
-    'services rural ground heat pump_2_2': {'label': 'Residential and tertiary electric HP for heating', 'source': 'TWh', 'target': 'preehpy'},
-    'services urban decentral air heat pump_2_2': {'label': 'Residential and tertiary electric HP sources for heating', 'source': 'TWh', 'target': 'preehpyy'},
+    'urban central resistive heater_3': {'label': 'Losses from centralised resistive heaters', 'source': 'TWh', 'target': 'losselchh'},
     'solid biomass for industry CC_2': {'label': 'Transformation losses biomass for industry CC', 'source': 'TWh', 'target': 'lossbmind'},
     'gas for industry CC_2': {'label': 'Transformation losses gas for industry CC', 'source': 'TWh', 'target': 'lossgasind'},
     'SMR_2': {'label': 'Transformation losses (steam methane reforming)', 'source': 'TWh', 'target': 'lossmr'},
     'SMR CC_2': {'label': 'Transformation losses (steam methane reforming)', 'source': 'TWh', 'target': 'lossmrr'},
     'methanolisation_3': {'label': 'electricity to metaholisation', 'source': 'TWh', 'target': 'pretareen'},
-    'residential rural water tanks charger_2': {'label': 'TES charging', 'source': 'TWh', 'target': 'preclochar'},
-    'residential rural water tanks discharger_2': {'label': 'TES discharging', 'source': 'TWh', 'target': 'preclocharr'},
+    'residential rural water tanks charger_2': {'label': 'TES charging losses', 'source': 'TWh', 'target': 'preclochar'},
+    'residential rural water tanks discharger_2': {'label': 'TES discharging losses', 'source': 'TWh', 'target': 'preclocharr'},
     'oil': {'label': 'Oil generation losses', 'source': 'TWh', 'target': 'pof'},
     'oil_2': {'label': 'Oil generation', 'source': 'TWh', 'target': 'proelcpet'},
     'biomass to liquid': {'label': 'biomass to liquid', 'source': 'TWh', 'target': 'probmliqu'},
@@ -504,6 +482,7 @@ entry_label_mapping = {
     'biogas to gas': {'label': 'biogas to gas', 'source': 'TWh', 'target': 'prodombgr'},
     'BioSNG': {'label': 'BioSNG', 'source': 'TWh', 'target': 'probiosng'},
     'Sabatier': {'label': 'Sabatier', 'source': 'TWh', 'target': 'presaba'},
+    'Sabatier_2': {'label': 'Sabatier losses', 'source': 'TWh', 'target': 'presabaloss'},
     'urban central solid biomass CHP CC': {'label': 'Power output from solid biomass CHP plants', 'source': 'TWh', 'target': 'prbelccbmcc'},
     'urban central solid biomass CHP CC_2': {'label': 'Heat output from solid biomass CHP plants', 'source': 'TWh', 'target': 'prbelccbmcch'},
     'urban central solid biomass CHP CC_3': {'label': 'losses solid biomass CHP plants', 'source': 'TWh', 'target': 'prbelccbmccl'},
@@ -512,7 +491,6 @@ entry_label_mapping = {
     'DAC_3': {'label': 'DAC', 'source': 'TWh', 'target': 'predachee'},
     'fossil oil': {'label': 'fossil oil', 'source': 'TWh', 'target': 'prefossiloil'},
 }
-
 # %%
 def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
     '''
@@ -633,7 +611,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      )
 
      # SMR
-     value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(regex="SMR$").filter(like=country)).sum()
+     value = -(n.snapshot_weightings.generators @ n.links_t.p2.filter(like="SMR").filter(like=country)).sum()
      collection.append(
         pd.Series(dict(label="SMR", source="gas", target="co2 atmosphere", value=value))
      )
@@ -1165,19 +1143,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
         ]
         )
        cf = pd.concat([cf, row], axis=0)
-     suffix_counter = {}
-
-     def generate_new_label(label):
-        if label in suffix_counter:
-            suffix_counter[label] += 1
-        else:
-            suffix_counter[label] = 1
-
-        if suffix_counter[label] > 1:
-            return f"{label}_{suffix_counter[label]}"
-        return label
-
-     cf['label'] = cf['label'].apply(generate_new_label)
+       
      cf.rename(columns={'value': str(planning_horizon)}, inplace=True)
      results_dict_co2[country] = cf
 
@@ -1347,6 +1313,20 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
 
     # Fill missing values with 0
         merged_emissions.fillna(0,inplace=True)
+        
+        suffix_counter = {}
+
+        def generate_new_label(label):
+            if label in suffix_counter:
+                suffix_counter[label] += 1
+            else:
+                suffix_counter[label] = 1
+
+            if suffix_counter[label] > 1:
+                return f"{label}_{suffix_counter[label]}"
+            return label
+
+        merged_emissions['label'] =  merged_emissions['label'].apply(generate_new_label)
         country_filename = ''.join(filename)[:-5] + country + ".xlsx"
 
         selected_entries_cf = pd.DataFrame()
