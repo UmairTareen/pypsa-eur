@@ -14,7 +14,7 @@ import datetime # For current time
 import logging
 import shutil
 
-scenario = "ncdr"
+scenario = "bau"
 
 
 def prepare_sepia(countries):

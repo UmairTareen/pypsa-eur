@@ -7,7 +7,9 @@ import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 import logging
 
-scenario = "ncdr"
+scenario = "bau"
+
+
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
