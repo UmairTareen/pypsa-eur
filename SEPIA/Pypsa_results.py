@@ -648,6 +648,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
            color=[colors[tech] for tech in positive_supplyn.columns],
            line_dash='solid', line_width=0,
            xlabel='Time', ylabel='Heat [GW]',
+           title=title + " - " + country + ' - ' + str(planning_horizon),
            width=1200, height=600,
            responsive=False,
            stacked=True,)
