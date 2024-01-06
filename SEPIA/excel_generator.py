@@ -7,7 +7,7 @@ import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 import logging
 
-scenario = "bau"
+scenario = "ncdr"
 
 
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
@@ -263,7 +263,19 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      connections.loc[where] = connections.loc[where].replace("losses", "fossil gas")
 
      connections.replace("AC", "electricity grid", inplace=True)
-    
+     suffix_counter = {}
+
+     def generate_new_label(label):
+         if label in suffix_counter:
+             suffix_counter[label] += 1
+         else:
+             suffix_counter[label] = 1
+
+         if suffix_counter[label] > 1:
+             return f"{label}_{suffix_counter[label]}"
+         return label
+
+     connections['label'] = connections['label'].apply(generate_new_label)
      if country == 'BE' and planning_horizon !=2020:
       new_value = n.links_t.p0['BE1 0 BEV charger'].sum() / 1e6
       connections.loc[connections.label.str.contains("BEV charger") & connections.target.str.contains("battery"), "value"] = new_value
@@ -381,13 +393,13 @@ entry_label_mapping = {
     'services rural oil boiler': {'label': 'Residential and tertiary oil for heating', 'source': 'TWh', 'target': 'prespetcfoo'},
     'services urban decentral oil boiler': {'label': 'Residential and tertiary oil for heating', 'source': 'TWh', 'target': 'prespetcfooo'},
     'residential rural ground heat pump': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccfres'},
-    'residential rural ground heat pump_2': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccfra'},
+    'residential rural ground heat pump_2': {'label': 'Residential and tertiary HP for heating', 'source': 'TWh', 'target': 'prespaccfra'},
     'residential urban decentral air heat pump': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccfraa'},
-    'residential urban decentral air heat pump_2': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccfaaa'},
+    'residential urban decentral air heat pump_2': {'label': 'Residential and tertiary HP for heating', 'source': 'TWh', 'target': 'prespaccfaaa'},
     'services rural ground heat pump': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccfta'},
-    'services rural ground heat pump_2': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccftaa'},
+    'services rural ground heat pump_2': {'label': 'Residential and tertiary HP for heating', 'source': 'TWh', 'target': 'prespaccftaa'},
     'services urban decentral air heat pump': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccfftt'},
-    'services urban decentral air heat pump_2': {'label': 'Residential and tertiary ambient sources for heating', 'source': 'TWh', 'target': 'prespaccffff'},
+    'services urban decentral air heat pump_2': {'label': 'Residential and tertiary HP for heating', 'source': 'TWh', 'target': 'prespaccffff'},
     'residential rural ground heat pump_3': {'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh', 'target': 'preehhp'},
     'residential rural ground heat pump_4': {'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh', 'target': 'preehhpp'},
     'residential urban decentral air heat pump_3': {'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh', 'target': 'preehhh'},
@@ -1256,19 +1268,6 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
         # Fill missing values with 0
         merged_df = merged_df.fillna(0)
         connections = merged_df
-        suffix_counter = {}
-
-        def generate_new_label(label):
-            if label in suffix_counter:
-                suffix_counter[label] += 1
-            else:
-                suffix_counter[label] = 1
-
-            if suffix_counter[label] > 1:
-                return f"{label}_{suffix_counter[label]}"
-            return label
-
-        connections['label'] = connections['label'].apply(generate_new_label)
 
         df = connections
         selected_entries_df = pd.DataFrame()
@@ -1360,7 +1359,30 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
         different_elements_list_c = list(different_elements_c)
         print("Different elements between the list and the Emissions dataFrame:", different_elements_list_c)
         
-    
+def process_countries(countries):
+    total_energy = {}
+    total_co2 = {}
+    total_country = 'EU'
+
+    for country in countries:
+        total_energy[country] = pd.read_excel(f"../results/sepia/inputs{country}.xlsx",
+                                      sheet_name="Inputs", index_col=0, usecols="C:G")
+        total_co2[country] = pd.read_excel(f"../results/sepia/inputs{country}.xlsx",
+                                          sheet_name="Inputs_co2", index_col=0, usecols="C:G")
+
+    dataframes_energy = list(total_energy.values())
+    tot_energy = pd.concat(dataframes_energy, axis=0)
+    tot_energy = tot_energy.groupby(tot_energy.index).sum()
+
+    dataframes_co2 = list(total_co2.values())
+    tota_co2 = pd.concat(dataframes_co2, axis=0)
+    tota_co2 = tota_co2.groupby(tota_co2.index).sum()
+
+    excel_file_path = f"../results/sepia/inputs{total_country}.xlsx"
+
+    with pd.ExcelWriter(excel_file_path) as writer:
+        tot_energy.to_excel(writer, sheet_name='Inputs')
+        tota_co2.to_excel(writer, sheet_name='Inputs_co2')    
         
 
 if __name__ == "__main__":
@@ -1409,4 +1431,4 @@ if __name__ == "__main__":
         filename=snakemake.output.excelfile,
      )
 
-
+    process_countries(countries)

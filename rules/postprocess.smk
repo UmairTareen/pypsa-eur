@@ -131,7 +131,10 @@ rule prepare_sepia:
         "../envs/environment.yaml"
     script:
         "../SEPIA/excel_generator.py"
-        
+
+local_countries = config["countries"].copy()
+if "EU" not in local_countries:
+    local_countries.append("EU")        
 rule generate_sepia:
     params:
         countries=config["countries"],
@@ -140,11 +143,11 @@ rule generate_sepia:
         costs = "data/costs_2050.csv",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         template = "SEPIA/Template/CLEVER.html",
-        excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=config["countries"]),
+        excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
         
     output:
-        excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=config["countries"]),
-        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=config["countries"]),
+        excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
+        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=local_countries),
     threads: 1
     resources:
         mem_mb=10000,

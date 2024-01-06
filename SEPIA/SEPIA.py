@@ -14,7 +14,7 @@ import datetime # For current time
 import logging
 import shutil
 
-scenario = "bau"
+scenario = "ncdr"
 
 
 def prepare_sepia(countries):
@@ -57,26 +57,42 @@ def prepare_sepia(countries):
  tot_flows = {} # Energy flow DataFrames
  tot_ghg = {}
  tot_co2 = {}
+ total_country = 'EU'
+ include_total_country = True
+ if include_total_country == True:
+      ALL_COUNTRIES.append(total_country)
+ else:
+      ALL_COUNTRIES = ALL_COUNTRIES
 
  # Energy system (network graph) creation for all countries
  print("\nEnergy system (network graph) creation\n")
  print("ALL_COUNTRIES:", ALL_COUNTRIES)
  print("snakemake.input.excelfile:", snakemake.input.excelfile)
-
+ 
  for country in ALL_COUNTRIES:
     datafile = snakemake.input.excelfile[ALL_COUNTRIES.index(country)]
     datafile = str(datafile)
     
     '''load energy input data for Sepia'''
-    data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
-    data.reset_index(drop=True, inplace=False)
-    data=data.T
+    if country == 'EU':
+     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0)
+     data.reset_index(drop=True, inplace=False)
+     data=data.T
+    else:
+     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
+     data.reset_index(drop=True, inplace=False)
+     data=data.T
     
     
     '''load co2 input data for Sepia'''
-    data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
-    data_co2.reset_index(drop=True, inplace=False)
-    data_co2=data_co2.T
+    if country == 'EU':
+     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0)
+     data_co2.reset_index(drop=True, inplace=False)
+     data_co2=data_co2.T
+    else:
+     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
+     data_co2.reset_index(drop=True, inplace=False)
+     data_co2=data_co2.T
 
     '''subtract agriculture heating demand from residential and tertiary sector'''
     data["prespaccfraa"] = data["prespaccfraa"] - data["presvapcfagr"]
@@ -165,7 +181,8 @@ def prepare_sepia(countries):
     sec_imports = flows.columns.get_level_values('Target').isin(SE_NODES)
     sec_imports = flows.loc[:, sec_imports]
     sec_imports = sec_imports.groupby(level='Target', axis=1).sum()
-    for en_code in ['elc','hyd']:
+    if country != 'EU':
+     for en_code in ['elc','hyd']:
         values_exp = sec_imports[en_code + '_se'] - fec_se[en_code + '_se']
         values_imp = fec_se[en_code + '_se'] - sec_imports[en_code + '_se']
         values_imp = values_imp.clip(lower=0)
@@ -176,7 +193,8 @@ def prepare_sepia(countries):
     other_imports = flows.columns.get_level_values('Target').isin(FE_NODES)
     other_imports = flows.loc[:, other_imports]
     other_imports = other_imports.groupby(level='Target', axis=1).sum() 
-    for en_code in ['amm','met']:
+    if country != 'EU':
+     for en_code in ['amm','met']:
         values_elec = flows[('elc_se',en_code + '_fe', '')].squeeze().rename_axis(None)
         values_exp = other_imports[en_code + '_fe'] - fec_pe[en_code + '_fe'] - values_elec
         values_imp = fec_pe[en_code + '_fe'] - other_imports[en_code + '_fe'] - values_elec
