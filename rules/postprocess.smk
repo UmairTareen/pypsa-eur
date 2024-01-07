@@ -191,7 +191,29 @@ rule prepare_results:
     script:
         "../SEPIA/Pypsa_results.py"
 
-
+rule prepare_scenarios:
+    params:
+        countries=config["countries"],
+        RDIR=RDIR,
+    input:
+        csvs_files=expand(
+            RESULTS
+            + "csvs/{country}_capacities.csv", country=config["countries"]),
+        
+    output:
+        htmlfile=expand(RESULTS + "pypsa_results/scenario/output.html", country=config["countries"]),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "scenario_results.log",
+    benchmark:
+        BENCHMARKS + "scenario_results",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/scenario_results.py"
+        
 rule plot_summary:
     params:
         countries=config["countries"],

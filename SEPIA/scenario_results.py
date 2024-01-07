@@ -7,25 +7,17 @@ Created on Mon Nov 27 10:59:23 2023
 """
 
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots 
-import cartopy.crs as ccrs
-import plotly.express as px
-import plotly.subplots as sp
-import yaml
 import os
+import shutil
+from datetime import datetime
 
-with open("../config/config.yaml") as file:
-    config = yaml.safe_load(file)
-  
-countries = ['BE', 'DE', 'FR', 'GB', 'NL']
-tech_colors = config["plotting"]["tech_colors"]
+prepare_folder_website = True
 
 def scenario_costs(country):
-    costs_bau = pd.read_csv(f"csvs/{country}_costs_bau.csv")
-    costs_suff = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
+    costs_bau = pd.read_csv(f"../results/csvs/{country}_costs_bau.csv")
+    costs_suff = pd.read_csv(f"../results/csvs/{country}_costs_ncdr.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     costs_reff = costs_bau[['tech', '2020']]
     costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
@@ -79,8 +71,8 @@ def scenario_costs(country):
     
 #%%
 def scenario_capacities(country):
-    caps_bau = pd.read_csv(f"csvs/{country}_capacities_bau.csv")
-    caps_suff = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
+    caps_bau = pd.read_csv(f"../results/csvs/{country}_capacities_bau.csv")
+    caps_suff = pd.read_csv(f"../results/csvs/{country}_capacities_ncdr.csv")
     # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
     caps_reff = caps_bau[['tech', '2020']]
     caps_bau = caps_bau[['tech', '2030', '2040', '2050']]
@@ -155,7 +147,7 @@ def scenario_capacities(country):
     
     return fig
 
-def create_combined_scenario_chart_country(country, output_folder='scenario_charts'):
+def create_combined_scenario_chart_country(country, output_folder='../results/pypsa_results/scenario'):
     # Create output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
 
@@ -177,7 +169,72 @@ def create_combined_scenario_chart_country(country, output_folder='scenario_char
     with open(combined_file_path, "w") as combined_file:
         combined_file.write(combined_html)
 
-# Example usage
-for country in countries:
-    create_combined_scenario_chart_country(country)
 
+
+
+if __name__ == "__main__":
+    if "snakemake" not in globals():
+        from _helpers import mock_snakemake
+
+        snakemake = mock_snakemake(
+            "prepare_scenarios")
+        
+    countries = snakemake.params.countries 
+    config = snakemake.config
+    
+    for country in countries:
+        create_combined_scenario_chart_country(country)
+        
+#%%
+
+if prepare_folder_website == True:  
+    
+ def create_website_files(source_directories, target_directory, new_names, files_to_delete):
+    # Get the current date
+    current_date = datetime.now()
+
+    # Format the date in the "year_month_day" format
+    folder_name = current_date.strftime("%Y%m%d")
+
+    # Create a new folder with the formatted name in the target directory
+    new_folder_path = os.path.join(target_directory, folder_name)
+    try:
+        os.makedirs(new_folder_path)
+        print(f"Folder '{folder_name}' created successfully in '{target_directory}'.")
+    except OSError as e:
+        print(f"Error creating folder: {e}")
+        return
+
+    # Copy, rename, and delete files in each source folder
+    for source_folder, new_name in zip(source_directories, new_names):
+        try:
+            source_folder_name = os.path.basename(source_folder)
+            destination_folder_name = f"{new_name}"
+            destination_folder_path = os.path.join(new_folder_path, destination_folder_name)
+
+            shutil.copytree(source_folder, destination_folder_path)
+            print(f"Folder '{source_folder_name}' copied and renamed to '{destination_folder_name}' in '{new_folder_path}'.")
+
+            # Delete specified files inside the copied folder
+            for file_to_delete in files_to_delete:
+                file_path = os.path.join(destination_folder_path, file_to_delete)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"File '{file_to_delete}' deleted from '{destination_folder_name}'.")
+                else:
+                    print(f"File '{file_to_delete}' not found in '{destination_folder_name}'.")
+        except shutil.Error as e:
+            print(f"Error copying folder '{source_folder}': {e}")
+ 
+
+ if __name__ == "__main__":
+    # Specify the list of source directories, the target directory, new names, and files to delete
+    source_directories = ["../results/pypsa_results", "../results/bau/htmls", "../results/ncdr/htmls"]
+    target_directory = "../results/" 
+    new_names = ["Pypsa_results", "bau", "suff"]  # Replace with the desired new names
+    files_to_delete = ["ChartData_BE.xlsx","ChartData_DE.xlsx","ChartData_FR.xlsx","ChartData_GB.xlsx", "ChartData_NL.xlsx","ChartData_EU.xlsx"]  # Specify the names of files to delete
+
+    create_website_files(source_directories, target_directory, new_names, files_to_delete)
+
+    
+ 

@@ -12,7 +12,7 @@ import panel as pn
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots 
 
-scenario = 'ncdr'
+scenario = 'bau'
 
 
 def rename_techs(label):
