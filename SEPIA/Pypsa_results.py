@@ -10,6 +10,7 @@ import hvplot.pandas
 import os
 import panel as pn
 import plotly.graph_objects as go
+import plotly.express as px
 from plotly.subplots import make_subplots 
 
 scenario = 'bau'
@@ -374,6 +375,94 @@ def capacities(countries, results):
 
     return capacities
 
+def plot_demands(countries):
+    colors = config["plotting"]["tech_colors"] 
+    colors["methane"] = "orange"
+    colors["Non-energy demand"] = "black" 
+    colors["hydrogen for industry"] = "cornflowerblue"
+    colors["agriculture electricity"] = "royalblue"
+    colors["agriculture and industry heat"] = "lightsteelblue"
+    colors["agriculture oil"] = "darkorange"
+    colors["electricity demand of residential and tertairy"] = "navajowhite"
+    colors["gas for Industry"] = "forestgreen"
+    colors["electricity for Industry"] = "limegreen"
+    colors["aviation oil demand"] = "black"
+    colors["land transport EV"] = "lightcoral"
+    colors["land transport hydrogen demand"] = "mediumpurple"
+    colors["oil to transport demand"] = "thistle"
+    colors["low-temperature heat for industry"] = "sienna"
+    colors["naphtha for non-energy"] = "sandybrown"
+    colors["shipping methanol"] = "lawngreen"
+    colors["shipping hydrogen"] = "gold"
+    colors["shipping oil"] = "turquoise"
+    colors["solid biomass for Industry"] = "paleturquoise"
+    colors["Residential and tertiary DH demand"] = "gray"
+    colors["Residential and tertiary heat demand"] = "pink"
+    colors["electricity demand for rail network"] = "blue"
+    colors["H2 for non-energy"] = "violet" 
+    
+    mapping = {
+        "hydrogen for industry": "hydrogen",
+        "H2 for non-energy": "Non-energy demand",
+        "shipping hydrogen": "hydrogen",
+        "shipping oil": "oil",
+        "agriculture electricity": "electricity",
+        "agriculture heat": "heat",
+        "agriculture oil": "oil",
+        "electricity demand of residential and tertairy": "electricity",
+        "gas for Industry": "methane",
+        "electricity for Industry": "electricity",
+        "aviation oil demand": "oil",
+        "land transport EV": "electricity",
+        "land transport hydrogen demand": "hydrogen",
+        "oil to transport demand": "oil",
+        "low-temperature heat for industry": "heat",
+        "naphtha for non-energy": "Non-energy demand",
+        "electricity demand for rail network": "electricity",
+        "Residential and tertiary DH demand": "heat",
+        "Residential and tertiary heat demand": "heat",
+        "solid biomass for Industry": "solid biomass",
+        "NH3":"hydrogen",
+    }
+    
+    for country in countries:
+        data = pd.read_excel(f"../results/{scenario}/sepia/inputs{country}.xlsx", index_col=0)
+        columns_to_drop = ['source', 'target']
+        data = data.drop(columns=columns_to_drop)
+        data = data.groupby(data.index).sum()
+
+        # Apply your mapping to the data
+        data = data[data.index.isin(mapping.keys())]
+        data.index = pd.MultiIndex.from_tuples([(mapping[i], i) for i in data.index])
+        data = data.reset_index()
+        data.rename(columns={'level_0': 'Demand'}, inplace=True)
+        data.rename(columns={'level_1': 'Sectors'}, inplace=True)
+
+        
+        melted_data = pd.melt(data, id_vars=['Demand', 'Sectors'], var_name='year', value_name='value')
+        melted_data['color'] = melted_data['Sectors'].map(colors)
+
+        # Use plotly express to create a stacked bar plot
+        fig = px.bar(
+        melted_data,
+        x='year',
+        y='value',
+        color='Sectors',
+        color_discrete_map=dict(zip(melted_data['Sectors'].unique(), melted_data['color'].unique())),
+        facet_col='Demand',
+        labels={'year': '', 'value': 'Final energy and non-energy demand [TWh/a]'}
+        )
+
+        # Show the plot
+        html_filename = f"{country}_sectoral_demands.html"
+        output_folder = f'../results/pypsa_results/{scenario}' # Set your desired output folder
+        os.makedirs(output_folder, exist_ok=True)
+        html_filepath = os.path.join(output_folder, html_filename)
+        fig.write_html(html_filepath)
+        file_path = f"../results/csvs/{country}_sectordemands_{scenario}.csv"
+        data.to_csv(file_path, index=True)
+        
+        
 def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start,stop,title):
     tech_colors = config["plotting"]["tech_colors"]
     colors = tech_colors 
@@ -767,14 +856,18 @@ def create_combined_chart_country(costs, capacities, country, output_folder = f'
 
     # Create combined HTML
     combined_html = "<html><head><title>Combined Plots</title></head><body>"
-
+    
+    plot_demands_file_path = os.path.join(output_folder, f"{country}_sectoral_demands.html")
+    with open(plot_demands_file_path, "r") as plot_demands_file:
+        plot_demands_html = plot_demands_file.read()
+        combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{plot_demands_html}</div>"
     # Create bar chart
     bar_chart = create_bar_chart(costs, country, output_folder)
-    combined_html += f"<div><h2>{country} - Bar Chart</h2>{bar_chart.to_html()}</div>"
+    combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
 
     # Create capacities chart
     capacities_chart = create_capacity_chart(capacities, country, output_folder)
-    combined_html += f"<div><h2>{country} - Capacities Chart</h2>{capacities_chart.to_html()}</div>"
+    combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
 
     # Save the Panel object to HTML
     plot_series_file_path = os.path.join(output_folder, f"Power Dispatch (Winter Week) - {country}.html")
@@ -831,7 +924,7 @@ if __name__ == "__main__":
     plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Power Dispatch (Summer Week)")
     plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Heat Dispatch (Winter Week)")
     plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Heat Dispatch (Summer Week)")
-   
+    plot_demands(countries)
     
     for country in countries:
         create_combined_chart_country(costs, capacities, country)
@@ -843,6 +936,7 @@ for country in costs.keys():
     combined_file_path_sum = os.path.join(f'../results/pypsa_results/{scenario}', f"Heat Dispatch (Summer Week) - {country}.html")
     plot_series_file_path = os.path.join(f'../results/pypsa_results/{scenario}', f"Power Dispatch (Winter Week) - {country}.html")
     plot_series_file_path_sum = os.path.join(f'../results/pypsa_results/{scenario}', f"Power Dispatch (Summer Week) - {country}.html")
+    plot_demands_file_path = os.path.join(f'../results/pypsa_results/{scenario}', f"{country}_sectoral_demands.html")
     
     if os.path.exists(combined_file_path):
         os.remove(combined_file_path)
@@ -852,3 +946,5 @@ for country in costs.keys():
         os.remove(plot_series_file_path)
     if os.path.exists(plot_series_file_path_sum):
         os.remove(plot_series_file_path_sum)
+    if os.path.exists(plot_demands_file_path):
+        os.remove(plot_demands_file_path)
