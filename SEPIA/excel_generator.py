@@ -7,7 +7,7 @@ import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 import logging
 
-scenario = "ncdr"
+scenario = "bau"
 
 
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
@@ -53,9 +53,9 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
      
      energy_demand =pd.read_csv(f"../resources/{scenario}/energy_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0).T
      
-     if planning_horizon == 2020:
+     if planning_horizon == 2020 or scenario == 'bau':
          H2_nonenergyy =0
-     else:
+     if scenario == 'ncdr':
       clever_industry = (
          pd.read_csv("../data/clever_Industry_"+str(planning_horizon)+".csv", index_col=0)).T
 
@@ -141,7 +141,7 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
 
      load = load.loc[~load.label.str.contains("emissions")]
      load.target += " demand"
-     if planning_horizon != 2020:
+     if scenario == 'ncdr':
       load.loc[load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
      value=load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
      load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
@@ -242,13 +242,14 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
             'source': 'Electricity grid',
             'target': 'Rail Network',
             'value': Rail_demand}
-     new_row2 = {'label': 'H2 for non-energy',
+     if scenario == 'ncdr':
+      new_row2 = {'label': 'H2 for non-energy',
             'source': 'hyd',
             'target': 'Non-energy',
             'value': H2_nonenergyy}
-
+      connections.loc[len(connections)] = pd.Series(new_row2)
      connections.loc[len(connections)] = pd.Series(new_row1)
-     connections.loc[len(connections)] = pd.Series(new_row2)
+     
 
      connections = connections.loc[
         ~(connections.source == connections.target)
@@ -424,9 +425,9 @@ entry_label_mapping = {
     'shipping methanol': {'label': 'shipping methanol', 'source': 'TWh', 'target': 'presngvcffrewati'},
     'H2 for shipping': {'label': 'shipping hydrogen', 'source': 'TWh', 'target': 'preshydwati'},
     'solid biomass for industry': {'label': 'solid biomass for Industry', 'source': 'TWh', 'target': 'presenccfind'},
-    'solid biomass for industry CC': {'label': 'solid biomass for Industry CC', 'source': 'TWh', 'target': 'presenccfindd'},
+    'solid biomass for industry CC': {'label': 'solid biomass for Industry', 'source': 'TWh', 'target': 'presenccfindd'},
     'gas for industry': {'label': 'gas for Industry', 'source': 'TWh', 'target': 'presgazcfind'},
-    'gas for industry CC': {'label': 'gas for Industry CC', 'source': 'TWh', 'target': 'presgazcfindd'},
+    'gas for industry CC': {'label': 'gas for Industry', 'source': 'TWh', 'target': 'presgazcfindd'},
     'industry electricity': {'label': 'electricity for Industry', 'source': 'TWh', 'target': 'preselccfind'},
     'low-temperature heat for industry': {'label': 'low-temperature heat for industry', 'source': 'TWh', 'target': 'presvapcfind'},
     'H2 for industry': {'label': 'hydrogen for industry', 'source': 'TWh', 'target': 'preshydcfind'},

@@ -12,8 +12,9 @@ from plotly.subplots import make_subplots
 import os
 import shutil
 from datetime import datetime
+import plotly.express as px
 
-prepare_folder_website = True
+prepare_folder_website = False
 
 def scenario_costs(country):
     costs_bau = pd.read_csv(f"../results/csvs/{country}_costs_bau.csv")
@@ -147,6 +148,66 @@ def scenario_capacities(country):
     
     return fig
 
+def scenario_demands(country):
+    colors = config["plotting"]["tech_colors"] 
+    colors["methane"] = "orange"
+    colors["Non-energy demand"] = "black" 
+    colors["hydrogen for industry"] = "cornflowerblue"
+    colors["agriculture electricity"] = "royalblue"
+    colors["agriculture and industry heat"] = "lightsteelblue"
+    colors["agriculture oil"] = "darkorange"
+    colors["electricity demand of residential and tertairy"] = "navajowhite"
+    colors["gas for Industry"] = "forestgreen"
+    colors["electricity for Industry"] = "limegreen"
+    colors["aviation oil demand"] = "black"
+    colors["land transport EV"] = "lightcoral"
+    colors["land transport hydrogen demand"] = "mediumpurple"
+    colors["oil to transport demand"] = "thistle"
+    colors["low-temperature heat for industry"] = "sienna"
+    colors["naphtha for non-energy"] = "sandybrown"
+    colors["shipping methanol"] = "lawngreen"
+    colors["shipping hydrogen"] = "gold"
+    colors["shipping oil"] = "turquoise"
+    colors["solid biomass for Industry"] = "paleturquoise"
+    colors["Residential and tertiary DH demand"] = "gray"
+    colors["Residential and tertiary heat demand"] = "pink"
+    colors["electricity demand for rail network"] = "blue"
+    colors["H2 for non-energy"] = "violet" 
+    
+    data_ncdr = pd.read_csv(f"../results/csvs/{country}_sectordemands_ncdr.csv", index_col=0)
+    columns_to_drop = ['2020']
+    data_ncdr = data_ncdr.drop(columns=columns_to_drop)
+    data_bau = pd.read_csv(f"../results/csvs/{country}_sectordemands_bau.csv", index_col=0)
+    
+    # Rename columns
+    data_bau.rename(columns={'2020': 'reff', '2030': 'bau-2030', '2040': 'bau-2040', '2050': 'bau-2050'}, inplace=True)
+    data_ncdr.rename(columns={'2030': 'suff-2030', '2040': 'suff-2040', '2050': 'suff-2050'}, inplace=True)
+          
+    # Melt dataframes
+    melted_bau = pd.melt(data_bau, id_vars=['Demand', 'Sectors'], var_name='year', value_name='value')
+    melted_ncdr = pd.melt(data_ncdr, id_vars=['Demand', 'Sectors'], var_name='year', value_name='value')
+       
+    # Add color information
+    melted_bau['color'] = melted_bau['Sectors'].map(colors)
+    melted_ncdr['color'] = melted_ncdr['Sectors'].map(colors)
+    
+    # Concatenate the dataframes
+    melted_data = pd.concat([melted_bau,melted_ncdr])
+
+    # Use plotly express to create a stacked bar plot
+    fig = px.bar(
+        melted_data,
+        x='year',
+        y='value',
+        color='Sectors',
+        color_discrete_map=dict(zip(melted_data['Sectors'].unique(), melted_data['color'].unique())),
+        facet_col='Demand',
+        labels={'year': '', 'value': 'Final energy and non-energy demand [TWh/a]'}
+    )
+    for col in fig.select_xaxes():
+     col.update(tickangle=-45)
+    return fig
+    
 def create_combined_scenario_chart_country(country, output_folder='../results/pypsa_results/scenario'):
     # Create output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
@@ -156,11 +217,15 @@ def create_combined_scenario_chart_country(country, output_folder='../results/py
 
     # Create bar chart
     bar_chart = scenario_costs(country)
-    combined_html += f"<div><h2>{country} - Bar Chart</h2>{bar_chart.to_html()}</div>"
+    combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
 
     # Create capacities chart
     capacities_chart = scenario_capacities(country)
-    combined_html += f"<div><h2>{country} - Capacities Chart</h2>{capacities_chart.to_html()}</div>"
+    combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    
+    # Create demands chart
+    demands_chart = scenario_demands(country)
+    combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
 
     combined_html += "</body></html>"
 
