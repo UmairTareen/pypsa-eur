@@ -14,9 +14,12 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import sys
 import os
-
-SCRIPTS_PATH = "../scripts/"
-sys.path.append(os.path.join(SCRIPTS_PATH))
+import mplleaflet
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+from plotly.offline import plot
+import plotly.io as pio
+sys.path.append("/home/umair/pypsa-eur_repository/scripts/")
 from plot_summary import rename_techs
 from plot_network import assign_location
 from plot_network import add_legend_circles, add_legend_patches, add_legend_lines
@@ -30,13 +33,13 @@ plt.style.use(["bmh", "matplotlibrc"])
 xr.set_options(display_style="html")
 
 LL = "vopt"
-
+scenario = "ncdr"
 
     
-n= pypsa.Network("../simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+# n= pypsa.Network("../simulations/myopic simulations/resultsbau/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
 # n= pypsa.Network("../simulations/Overnight simulations/resultsreff/postnetworks/elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc")
 plt.style.use(["ggplot", "matplotlibrc"])
-with open("../config/config.yaml") as file:
+with open("/home/umair/pypsa-eur_repository/config/config.yaml") as file:
     config = yaml.safe_load(file)
 
 def rename_techs_tyndp(tech):
@@ -213,7 +216,7 @@ def plot_map(
     # link_widths = link_widths.replace(line_lower_threshold, 0)
 
     fig, ax = plt.subplots(subplot_kw={"projection": ccrs.Sinusoidal()})
-    fig.set_size_inches(10, 10)
+    fig.set_size_inches(15, 15)
 
     n.plot(
         bus_sizes=costs / bus_size_factor,
@@ -232,12 +235,12 @@ def plot_map(
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.05, 0.7),
-        labelspacing=1,
+        bbox_to_anchor=(0.05, 0.75),
+        labelspacing=2,
         frameon=False,
         fontsize=20,
         handletextpad=1,
-        title="system cost",
+        title="investment costs",
     )
 
     add_legend_circles(
@@ -253,46 +256,181 @@ def plot_map(
     labels = [f"{s} GW" for s in sizes]
     scale = 1e3 / linewidth_factor
     sizes = [s * scale for s in sizes]
-
+    if planning_horizon == 2020:
+        value = "current grid"
+    else:
+        value = "total grid"
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.05, 0.4),
+        bbox_to_anchor=(0.05, 0.35),
         fontsize=20,
         frameon=False,
         labelspacing=1,
         handletextpad=1,
-        title=title,
+        title=value
     )
 
     add_legend_lines(
         ax, sizes, labels, patch_kw=dict(color="black"), legend_kw=legend_kw,
     )
 
-    # legend_kw = dict(
-    #     bbox_to_anchor=(0.6, 0.8),
-    #     frameon=False,
-    #     fontsize=20,
-    # )
-
-    # if with_legend:
-    #     colors = [tech_colors[c] for c in carriers] + [ac_color, dc_color]
-    #     labels = carriers + ["HVAC line", "HVDC link"]
-
-    #     add_legend_patches(
-    #         ax,
-    #         colors,
-    #         labels,
-    #         legend_kw=legend_kw,
-    #     )
-plot_map(
-        n,
-        components=["generators", "links", "stores", "storage_units"],
-        bus_size_factor=90e9,
-        transmission=True,
+    legend_kw = dict(
+        bbox_to_anchor=(1.3, 1),
+        frameon=False,
+        fontsize=15,
     )
-plt.title("BAU(2050)", fontsize=(25))
-plt.rcParams['legend.title_fontsize'] = '20'
-plt.tight_layout()
+
+    if with_legend:
+        colors = [tech_colors[c] for c in carriers] + [ac_color, dc_color]
+        labels = carriers + ["HVAC line", "HVDC link"]
+
+        add_legend_patches(
+            ax,
+            colors,
+            labels,
+            legend_kw=legend_kw,
+        )
+    return fig
+
+planning_horizons = [2020, 2030, 2040, 2050]
+html_content = """
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+/* Style the tabs */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the tab buttons */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+  margin-top: 15px;  /* Add margin to move the buttons down */
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+</style>
+</head>
+<body>
+"""
+
+html_content = """
+<div class="tab">
+"""
+
+for i, planning_horizon in enumerate(planning_horizons):
+    # Load network for the current planning horizon
+    network_path = f"/home/umair/pypsa-eur_repository/results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
+
+    if not os.path.exists(network_path):
+        print(f"Network file not found for {planning_horizon}")
+        continue
+
+    n = pypsa.Network(network_path)
+
+    # Plot the map and get the figure
+    fig = plot_map(
+            n,
+            components=["generators", "links", "stores", "storage_units"],
+            bus_size_factor=90e9,
+            transmission=True,
+        )
+
+    # Save the map plot as an image
+    output_image_path = f"../maps/map_plot_{planning_horizon}.png"
+    fig.savefig(output_image_path, bbox_inches="tight")
+
+    # Add tab content for each planning horizon
+    html_content += f"""
+    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, '{planning_horizon}')">{planning_horizon}</button>
+    """
+
+# Close the tab div
+html_content += """
+</div>
+"""
+
+# Add tab content divs
+for i, planning_horizon in enumerate(planning_horizons):
+    # Load network for the current planning horizon
+    network_path = f"/home/umair/pypsa-eur_repository/results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
+
+    if not os.path.exists(network_path):
+        print(f"Network file not found for {planning_horizon}")
+        continue
+
+    n = pypsa.Network(network_path)
+
+    # Plot the map and get the figure
+    fig = plot_map(
+            n,
+            components=["generators", "links", "stores", "storage_units"],
+            bus_size_factor=90e9,
+            transmission=True,
+        )
+
+    # Save the map plot as an image
+    output_image_path = f"../maps/map_plot_{planning_horizon}.png"
+    fig.savefig(output_image_path, bbox_inches="tight")
+
+    html_content += f"""
+    <div id="{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
+        <h2>Map Plot - {planning_horizon}</h2>
+        <img src="{output_image_path}" alt="Map Plot" width="1200" height="800">
+    </div>
+    """
+
+# Add JavaScript for tab functionality
+html_content += """
+<script>
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+</body>
+</html>
+"""
+
+# Save the entire HTML content to a single file
+output_combined_html_path = "../maps/map_plots.html"
+with open(output_combined_html_path, "w") as html_file:
+    html_file.write(html_content)
 #%%
 
 def group_pipes(df, drop_direction=False):
@@ -423,7 +561,7 @@ def plot_h2_map(network):
     proj = ccrs.EqualEarth()
     #regions = regions.to_crs(proj.proj4_init)
 
-    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": proj})
+    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
 
     color_h2_pipe = "#b3f3f4"
     color_retrofit = "#499a9c"
@@ -471,8 +609,8 @@ def plot_h2_map(network):
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.5, 0.95),
-        labelspacing=1,
+        bbox_to_anchor=(0.05, 0.75),
+        labelspacing=1.2,
         handletextpad=0,
         frameon=False,
         fontsize=15,
@@ -483,7 +621,7 @@ def plot_h2_map(network):
         sizes,
         labels,
         srid=n.srid,
-        patch_kw=dict(facecolor="lightgrey"),
+        patch_kw=dict(facecolor="black"),
         legend_kw=legend_kw,
     )
 
@@ -494,7 +632,7 @@ def plot_h2_map(network):
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.63, 0.95),
+        bbox_to_anchor=(0.05, 0.6),
         frameon=False,
         labelspacing=0.8,
         handletextpad=1,
@@ -505,7 +643,7 @@ def plot_h2_map(network):
         ax,
         sizes,
         labels,
-        patch_kw=dict(color="lightgrey"),
+        patch_kw=dict(color="black"),
         legend_kw=legend_kw,
     )
 
@@ -514,8 +652,8 @@ def plot_h2_map(network):
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0, 0.5),
-        ncol=2,
+        bbox_to_anchor=(1, 0.9),
+        ncol=1,
         frameon=False,
         fontsize=15,
     )
@@ -524,10 +662,91 @@ def plot_h2_map(network):
 
     ax.set_facecolor("white")
     
-plot_h2_map(n)
-plt.title("Suff-2050-NO-CDR", fontsize=(25))
-plt.rcParams['legend.title_fontsize'] = '20'
-plt.tight_layout()
+    return fig
+html_content = """
+<div class="tab">
+"""
+
+planning_horizons = [2030, 2040, 2050]
+
+for i, planning_horizon in enumerate(planning_horizons):
+    # Load network for the current planning horizon
+    network_path = f"/home/umair/pypsa-eur_repository/results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
+
+    if not os.path.exists(network_path):
+        print(f"Network file not found for {planning_horizon}")
+        continue
+
+    n = pypsa.Network(network_path)
+
+    # Plot the map and get the figure
+    fig = plot_h2_map(network=n)
+
+    # Save the map plot as an image
+    output_image_path = f"../maps/map_h2_plot_{planning_horizon}.png"
+    fig.savefig(output_image_path, bbox_inches="tight")
+
+    # Add tab content for each planning horizon
+    html_content += f"""
+    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, '{planning_horizon}')">{planning_horizon}</button>
+    """
+
+# Close the tab div
+html_content += """
+</div>
+"""
+
+# Add tab content divs
+for i, planning_horizon in enumerate(planning_horizons):
+    # Load network for the current planning horizon
+    network_path = f"/home/umair/pypsa-eur_repository/results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
+
+    if not os.path.exists(network_path):
+        print(f"Network file not found for {planning_horizon}")
+        continue
+
+    n = pypsa.Network(network_path)
+
+    # Plot the map and get the figure
+    fig = plot_h2_map(network=n)
+
+    # Save the map plot as an image
+    output_image_path = f"../maps/map_h2_plot_{planning_horizon}.png"
+    fig.savefig(output_image_path, bbox_inches="tight")
+
+    html_content += f"""
+    <div id="{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
+        <h2>Map H2 Plot - {planning_horizon}</h2>
+        <img src="{output_image_path}" alt="Map H2 Plot" width="1200" height="800">
+    </div>
+    """
+
+# Add JavaScript for tab functionality
+html_content += """
+<script>
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+</body>
+</html>
+"""
+
+# Save the entire HTML content to a single file
+output_combined_html_path = "../maps/map_h2_plots.html"
+with open(output_combined_html_path, "w") as html_file:
+    html_file.write(html_content)
+
 
 #%%
 def plot_ch4_map(network):
@@ -639,7 +858,7 @@ def plot_ch4_map(network):
         "biogas": "seagreen",
     }
 
-    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": ccrs.EqualEarth()})
+    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": ccrs.EqualEarth()})
 
     n.plot(
         bus_sizes=bus_sizes,
@@ -674,7 +893,7 @@ def plot_ch4_map(network):
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.5, 1),
+        bbox_to_anchor=(0, 0.8),
         fontsize=15,
         labelspacing=0.8,
         frameon=False,
@@ -687,7 +906,7 @@ def plot_ch4_map(network):
         sizes,
         labels,
         srid=n.srid,
-        patch_kw=dict(facecolor="lightgrey"),
+        patch_kw=dict(facecolor="black"),
         legend_kw=legend_kw,
     )
 
@@ -698,7 +917,7 @@ def plot_ch4_map(network):
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.68, 1),
+        bbox_to_anchor=(0, 0.6),
         frameon=False,
         labelspacing=0.8,
         fontsize=15,
@@ -710,7 +929,7 @@ def plot_ch4_map(network):
         ax,
         sizes,
         labels,
-        patch_kw=dict(color="lightgrey"),
+        patch_kw=dict(color="black"),
         legend_kw=legend_kw,
     )
 
@@ -725,8 +944,8 @@ def plot_ch4_map(network):
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0, 0.6),
-        ncol=2,
+        bbox_to_anchor=(1, 0.9),
+        ncol=1,
         frameon=False,
         fontsize=15,
     )
@@ -737,10 +956,91 @@ def plot_ch4_map(network):
         labels,
         legend_kw=legend_kw,
     )
-plot_ch4_map(n)
-plt.title("Suff-2050-NO-CDR", fontsize=(25))
-plt.rcParams['legend.title_fontsize'] = '20'
-plt.tight_layout()
+    return fig
+html_content = """
+<div class="tab">
+"""
+
+planning_horizons = [2020,2030, 2040, 2050]
+
+for i, planning_horizon in enumerate(planning_horizons):
+    # Load network for the current planning horizon
+    network_path = f"/home/umair/pypsa-eur_repository/results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
+
+    if not os.path.exists(network_path):
+        print(f"Network file not found for {planning_horizon}")
+        continue
+
+    n = pypsa.Network(network_path)
+
+    # Plot the map and get the figure
+    fig = plot_ch4_map(network=n)
+
+    # Save the map plot as an image
+    output_image_path = f"../maps/map_ch4_plot_{planning_horizon}.png"
+    fig.savefig(output_image_path, bbox_inches="tight")
+
+    # Add tab content for each planning horizon
+    html_content += f"""
+    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, '{planning_horizon}')">{planning_horizon}</button>
+    """
+
+# Close the tab div
+html_content += """
+</div>
+"""
+
+# Add tab content divs
+for i, planning_horizon in enumerate(planning_horizons):
+    # Load network for the current planning horizon
+    network_path = f"/home/umair/pypsa-eur_repository/results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
+
+    if not os.path.exists(network_path):
+        print(f"Network file not found for {planning_horizon}")
+        continue
+
+    n = pypsa.Network(network_path)
+
+    # Plot the map and get the figure
+    fig = plot_ch4_map(network=n)
+
+    # Save the map plot as an image
+    output_image_path = f"../maps/map_ch4_plot_{planning_horizon}.png"
+    fig.savefig(output_image_path, bbox_inches="tight")
+
+    html_content += f"""
+    <div id="{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
+        <h2>Map H2 Plot - {planning_horizon}</h2>
+        <img src="{output_image_path}" alt="Map H2 Plot" width="1200" height="800">
+    </div>
+    """
+
+# Add JavaScript for tab functionality
+html_content += """
+<script>
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+</body>
+</html>
+"""
+
+# Save the entire HTML content to a single file
+output_combined_html_path = "../maps/map_ch4_plots.html"
+with open(output_combined_html_path, "w") as html_file:
+    html_file.write(html_content)
+
 #%%
 import logging
 

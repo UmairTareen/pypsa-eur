@@ -8,117 +8,23 @@ import pypsa
 import logging
 import hvplot.pandas
 import os
+import sys
 import panel as pn
+import base64
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots 
+sys.path.append("../scripts/")
+from plot_summary import rename_techs, preferred_order
+from plot_network import assign_location
+from plot_network import add_legend_circles, add_legend_patches, add_legend_lines
+from make_summary import assign_carriers
 
-scenario = 'bau'
-
-
-def rename_techs(label):
-    prefix_to_remove = [
-        "residential ",
-        "services ",
-        "urban ",
-        "rural ",
-        "central ",
-        "decentral ",
-    ]
-
-    rename_if_contains = [
-        "CHP",
-        "gas boiler",
-        "biogas",
-        "solar thermal",
-        "air heat pump",
-        "ground heat pump",
-        "resistive heater",
-        "Fischer-Tropsch",
-    ]
-
-    rename_if_contains_dict = {
-        "water tanks": "hot water storage",
-        "retrofitting": "building retrofitting",
-        "battery": "battery storage",
-    }
-
-    rename = {
-        "solar": "solar PV",
-        "Sabatier": "methanation",
-        "offwind": "offshore wind",
-        "offwind-ac": "offshore wind (AC)",
-        "offwind-dc": "offshore wind (DC)",
-        "onwind": "onshore wind",
-        "ror": "hydroelectricity",
-        "hydro": "hydroelectricity",
-        "PHS": "hydroelectricity",
-        "NH3": "ammonia",
-        "co2 Store": "DAC",
-        "co2 stored": "CO2 sequestration",
-        "AC": "transmission lines",
-        "DC": "transmission lines",
-        "B2B": "transmission lines",
-    }
-
-    for ptr in prefix_to_remove:
-        if label[: len(ptr)] == ptr:
-            label = label[len(ptr) :]
-
-    for rif in rename_if_contains:
-        if rif in label:
-            label = rif
-
-    for old, new in rename_if_contains_dict.items():
-        if old in label:
-            label = new
-
-    for old, new in rename.items():
-        if old == label:
-            label = new
-    return label
+scenario = 'ncdr'
 
 
-preferred_order = pd.Index(
-    [
-        "transmission lines",
-        "hydroelectricity",
-        "hydro reservoir",
-        "run of river",
-        "pumped hydro storage",
-        "solid biomass",
-        "biogas",
-        "onshore wind",
-        "offshore wind",
-        "offshore wind (AC)",
-        "offshore wind (DC)",
-        "solar PV",
-        "solar thermal",
-        "solar rooftop",
-        "solar",
-        "building retrofitting",
-        "ground heat pump",
-        "air heat pump",
-        "heat pump",
-        "resistive heater",
-        "power-to-heat",
-        "gas-to-power/heat",
-        "CHP",
-        "OCGT",
-        "gas boiler",
-        "gas",
-        "natural gas",
-        "helmeth",
-        "methanation",
-        "ammonia",
-        "hydrogen storage",
-        "power-to-gas",
-        "power-to-liquid",
-        "battery storage",
-        "hot water storage",
-        "CO2 sequestration",
-    ]
-)
 def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
     if "heat pump" in tech or "resistive heater" in tech:
@@ -154,21 +60,54 @@ def rename_techs_tyndp(tech):
     else:
         return tech
    
-def assign_location(n):
-    for c in n.iterate_components(n.one_port_components | n.branch_components):
-        ifind = pd.Series(c.df.index.str.find(" ", start=4), c.df.index)
-        for i in ifind.value_counts().index:
-            # these have already been assigned defaults
-            if i == -1:
-                continue
-            names = ifind.index[ifind == i]
-            c.df.loc[names, "location"] = names.str[:i]
-            
-def assign_carriers(n):
-    if "carrier" not in n.lines:
-        n.lines["carrier"] = "AC"
-        
-        
+html_content = """
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+/* Style the tabs */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the tab buttons */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+  margin-top: 15px;  /* Add margin to move the buttons down */
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+</style>
+</head>
+<body>
+<div class="tab">
+"""
+
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix=f"../results/{scenario}/postnetworks/elec_"):
     return prefix+"s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
         simpl=simpl,
@@ -769,7 +708,897 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
      html_filepath = os.path.join(output_folder, html_filename)
      tabs.save(html_filepath)
 
+def plot_map(
+    network,
+    components=["links", "stores", "storage_units", "generators"],
+    bus_size_factor=1.7e10,
+    transmission=True,
+    with_legend=True,
+):
+    tech_colors = config["plotting"]["tech_colors"]
+    colors = tech_colors 
+    colors["fossil oil and gas"] = colors["oil"]
+    colors["hydrogen storage"] = colors["H2 Store"]
+    colors["load shedding"] = 'black'
+    colors["gas-to-power/heat"] = 'darkred'
+    LL = "vopt"
+    n = network.copy()
+    assign_location(n)
+    # Drop non-electric buses so they don't clutter the plot
+    n.buses.drop(n.buses.index[n.buses.carrier != "AC"], inplace=True)
 
+    costs = pd.DataFrame(index=n.buses.index)
+
+    for comp in components:
+        df_c = getattr(n, comp)
+
+        if df_c.empty:
+            continue
+
+        df_c["nice_group"] = df_c.carrier.map(rename_techs_tyndp)
+
+        attr = "e_nom_opt" if comp == "stores" else "p_nom_opt"
+
+        costs_c = (
+            (df_c.capital_cost * df_c[attr])
+            .groupby([df_c.location, df_c.nice_group])
+            .sum()
+            .unstack()
+            .fillna(0.0)
+        )
+        costs = pd.concat([costs, costs_c], axis=1)
+        
+
+        #logger.debug(f"{comp}, {costs}")
+
+    costs = costs.groupby(costs.columns, axis=1).sum()
+    #del costs["CCS"]
+
+    costs.drop(list(costs.columns[(costs == 0.0).all()]), axis=1, inplace=True)
+
+    new_columns = preferred_order.intersection(costs.columns).append(
+        costs.columns.difference(preferred_order)
+    )
+    costs = costs[new_columns]
+
+
+    costs = costs.stack()  # .sort_index()
+
+    # hack because impossible to drop buses...
+    eu_location = config["plotting"].get(
+        "eu_node_location", dict(x=-5.5, y=46)
+    )
+    n.buses.loc["EU gas", "x"] = eu_location["x"]
+    n.buses.loc["EU gas", "y"] = eu_location["y"]
+
+    n.links.drop(
+        n.links.index[(n.links.carrier != "DC") & (n.links.carrier != "B2B")],
+        inplace=True,
+    )
+
+    # drop non-bus
+    to_drop = costs.index.levels[0].symmetric_difference(n.buses.index)
+    if len(to_drop) != 0:
+        #logger.info(f"Dropping non-buses {to_drop.tolist()}")
+        costs.drop(to_drop, level=0, inplace=True, axis=0, errors="ignore")
+
+    # make sure they are removed from index
+    costs.index = pd.MultiIndex.from_tuples(costs.index.values)
+
+    threshold = 100e6  # 100 mEUR/a
+    carriers = costs.groupby(level=1).sum()
+    carriers = carriers.where(carriers > threshold).dropna()
+    carriers = list(carriers.index)
+
+    # PDF has minimum width, so set these to zero
+    line_lower_threshold = 500.0
+    line_upper_threshold = 1e4
+    linewidth_factor = 2e3
+    ac_color = "rosybrown"
+    dc_color = "darkseagreen"
+
+    if LL == "1.0":
+        # should be zero
+        line_widths = n.lines.s_nom_opt - n.lines.s_nom
+        link_widths = n.links.p_nom_opt - n.links.p_nom
+        linewidth_factor = 2e3
+        line_lower_threshold = 0.0
+        title = "added grid"
+        
+
+        if transmission:
+            line_widths = n.lines.s_nom_opt
+            link_widths = n.links.p_nom_opt
+            linewidth_factor = 2e3
+            line_lower_threshold = 0.0
+            title = "current grid"
+            
+    else:
+        line_widths = n.lines.s_nom_opt - n.lines.s_nom_min
+        link_widths = n.links.p_nom_opt - n.links.p_nom_min
+        linewidth_factor = 2e3
+        line_lower_threshold = 0.0
+        title = "added grid"
+
+        if transmission:
+            line_widths = n.lines.s_nom_opt
+            link_widths = n.links.p_nom_opt
+            linewidth_factor = 2e3
+            line_lower_threshold = 0.0
+            title = "total grid"
+
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.Sinusoidal()})
+    fig.set_size_inches(15, 15)
+
+    n.plot(
+        bus_sizes=costs / bus_size_factor,
+        bus_colors=tech_colors,
+        line_colors=ac_color,
+        link_colors=dc_color,
+        line_widths=line_widths / linewidth_factor,
+        link_widths=link_widths / linewidth_factor,
+        ax=ax,
+    )
+
+    #sizes = [20, 10, 5]
+    sizes = [30, 20, 10]
+    labels = [f"{s} bEUR/a" for s in sizes]
+    sizes = [s / bus_size_factor * 1e9 for s in sizes]
+
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(0.05, 0.75),
+        labelspacing=2,
+        frameon=False,
+        fontsize=20,
+        handletextpad=1,
+        title="investment costs",
+    )
+
+    add_legend_circles(
+        ax,
+        sizes,
+        labels,
+        srid=n.srid,
+        patch_kw=dict(facecolor="black"),
+        legend_kw=legend_kw,
+    )
+
+    sizes = [10, 5]
+    labels = [f"{s} GW" for s in sizes]
+    scale = 1e3 / linewidth_factor
+    sizes = [s * scale for s in sizes]
+    if planning_horizons == 2020:
+        value = "current grid"
+    else:
+        value = "total grid"
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(0.05, 0.35),
+        fontsize=15,
+        frameon=False,
+        labelspacing=1,
+        handletextpad=1,
+        title=value
+    )
+
+    add_legend_lines(
+        ax, sizes, labels, patch_kw=dict(color="black"), legend_kw=legend_kw,
+    )
+
+    legend_kw = dict(
+        bbox_to_anchor=(1.3, 1),
+        frameon=False,
+        fontsize=15,
+    )
+
+    if with_legend:
+        colors = [tech_colors[c] for c in carriers] + [ac_color, dc_color]
+        labels = carriers + ["HVAC line", "HVDC link"]
+
+        add_legend_patches(
+            ax,
+            colors,
+            labels,
+            legend_kw=legend_kw,
+        )
+    
+    return fig
+
+def group_pipes(df, drop_direction=False):
+    """
+    Group pipes which connect same buses and return overall capacity.
+    """
+    if drop_direction:
+        positive_order = df.bus0 < df.bus1
+        df_p = df[positive_order]
+        swap_buses = {"bus0": "bus1", "bus1": "bus0"}
+        df_n = df[~positive_order].rename(columns=swap_buses)
+        df = pd.concat([df_p, df_n])
+
+    # there are pipes for each investment period rename to AC buses name for plotting
+    df.index = df.apply(
+        lambda x: f"H2 pipeline {x.bus0.replace(' H2', '')} -> {x.bus1.replace(' H2', '')}",
+        axis=1,
+    )
+    # group pipe lines connecting the same buses and rename them for plotting
+    pipe_capacity = df.groupby(level=0).agg(
+        {"p_nom_opt": sum, "bus0": "first", "bus1": "first"}
+    )
+
+    return pipe_capacity
+
+
+def plot_h2_map(network):
+    n = network.copy()
+    if "H2 pipeline" not in n.links.carrier.unique():
+        return
+
+    assign_location(n)
+
+    h2_storage = n.stores.query("carrier == 'H2'")
+    # regions["H2"] = h2_storage.rename(
+    #     index=h2_storage.bus.map(n.buses.location)
+    # ).e_nom_opt.div(
+    #     1e6
+    # )  # TWh
+    # regions["H2"] = regions["H2"].where(regions["H2"] > 0.1)
+
+    bus_size_factor = 3e5
+    linewidth_factor = 7e3
+    # MW below which not drawn
+    line_lower_threshold = 750
+
+    # Drop non-electric buses so they don't clutter the plot
+    n.buses.drop(n.buses.index[n.buses.carrier != "AC"], inplace=True)
+
+    carriers = ["H2 Electrolysis", "H2 Fuel Cell"]
+
+    elec = n.links[n.links.carrier.isin(carriers)].index
+
+    bus_sizes = (
+        n.links.loc[elec, "p_nom_opt"].groupby([n.links["bus0"], n.links.carrier]).sum()
+        / bus_size_factor
+    )
+    
+    eu_location = config["plotting"].get(
+        "eu_node_location", dict(x=-5.5, y=46)
+    )
+    n.buses.loc["EU gas", "x"] = eu_location["x"]
+    n.buses.loc["EU gas", "y"] = eu_location["y"]
+
+    # make a fake MultiIndex so that area is correct for legend
+    bus_sizes.rename(index=lambda x: x.replace(" H2", ""), level=0, inplace=True)
+    # drop all links which are not H2 pipelines
+    n.links.drop(
+        n.links.index[~n.links.carrier.str.contains("H2 pipeline")], inplace=True
+    )
+
+    h2_new = n.links[n.links.carrier == "H2 pipeline"]
+    h2_retro = n.links[n.links.carrier == "H2 pipeline retrofitted"]
+
+    if config["foresight"] == "myopic":
+        # sum capacitiy for pipelines from different investment periods
+        h2_new = group_pipes(h2_new)
+
+        if not h2_retro.empty:
+            h2_retro = (
+                group_pipes(h2_retro, drop_direction=True)
+                .reindex(h2_new.index)
+                .fillna(0)
+            )
+
+    if not h2_retro.empty:
+        positive_order = h2_retro.bus0 < h2_retro.bus1
+        h2_retro_p = h2_retro[positive_order]
+        swap_buses = {"bus0": "bus1", "bus1": "bus0"}
+        h2_retro_n = h2_retro[~positive_order].rename(columns=swap_buses)
+        h2_retro = pd.concat([h2_retro_p, h2_retro_n])
+
+        h2_retro["index_orig"] = h2_retro.index
+        h2_retro.index = h2_retro.apply(
+            lambda x: f"H2 pipeline {x.bus0.replace(' H2', '')} -> {x.bus1.replace(' H2', '')}",
+            axis=1,
+        )
+
+        retro_w_new_i = h2_retro.index.intersection(h2_new.index)
+        h2_retro_w_new = h2_retro.loc[retro_w_new_i]
+
+        retro_wo_new_i = h2_retro.index.difference(h2_new.index)
+        h2_retro_wo_new = h2_retro.loc[retro_wo_new_i]
+        h2_retro_wo_new.index = h2_retro_wo_new.index_orig
+
+        to_concat = [h2_new, h2_retro_w_new, h2_retro_wo_new]
+        h2_total = pd.concat(to_concat).p_nom_opt.groupby(level=0).sum()
+
+    else:
+        h2_total = h2_new.p_nom_opt
+
+    link_widths_total = h2_total / linewidth_factor
+
+    n.links.rename(index=lambda x: x.split("-2")[0], inplace=True)
+    n.links = n.links.groupby(level=0).first()
+    link_widths_total = link_widths_total.reindex(n.links.index).fillna(0.0)
+    link_widths_total[n.links.p_nom_opt < line_lower_threshold] = 0.0
+
+    retro = n.links.p_nom_opt.where(
+        n.links.carrier == "H2 pipeline retrofitted", other=0.0
+    )
+    link_widths_retro = retro / linewidth_factor
+    link_widths_retro[n.links.p_nom_opt < line_lower_threshold] = 0.0
+
+    n.links.bus0 = n.links.bus0.str.replace(" H2", "")
+    n.links.bus1 = n.links.bus1.str.replace(" H2", "")
+
+    proj = ccrs.EqualEarth()
+    #regions = regions.to_crs(proj.proj4_init)
+
+    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
+
+    color_h2_pipe = "#b3f3f4"
+    color_retrofit = "#499a9c"
+
+    bus_colors = {"H2 Electrolysis": "#ff29d9", "H2 Fuel Cell": "#805394"}
+
+    n.plot(
+        geomap=True,
+        bus_sizes=bus_sizes,
+        bus_colors=bus_colors,
+        link_colors=color_h2_pipe,
+        link_widths=link_widths_total,
+        branch_components=["Link"],
+        ax=ax,
+    )
+
+    n.plot(
+        geomap=True,
+        bus_sizes=0,
+        link_colors=color_retrofit,
+        link_widths=link_widths_retro,
+        branch_components=["Link"],
+        ax=ax,
+        color_geomap=False,
+    )
+
+    # regions.plot(
+    #     ax=ax,
+    #     column="H2",
+    #     cmap="Blues",
+    #     linewidths=0,
+    #     legend=True,
+    #     vmax=6,
+    #     vmin=0,
+    #     legend_kwds={
+    #         "label": "Hydrogen Storage [TWh]",
+    #         "shrink": 0.7,
+    #         "extend": "max",
+    #     },
+    # )
+
+    sizes = [50, 10]
+    labels = [f"{s} GW" for s in sizes]
+    sizes = [s / bus_size_factor * 1e3 for s in sizes]
+
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(0.05, 0.75),
+        labelspacing=1.2,
+        handletextpad=0,
+        frameon=False,
+        fontsize=15,
+    )
+
+    add_legend_circles(
+        ax,
+        sizes,
+        labels,
+        srid=n.srid,
+        patch_kw=dict(facecolor="black"),
+        legend_kw=legend_kw,
+    )
+
+    sizes = [30, 10]
+    labels = [f"{s} GW" for s in sizes]
+    scale = 1e3 / linewidth_factor
+    sizes = [s * scale for s in sizes]
+
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(0.05, 0.6),
+        frameon=False,
+        labelspacing=0.8,
+        handletextpad=1,
+        fontsize=15,
+    )
+
+    add_legend_lines(
+        ax,
+        sizes,
+        labels,
+        patch_kw=dict(color="black"),
+        legend_kw=legend_kw,
+    )
+
+    colors = [bus_colors[c] for c in carriers] + [color_h2_pipe, color_retrofit]
+    labels = carriers + ["H2 pipeline (total)", "H2 pipeline (repurposed)"]
+
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(1, 0.9),
+        ncol=1,
+        frameon=False,
+        fontsize=15,
+    )
+
+    add_legend_patches(ax, colors, labels, legend_kw=legend_kw)
+
+    ax.set_facecolor("white")
+    
+    return fig
+
+def plot_ch4_map(network):
+    n = network.copy()
+
+    if "gas pipeline" not in n.links.carrier.unique():
+        return
+
+    assign_location(n)
+
+    bus_size_factor = 10e8
+    linewidth_factor = 1e4
+    # MW below which not drawn
+    line_lower_threshold = 1e3
+
+    # Drop non-electric buses so they don't clutter the plot
+    n.buses.drop(n.buses.index[n.buses.carrier != "AC"], inplace=True)
+
+    fossil_gas_i = n.generators[n.generators.carrier == "gas"].index
+    fossil_gas = (
+        n.generators_t.p.loc[:, fossil_gas_i]
+        .mul(n.snapshot_weightings.generators, axis=0)
+        .sum()
+        .groupby(n.generators.loc[fossil_gas_i, "bus"])
+        .sum()
+        / bus_size_factor
+    )
+    fossil_gas.rename(index=lambda x: x.replace(" gas", ""), inplace=True)
+    fossil_gas = fossil_gas.reindex(n.buses.index).fillna(0)
+    # make a fake MultiIndex so that area is correct for legend
+    fossil_gas.index = pd.MultiIndex.from_product([fossil_gas.index, ["fossil gas"]])
+
+    methanation_i = n.links[n.links.carrier.isin(["helmeth", "Sabatier"])].index
+    methanation = (
+        abs(
+            n.links_t.p1.loc[:, methanation_i].mul(
+                n.snapshot_weightings.generators, axis=0
+            )
+        )
+        .sum()
+        .groupby(n.links.loc[methanation_i, "bus1"])
+        .sum()
+        / bus_size_factor
+    )
+    methanation = (
+        methanation.groupby(methanation.index)
+        .sum()
+        .rename(index=lambda x: x.replace(" gas", ""))
+    )
+    # make a fake MultiIndex so that area is correct for legend
+    methanation.index = pd.MultiIndex.from_product([methanation.index, ["methanation"]])
+
+    biogas_i = n.stores[n.stores.carrier == "biogas"].index
+    biogas = (
+        n.stores_t.p.loc[:, biogas_i]
+        .mul(n.snapshot_weightings.generators, axis=0)
+        .sum()
+        .groupby(n.stores.loc[biogas_i, "bus"])
+        .sum()
+        / bus_size_factor
+    )
+    biogas = (
+        biogas.groupby(biogas.index)
+        .sum()
+        .rename(index=lambda x: x.replace(" biogas", ""))
+    )
+    # make a fake MultiIndex so that area is correct for legend
+    biogas.index = pd.MultiIndex.from_product([biogas.index, ["biogas"]])
+
+    bus_sizes = pd.concat([fossil_gas, methanation, biogas])
+    bus_sizes.sort_index(inplace=True)
+    
+    eu_location = config["plotting"].get(
+        "eu_node_location", dict(x=-5.5, y=46)
+    )
+    n.buses.loc["EU gas", "x"] = eu_location["x"]
+    n.buses.loc["EU gas", "y"] = eu_location["y"]
+
+    to_remove = n.links.index[~n.links.carrier.str.contains("gas pipeline")]
+    n.links.drop(to_remove, inplace=True)
+
+    link_widths_rem = n.links.p_nom_opt / linewidth_factor
+    link_widths_rem[n.links.p_nom_opt < line_lower_threshold] = 0.0
+
+    link_widths_orig = n.links.p_nom / linewidth_factor
+    link_widths_orig[n.links.p_nom < line_lower_threshold] = 0.0
+
+    max_usage = n.links_t.p0.abs().max(axis=0)
+    link_widths_used = max_usage / linewidth_factor
+    link_widths_used[max_usage < line_lower_threshold] = 0.0
+
+    tech_colors = config["plotting"]["tech_colors"]
+
+    pipe_colors = {
+        "gas pipeline": "#f08080",
+        "gas pipeline new": "#c46868",
+        "gas pipeline (in 2020)": "lightgrey",
+        "gas pipeline (available)": "#e8d1d1",
+    }
+
+    link_color_used = n.links.carrier.map(pipe_colors)
+
+    n.links.bus0 = n.links.bus0.str.replace(" gas", "")
+    n.links.bus1 = n.links.bus1.str.replace(" gas", "")
+
+    bus_colors = {
+        "fossil gas": tech_colors["fossil gas"],
+        "methanation": tech_colors["methanation"],
+        "biogas": "seagreen",
+    }
+
+    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": ccrs.EqualEarth()})
+
+    n.plot(
+        bus_sizes=bus_sizes,
+        bus_colors=bus_colors,
+        link_colors=pipe_colors["gas pipeline (in 2020)"],
+        link_widths=link_widths_orig,
+        branch_components=["Link"],
+        ax=ax,
+    )
+
+    n.plot(
+        ax=ax,
+        bus_sizes=0.0,
+        link_colors=pipe_colors["gas pipeline (available)"],
+        link_widths=link_widths_rem,
+        branch_components=["Link"],
+        color_geomap=False,
+    )
+
+    n.plot(
+        ax=ax,
+        bus_sizes=0.0,
+        link_colors=link_color_used,
+        link_widths=link_widths_used,
+        branch_components=["Link"],
+        color_geomap=False,
+    )
+
+    sizes = [100, 10]
+    labels = [f"{s} TWh" for s in sizes]
+    sizes = [s / bus_size_factor * 1e6 for s in sizes]
+
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(0, 0.8),
+        fontsize=15,
+        labelspacing=0.8,
+        frameon=False,
+        handletextpad=1,
+        title="gas sources",
+    )
+
+    add_legend_circles(
+        ax,
+        sizes,
+        labels,
+        srid=n.srid,
+        patch_kw=dict(facecolor="black"),
+        legend_kw=legend_kw,
+    )
+
+    sizes = [50, 10]
+    labels = [f"{s} GW" for s in sizes]
+    scale = 1e3 / linewidth_factor
+    sizes = [s * scale for s in sizes]
+
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(0, 0.6),
+        frameon=False,
+        labelspacing=0.8,
+        fontsize=15,
+        handletextpad=1,
+        title="gas pipeline",
+    )
+
+    add_legend_lines(
+        ax,
+        sizes,
+        labels,
+        patch_kw=dict(color="black"),
+        legend_kw=legend_kw,
+    )
+
+    colors = list(pipe_colors.values()) + list(bus_colors.values())
+    labels = list(pipe_colors.keys()) + list(bus_colors.keys())
+
+    # legend on the side
+    # legend_kw = dict(
+    #     bbox_to_anchor=(1.47, 1.04),
+    #     frameon=False,
+    # )
+
+    legend_kw = dict(
+        loc="upper left",
+        bbox_to_anchor=(1, 0.9),
+        ncol=1,
+        frameon=False,
+        fontsize=15,
+    )
+
+    add_legend_patches(
+        ax,
+        colors,
+        labels,
+        legend_kw=legend_kw,
+    )
+    return fig
+
+def create_map_plots(planning_horizons):
+    
+    html_content = """
+    <div class="tab">
+    """
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        n = pypsa.Network(filename)
+
+        # Plot the map and get the figure
+        fig = plot_map(
+            n,
+            components=["generators", "links", "stores", "storage_units"],
+            bus_size_factor=90e9,
+            transmission=True,
+        )
+        plt.rcParams['legend.title_fontsize'] = '20'
+        # Save the map plot as an image
+        output_image_path = f"../results/pypsa_results/{scenario}/map_plot_{planning_horizon}.png"
+        fig.savefig(output_image_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+        with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+        html_content += f"""
+    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, 'map_{planning_horizon}')">{planning_horizon}</button>
+    """
+
+    html_content += """
+    </div>
+    """
+
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        n = pypsa.Network(filename)
+        fig = plot_map(
+            n,
+            components=["generators", "links", "stores", "storage_units"],
+            bus_size_factor=90e9,
+            transmission=True,
+        )
+        plt.rcParams['legend.title_fontsize'] = '20'
+        # Save the map plot as an image
+        output_image_path = f"../results/pypsa_results/{scenario}/map_plot_{planning_horizon}.png"
+        fig.savefig(output_image_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+        with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+        html_content += f"""
+    <div id="map_{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
+        <h2>Map Plot - {planning_horizon}</h2>
+        <img src="data:image/png;base64,{encoded_image}" alt="Map Plot" width="1200" height="800">
+    </div>
+    """
+
+
+    # Add JavaScript for tab functionality
+    html_content += """
+<script>
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+</body>
+</html>
+"""
+
+    # Save the entire HTML content to a single file
+    output_combined_html_path = f"../results/pypsa_results/{scenario}/map_plots.html"
+    with open(output_combined_html_path, "w") as html_file:
+        html_file.write(html_content)
+
+def create_H2_map_plots(planning_horizons):
+    html_content = """
+    <div class="tab">
+    """
+    planning_horizons = [2030, 2040, 2050]
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        n = pypsa.Network(filename)
+
+        # Plot the H2 map and get the figure
+        fig = plot_h2_map(network=n)
+        plt.rcParams['legend.title_fontsize'] = '20'
+
+        # Save the H2 map plot as an image
+        output_image_path = f"../results/pypsa_results/{scenario}/map_h2_plot_{planning_horizon}.png"
+        fig.savefig(output_image_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+        with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+        html_content += f"""
+    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, 'h2_{planning_horizon}')">{planning_horizon}</button>
+    """
+
+    html_content += """
+    </div>
+    """
+
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        n = pypsa.Network(filename)
+        fig = plot_h2_map(network=n)
+        plt.rcParams['legend.title_fontsize'] = '20'
+
+        # Save the H2 map plot as an image
+        output_image_path = f"../results/pypsa_results/{scenario}/map_h2_plot_{planning_horizon}.png"
+        fig.savefig(output_image_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+        with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+        html_content += f"""
+    <div id="h2_{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
+        <h2>H2 Map Plot - {planning_horizon}</h2>
+        <img src="data:image/png;base64,{encoded_image}" alt="H2 Map Plot" width="1200" height="800">
+    </div>
+    """
+
+    # Add JavaScript for tab functionality
+    html_content += """
+<script>
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+</body>
+</html>
+"""
+
+    # Save the entire HTML content to a single file
+    output_combined_html_path = f"../results/pypsa_results/{scenario}/map_h2_plots.html"
+    with open(output_combined_html_path, "w") as html_file:
+        html_file.write(html_content)
+
+def create_gas_map_plots(planning_horizons):
+    html_content = """
+    <div class="tab">
+    """
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        n = pypsa.Network(filename)
+
+        # Plot the H2 map and get the figure
+        fig = plot_ch4_map(network=n)
+        plt.rcParams['legend.title_fontsize'] = '20'
+
+        # Save the H2 map plot as an image
+        output_image_path = f"../results/pypsa_results/{scenario}/map_ch4_plot_{planning_horizon}.png"
+        fig.savefig(output_image_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+        with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+        html_content += f"""
+    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, 'ch4_{planning_horizon}')">{planning_horizon}</button>
+    """
+
+    html_content += """
+    </div>
+    """
+
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        n = pypsa.Network(filename)
+        fig = plot_ch4_map(network=n)
+        plt.rcParams['legend.title_fontsize'] = '20'
+
+        # Save the H2 map plot as an image
+        output_image_path = f"../results/pypsa_results/{scenario}/map_ch4_plot_{planning_horizon}.png"
+        fig.savefig(output_image_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+        with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+        html_content += f"""
+    <div id="ch4_{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
+        <h2>Gas Map Plot - {planning_horizon}</h2>
+        <img src="data:image/png;base64,{encoded_image}" alt="H2 Map Plot" width="1200" height="800">
+    </div>
+    """
+
+    # Add JavaScript for tab functionality
+    html_content += """
+<script>
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+</body>
+</html>
+"""
+
+    # Save the entire HTML content to a single file
+    output_combined_html_path = f"../results/pypsa_results/{scenario}/map_ch4_plots.html"
+    with open(output_combined_html_path, "w") as html_file:
+        html_file.write(html_content) 
+        
 def create_bar_chart(costs, country, output_folder = f'../results/pypsa_results/{scenario}', unit='Billion Euros/year'):
     # Create output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
@@ -874,6 +1703,9 @@ def create_combined_chart_country(costs, capacities, country, output_folder = f'
     plot_series_file_path_sum = os.path.join(output_folder, f"Power Dispatch (Summer Week) - {country}.html")
     plot_series_heat_file_path = os.path.join(output_folder, f"Heat Dispatch (Winter Week) - {country}.html")
     plot_series_heat_file_path_sum = os.path.join(output_folder, f"Heat Dispatch (Summer Week) - {country}.html")
+    plot_map_path = os.path.join(output_folder, "map_plots.html")
+    plot_map_h2_path = os.path.join(output_folder, "map_h2_plots.html")
+    plot_map_ch4_path = os.path.join(output_folder, "map_ch4_plots.html")
 
     # Include the saved HTML in the combined HTML
     with open(plot_series_heat_file_path, "r") as plot_series_heat_file:
@@ -889,6 +1721,15 @@ def create_combined_chart_country(costs, capacities, country, output_folder = f'
     with open(plot_series_file_path_sum, "r") as plot_series_file_sum:
         plot_series_html = plot_series_file_sum.read()
         combined_html += f"<div><h2>{country} - Power Dispatch</h2>{plot_series_html}</div>"
+    with open(plot_map_path, "r") as plot_map_path:
+        plot_map_html = plot_map_path.read()
+        combined_html += f"<div><h2> Map Plots</h2>{plot_map_html}</div>"
+    with open(plot_map_h2_path, "r") as plot_map_h2_path:
+        plot_map_h2_html = plot_map_h2_path.read()
+        combined_html += f"<div><h2>H2 Map Plots</h2>{plot_map_h2_html}</div>"
+    with open(plot_map_ch4_path, "r") as plot_map_ch4_path:
+        plot_map_ch4_html = plot_map_ch4_path.read()
+        combined_html += f"<div><h2>Gas Map Plots</h2>{plot_map_ch4_html}</div>"
         
     combined_html += "</body></html>"
     # Save the combined HTML file
@@ -925,26 +1766,20 @@ if __name__ == "__main__":
     plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Heat Dispatch (Winter Week)")
     plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Heat Dispatch (Summer Week)")
     plot_demands(countries)
+    create_map_plots(planning_horizons)
+    create_H2_map_plots(planning_horizons)
+    create_gas_map_plots(planning_horizons)
     
     for country in countries:
         create_combined_chart_country(costs, capacities, country)
     
 
-    
-for country in costs.keys():
-    combined_file_path = os.path.join(f'../results/pypsa_results/{scenario}', f"Heat Dispatch (Winter Week) - {country}.html")
-    combined_file_path_sum = os.path.join(f'../results/pypsa_results/{scenario}', f"Heat Dispatch (Summer Week) - {country}.html")
-    plot_series_file_path = os.path.join(f'../results/pypsa_results/{scenario}', f"Power Dispatch (Winter Week) - {country}.html")
-    plot_series_file_path_sum = os.path.join(f'../results/pypsa_results/{scenario}', f"Power Dispatch (Summer Week) - {country}.html")
-    plot_demands_file_path = os.path.join(f'../results/pypsa_results/{scenario}', f"{country}_sectoral_demands.html")
-    
-    if os.path.exists(combined_file_path):
-        os.remove(combined_file_path)
-    if os.path.exists(combined_file_path_sum):
-        os.remove(combined_file_path_sum)
-    if os.path.exists(plot_series_file_path):
-        os.remove(plot_series_file_path)
-    if os.path.exists(plot_series_file_path_sum):
-        os.remove(plot_series_file_path_sum)
-    if os.path.exists(plot_demands_file_path):
-        os.remove(plot_demands_file_path)
+
+files_to_keep = ["BE_combined_chart.html","DE_combined_chart.html","FR_combined_chart.html","GB_combined_chart.html","NL_combined_chart.html"]
+# Directory path
+directory_path = f'../results/pypsa_results/{scenario}'
+# Remove files not in the list
+for file_name in os.listdir(directory_path):
+    file_path = os.path.join(directory_path, file_name)
+    if file_name not in files_to_keep and os.path.isfile(file_path):
+        os.remove(file_path)    

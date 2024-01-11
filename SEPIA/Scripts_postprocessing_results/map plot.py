@@ -14,8 +14,7 @@ import cartopy.crs as ccrs
 import sys
 import os
 
-SCRIPTS_PATH = "../scripts/"
-sys.path.append(os.path.join(SCRIPTS_PATH))
+sys.path.append("/home/umair/pypsa-eur_repository/scripts/")
 from plot_summary import rename_techs
 from plot_network import assign_location
 from plot_network import add_legend_circles, add_legend_patches, add_legend_lines
@@ -29,13 +28,13 @@ plt.style.use(["bmh", "matplotlibrc"])
 xr.set_options(display_style="html")
 
 LL = "vopt"
-
+scenario = "ncdr"
 
     
-n= pypsa.Network("../simulations/myopic simulations/resultsnocdr/postnetworks/elec_s_6_lvopt__1H-T-H-B-I-A-dist1_2050.nc")
+n= pypsa.Network(f"/home/umair/pypsa-eur_repository/results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_2050.nc")
 # n= pypsa.Network("../simulations/Overnight simulations/resultsreff/postnetworks/elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc")
 plt.style.use(["ggplot", "matplotlibrc"])
-with open("../config/config.yaml") as file:
+with open("/home/umair/pypsa-eur_repository/config/config.yaml") as file:
     config = yaml.safe_load(file)
 
 def rename_techs_tyndp(tech):
