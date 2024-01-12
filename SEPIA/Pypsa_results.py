@@ -16,7 +16,9 @@ import cartopy.crs as ccrs
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots 
-sys.path.append("../scripts/")
+current_script_dir = os.path.dirname(os.path.abspath(__file__))
+scripts_path = os.path.join(current_script_dir, "../scripts/")
+sys.path.append(scripts_path)
 from plot_summary import rename_techs, preferred_order
 from plot_network import assign_location
 from plot_network import add_legend_circles, add_legend_patches, add_legend_lines
