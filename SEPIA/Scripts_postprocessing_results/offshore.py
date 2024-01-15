@@ -3,7 +3,6 @@
 """
 Created on Tue Nov 21 14:44:19 2023
 
-@author: umair
 """
 
 import pandas as pd
@@ -11,11 +10,13 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import geopandas as gpd
 
-PATH = "/home/umair/pypsa-eur_repository/"
-file_path_ac = PATH + f"resources/profile_offwind-ac.nc"
-file_dc = PATH + f"resources/profile_offwind-dc.nc"
+scenario = 'bau'
 
-regions = gpd.read_file(PATH + "resources/regions_offshore.geojson")
+
+file_path_ac =  f"../../resources/{scenario}/profile_offwind-ac.nc"
+file_dc = f"../../resources/{scenario}/profile_offwind-dc.nc"
+
+regions = gpd.read_file(f"../../resources/{scenario}/regions_offshore.geojson")
 
 # Filter the regions GeoDataFrame to include only Belgium (BE)
 belgium_regions = regions[(regions['country'] == 'BE')]

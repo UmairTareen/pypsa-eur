@@ -7,7 +7,7 @@ import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 import logging
 
-scenario = "bau"
+scenario = "ncdr"
 
 
 def prepare_files(simpl, cluster, opt, sector_opt, ll):

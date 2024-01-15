@@ -3,26 +3,26 @@
 """
 Created on Wed Sep 27 16:25:57 2023
 
-@author: umair
 """
 
-import pypsa
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 import yaml
-with open("../config/config.yaml") as file:
+import os
+with open("../../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
-capn = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/Overnight simulations/resultsreff/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
-capm = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsbau/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
-capp = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultssuff/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
-capr = pd.read_csv("/home/umair/pypsa-eur_repository/simulations/myopic simulations/resultsnocdr/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
+scenario = 'ncdr'
+
+
+capn = pd.read_csv("../../results/reff/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
+capm = pd.read_csv("../../results/bau/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
+capr = pd.read_csv("../../results/ncdr/csvs/capacities.csv", header=[0, 1, 2, 3], index_col=[0, 1])
 
 
 nn = capn.groupby(level=1).sum().div(1e3)
 mm = capm.groupby(level=1).sum().div(1e3)
-pp = capp.groupby(level=1).sum().div(1e3)
 rr = capr.groupby(level=1).sum().div(1e3)
 
 def rename_techs(label):
@@ -134,7 +134,6 @@ colors["methanation"] = 'gray'
 
 nn = nn.groupby(nn.index.map(rename_techs_tyndp)).sum().T
 mm = mm.groupby(mm.index.map(rename_techs_tyndp)).sum().T
-pp = pp.groupby(pp.index.map(rename_techs_tyndp)).sum().T
 rr = rr.groupby(rr.index.map(rename_techs_tyndp)).sum().T
 
 #%%
@@ -149,12 +148,6 @@ mm.columns=mm.columns.droplevel(1)
 mm.columns=mm.columns.droplevel(0)
 
 
-pp=pp.T
-pp.columns=pp.columns.droplevel(1)
-pp.columns=pp.columns.droplevel(1)
-pp.columns=pp.columns.droplevel(0)
-
-
 rr=rr.T
 rr.columns=rr.columns.droplevel(1)
 rr.columns=rr.columns.droplevel(1)
@@ -166,12 +159,6 @@ mf2 = mm["2040"]
 mf2 = pd.DataFrame(mf2)
 mf3 = mm["2050"]
 mf3 = pd.DataFrame(mf3)
-pf1 = pp["2030"]
-pf1 = pd.DataFrame(pf1)
-pf2 = pp["2040"]
-pf2 = pd.DataFrame(pf2)
-pf3 = pp["2050"]
-pf3 = pd.DataFrame(pf3)
 rf1 = rr["2030"]
 rf1 = pd.DataFrame(rf1)
 rf2 = rr["2040"]
@@ -200,9 +187,8 @@ groupps = [
 ]
 
 
-x= [-0.9,-0.73,-0.55,-0.37,-0.18,0,0.18, 0.36,0.54, 0.72]
-x_labels =["Reff", "BAU-2030","BAU-2040","BAU-2050", "SUff-2030", "SUff-2040", "SUff-2050",
-                  "NO_CDR-2030", "NO_CDR-2040", "NO_CDR-2050"]
+x= [-0.9,-0.73,-0.55,-0.37,-0.18,0,0.18]
+x_labels =["Reff", "BAU-2030","BAU-2040","BAU-2050", "SUff-2030", "SUff-2040", "SUff-2050"]
 ylims = [
     [0, 1700],
     [0, 1500],
@@ -210,10 +196,10 @@ ylims = [
     [0, 1000],
 ]
 xlims = [
-    [-1, 1],
-    [-1, 1],
-    [-1, 1],
-    [-1, 1],
+    [-1, 0.5],
+    [-1, 0.5],
+    [-1, 0.5],
+    [-1, 0.5],
 ]
 
 for ax, group,groupp, ylim, xlim in zip(axs, groups, groupps, ylims,xlims):
@@ -221,15 +207,10 @@ for ax, group,groupp, ylim, xlim in zip(axs, groups, groupps, ylims,xlims):
     mf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=6.5,width=0.12, legend=False)
     mf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=5,width=0.12, legend=True)
     mf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=3.5,width=0.12, legend=False)
-    pf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=2,width=0.12, legend=False)
-    pf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0.5,width=0.12, legend=False)
-    pf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-1,width=0.12, legend=False)
-    rf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-2.5,width=0.12, legend=False)
-    rf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-4,width=0.12, legend=False)
-    rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-5.5,width=0.12, legend=False)
+    rf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=2,width=0.12, legend=False)
+    rf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0.5,width=0.12, legend=False)
+    rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-1,width=0.12, legend=False)
     
-    #ax.set_xlabel('grid expansion')
-    #ax.legend(bbox_to_anchor=(1.02, 1.45))
     ax.set_ylabel("Capacities [GW]", fontsize=20)
     ax.set_xlabel("")
     ax.set_ylim(ylim)
@@ -237,9 +218,17 @@ for ax, group,groupp, ylim, xlim in zip(axs, groups, groupps, ylims,xlims):
     ax.set_xticks(x, x_labels, rotation='vertical')
     
 # fig.supxlabel('Total Costs', fontsize=20)
-plt.rc('xtick',labelsize=15)
+plt.rc('xtick',labelsize=20)
 plt.rc('ytick',labelsize=20)
 plt.tight_layout()
+save_folder = f"../../results/{scenario}/plots"  # Specify the desired folder path for each country
+if not os.path.exists(save_folder):
+  os.makedirs(save_folder)
+
+fn = "capacities_plot.png"
+fn_path = os.path.join(save_folder, fn)
+plt.savefig(fn_path, dpi=300, bbox_inches="tight")
+plt.close()
 
 #%%
 params = {'legend.fontsize': 'x-large',
@@ -260,9 +249,8 @@ groupps = [
     ["CCGT"],
 ]
 
-x= [-0.9,-0.73,-0.55,-0.37,-0.18,0,0.18, 0.36,0.54, 0.72]
-x_labels =["Reff", "BAU-2030","BAU-2040","BAU-2050", "SUff-2030", "SUff-2040", "SUff-2050",
-                  "NO_CDR-2030", "NO_CDR-2040", "NO_CDR-2050"]
+x= [-0.9,-0.73,-0.55,-0.37,-0.18,0,0.18]
+x_labels =["Reff", "BAU-2030","BAU-2040","BAU-2050", "SUff-2030", "SUff-2040", "SUff-2050"]
 ylims = [
     [0, 300],
     [0, 700],
@@ -270,10 +258,10 @@ ylims = [
     [0, 200],
 ]
 xlims = [
-    [-1, 1],
-    [-1, 1],
-    [-1, 1],
-    [-1, 1],
+    [-1, 0.5],
+    [-1, 0.5],
+    [-1, 0.5],
+    [-1, 0.5],
 ]
 
 for ax, group, groupp, ylim, xlim in zip(axs, groups,groupps, ylims,xlims):
@@ -281,12 +269,9 @@ for ax, group, groupp, ylim, xlim in zip(axs, groups,groupps, ylims,xlims):
     mf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=6.5,width=0.12, legend=False)
     mf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=5,width=0.12, legend=True)
     mf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=3.5,width=0.12, legend=False)
-    pf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=2,width=0.12, legend=False)
-    pf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0.5,width=0.12, legend=False)
-    pf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-1,width=0.12, legend=False)
-    rf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-2.5,width=0.12, legend=False)
-    rf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-4,width=0.12, legend=False)
-    rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-5.5,width=0.12, legend=False)
+    rf1.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=2,width=0.12, legend=False)
+    rf2.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0.5,width=0.12, legend=False)
+    rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-1,width=0.12, legend=False)
     
     #ax.set_xlabel('grid expansion')
     #ax.legend(bbox_to_anchor=(1.02, 1.45))
@@ -297,9 +282,13 @@ for ax, group, groupp, ylim, xlim in zip(axs, groups,groupps, ylims,xlims):
     ax.set_xticks(x, x_labels, rotation='vertical')
     
 # fig.supxlabel('Total Costs', fontsize=20)
-plt.rc('xtick',labelsize=15)
+plt.rc('xtick',labelsize=20)
 plt.rc('ytick',labelsize=20)
 plt.tight_layout()
+fn = "capacities_plot_2.png"
+fn_path = os.path.join(save_folder, fn)
+plt.savefig(fn_path, dpi=300, bbox_inches="tight")
+plt.close()
 
 #%%
 params = {'legend.fontsize': 'x-large',
@@ -323,8 +312,8 @@ groupps = [
 ]
 
 
-x= [-0.73,-0.3,0.13,0.59]
-x_labels =["Reff", "BAU","SUff", "NO_CDR"]
+x= [-0.73,-0.3,0.13]
+x_labels =["Reff", "BAU","SUff"]
 ylims = [
     [0, 2000],
     [0, 1500],
@@ -333,18 +322,17 @@ ylims = [
     [0, 250],
 ]
 xlims = [
-    [-1, 1],
-    [-1, 1],
-    [-1, 1],
-    [-1, 1],
-    [-1, 1],
+    [-1, 0.5],
+    [-1, 0.5],
+    [-1, 0.5],
+    [-1, 0.5],
+    [-1, 0.5],
 ]
 
 for ax, group,groupp, ylim, xlim in zip(axs, groups, groupps, ylims,xlims):
     nn.loc[groupp].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=3,width=0.3,legend=False)
     mf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=1.5,width=0.3, legend=True)
-    pf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0,width=0.3, legend=False)
-    rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=-1.5,width=0.3, legend=False)
+    rf3.loc[group].T.plot.bar(ax=ax, stacked=True, color=tech_colors,position=0,width=0.3, legend=False)
     
     #ax.set_xlabel('grid expansion')
     #ax.legend(bbox_to_anchor=(1.02, 1.45))
@@ -358,3 +346,7 @@ for ax, group,groupp, ylim, xlim in zip(axs, groups, groupps, ylims,xlims):
 plt.rc('xtick',labelsize=15)
 plt.rc('ytick',labelsize=20)
 plt.tight_layout()
+fn = "capacities_plot_scenario.png"
+fn_path = os.path.join(save_folder, fn)
+plt.savefig(fn_path, dpi=300, bbox_inches="tight")
+plt.close()
