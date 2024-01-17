@@ -158,6 +158,14 @@ imposed_values: #MW offshore total is 5.7 GW, assuming alrge portion would be ac
   offshore_dc: 2000
   solar: 12000
   solar-rooftop: 2000
+  
+TYNDP_values:
+  be_fr: 4300
+  be_nl: 3400
+  de_fr: 3300
+  de_nl: 5000
+  be_de: 0
+  max_expansion: 1.5
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
   onwind:

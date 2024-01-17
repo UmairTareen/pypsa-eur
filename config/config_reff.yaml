@@ -158,6 +158,17 @@ atlite:
       sarah_dir:
       features: [influx, temperature]
 
+TYNDP_values:
+  be_fr: 4300
+  be_nl: 3400
+  de_fr: 3300
+  de_nl: 5000
+  be_de: 0
+  T12: 0
+  T19: 0
+  T21: 0
+  T22: 0
+  
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
   onwind:
@@ -246,7 +257,7 @@ lines:
   s_nom_max: .inf
   max_extension: .inf
   length_factor: 1.25
-  under_construction: 'zero' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
   dynamic_line_rating:
     activate: true
     cutout: europe-2013-era5
@@ -260,7 +271,7 @@ links:
   p_nom_max: .inf
   max_extension: .inf
   include_tyndp: true
-  under_construction: 'zero' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#transformers
 transformers:

@@ -271,6 +271,68 @@ def imposed_values_genertion(n, foresight, config):
       n.links.loc[f"{country}{suffix} nuclear-1980", "p_nom"] = nuclear_max
        
     return n       
+
+def imposed_TYNDP(n, foresight, config):
+   ''' This funtion impse values for TYNDP for transmissions lines'''
+   
+   if foresight == "overnight":
+      n.lines_t['s_max_pu']['0'] = 0
+      if n.lines.loc['0', "bus0"] == "BE1 0" and n.lines.loc['0', "bus1"] == "DE1 0":
+         n.lines.loc['0', "s_nom"] = config["TYNDP_values"]["be_de"]
+         n.lines.loc['0', "s_nom_min"] = config["TYNDP_values"]["be_de"]
+         
+      if n.lines.loc['1', "bus0"] == "BE1 0" and n.lines.loc['1', "bus1"] == "FR1 0":
+         n.lines.loc['1', "s_nom"] = config["TYNDP_values"]["be_fr"]
+         n.lines.loc['1', "s_nom_min"] = config["TYNDP_values"]["be_fr"]
+    
+      if n.lines.loc['2', "bus0"] == "BE1 0" and n.lines.loc['2', "bus1"] == "NL1 0":
+         n.lines.loc['2', "s_nom"] = config["TYNDP_values"]["be_nl"]
+         n.lines.loc['2', "s_nom_min"] = config["TYNDP_values"]["be_nl"]
+    
+      if n.lines.loc['3', "bus0"] == "DE1 0" and n.lines.loc['3', "bus1"] == "FR1 0":
+         n.lines.loc['3', "s_nom"] = config["TYNDP_values"]["de_fr"]
+         n.lines.loc['3', "s_nom_min"] = config["TYNDP_values"]["de_fr"]
+    
+      if n.lines.loc['4', "bus0"] == "DE1 0" and n.lines.loc['4', "bus1"] == "NL1 0":
+         n.lines.loc['4', "s_nom"] = config["TYNDP_values"]["de_nl"]
+         n.lines.loc['4', "s_nom_min"] = config["TYNDP_values"]["de_nl"]
+
+  
+      n.links.loc["T12", "p_nom"] = config["TYNDP_values"]["T12"]
+      n.links.loc["T19", "p_nom"] = config["TYNDP_values"]["T19"] 
+      n.links.loc["T21", "p_nom"] =config["TYNDP_values"]["T21"] 
+      n.links.loc["T22", "p_nom"] = config["TYNDP_values"]["T22"] 
+   else:        
+      country = config["imposed_values"]["country"]
+      suffix = "1 0"
+      n.lines_t['s_max_pu']['0'] = 0
+      if n.lines.loc['0', "bus0"] == "BE1 0" and n.lines.loc['0', "bus1"] == "DE1 0":
+         n.lines.loc['0', "s_nom"] = config["TYNDP_values"]["be_de"]
+         n.lines.loc['0', "s_nom_min"] = config["TYNDP_values"]["be_de"]
+      if f"{country}{suffix} nuclear-1980" in n.links.index:
+      
+       if n.lines.loc['1', "bus0"] == "BE1 0" and n.lines.loc['1', "bus1"] == "FR1 0":
+          n.lines.loc['1', "s_nom"] = config["TYNDP_values"]["be_fr"]
+          n.lines.loc['1', "s_nom_min"] = config["TYNDP_values"]["be_fr"]
+     
+       if n.lines.loc['2', "bus0"] == "BE1 0" and n.lines.loc['2', "bus1"] == "NL1 0":
+          n.lines.loc['2', "s_nom"] = config["TYNDP_values"]["be_nl"]
+          n.lines.loc['2', "s_nom_min"] = config["TYNDP_values"]["be_nl"]
+     
+       if n.lines.loc['3', "bus0"] == "DE1 0" and n.lines.loc['3', "bus1"] == "FR1 0":
+          n.lines.loc['3', "s_nom"] = config["TYNDP_values"]["de_fr"]
+          n.lines.loc['3', "s_nom_min"] = config["TYNDP_values"]["de_fr"]
+     
+       if n.lines.loc['4', "bus0"] == "DE1 0" and n.lines.loc['4', "bus1"] == "NL1 0":
+          n.lines.loc['4', "s_nom"] = config["TYNDP_values"]["de_nl"]
+          n.lines.loc['4', "s_nom_min"] = config["TYNDP_values"]["de_nl"]
+          
+      n.lines["s_nom_max"] = n.lines["s_nom"] * config["TYNDP_values"]["max_expansion"]
+      indices_to_update = ["14801", "14814", "14826", "5581", "5580", "T2", "T6", "T12", "T19", "T21", "T22"]
+      for index in indices_to_update:
+          n.links.at[index, "p_nom_max"] = n.links.at[index, "p_nom"] * config["TYNDP_values"]["max_expansion"]
+         
+   return n
     
 def add_CCL_constraints(n, config):
     """
@@ -1159,6 +1221,10 @@ if __name__ == "__main__":
         co2_sequestration_potential=snakemake.params["co2_sequestration_potential"],
     )
     n = imposed_values_genertion(
+        n,
+        config=snakemake.config,
+        foresight=snakemake.params.foresight,)
+    n = imposed_TYNDP(
         n,
         config=snakemake.config,
         foresight=snakemake.params.foresight,)
