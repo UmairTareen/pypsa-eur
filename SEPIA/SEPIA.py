@@ -229,13 +229,13 @@ def prepare_sepia(countries):
         value_naph = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
         value_ker = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
         value_tra = flows[('pet_fe', 'tra', '')].squeeze().rename_axis(None) * co2_intensity_oil
-        value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) * co2_intensity_oil
+        # value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) * co2_intensity_oil
         value_tot =  value_naph * co2_intensity_oil
         # value_avi =  value_ker * co2_intensity_oil
         flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
         flows_co2[(en_code + '_ghg', 'atm', 'oil')] = value_tot
         flows_co2[(en_code + '_ghg', 'atm', 'tra')] = value_tra
-        flows_co2[(en_code + '_ghg', 'atm', 'agr')] = value_agr
+        # flows_co2[(en_code + '_ghg', 'atm', 'agr')] = value_agr
         # flows_co2[(en_code + '_ghg', 'atm', 'avi')] = value_avi
     
     # tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
@@ -260,7 +260,7 @@ def prepare_sepia(countries):
         
     for en_code in ['pet']:
         flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
-        flows_ghg[('agr_ghg',  en_code + '_pe', '')] = value_agr
+        # flows_ghg[('agr_ghg',  en_code + '_pe', '')] = value_agr
         flows_ghg[('tra_ghg',  en_code + '_pe', '')] = value_tra
        
     for en_code in ['wati']:
@@ -495,14 +495,12 @@ def prepare_sepia(countries):
     ghg_sector = ghg_sector.groupby(level='Source', axis=1).sum()
     ghg_sector['lufnes_ghg'] = -ghg_sector['lufnes_ghg']
     ghg_sector['blg_ghg'] = -ghg_sector['blg_ghg']
-    ghg_sector['seq'] = -ghg_sector['seq']
     ghg_sector['dac_ghg'] = -ghg_sector['dac_ghg']
     ghg_sector['bec_ghg'] = -ghg_sector['bec_ghg']
     ghg_sector['blq_ghg'] = -ghg_sector['blq_ghg']
     ghg_source = tot_ghg[country].groupby(level='Target', axis=1).sum()
     ghg_source['lufnes_ghg'] = -ghg_source['lufnes_ghg']
     ghg_source['blg_ghg'] = -ghg_source['blg_ghg']
-    ghg_source['seq'] = -ghg_source['seq']
     ghg_source['dac_ghg'] = -ghg_source['dac_ghg']
     ghg_source['bec_ghg'] = -ghg_source['bec_ghg']
     ghg_source['blq_ghg'] = -ghg_source['blq_ghg']

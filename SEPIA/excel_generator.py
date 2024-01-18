@@ -24,7 +24,7 @@ def prepare_files(simpl, cluster, opt, sector_opt, ll):
     # CSV files
     csv_source_directory = '../resources/reff/'
     csv_destination_directory = f'../resources/{scenario}/'
-    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
+    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv",f"co2_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
 
     for csv_file in csv_files:
         source_csv_path = os.path.join(csv_source_directory, csv_file)
@@ -216,7 +216,6 @@ def process_network(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
 
      to_concat = [df, gen, su, sto, load, collection]
      connections = pd.concat(to_concat).sort_index().reset_index(drop=True)
-
     # aggregation
 
      src_contains = connections.source.str.contains
@@ -818,16 +817,16 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      collection.append(
         pd.Series(
             dict(
-                label="solid biomass solid biomass to gas CC",
+                label="solid biomass solid biomass to gas CC1",
                 source="solid biomass",
                 target="gas",
-                value=value * options.loc[("BioSNG", "CO2 stored"), "value"],
+                value=value * options.loc[("gas", "CO2 intensity"), "value"],
             )
              )
               )
      collection.append(
-        pd.Series(dict(label="solid biomass solid biomass to gas CC", source="co2 atmosphere", target="solid biomass",
-                       value=value * options.loc[("BioSNG", "CO2 stored"), "value"]))
+        pd.Series(dict(label="solid biomass solid biomass to gas CC2", source="co2 atmosphere", target="solid biomass",
+                       value=value * options.loc[("gas", "CO2 intensity"), "value"]))
      )
      value = -(
             n.snapshot_weightings.generators @ n.links_t.p2.filter(like="solid biomass solid biomass to gas CC")
@@ -835,12 +834,12 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      collection.append(
         pd.Series(
             dict(
-                label="solid biomass solid biomass to gas CC", source="solid biomass", target="co2 stored", value=value
+                label="solid biomass solid biomass to gas CC3", source="solid biomass", target="co2 stored", value=value
             )
              )
               )
      collection.append(
-        pd.Series(dict(label="solid biomass solid biomass to gas CC", source="co2 atmosphere", target="solid biomass",
+        pd.Series(dict(label="solid biomass solid biomass to gas CC4", source="co2 atmosphere", target="solid biomass",
                        value=value))
      )
      # biomass boilers
@@ -1143,15 +1142,15 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
      cf = pd.concat([cf, row], axis=0)
      cf = cf.loc[(cf.value >= 0.1)]
       #LULUCF
-     if planning_horizon != 2020:
-       LULUCF = (
+     # if planning_horizon != 2020:
+     LULUCF = (
           pd.read_csv(f"../resources/{scenario}/co2_totals_s_"+str(cluster)+"_"+str(planning_horizon)+".csv", index_col=0)).T
-       V = LULUCF.loc['LULUCF'].filter(like=country).sum()
-       if country == 'NL':
+     V = LULUCF.loc['LULUCF'].filter(like=country).sum()
+     if country == 'NL':
         V = 0
-       else:
+     else:
         V=-V
-       row = pd.DataFrame(
+     row = pd.DataFrame(
        [
          dict(
              label="LULUCF",
@@ -1161,7 +1160,7 @@ def prepare_emissions(simpl,cluster,opt,sector_opt,ll,planning_horizon):
          )
         ]
         )
-       cf = pd.concat([cf, row], axis=0)
+     cf = pd.concat([cf, row], axis=0)
        
      cf.rename(columns={'value': str(planning_horizon)}, inplace=True)
      results_dict_co2[country] = cf
@@ -1183,8 +1182,8 @@ entries_to_select_c = ['process emissions','process emissions CC','process emiss
                       'urban central solid biomass CHP','urban central solid biomass CHP_2','coal','solid biomass biomass to liquid',
                        'solid biomass biomass to liquid_2','biogas to gas','biogas to gas_2','urban central gas CHP','Fischer-Tropsch',
                        'OCGT','SMR','urban central solid biomass CHP CC','urban central solid biomass CHP CC_2','DAC','co2 sequestration',
-                       'solid biomass solid biomass to gas','solid biomass solid biomass to gas CC','solid biomass solid biomass to gas CC_2',
-                       'solid biomass solid biomass to gas CC_3','solid biomass solid biomass to gas CC_4','Sabatier'
+                       'solid biomass solid biomass to gas','solid biomass solid biomass to gas CC1','solid biomass solid biomass to gas CC2',
+                       'solid biomass solid biomass to gas CC3','solid biomass solid biomass to gas CC4','Sabatier',
                        ] # Add moe entries if needed
 
 entry_label_mapping_c = {
@@ -1247,10 +1246,10 @@ entry_label_mapping_c = {
     'DAC': {'label': 'DAC', 'source': 'MtCO2', 'target': 'emmdac'},
     'co2 sequestration': {'label': 'co2 sequestration', 'source': 'MtCO2', 'target': 'emmseq'},
     'solid biomass solid biomass to gas': {'label': 'solid biomass solid biomass to gas', 'source': 'MtCO2', 'target': 'emmbmsng'},
-    'solid biomass solid biomass to gas CC': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngcc'},
-    'solid biomass solid biomass to gas CC_2': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngccc'},
-    'solid biomass solid biomass to gas CC_3': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngccca'},
-    'solid biomass solid biomass to gas CC_4': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngcccb'},
+    'solid biomass solid biomass to gas CC1': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngcc'},
+    'solid biomass solid biomass to gas CC2': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngccc'},
+    'solid biomass solid biomass to gas CC3': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngccca'},
+    'solid biomass solid biomass to gas CC4': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2', 'target': 'emmbmsngcccb'},
     'Sabatier': {'label': 'Sabatier"', 'source': 'MtCO2', 'target': 'emmsaba'},
 }
 def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries,filename='../SEPIA/inputs_country.xlsx'):
@@ -1293,7 +1292,14 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
 
                 # Concatenate the selected entry to the main DataFrame
                 selected_entries_df = pd.concat([selected_entries_df, selected_df])
-
+                
+            selected_entries_df = selected_entries_df.groupby('target').agg({'label': 'first','source': 'first',
+                '2020': 'sum',
+                '2030': 'sum', 
+                '2040': 'sum' ,
+                '2050': 'sum'
+            }).reset_index()
+            selected_entries_df = selected_entries_df[['label', 'source', 'target', '2020', '2030', '2040', '2050']]
             # Write the concatenated DataFrame to a new sheet
             selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
 
