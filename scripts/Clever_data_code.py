@@ -2,20 +2,14 @@
 """
 Created on Wed Apr 19 08:57:23 2023
 
-@author: umair
 """
 
-import geopandas as gpd
-import numpy as np
 import pandas as pd
 import os
 from _helpers import mute_print
 from tqdm import tqdm
 import multiprocessing as mp
 from functools import partial
-import logging
-import re
-from pathlib import Path
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -129,7 +123,7 @@ def build_Clever_Residential(countriess, year):
     return totals.T
 clever_residential = build_Clever_Residential(countriess, year) 
 clever_residential = clever_residential.loc[:, clever_residential.columns.notna()]
-clever_residential.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_residential_{year}.csv")
+clever_residential.to_csv(f"../data/clever_residential_{year}.csv")
 
 def build_CLEVER_tertiary_data_per_country(countriess):
     
@@ -221,7 +215,7 @@ for country_code in ['BE', 'DE', 'FR', 'GB', 'NL']:
     
 
 clever_Tertairy = clever_Tertairy.loc[:, clever_Tertairy.columns.notna()]
-clever_Tertairy.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Tertairy_{year}.csv")
+clever_Tertairy.to_csv(f"../data/clever_Tertairy_{year}.csv")
 
 def build_CLEVER_transport_data_per_country(countriess):
     
@@ -307,7 +301,7 @@ def build_Clever_Transport(countriess, year):
     return totals.T  
 clever_Transport = build_Clever_Transport(countriess, year)
 clever_Transport = clever_Transport.loc[:, clever_Transport.columns.notna()]
-clever_Transport.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Transport_{year}.csv") 
+clever_Transport.to_csv(f"../data/clever_Transport_{year}.csv") 
 
 def build_CLEVER_agriculture_data_per_country(countriess):
     '''
@@ -372,7 +366,7 @@ def build_Clever_Agriculture(countriess, year):
     return totals.T 
 clever_Agriculture = build_Clever_Agriculture(countriess, year) 
 clever_Agriculture = clever_Agriculture.loc[:, clever_Agriculture.columns.notna()]
-clever_Agriculture.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Agriculture_{year}.csv") 
+clever_Agriculture.to_csv(f"../data/clever_Agriculture_{year}.csv") 
 
 def build_CLEVER_AFOLUB_data_per_country(countriess):
     
@@ -430,7 +424,7 @@ def build_Clever_AFOLUB(countriess, year):
     return totals.T
 clever_AFOLUB = build_Clever_AFOLUB(countriess, year) 
 clever_AFOLUB = clever_AFOLUB.loc[:, clever_AFOLUB.columns.notna()]
-clever_AFOLUB.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_AFOLUB_{year}.csv") 
+clever_AFOLUB.to_csv(f"../data/clever_AFOLUB_{year}.csv") 
 
 def build_CLEVER_macro_data_per_country(countriess):
     
@@ -491,7 +485,7 @@ def build_Clever_Macro(countriess, year):
     return totals.T 
 clever_Macro = build_Clever_Macro(countriess, year)
 clever_Macro = clever_Macro.loc[:, clever_Macro.columns.notna()]
-clever_Macro.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Macro_{year}.csv")  
+clever_Macro.to_csv(f"../data/clever_Macro_{year}.csv")  
 
 
 def build_CLEVER_industry_data_per_country(countriess):
@@ -565,6 +559,6 @@ def build_Clever_Industry(countriess, year):
     return totals.T  
 clever_Industry = build_Clever_Industry(countriess, year) 
 clever_Industry = clever_Industry.loc[:, clever_Industry.columns.notna()]
-clever_Industry.to_csv(f"/home/umair/pypsa-eur_repository/data/clever_Industry_{year}.csv")  
+clever_Industry.to_csv(f"../data/clever_Industry_{year}.csv")  
     
 
