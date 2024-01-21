@@ -99,6 +99,56 @@ rule make_summary:
         "../envs/environment.yaml"
     script:
         "../scripts/make_summary.py"
+        
+rule make_country_summary:
+    params:
+        foresight=config["foresight"],
+        costs=config["costs"],
+        snapshots=config["snapshots"],
+        scenario=config["scenario"],
+        planning_horizons=config["scenario"]["planning_horizons"],
+        RDIR=RDIR,
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        costs="data/costs_{}.csv".format(config["costs"]["year"])
+        if config["foresight"] == "overnight"
+        else "data/costs_{}.csv".format(config["scenario"]["planning_horizons"][0]),
+        plots=expand(
+            RESULTS
+            + "maps/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}-costs-all_{planning_horizons}.pdf",
+            **config["scenario"]
+        ),
+    output:
+        nodal_costs=RESULTS + "country_csvs/nodal_costs.csv",
+        nodal_capacities=RESULTS + "country_csvs/nodal_capacities.csv",
+        nodal_cfs=RESULTS + "country_csvs/nodal_cfs.csv",
+        cfs=RESULTS + "country_csvs/cfs.csv",
+        costs=RESULTS + "country_csvs/costs.csv",
+        capacities=RESULTS + "country_csvs/capacities.csv",
+        curtailment=RESULTS + "country_csvs/curtailment.csv",
+        energy=RESULTS + "country_csvs/energy.csv",
+        supply=RESULTS + "country_csvs/supply.csv",
+        supply_energy=RESULTS + "country_csvs/supply_energy.csv",
+        prices=RESULTS + "country_csvs/prices.csv",
+        weighted_prices=RESULTS + "country_csvs/weighted_prices.csv",
+        market_values=RESULTS + "country_csvs/market_values.csv",
+        price_statistics=RESULTS + "country_csvs/price_statistics.csv",
+        metrics=RESULTS + "country_csvs/metrics.csv",
+    threads: 2
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "make_country_summary.log",
+    benchmark:
+        BENCHMARKS + "make_country_summary"
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../scripts/make_country_summary.py"
 
 rule prepare_sepia:
     params:
