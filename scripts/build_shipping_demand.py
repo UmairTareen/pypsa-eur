@@ -20,6 +20,7 @@ if __name__ == "__main__":
             "build_shipping_demand_per_node",
             simpl="",
             clusters=48,
+            planning_horizons=2050,
         )
 
     scope = gpd.read_file(snakemake.input.scope).geometry[0]

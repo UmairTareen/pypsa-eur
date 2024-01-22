@@ -25,8 +25,10 @@ def add_brownfield(n, n_p, year):
 
     # electric transmission grid set optimised capacities of previous as minimum
     n.lines.s_nom_min = n_p.lines.s_nom_opt
+    n.lines.s_nom = n_p.lines.s_nom_opt
     dc_i = n.links[n.links.carrier == "DC"].index
     n.links.loc[dc_i, "p_nom_min"] = n_p.links.loc[dc_i, "p_nom_opt"]
+    n.links.loc[dc_i, "p_nom"] = n_p.links.loc[dc_i, "p_nom_opt"]
 
     for c in n_p.iterate_components(["Link", "Generator", "Store"]):
         attr = "e" if c.name == "Store" else "p"
@@ -41,12 +43,9 @@ def add_brownfield(n, n_p, year):
         # remove assets if their optimized nominal capacity is lower than a threshold
         # since CHP heat Link is proportional to CHP electric Link, make sure threshold is compatible
         chp_heat = c.df.index[
-            (
-                c.df[attr + "_nom_extendable"]
-                & c.df.index.str.contains("urban central")
-                & c.df.index.str.contains("CHP")
-                & c.df.index.str.contains("heat")
-            )
+            (c.df[f"{attr}_nom_extendable"] & c.df.index.str.contains("urban central"))
+            & c.df.index.str.contains("CHP")
+            & c.df.index.str.contains("heat")
         ]
 
         threshold = snakemake.params.threshold_capacity
@@ -60,21 +59,20 @@ def add_brownfield(n, n_p, year):
             )
             n_p.mremove(
                 c.name,
-                chp_heat[c.df.loc[chp_heat, attr + "_nom_opt"] < threshold_chp_heat],
+                chp_heat[c.df.loc[chp_heat, f"{attr}_nom_opt"] < threshold_chp_heat],
             )
 
         n_p.mremove(
             c.name,
             c.df.index[
-                c.df[attr + "_nom_extendable"]
-                & ~c.df.index.isin(chp_heat)
-                & (c.df[attr + "_nom_opt"] < threshold)
+                (c.df[f"{attr}_nom_extendable"] & ~c.df.index.isin(chp_heat))
+                & (c.df[f"{attr}_nom_opt"] < threshold)
             ],
         )
 
         # copy over assets but fix their capacity
-        c.df[attr + "_nom"] = c.df[attr + "_nom_opt"]
-        c.df[attr + "_nom_extendable"] = False
+        c.df[f"{attr}_nom"] = c.df[f"{attr}_nom_opt"]
+        c.df[f"{attr}_nom_extendable"] = False
 
         n.import_components_from_dataframe(c.df, c.name)
 
@@ -124,7 +122,6 @@ def add_brownfield(n, n_p, year):
             n.links.loc[new_pipes, "p_nom_min"] = 0.0
 
 
-# %%
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake

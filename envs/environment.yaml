@@ -52,7 +52,9 @@ dependencies:
 - cartopy
 - descartes
 - rasterio!=1.2.10
-
+  # For post-processing scripts
+- plotly
+- kaleido
 
 - pip:
   - tsam>=1.1.0

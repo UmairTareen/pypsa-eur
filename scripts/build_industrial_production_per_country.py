@@ -275,7 +275,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake
 
-        snakemake = mock_snakemake("build_industrial_production_per_country")
+        snakemake = mock_snakemake(
+            "build_industrial_production_per_country")
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
 
@@ -289,8 +290,26 @@ if __name__ == "__main__":
     eurostat_dir = snakemake.input.eurostat
 
     demand = industry_production(countries, year, eurostat_dir, jrc_dir)
-
+    config=snakemake.config 
+    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+      def clever_industry_data():
+          fn = snakemake.input.clever_industry
+          df= pd.read_csv(fn ,index_col=0)
+          return df
+    
+      clever_Industry = clever_industry_data()
+      for country in countries:
+        demand.loc[country, 'Integrated steelworks'] = clever_Industry.loc[country, 'Production of crude steel']
+        demand.loc[country, 'Cement'] = clever_Industry.loc[country, 'Production of cement']
+        demand.loc[country, 'Glass production'] = clever_Industry.loc[country, 'Production of glass']
+        demand.loc[country, 'Other chemicals'] = clever_Industry.loc[country, 'Production of high value chemicals ']
+        demand.loc[country, 'Paper production'] = clever_Industry.loc[country, 'Production of paper']
+    else:
+        demand = demand
     separate_basic_chemicals(demand, year)
+    #for country in countrries:
+        #demand.loc[country, 'Ammonia'] = clever_Industry.loc[country, 'Production of ammonia']
+    
 
     fn = snakemake.output.industrial_production_per_country
     demand.to_csv(fn, float_format="%.2f")

@@ -17,7 +17,6 @@ gurobi.log
 /benchmarks
 /logs
 /notebooks
-#/data
 /cutouts
 
 doc/_build
@@ -28,20 +27,17 @@ dconf
 /data/links_p_nom.csv
 /data/*totals.csv
 /data/biomass*
-/data/bundle-sector/emobility/
-/data/bundle-sector/eea*
-/data/bundle-sector/jrc*
+/data/bundle-sector
 /data/heating/
-/data/bundle-sector/eurostat*
 /data/odyssee/
 /data/transport_data.csv
-/data/bundle-sector/switzerland*
 /data/.nfs*
-/data/bundle-sector/Industrial_Database.csv
 /data/retro/tabula-calculator-calcsetbuilding.csv
-/data/bundle-sector/nuts*
 data/gas_network/scigrid-gas/
-data/costs_*.csv
+data/bundle
+data/load_raw.csv
+data/shipdensity_global.zip
+data/ENSPRESO_BIOMASS.xlsx
 
 dask-worker-space/
 publications.jrc.ec.europa.eu/
@@ -58,8 +54,6 @@ publications.jrc.ec.europa.eu/
 /tmp
 /pypsa
 
-*.xlsx
-
 config.yaml
 
 doc/_build
@@ -74,3 +68,5 @@ data/costs_*
 
 merger-todos.md
 .idea/*
+SEPIA/SEPIA_functions.py
+SEPIA/Results/*

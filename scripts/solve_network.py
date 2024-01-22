@@ -37,6 +37,7 @@ from _helpers import configure_logging, update_config_with_sector_opts
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
+from prepare_sector_network import emission_sectors_from_opts
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 
@@ -51,9 +52,6 @@ def _add_land_use_constraint(n):
     # warning: this will miss existing offwind which is not classed AC-DC and has carrier 'offwind'
 
     for carrier in ["solar", "onwind", "offwind-ac", "offwind-dc"]:
-        extendable_i = (n.generators.carrier == carrier) & n.generators.p_nom_extendable
-        n.generators.loc[extendable_i, "p_nom_min"] = 0
-
         ext_i = (n.generators.carrier == carrier) & ~n.generators.p_nom_extendable
         existing = (
             n.generators.loc[ext_i, "p_nom"]
@@ -70,7 +68,7 @@ def _add_land_use_constraint(n):
     if len(existing_large):
         logger.warning(
             f"Existing capacities larger than technical potential for {existing_large},\
-                        adjust technical potential to existing capacities"
+                       adjust technical potential to existing capacities"
         )
         n.generators.loc[existing_large, "p_nom_max"] = n.generators.loc[
             existing_large, "p_nom_min"
@@ -116,12 +114,18 @@ def _add_land_use_constraint_m(n, planning_horizons, config):
     n.generators.p_nom_max.clip(lower=0, inplace=True)
 
 
-def add_co2_sequestration_limit(n, limit=200):
+def add_co2_sequestration_limit(n, config, limit=200):
     """
     Add a global constraint on the amount of Mt CO2 that can be sequestered.
     """
-    n.carriers.loc["co2 stored", "co2_absorptions"] = -1
-    n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
+    if config["run"]["name"] == "ncdr":
+        limit = 0
+        n.carriers.loc["co2 stored", "co2_absorptions"] = 0
+        n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
+    else:
+        limit = limit
+        n.carriers.loc["co2 stored", "co2_absorptions"] = -1
+        n.carriers.co2_absorptions = n.carriers.co2_absorptions.fillna(0)
 
     limit = limit * 1e6
     for o in opts:
@@ -162,10 +166,10 @@ def prepare_network(
         # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
         # TODO: retrieve color and nice name from config
         n.add("Carrier", "load", color="#dd2e23", nice_name="Load shedding")
-        buses_i = n.buses.query("carrier == 'AC'").index
+        buses_i = n.buses.index
         if not np.isscalar(load_shedding):
             # TODO: do not scale via sign attribute (use Eur/MWh instead of Eur/kWh)
-            load_shedding = 1e2  # Eur/kWh
+            load_shedding = 3000  # Eur/MWh
 
         n.madd(
             "Generator",
@@ -173,9 +177,9 @@ def prepare_network(
             " load",
             bus=buses_i,
             carrier="load",
-            sign=1e-3,  # Adjust sign to measure p and p_nom in kW instead of MW
-            marginal_cost=load_shedding,  # Eur/kWh
-            p_nom=1e9,  # kW
+            sign=1,  # Adjust sign to measure p and p_nom in kW instead of MW
+            marginal_cost=3000,  # Eur/MWh
+            p_nom=1e6,  # MW
         )
 
     if solve_opts.get("noisy_costs"):
@@ -202,11 +206,134 @@ def prepare_network(
 
     if n.stores.carrier.eq("co2 stored").any():
         limit = co2_sequestration_potential
-        add_co2_sequestration_limit(n, limit=limit)
+        add_co2_sequestration_limit(n, config, limit=limit)
 
     return n
 
+def imposed_values_genertion(n, foresight, config):
+    ''' This funtion impse values for generation technologies. For example the
+    wind offshore, onshore, solar and nuclear capacities are constraint for 
+    Belgium for year 2030 considering the values from ELIA'''
+    if foresight == "myopic":
+     country = config["imposed_values"]["country"]
+     suffix = "1 0"
+     if f"{country}{suffix} nuclear-1980" in n.links.index:
+        
+      #getting values from config file
+      
+      onwind_max = config["imposed_values"]["onwind"]
+      offwind_ac_max = config["imposed_values"]["offshore_ac"]
+      offwind_dc_max = config["imposed_values"]["offshore_dc"]
+      solar_max = config["imposed_values"]["solar"]
+      solar_rooftop_max = config["imposed_values"]["solar-rooftop"]
+      nuclear_max = config["imposed_values"]["nuclear"]
+      
+    
+      # preparing data for technoligies considering already installed capacities excluding 2030
+      onwind = n.generators[
+        n.generators.index.str.contains(country) & 
+        n.generators.index.str.contains('onwind') & 
+        ~n.generators.index.str.contains('-2030')
+      ].p_nom.sum()
+    
+      offwind_ac = n.generators[
+        n.generators.index.str.contains(country) & 
+        n.generators.index.str.contains('offwind-ac') & 
+        ~n.generators.index.str.contains('-2030')
+      ].p_nom.sum()
+    
+      offwind_dc = n.generators[
+        n.generators.index.str.contains(country) & 
+        n.generators.index.str.contains('offwind-dc') & 
+        ~n.generators.index.str.contains('-2030')
+      ].p_nom.sum()
+    
+      solar = n.generators[
+        n.generators.index.str.contains(country) & 
+        n.generators.index.str.contains('solar') & 
+        ~n.generators.index.str.contains('-2030')
+      ].p_nom.sum()
+     
+      solar_rooftop = n.generators[
+        n.generators.index.str.contains(country) & 
+        n.generators.index.str.contains('solar rooftop') & 
+        ~n.generators.index.str.contains('-2030')
+      ].p_nom.sum()
+      
+      #imposing values in the model for year 2030
+      n.generators.loc[f"{country}{suffix} solar-2030", "p_nom_max"] = solar_max - solar
+      n.generators.loc[f"{country}{suffix} solar rooftop-2030", "p_nom_max"] = solar_rooftop_max - solar_rooftop
+      n.generators.loc[f"{country}{suffix} onwind-2030", "p_nom_max"] = onwind_max - onwind
+      n.generators.loc[f"{country}{suffix} offwind-ac-2030", "p_nom_max"] = offwind_ac_max - offwind_ac
+      n.generators.loc[f"{country}{suffix} offwind-dc-2030", "p_nom_max"] = offwind_dc_max - offwind_dc
+     
+      #nuclear is grouped by grouping years so imposing value in last grouping year
+      n.links.loc[f"{country}{suffix} nuclear-1980", "p_nom"] = nuclear_max
+       
+    return n       
 
+def imposed_TYNDP(n, foresight, config):
+   ''' This funtion impse values for TYNDP for transmissions lines'''
+   
+   if foresight == "overnight":
+      n.lines_t['s_max_pu']['0'] = 0
+      if n.lines.loc['0', "bus0"] == "BE1 0" and n.lines.loc['0', "bus1"] == "DE1 0":
+         n.lines.loc['0', "s_nom"] = config["TYNDP_values"]["be_de"]
+         n.lines.loc['0', "s_nom_min"] = config["TYNDP_values"]["be_de"]
+         
+      if n.lines.loc['1', "bus0"] == "BE1 0" and n.lines.loc['1', "bus1"] == "FR1 0":
+         n.lines.loc['1', "s_nom"] = config["TYNDP_values"]["be_fr"]
+         n.lines.loc['1', "s_nom_min"] = config["TYNDP_values"]["be_fr"]
+    
+      if n.lines.loc['2', "bus0"] == "BE1 0" and n.lines.loc['2', "bus1"] == "NL1 0":
+         n.lines.loc['2', "s_nom"] = config["TYNDP_values"]["be_nl"]
+         n.lines.loc['2', "s_nom_min"] = config["TYNDP_values"]["be_nl"]
+    
+      if n.lines.loc['3', "bus0"] == "DE1 0" and n.lines.loc['3', "bus1"] == "FR1 0":
+         n.lines.loc['3', "s_nom"] = config["TYNDP_values"]["de_fr"]
+         n.lines.loc['3', "s_nom_min"] = config["TYNDP_values"]["de_fr"]
+    
+      if n.lines.loc['4', "bus0"] == "DE1 0" and n.lines.loc['4', "bus1"] == "NL1 0":
+         n.lines.loc['4', "s_nom"] = config["TYNDP_values"]["de_nl"]
+         n.lines.loc['4', "s_nom_min"] = config["TYNDP_values"]["de_nl"]
+
+  
+      n.links.loc["T12", "p_nom"] = config["TYNDP_values"]["T12"]
+      n.links.loc["T19", "p_nom"] = config["TYNDP_values"]["T19"] 
+      n.links.loc["T21", "p_nom"] =config["TYNDP_values"]["T21"] 
+      n.links.loc["T22", "p_nom"] = config["TYNDP_values"]["T22"] 
+   else:        
+      country = config["imposed_values"]["country"]
+      suffix = "1 0"
+      n.lines_t['s_max_pu']['0'] = 0
+      if n.lines.loc['0', "bus0"] == "BE1 0" and n.lines.loc['0', "bus1"] == "DE1 0":
+         n.lines.loc['0', "s_nom"] = config["TYNDP_values"]["be_de"]
+         n.lines.loc['0', "s_nom_min"] = config["TYNDP_values"]["be_de"]
+      if f"{country}{suffix} nuclear-1980" in n.links.index:
+      
+       if n.lines.loc['1', "bus0"] == "BE1 0" and n.lines.loc['1', "bus1"] == "FR1 0":
+          n.lines.loc['1', "s_nom"] = config["TYNDP_values"]["be_fr"]
+          n.lines.loc['1', "s_nom_min"] = config["TYNDP_values"]["be_fr"]
+     
+       if n.lines.loc['2', "bus0"] == "BE1 0" and n.lines.loc['2', "bus1"] == "NL1 0":
+          n.lines.loc['2', "s_nom"] = config["TYNDP_values"]["be_nl"]
+          n.lines.loc['2', "s_nom_min"] = config["TYNDP_values"]["be_nl"]
+     
+       if n.lines.loc['3', "bus0"] == "DE1 0" and n.lines.loc['3', "bus1"] == "FR1 0":
+          n.lines.loc['3', "s_nom"] = config["TYNDP_values"]["de_fr"]
+          n.lines.loc['3', "s_nom_min"] = config["TYNDP_values"]["de_fr"]
+     
+       if n.lines.loc['4', "bus0"] == "DE1 0" and n.lines.loc['4', "bus1"] == "NL1 0":
+          n.lines.loc['4', "s_nom"] = config["TYNDP_values"]["de_nl"]
+          n.lines.loc['4', "s_nom_min"] = config["TYNDP_values"]["de_nl"]
+          
+      n.lines["s_nom_max"] = n.lines["s_nom"] * config["TYNDP_values"]["max_expansion"]
+      indices_to_update = ["14801", "14814", "14826", "5581", "5580", "T2", "T6", "T12", "T19", "T21", "T22"]
+      for index in indices_to_update:
+          n.links.at[index, "p_nom_max"] = n.links.at[index, "p_nom"] * config["TYNDP_values"]["max_expansion"]
+         
+   return n
+    
 def add_CCL_constraints(n, config):
     """
     Add CCL (country & carrier limit) constraint to the network.
@@ -252,71 +379,366 @@ def add_CCL_constraints(n, config):
         )
 
 
-def add_EQ_constraints(n, o, scaling=1e-1):
+def add_EQ_constraints(n, level, by_country, config):
     """
     Add equity constraints to the network.
-
-    Currently this is only implemented for the electricity sector only.
-
-    Opts must be specified in the config.yaml.
-
+    The equity option specifies a certain level x of equity (as in
+    EQx) where x is a number between 0 and 1. When this option is set,
+    each node in the network is required to produce at least a
+    fraction of x of its energy demand locally. For example, when
+    EQ0.7 is set, each node is required to produce at least 70% of its
+    energy demand locally.
+    Locally produced energy includes local renewable generation and
+    (some) conventional generation (nuclear, coal, geothermal).
+    How conventional generation is dealt with depends on whether the
+    model is run in electricity-only mode or is sector-coupled. In
+    electricity-only mode, all conventional generation is considered
+    local production.
+    In the sector-coupled model, however, gas and oil are endogenously
+    modelled. Oil is not spatially resolved, meaning that any use of
+    oil is considered an import, but any production of oil
+    (Fischer-Tropsch) is considered an export. When gas is not
+    spatially resolved, it functions the same. When, however, a gas
+    network is modelled, imports and exports are instead calculated
+    using gas network flow. For now, even locally extracted natural
+    gas is considered "imported" for the purposes of this equation.
+    For other conventional generation (coal, oil, nuclear) the fuel is
+    not endogenously modelled, and this generation is considered local
+    (even though implementation-wise nodes have to "import" the fuel
+    from a copper-plated "EU" node).
+    Optionally the EQ option may be suffixed by the letter "c", which
+    makes the equity constraint act on a country level instead of a
+    node level.
+    Regardless, the equity constraint is only enforced on average over
+    the whole year.
+    In a sector-coupled network, energy production is generally
+    greater than consumption because of efficiency losses in energy
+    conversions such as hydrogen production (whereas heat pumps
+    actually have an "efficiency" greater than 1). Ignoring these
+    losses would lead to a weakening of the equity constraint (i.e. if
+    1.5TWh of electricity needs to be produced to satisfy a final
+    demand of 1 TWh of energy, even an equity constraint of 100% would
+    be satisfied if 1TWh of electricity is produced locally).
+    Therefore, for the purpose of the equity constraint, efficiency
+    losses in a sector-coupled network are effectively counted as
+    demand, and the equity constraint is enforced on the sum of final
+    demand and efficiency losses.
+    Again in the sector-coupled model, some energy supply and energy
+    demand are copper-plated, meaning that they are not spatially
+    resolved by only modelled europe-wide. For the purpose of the
+    equity constraint in a sector-coupled model, energy supplied from
+    a copper-plated carrier (supplied from the "european node") is
+    counted as imported, not locally produced. Similarly, energy
+    demand for a copper-plated carrier (demanded at the "european
+    node") is counted as exported, not locally demanded.
     Parameters
     ----------
-    n : pypsa.Network
-    o : str
-
-    Example
     -------
     scenario:
         opts: [Co2L-EQ0.7-24H]
-
-    Require each country or node to on average produce a minimal share
-    of its total electricity consumption itself. Example: EQ0.7c demands each country
-    to produce on average at least 70% of its consumption; EQ0.7 demands
-    each node to produce on average at least 70% of its consumption.
     """
-    # TODO: Generalize to cover myopic and other sectors?
-    float_regex = "[0-9]*\.?[0-9]+"
-    level = float(re.findall(float_regex, o)[0])
-    if o[-1] == "c":
-        ggrouper = n.generators.bus.map(n.buses.country)
-        lgrouper = n.loads.bus.map(n.buses.country)
-        sgrouper = n.storage_units.bus.map(n.buses.country)
-    else:
-        ggrouper = n.generators.bus
-        lgrouper = n.loads.bus
-        sgrouper = n.storage_units.bus
-    load = (
-        n.snapshot_weightings.generators
-        @ n.loads_t.p_set.groupby(lgrouper, axis=1).sum()
-    )
-    inflow = (
-        n.snapshot_weightings.stores
-        @ n.storage_units_t.inflow.groupby(sgrouper, axis=1).sum()
-    )
-    inflow = inflow.reindex(load.index).fillna(0.0)
-    rhs = scaling * (level * load - inflow)
-    p = n.model["Generator-p"]
-    lhs_gen = (
-        (p * (n.snapshot_weightings.generators * scaling))
-        .groupby(ggrouper.to_xarray())
-        .sum()
-        .sum("snapshot")
-    )
-    # TODO: double check that this is really needed, why do have to subtract the spillage
-    if not n.storage_units_t.inflow.empty:
-        spillage = n.model["StorageUnit-spill"]
-        lhs_spill = (
-            (spillage * (-n.snapshot_weightings.stores * scaling))
-            .groupby(sgrouper.to_xarray())
-            .sum()
-            .sum("snapshot")
-        )
-        lhs = lhs_gen + lhs_spill
-    else:
-        lhs = lhs_gen
-    n.model.add_constraints(lhs >= rhs, name="equity_min")
+    # TODO: Does this work for myopic optimisation?
 
+    # Implementation note: while the equity constraint nominally
+    # specifies that a minimum fraction demand be produced locally, in
+    # the implementation we enforce a minimum ratio between local
+    # production and net energy imports. This because
+    #     local_production + net_imports = demand + efficiency_losses
+    # for each node (or country), so we can convert a constraint of the form
+    #     local_production >= level * (demand + efficiency_losses)
+    # to the equivalent:
+    #     net_imports <= (1 / level - 1) * local_production
+    # or, putting all variables on the right hand side and constants
+    # on the left hand side:
+    #     (1 - 1 / level) * local_production + net_imports <= 0
+    #
+    # While leading to an equivalent constraint, we choose this
+    # implementation because it allows us to avoid having to calculate
+    # efficiency losses explicitly; local production and net imports
+    # are slightly easier to deal with.
+    #
+    # Notes on specific technologies. Locally produced energy comes
+    # from the following sources:
+    # - Variable renewables (various types of solar, onwind, offwind,
+    #   etc.), implemented as generators.
+    # - Conventional sources (gas, coal, nuclear), implemented as
+    #   either generators or links (depending on whether or not the
+    #   model is sector-coupled).
+    # - Biomass, biogass, if spatially resolved, implemented as stores.
+    # - Hydro, implemented as storageunits.
+    # - Ambient heat used in heat pumps, implemented as links.
+    # Imports can come in the following forms:
+    # - Electricity (AC & DC), implemented as lines and links.
+    # - Gas pipelines, implemented as links.
+    # - H2 pipelines, implemented as links.
+    # - Gas imports (pipeline, LNG, production), implemented as generators.
+
+    # if config["foresight"] != "overnight":
+    #     logging.warning(
+    #         "Careful! Equity constraint is only tested for 'overnight' "
+    #         f"foresight models, not '{config['foresight']}' foresight"
+    #     )
+
+    # While we need to group components by bus location in the
+    # sector-coupled model, there is no "location" column in the
+    # electricity-only model.
+    location = (
+        n.buses.location
+        if "location" in n.buses.columns
+        else pd.Series(n.buses.index, index=n.buses.index)
+    )
+
+    def group(df, b="bus"):
+        """
+        Group given dataframe by bus location or country.
+        The optional argument `b` allows clustering by bus0 or bus1 for
+        lines and links.
+        """
+        if by_country:
+            return df[b].map(location).map(n.buses.country).to_xarray()
+        else:
+            return df[b].map(location).to_xarray()
+
+    # Local production by generators. Note: the network may not
+    # actually have all these generators (for instance some
+    # conventional generators are implemented as links in the
+    # sector-coupled model; heating sector might not be turned on),
+    # but we list all that might be in the network.
+    local_gen_carriers = list(
+        set(
+            config["electricity"]["extendable_carriers"]["Generator"]
+            + config["electricity"]["conventional_carriers"]
+            + config["electricity"]["renewable_carriers"]
+            + [c for c in n.generators.carrier if "solar thermal" in c]
+            + ["solar rooftop", "wave"]
+        )
+    )
+    local_gen_i = n.generators.loc[
+        n.generators.carrier.isin(local_gen_carriers)
+        & (n.generators.bus.map(location) != "EU")
+    ].index
+    local_gen_p = (
+        n.model["Generator-p"]
+        .loc[:, local_gen_i]
+        .groupby(group(n.generators.loc[local_gen_i]))
+        .sum()
+    )
+    local_gen = (local_gen_p * n.snapshot_weightings.generators).sum("snapshot")
+
+    # Hydro production; the only local production from a StorageUnit.
+    local_hydro_i = n.storage_units.loc[n.storage_units.carrier == "hydro"].index
+    local_hydro_p = (
+        n.model["StorageUnit-p_dispatch"]
+        .loc[:, local_hydro_i]
+        .groupby(group(n.storage_units.loc[local_hydro_i]))
+        .sum()
+    )
+    local_hydro = (local_hydro_p * n.snapshot_weightings.stores).sum("snapshot")
+
+    # Biomass and biogas; these are only considered locally produced
+    # if spatially resolved, not if they belong to an "EU" node. They
+    # are modelled as stores with initial capacity to model a finite
+    # yearly supply; the difference between initial and final capacity
+    # is the total local production.
+    # local_bio_i = n.stores.loc[
+    #     n.stores.carrier.isin(["biogas", "solid biomass"])
+    #     & (n.stores.bus.map(location) != "EU")
+    # ].index
+    # #Building the following linear expression only works if it's non-empty
+    # if len(local_bio_i) > 0:
+    #     local_bio_first_e = n.model["Store-e"].loc[n.snapshots[0], local_bio_i]
+    #     local_bio_last_e = n.model["Store-e"].loc[n.snapshots[-1], local_bio_i]
+    #     local_bio_p = local_bio_first_e - local_bio_last_e
+    #     local_bio = local_bio_p.groupby(group(n.stores.loc[local_bio_i])).sum()
+    # else:
+    #     local_bio = None
+
+    # Conventional generation in the sector-coupled model. These are
+    # modelled as links in order to take the CO2 cycle into account.
+    # All of these are counted as local production even if the links
+    # may take their fuel from an "EU" node, except for gas and oil,
+    # which are modelled endogenously and is counted under imports /
+    # exports.
+    conv_carriers = config["sector"].get("conventional_generation", {})
+    conv_carriers = [
+        gen for gen, carrier in conv_carriers.items() if carrier not in ["gas", "oil"]
+    ]
+    if config["sector"].get("coal_cc") and not "coal" in conv_carriers:
+        conv_carriers.append("coal")
+    local_conv_gen_i = n.links.loc[n.links.carrier.isin(conv_carriers)].index
+    if len(local_conv_gen_i) > 0:
+        local_conv_gen_p = n.model["Link-p"].loc[:, local_conv_gen_i]
+        # These links have efficiencies, which we multiply by since we
+        # only want to count the _output_ of each conventional
+        # generator as local generation for the equity balance.
+        efficiencies = n.links.loc[local_conv_gen_i, "efficiency"]
+        local_conv_gen_p = (
+            (local_conv_gen_p * efficiencies)
+            .groupby(group(n.links.loc[local_conv_gen_i], b="bus1"))
+            .sum()
+            .rename({"bus1": "bus"})
+        )
+        local_conv_gen = (local_conv_gen_p * n.snapshot_weightings.generators).sum(
+            "snapshot"
+        )
+    else:
+        local_conv_gen = None
+
+    #TODO: should we (in prepare_sector_network.py) model gas
+    #pipeline imports from outside the EU and LNG imports separately
+    #from gas extraction / production? Then we could model gas
+    #extraction as locally produced energy.
+
+    # #Ambient heat for heat pumps
+    # heat_pump_i = n.links.filter(like="heat pump", axis="rows").index
+    # if len(heat_pump_i) > 0:
+    #     # To get the ambient heat extracted, we subtract 1 from the
+    #     # efficiency of the heat pump (where "efficiency" is really COP
+    #     # for heat pumps).
+    #     from_ambient = n.links_t["efficiency"].loc[:, heat_pump_i] - 1
+    #     local_heat_from_ambient_p = n.model["Link-p"].loc[:, heat_pump_i]
+    #     local_heat_from_ambient = (
+    #         (local_heat_from_ambient_p * from_ambient)
+    #         .groupby(group(n.links.loc[heat_pump_i], b="bus1"))
+    #         .sum()
+    #         .rename({"bus1": "bus"})
+    #     )
+    #     local_heat_from_ambient = (
+    #         local_heat_from_ambient * n.snapshot_weightings.generators
+    #     ).sum("snapshot")
+    # else:
+    #     local_heat_from_ambient = None
+
+    #Total locally produced energy
+    local_energy = sum(
+        e
+        for e in [
+            local_gen,
+            local_hydro,
+            # local_bio,
+            local_conv_gen,
+            #local_heat_from_ambient,
+        ]
+        if e is not None
+    )
+
+    # Now it's time to collect imports: electricity, hydrogen & gas
+    # pipeline, other gas, biomass, gas terminals & production.
+
+    # Start with net electricity imports.
+    lines_cross_region_i = n.lines.loc[
+        (group(n.lines, b="bus0") != group(n.lines, b="bus1")).to_numpy()
+    ].index
+    # Build linear expression representing net imports (i.e. imports -
+    # exports) for each bus/country.
+    lines_in_s = (
+        n.model["Line-s"]
+        .loc[:, lines_cross_region_i]
+        .groupby(group(n.lines.loc[lines_cross_region_i], b="bus1"))
+        .sum()
+        .rename({"bus1": "bus"})
+    ) - (
+        n.model["Line-s"]
+        .loc[:, lines_cross_region_i]
+        .groupby(group(n.lines.loc[lines_cross_region_i], b="bus0"))
+        .sum()
+        .rename({"bus0": "bus"})
+    )
+    line_imports = (lines_in_s * n.snapshot_weightings.generators).sum("snapshot")
+
+    # Link net imports, representing all net energy imports of various
+    # carriers that are implemented as links. We list all possible
+    # link carriers that could be represented in the network; some
+    # might not be present in some networks depending on the sector
+    # configuration. Note that we do not count efficiencies here (e.g.
+    # for oil boilers that import oil) since efficiency losses are
+    # counted as "local demand".
+    link_import_carriers = [
+        # Pipeline imports / exports
+        # "H2 pipeline",
+        # "H2 pipeline retrofitted",
+        # "gas pipeline",
+        # "gas pipeline new",
+        # # Solid biomass
+        # "solid biomass transport",
+        # DC electricity
+        "DC",
+        # # Oil (imports / exports between spatial nodes and "EU" node)
+        # "Fischer-Tropsch",
+        # "biomass to liquid",
+        # "residential rural oil boiler",
+        # "services rural oil boiler",
+        # "residential urban decentral oil boiler",
+        # "services urban decentral oil boiler",
+        # "oil",  # Oil powerplant (from `prepare_sector_network.add_generation`)
+        # # Gas (imports / exports between spatial nodes and "EU" node,
+        # # only cross-region if gas is not spatially resolved)
+        # "Sabatier",
+        # "helmeth",
+        # "SMR CC",
+        # "SMR",
+        # "biogas to gas",
+        # "BioSNG",
+        # "residential rural gas boiler",
+        # "services rural gas boiler",
+        # "residential urban decentral gas boiler",
+        # "services urban decentral gas boiler",
+        # "urban central gas boiler",
+        # "urban central gas CHP",
+        # "urban central gas CHP CC",
+        # "residential rural micro gas CHP",
+        # "services rural micro gas CHP",
+        # "residential urban decentral micro gas CHP",
+        # "services urban decentral micro gas CHP",
+        # # "allam",
+        # "OCGT",
+        # "CCGT",
+    ]
+    links_cross_region_i = (
+        n.links.loc[(group(n.links, b="bus0") != group(n.links, b="bus1")).to_numpy()]
+        .loc[n.links.carrier.isin(link_import_carriers)]
+        .index
+    )
+    # Build linear expression representing net imports (i.e. imports -
+    # exports) for each bus/country.
+    links_in_p = (
+        n.model["Link-p"]
+        .loc[:, links_cross_region_i]
+        .groupby(group(n.links.loc[links_cross_region_i], b="bus1"))
+        .sum()
+        .rename({"bus1": "bus"})
+    ) - (
+        n.model["Link-p"]
+        .loc[:, links_cross_region_i]
+        .groupby(group(n.links.loc[links_cross_region_i], b="bus0"))
+        .sum()
+        .rename({"bus0": "bus"})
+    )
+    link_imports = (links_in_p * n.snapshot_weightings.generators).sum("snapshot")
+
+    # Gas imports by pipeline from outside of Europe, LNG terminal or
+    # gas production (all modelled as generators).
+    # gas_import_i = n.generators.loc[n.generators.carrier == "gas"].index
+    # if len(gas_import_i) > 0:
+    #     gas_import_p = (
+    #         n.model["Generator-p"]
+    #         .loc[:, gas_import_i]
+    #         .groupby(group(n.generators.loc[gas_import_i]))
+    #         .sum()
+    #     )
+    #     gas_imports = (gas_import_p * n.snapshot_weightings.generators).sum("snapshot")
+    # else:
+    #     gas_imports = None
+
+    imported_energy = sum(
+        i for i in [line_imports, link_imports] if i is not None
+    )
+
+    local_factor = 1 - 1 / level
+
+    n.model.add_constraints(
+        local_factor * local_energy + imported_energy <= 0, name="equity_min"
+    )
 
 def add_BAU_constraints(n, config):
     """
@@ -569,6 +991,101 @@ def add_pipe_retrofit_constraint(n):
     n.model.add_constraints(lhs == rhs, name="Link-pipe_retrofit")
 
 
+def add_co2limit_country(n, limit_countries, nyears=1.0):
+    """
+    Add a set of emissions limit constraints for specified countries.
+    The countries and emissions limits are specified in the config file entry 'co2_budget_country_{investment_year}'.
+    Parameters
+    ----------
+    n : pypsa.Network
+    config : dict
+    limit_countries : dict
+    nyears: float, optional
+        Used to scale the emissions constraint to the number of snapshots of the base network.
+    """
+    logger.info(f"Adding CO2 budget limit for each country as per unit of 1990 levels")
+
+    countries = n.config["countries"]
+
+    # TODO: import function from prepare_sector_network? Move to common place?
+    sectors = emission_sectors_from_opts(opts)
+
+    # convert Mt to tCO2
+    co2_totals = 1e6 * pd.read_csv(snakemake.input.co2_totals_name, index_col=0)
+
+    co2_limit_countries = co2_totals.loc[countries, sectors].sum(axis=1)
+    co2_limit_countries = co2_limit_countries.loc[
+        co2_limit_countries.index.isin(limit_countries.keys())
+    ]
+    lulucf = co2_totals.loc[countries, 'LULUCF']
+    lulucf = lulucf * -1
+    lulucf['NL'] = 0
+    co2_limit_countries *= co2_limit_countries.index.map(limit_countries) * nyears
+    co2_limit_countries = co2_limit_countries + lulucf
+
+    p = n.model["Link-p"]  # dimension: (time, component)
+
+    # NB: Most country-specific links retain their locational information in bus1 (except for DAC, where it is in bus2, and process emissions, where it is in bus0)
+    country = n.links.bus1.map(n.buses.location).map(n.buses.country)
+    country_DAC = (
+        n.links[n.links.carrier == "DAC"]
+        .bus2.map(n.buses.location)
+        .map(n.buses.country)
+    )
+    country[country_DAC.index] = country_DAC
+    country_process_emissions = (
+        n.links[n.links.carrier.str.contains("process emissions")]
+        .bus0.map(n.buses.location)
+        .map(n.buses.country)
+    )
+    country[country_process_emissions.index] = country_process_emissions
+
+    lhs = []
+    for port in [col[3:] for col in n.links if col.startswith("bus")]:
+        if port == str(0):
+            efficiency = (
+                n.links["efficiency"].apply(lambda x: 1.0).rename("efficiency0")
+            )
+        elif port == str(1):
+            efficiency = n.links["efficiency"]
+        else:
+            efficiency = n.links[f"efficiency{port}"]
+        mask = n.links[f"bus{port}"].map(n.buses.carrier).eq("co2")
+
+        idx = n.links[mask].index
+
+        international = n.links.carrier.map(
+            lambda x: 0.4 if x in ["kerosene for aviation", "shipping oil"] else 1.0
+        )
+        grouping = country.loc[idx]
+
+        if not grouping.isnull().all():
+            expr = (
+                (p.loc[:, idx] * efficiency[idx] * international[idx])
+                .groupby(grouping, axis=1)
+                .sum()
+                * n.snapshot_weightings.generators
+            ).sum(dims="snapshot")
+            lhs.append(expr)
+
+    lhs = sum(lhs)  # dimension: (country)
+    lhs = lhs.rename({list(lhs.dims.keys())[0]: "snapshot"})
+    rhs = pd.Series(co2_limit_countries)  # dimension: (country)
+
+    for ct in lhs.indexes["snapshot"]:
+        n.model.add_constraints(
+            lhs.loc[ct] <= rhs[ct],
+            name=f"GlobalConstraint-co2_limit_per_country{ct}",
+        )
+        n.add(
+            "GlobalConstraint",
+            f"co2_limit_per_country{ct}",
+            constant=rhs[ct],
+            sense="<=",
+            type="",
+        )
+        
+        
 def extra_functionality(n, snapshots):
     """
     Collects supplementary constraints which will be passed to
@@ -589,54 +1106,74 @@ def extra_functionality(n, snapshots):
     reserve = config["electricity"].get("operational_reserve", {})
     if reserve.get("activate"):
         add_operational_reserve_margin(n, snapshots, config)
-    for o in opts:
-        if "EQ" in o:
-            add_EQ_constraints(n, o)
+    
     add_battery_constraints(n)
     add_pipe_retrofit_constraint(n)
+    for o in opts:
+        if "EQ" in o:
+            EQ_regex = "EQ(0\.[0-9]+)(c?)"  # Ex.: EQ0.75c
+            m = re.search(EQ_regex, o)
+            if m is not None:
+                level = float(m.group(1))
+                by_country = True if m.group(2) == "c" else False
+                add_EQ_constraints(n, level, by_country, config)
+            else:
+                logging.warning(f"Invalid EQ option: {o}")
+    if n.config["sector"]["co2_budget_national"]:
+        # prepare co2 constraint
+        nhours = n.snapshot_weightings.generators.sum()
+        nyears = nhours / 8760
+        investment_year = int(snakemake.wildcards.planning_horizons[-4:])
+        limit_countries = snakemake.config["co2_budget_national"][investment_year]
 
+        # add co2 constraint for each country
+        logger.info(f"Add CO2 limit for each country")
+        add_co2limit_country(n, limit_countries, nyears)
+    
 
 def solve_network(n, config, solving, opts="", **kwargs):
     set_of_options = solving["solver"]["options"]
+    solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
+    solver_name = solving["solver"]["name"]
     cf_solving = solving["options"]
-
-    kwargs["solver_options"] = (
-        solving["solver_options"][set_of_options] if set_of_options else {}
-    )
-    kwargs["solver_name"] = solving["solver"]["name"]
-    kwargs["extra_functionality"] = extra_functionality
-    kwargs["transmission_losses"] = cf_solving.get("transmission_losses", False)
-    kwargs["linearized_unit_commitment"] = cf_solving.get(
-        "linearized_unit_commitment", False
-    )
-    kwargs["assign_all_duals"] = cf_solving.get("assign_all_duals", False)
-
-    rolling_horizon = cf_solving.pop("rolling_horizon", False)
-    skip_iterations = cf_solving.pop("skip_iterations", False)
-    if not n.lines.s_nom_extendable.any():
-        skip_iterations = True
-        logger.info("No expandable lines found. Skipping iterative solving.")
+    track_iterations = cf_solving.get("track_iterations", False)
+    min_iterations = cf_solving.get("min_iterations", 4)
+    max_iterations = cf_solving.get("max_iterations", 6)
+    transmission_losses = cf_solving.get("transmission_losses", 0)
+    assign_all_duals = cf_solving.get("assign_all_duals", False)
 
     # add to network for extra_functionality
     n.config = config
     n.opts = opts
 
-    if rolling_horizon:
-        kwargs["horizon"] = cf_solving.get("horizon", 365)
-        kwargs["overlap"] = cf_solving.get("overlap", 0)
-        n.optimize.optimize_with_rolling_horizon(**kwargs)
-        status, condition = "", ""
-    elif skip_iterations:
-        status, condition = n.optimize(**kwargs)
+    skip_iterations = cf_solving.get("skip_iterations", False)
+    if not n.lines.s_nom_extendable.any():
+        skip_iterations = True
+        logger.info("No expandable lines found. Skipping iterative solving.")
+
+    if skip_iterations:
+        status, condition = n.optimize(
+            solver_name=solver_name,
+            transmission_losses=transmission_losses,
+            assign_all_duals=assign_all_duals,
+            extra_functionality=extra_functionality,
+            **solver_options,
+            **kwargs,
+        )
     else:
-        kwargs["track_iterations"] = (cf_solving.get("track_iterations", False),)
-        kwargs["min_iterations"] = (cf_solving.get("min_iterations", 4),)
-        kwargs["max_iterations"] = (cf_solving.get("max_iterations", 6),)
         status, condition = n.optimize.optimize_transmission_expansion_iteratively(
-            **kwargs
+            solver_name=solver_name,
+            track_iterations=track_iterations,
+            min_iterations=min_iterations,
+            max_iterations=max_iterations,
+            transmission_losses=transmission_losses,
+            assign_all_duals=assign_all_duals,
+            extra_functionality=extra_functionality,
+            **solver_options,
+            **kwargs,
         )
 
-    if status != "ok" and not rolling_horizon:
+    if status != "ok":
         logger.warning(
             f"Solving status '{status}' with termination condition '{condition}'"
         )
@@ -651,13 +1188,14 @@ if __name__ == "__main__":
         from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
-            "solve_network",
+            "solve_sector_network",
+            configfiles="test/config.overnight.yaml",
             simpl="",
             opts="",
-            clusters="6",
-            ll="v1.0",
-            sector_opts="",
-            planning_horizons="2020",
+            clusters="5",
+            ll="v1.5",
+            sector_opts="CO2L0-24H-T-H-B-I-A-solar+p3-dist1",
+            planning_horizons="2030",
         )
     configure_logging(snakemake)
     if "sector_opts" in snakemake.wildcards.keys():
@@ -674,7 +1212,6 @@ if __name__ == "__main__":
     np.random.seed(solve_opts.get("seed", 123))
 
     n = pypsa.Network(snakemake.input.network)
-
     n = prepare_network(
         n,
         solve_opts,
@@ -683,6 +1220,14 @@ if __name__ == "__main__":
         planning_horizons=snakemake.params.planning_horizons,
         co2_sequestration_potential=snakemake.params["co2_sequestration_potential"],
     )
+    n = imposed_values_genertion(
+        n,
+        config=snakemake.config,
+        foresight=snakemake.params.foresight,)
+    n = imposed_TYNDP(
+        n,
+        config=snakemake.config,
+        foresight=snakemake.params.foresight,)
 
     n = solve_network(
         n,

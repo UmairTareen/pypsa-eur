@@ -970,7 +970,6 @@ bus_id,station_id,voltage,dc,symbol,under_construction,tags,x,y
 940,989,220,f,Substation,f,'"TSO"=>"", "oid"=>"57705", "country"=>"MA", "visible"=>"1", "EIC_code"=>"", "capacity"=>"0", "tie_line_s"=>"0", "CreatedDate"=>"1489968000000", "visible_on_printed"=>"1"',-5.479431,35.231038
 942,990,220,f,Substation,f,'"TSO"=>"", "oid"=>"57634", "country"=>"MA", "visible"=>"1", "EIC_code"=>"", "capacity"=>"0", "tie_line_s"=>"0", "CreatedDate"=>"1489968000000", "ModifiedDate"=>"1503920888000", "visible_on_printed"=>"1"',-5.22125199999999,34.9017
 943,992,220,f,Substation,f,'"TSO"=>"", "oid"=>"57628", "country"=>"MA", "visible"=>"1", "EIC_code"=>"", "capacity"=>"0", "tie_line_s"=>"0", "CreatedDate"=>"1489968000000", "visible_on_printed"=>"1"',-3.76556400000001,34.893816
-944,994,220,f,Substation,f,'"TSO"=>"", "oid"=>"32004", "country"=>"AL", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "visible_on_printed"=>"1"',19.605103,40.486649
 945,995,220,f,Hydro mixed pump storage,f,'"oid"=>"64920", "country"=>"MA", "visible"=>"1", "tie_line_s"=>"0", "CreatedDate"=>"1504089052000", "ModifiedDate"=>"1504089065000", "visible_on_printed"=>"1"',-2.969055,34.663711
 946,996,220,f,Hydro mixed pump storage,f,'"oid"=>"65318", "country"=>"MA", "visible"=>"1", "tie_line_s"=>"0", "CreatedDate"=>"1504089201000", "ModifiedDate"=>"1504089302000", "visible_on_printed"=>"1"',-2.837219,34.72807
 948,997,380,f,Substation,f,'"TSO"=>"", "oid"=>"57703", "country"=>"MA", "visible"=>"1", "EIC_code"=>"", "capacity"=>"0", "tie_line_s"=>"0", "CreatedDate"=>"1489968000000", "visible_on_printed"=>"1"',-5.535736,33.827075
@@ -1323,8 +1322,6 @@ bus_id,station_id,voltage,dc,symbol,under_construction,tags,x,y
 1277,1608,380,f,Brown coal/Lignite,f,'"TSO"=>"", "oid"=>"33113", "country"=>"IT", "visible"=>"1", "capacity"=>"2910", "tie_line_s"=>"0", "visible_on_printed"=>"1"',18.065643,40.512755
 1278,1609,380,f,Substation,f,'"TSO"=>"", "oid"=>"33327", "country"=>"IT", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "visible_on_printed"=>"1"',18.097229,39.997112
 1280,1611,380,f,Substation,f,'"TSO"=>"", "oid"=>"33321", "country"=>"IT", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "visible_on_printed"=>"1"',17.082367,39.04052
-1282,1614,380,f,Substation,f,'"TSO"=>"", "oid"=>"32003", "country"=>"AL", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "visible_on_printed"=>"1"',19.592743,40.783661
-1281,1614,220,f,Substation,f,'"TSO"=>"", "oid"=>"32003", "country"=>"AL", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "visible_on_printed"=>"1"',19.592743,40.783661
 1283,1615,220,f,Substation,f,'"TSO"=>"", "oid"=>"35908", "country"=>"AL", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "ModifiedDate"=>"1515159158000", "visible_on_printed"=>"1"',19.465027,40.498137
 1284,1617,220,f,Substation,t,'"TSO"=>"", "oid"=>"35907", "country"=>"AL", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "visible_on_printed"=>"1"',20.320587,40.941527
 1285,1619,220,f,Substation,t,'"TSO"=>"", "oid"=>"35906", "country"=>"AL", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "ModifiedDate"=>"1515159143000", "visible_on_printed"=>"1"',20.43457,40.771182
@@ -2133,7 +2130,6 @@ bus_id,station_id,voltage,dc,symbol,under_construction,tags,x,y
 2083,2604,380,f,Substation,t,'"oid"=>"41314", "country"=>"TR", "visible"=>"1", "tie_line_s"=>"0", "CreatedDate"=>"1487916712000", "ModifiedDate"=>"1487916726000", "visible_on_printed"=>"1"',27.938232,41.259227
 2084,2605,380,f,Substation,f,'"oid"=>"40531", "country"=>"TR", "visible"=>"1", "tie_line_s"=>"0", "CreatedDate"=>"1487851841000", "ModifiedDate"=>"1487851941000", "visible_on_printed"=>"1"',27.969818,41.004775
 2085,2606,380,f,Substation,t,'"oid"=>"40915", "country"=>"TR", "visible"=>"1", "tie_line_s"=>"0", "CreatedDate"=>"1487917596000", "ModifiedDate"=>"1487917629000", "visible_on_printed"=>"1"',28.086548,41.05968
-2086,2608,380,f,Substation,f,'"TSO"=>"", "oid"=>"32172", "country"=>"BA", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "ModifiedDate"=>"1487840959000", "visible_on_printed"=>"1"',17.201843,44.772087
 2087,2610,220,f,Substation,f,'"TSO"=>"", "oid"=>"32183", "country"=>"BA", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"0", "ModifiedDate"=>"1487842163000", "visible_on_printed"=>"1"',17.355652,44.25897
 2088,2613,132,f,Substation,f,'"TSO"=>"", "oid"=>"32198", "country"=>"BA", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"1", "visible_on_printed"=>"1"',18.010712,45.040537
 2089,2614,220,f,Substation,f,'"TSO"=>"", "oid"=>"32188", "country"=>"BA", "visible"=>"1", "capacity"=>"-1", "tie_line_s"=>"1", "visible_on_printed"=>"1"',18.094482,44.922029
