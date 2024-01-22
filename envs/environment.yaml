@@ -44,6 +44,7 @@ dependencies:
 - tabula-py
 - pyxlsb
 - graphviz
+- linopy==0.2.5
 
   # Keep in conda environment when calling ipython
 - ipython
