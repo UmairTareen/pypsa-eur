@@ -47,20 +47,20 @@ include: "rules/collect.smk"
 include: "rules/retrieve.smk"
 include: "rules/build_electricity.smk"
 include: "rules/solve_electricity.smk"
-include: "rules/postprocess.smk"
+include: "rules/postprocess_nocdr_myopic.smk"
 include: "rules/validate.smk"
 
 
 if config["foresight"] == "overnight":
 
     include: "rules/solve_overnight.smk"
-    include: "rules/build_sector.smk"
+    include: "rules/build_sector_suff.smk"
 
 
 if config["foresight"] == "myopic":
 
-    include: "rules/solve_myopic.smk"
-    include: "rules/build_sector.smk"
+    include: "rules/solve_myopic_nocdr.smk"
+    include: "rules/build_sector_nocdr_myopic.smk"
 
 
 rule purge:
