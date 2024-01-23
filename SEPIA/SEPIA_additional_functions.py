@@ -15,11 +15,6 @@ import time # For performance measurement
 ## General functions
 # Show calculation time
 
-from SEPIA_functions import calc_time
-from SEPIA_functions import db_cleanup
-from SEPIA_functions import unfound_indicators
-from SEPIA_functions import put_item_in_front
-from SEPIA_functions import node_consumption
 from SEPIA_functions import create_line_chart
 from SEPIA_functions import format_chart
 from SEPIA_functions import chart_to_output

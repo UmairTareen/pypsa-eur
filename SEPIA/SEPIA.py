@@ -534,8 +534,8 @@ def prepare_sepia(countries,scenario):
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
     html_items['MAIN'] += saf.combine_charts([('by sector',ghg_sector)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
     html_items['MAIN'] += saf.combine_charts([('by source',ghg_source)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart', results_xls_writer, 'MtCO<sub>2</sub>eq')
-    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by sector',sf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
-    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by source',sf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, 'CO2 emissions','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
+    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by sector',saf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
+    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by source',saf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, 'CO2 emissions','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
 
     # Sankeys
     id_section += 1
