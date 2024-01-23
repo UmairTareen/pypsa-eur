@@ -8,16 +8,15 @@ __license__ = "GPL"
 __version__ = "1.8"
 __email__ = "adrien.jacob@negawatt.org"
 
+import SEPIA_additional_functions as saf # Custom functions
 import SEPIA_functions as sf # Custom functions
 import pandas as pd # Read/analyse data
 import datetime # For current time
 import logging
 import shutil
 
-scenario = "ncdr"
 
-
-def prepare_sepia(countries):
+def prepare_sepia(countries,scenario):
  '''This function prepares data from excel files for sepia visulaisation'''
 
  # Import country data
@@ -533,18 +532,18 @@ def prepare_sepia(countries):
     # GHG
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += sf.combine_charts([('by sector',ghg_sector)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
-    html_items['MAIN'] += sf.combine_charts([('by source',ghg_source)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart', results_xls_writer, 'MtCO<sub>2</sub>eq')
-    html_items['MAIN'] += sf.combine_charts([('cumulated since 2020 by sector',sf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
-    html_items['MAIN'] += sf.combine_charts([('cumulated since 2020 by source',sf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, 'CO2 emissions','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
+    html_items['MAIN'] += saf.combine_charts([('by sector',ghg_sector)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
+    html_items['MAIN'] += saf.combine_charts([('by source',ghg_source)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart', results_xls_writer, 'MtCO<sub>2</sub>eq')
+    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by sector',sf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
+    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by source',sf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, 'CO2 emissions','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
 
     # Sankeys
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += sf.combine_charts([('Sankey diagram',flows)], MAIN_PARAMS, NODES, '', 'sankey', sk_proc=PROCESSES) #('upstream flows from final energies',flows_from_node_cum),('Sankey diagram without import mix',flows)
+    html_items['MAIN'] += saf.combine_charts([('Sankey diagram',flows)], MAIN_PARAMS, NODES, '', 'sankey', sk_proc=PROCESSES) #('upstream flows from final energies',flows_from_node_cum),('Sankey diagram without import mix',flows)
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += sf.combine_charts([('Carbon Sankey diagram',flows_co2)], MAIN_PARAMS, NODES, '', 'carbon sankey', sk_proc=PROCESSES_2) #('upstream flows from final energies',flows_from_node_cum),('Sankey diagram without import mix',flows)
+    html_items['MAIN'] += saf.combine_charts([('Carbon Sankey diagram',flows_co2)], MAIN_PARAMS, NODES, '', 'carbon sankey', sk_proc=PROCESSES_2) #('upstream flows from final energies',flows_from_node_cum),('Sankey diagram without import mix',flows)
     # RES share
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
@@ -564,18 +563,18 @@ def prepare_sepia(countries):
         node_list = tot_results['cov_ratio'].columns.unique(level='Sub_indicator').to_list()
         sf.put_item_in_front(node_list, 'total') # We put total first
         combinations = [(NODES.loc[node,'Label'],tot_results[('cov_ratio',node)]) for node in node_list]
-        html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, country_list, 'Local prod coverage ratios -', 'map', results_xls_writer, '%', min_scale=0, mid_scale=50)
+        html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, country_list, 'Local prod coverage ratios -', 'map', results_xls_writer, '%', min_scale=0, mid_scale=50)
     combinations = [('All energies',fec_sector)]
     for energy in FE_NODES:
         combinations += [(NODES.loc[energy,'Label'], sf.node_consumption(flows_bk, energy, direction='forward', splitby='target'))]
-    html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
+    html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
     combinations = []
     grouped_flows = flows.T.groupby(['Source', 'Target', 'Type']).sum().T
     for energy in SE_NODES:
         df = sf.node_consumption(grouped_flows, energy, direction='backward', splitby='source')
         combinations += [(NODES.loc[energy,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'sec_mix.'+energy, False)
-    html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
+    html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
     # html_items['MAIN'] += '<p>The above chart describes the contribution of misc. technologies (and possibly imports) to the production of a given secondary energy carrier.</p>'
     combinations = []
     # Energy consumption
@@ -586,7 +585,7 @@ def prepare_sepia(countries):
         df = sf.node_consumption(flows_bk, sector, direction='backwards', splitby='target')
         combinations += [(NODES.loc[sector,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'fec.'+sector)
-    html_items['MAIN'] += sf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
+    html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
     
 
     # Indicator calculation for inter-territorial analysis
@@ -640,7 +639,7 @@ def prepare_sepia(countries):
  
  for country in ALL_COUNTRIES:
     tot_results = generate_results(tot_flows[country], tot_results, country)
-    
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -651,17 +650,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     countries = snakemake.params.countries
+    scenario = snakemake.config['run']['name']
     
-    prepare_sepia(countries)
-    
-def move_folder(source_paths, destination_path):
-    try:
-        for source_path in source_paths:
-            shutil.move(source_path, destination_path)
-            print(f"Folder moved successfully from {source_path} to {destination_path}")
-    except Exception as e:
-        print(f"Error: {e}")
+    prepare_sepia(countries,scenario)
 
-source_folders = ['../results/sepia', '../results/htmls']
-destination_folder = f'../results/{scenario}/'
-move_folder(source_folders, destination_folder)
