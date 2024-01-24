@@ -55,7 +55,7 @@ dependencies:
 - rasterio!=1.2.10
   # For post-processing scripts
 - plotly
-- kaleido
+- python-kaleido
 
 - pip:
   - tsam>=1.1.0

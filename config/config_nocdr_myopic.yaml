@@ -44,7 +44,7 @@ scenario:
   opts:
   - EQ0.70c
   sector_opts:
-  - 1H-T-H-B-I-A-dist1
+  - 12H-T-H-B-I-A-dist1
   planning_horizons:
   # - 2020
   - 2030

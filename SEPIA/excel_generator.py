@@ -6,32 +6,31 @@ from pypsa.descriptors import get_switchable_as_dense as as_dense
 import logging
 
 
-def prepare_files(simpl, cluster, opt, sector_opt, ll, scenario):
+def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
-    file_name = 'elec_s_6_lv1.0__Co2L0.7-1H-T-H-B-I-A-dist1_2020.nc'
+    file_name = 'elec_s_6_lv1.0__Co2L0.7-12H-T-H-B-I-A-dist1_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
-    source_directory = '../results/reff/postnetworks/'
-    destination_directory = f'../results/{scenario}/postnetworks/'
+    source_directory = 'results/reff/postnetworks/'
+    destination_directory = f'results/{scenario}/postnetworks/'
     source_path = os.path.join(source_directory, file_name)
     destination_path = os.path.join(destination_directory, new_file_name)
     shutil.copy(source_path, destination_path)
 
     # CSV files
-    csv_source_directory = '../resources/reff/'
-    csv_destination_directory = f'../resources/{scenario}/'
-    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv", f"co2_totals_s{simpl}_{cluster}_2020.csv",
-                 f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
+    csv_source_directory = 'resources/reff/'
+    csv_destination_directory = f'resources/{scenario}/'
+    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv",f"co2_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
 
     for csv_file in csv_files:
         source_csv_path = os.path.join(csv_source_directory, csv_file)
         destination_csv_path = os.path.join(csv_destination_directory, csv_file)
         shutil.copy(source_csv_path, destination_csv_path)
-
-
-def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenario):
-    prefix = f"../results/{scenario}/postnetworks/elec_"
-    return prefix + "s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
+    
+    
+def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
+    prefix=f"results/{scenario}/postnetworks/elec_"
+    return prefix+"s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
         simpl=simpl,
         cluster=cluster,
         opt=opt,
@@ -1438,10 +1437,7 @@ entry_label_mapping_c = {
                                                'target': 'emmbmsngcccb'},
     'Sabatier': {'label': 'Sabatier"', 'source': 'MtCO2', 'target': 'emmsaba'},
 }
-
-
-def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, countries, scenario,
-                   filename='../SEPIA/inputs_country.xlsx'):
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries, filename):
     '''
     Function that writes the simulation results to the SEPIA excel input file
     :param filename_template: Template for the excel file name with a placeholder for the country
@@ -1464,8 +1460,8 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, count
 
         df = connections
         selected_entries_df = pd.DataFrame()
-
-        country_filename = ''.join(filename)[:-5] + country + ".xlsx"
+        filename=snakemake.output.excelfile[countries.index(country)]
+        country_filename = str(filename)
 
         with pd.ExcelWriter(country_filename, engine='openpyxl') as writer:
             for entry in entries_to_select:
@@ -1526,8 +1522,9 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, count
                 return f"{label}_{suffix_counter[label]}"
             return label
 
-        merged_emissions['label'] = merged_emissions['label'].apply(generate_new_label)
-        country_filename = ''.join(filename)[:-5] + country + ".xlsx"
+        merged_emissions['label'] =  merged_emissions['label'].apply(generate_new_label)
+        filename=snakemake.output.excelfile[countries.index(country)]
+        country_filename = str(filename)
 
         selected_entries_cf = pd.DataFrame()
         with pd.ExcelWriter(country_filename, engine='openpyxl', mode='a',
@@ -1594,20 +1591,22 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_sepia")
 
-        # Updating the configuration from the standard config file to run in standalone:
-        snakemake.params.scenario["simpl"] = [""]
-        snakemake.params.scenario["clusters"] = [6]
-        snakemake.params.scenario["opts"] = ["EQ0.70c"]
-        snakemake.params.scenario["sector_opts"] = ["1H-T-H-B-I-A-dist1"]
-        snakemake.params.scenario["ll"] = ["vopt"]
-        snakemake.params.scenario["planning_horizons"] = [2020, 2030, 2040, 2050]
+        
 
-    scenario = snakemake.config['run']['name']
+    simpl = ""
+    cluster = 6
+    opt = "EQ0.70c"
+    sector_opt = "12H-T-H-B-I-A-dist1"
+    ll = "vopt"
+    planning_horizons = [2020, 2030, 2040, 2050] 
+    countries = snakemake.params.countries
+    scenario = snakemake.params.studies
+    for scenario in snakemake.params.studies:
+     prepare_files(simpl, cluster, opt, sector_opt, ll)
     # List the input files for  this script:
     networks_dict = {
         (cluster, ll, opt + sector_opt, planning_horizon): "results/"
-                                                           + snakemake.params.RDIR
-                                                           + f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
+        + f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
         for simpl in snakemake.params.scenario["simpl"]
         for cluster in snakemake.params.scenario["clusters"]
         for opt in snakemake.params.scenario["opts"]
@@ -1622,8 +1621,8 @@ if __name__ == "__main__":
 
     # TODO: embed this function call in a loop for the case where there is more than one scenario
     # for country in countries:
-    countries = snakemake.params.countries
-
+     
+    # for scenario in snakemake.params.studies:
     write_to_excel(
         snakemake.params.scenario["simpl"][0],
         snakemake.params.scenario["clusters"][0],
