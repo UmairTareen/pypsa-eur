@@ -63,8 +63,9 @@ doc/_build
 *.geojson
 
 *.ipynb
-
-data/costs_*
+run_snakefile_bau.done
+run_snakefile_reff.done
+run_snakefile_nocdr.done
 
 merger-todos.md
 .idea/*

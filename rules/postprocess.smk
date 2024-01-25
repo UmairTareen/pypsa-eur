@@ -149,66 +149,7 @@ rule make_country_summary:
         "../envs/environment.yaml"
     script:
         "../scripts/make_country_summary.py"
-
-rule prepare_sepia:
-    params:
-        countries=config["countries"],
-        planning_horizons=config["scenario"]["planning_horizons"],
-        sector_opts=config["scenario"]["sector_opts"],
-        emissions_scope=config["energy"]["emissions"],
-        eurostat_report_year=config["energy"]["eurostat_report_year"],
-        plotting=config["plotting"],
-        scenario=config["scenario"],
-        RDIR=RDIR,
-    input:
-        networks=expand(
-            RESULTS
-            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
-            **config["scenario"]
-        ),
-        costs = "data/costs_2050.csv",
         
-    output:
-        excelfile=expand(RESULTS + "sepia/inputs.xlsx", country=config["countries"]),
-    threads: 1
-    resources:
-        mem_mb=10000,
-    log:
-        LOGS + "prepare_sepia.log",
-    benchmark:
-        BENCHMARKS + "prepare_sepia",
-    conda:
-        "../envs/environment.yaml"
-    script:
-        "../SEPIA/excel_generator.py"
-
-local_countries = config["countries"].copy()
-if "EU" not in local_countries:
-    local_countries.append("EU")        
-rule generate_sepia:
-    params:
-        countries=config["countries"],
-    input:
-        countries = "SEPIA/COUNTRIES.xlsx",
-        costs = "data/costs_2050.csv",
-        sepia_config = "SEPIA/SEPIA_config.xlsx",
-        template = "SEPIA/Template/CLEVER.html",
-        excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
-        
-    output:
-        excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
-        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=local_countries),
-    threads: 1
-    resources:
-        mem_mb=10000,
-    log:
-        LOGS + "generate_sepia.log",
-    benchmark:
-        BENCHMARKS + "generate_sepia",
-    conda:
-        "../envs/environment.yaml"
-    script:
-        "../SEPIA/SEPIA.py"
         
 rule prepare_results:
     params:
@@ -294,8 +235,72 @@ rule plot_summary:
         "../envs/environment.yaml"
     script:
         "../scripts/plot_summary.py"
+        
+
+                   
+planning_horizons = [2020, 2030, 2040, 2050] 
+local_countries = config["countries"].copy()
+if "EU" not in local_countries:
+    local_countries.append("EU")                      
+rule prepare_sepia:
+    params:
+        countries=config["countries"],
+        planning_horizons=planning_horizons,
+        sector_opts=config["scenario"]["sector_opts"],
+        emissions_scope=config["energy"]["emissions"],
+        eurostat_report_year=config["energy"]["eurostat_report_year"],
+        plotting=config["plotting"],
+        scenario=config["scenario"],
+        study = config["run"]["name"],
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        costs = "data/costs_2050.csv", 
+        summary = RESULTS + "graphs/costs.pdf",
+    output:
+        excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "prepare_sepia.log",
+    benchmark:
+        BENCHMARKS + "prepare_sepia",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/excel_generator.py"
 
 
+rule generate_sepia:
+    params:
+        countries=config["countries"],
+    input:
+        countries = "SEPIA/COUNTRIES.xlsx",
+        costs = "data/costs_2050.csv",
+        sepia_config = "SEPIA/SEPIA_config.xlsx",
+        template = "SEPIA/Template/CLEVER.html",
+        excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
+        
+    output:
+        excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
+        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=local_countries),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "generate_sepia.log",
+    benchmark:
+        BENCHMARKS + "generate_sepia",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/SEPIA.py"
+        
+                
 STATISTICS_BARPLOTS = [
     "capacity_factor",
     "installed_capacity",

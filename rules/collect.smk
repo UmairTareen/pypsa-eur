@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-
 localrules:
     all,
     cluster_networks,
@@ -13,10 +12,15 @@ localrules:
     solve_sector_networks,
     plot_networks,
 
-
-rule all:
+if config["run"]["name"] == "reff":
+ rule all:
     input:
         RESULTS + "graphs/costs.pdf",
+    default_target: True
+else:
+ rule all:
+    input:
+        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=config["countries"]),
     default_target: True
 
 
