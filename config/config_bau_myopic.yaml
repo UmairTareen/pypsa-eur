@@ -185,6 +185,7 @@ TYNDP_values:
   de_nl: 5000
   be_de: 0
   max_expansion: 1.5
+country_summary: 'BE'
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
   onwind:
@@ -1003,5 +1004,9 @@ plotting:
     onshore curtailment: "navy"
     offshore curtailment: "lightskyblue"
     LULUCF: "greenyellow"
+    solar curtailment: "gold"
+    onshore curtailment: "navy"
+    offshore curtailment: "lightskyblue"
+    load shedding: "black"
     load: "black"
     coal for industry: '#343434'

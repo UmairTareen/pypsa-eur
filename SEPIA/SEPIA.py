@@ -13,10 +13,9 @@ import SEPIA_functions as sf # Custom functions
 import pandas as pd # Read/analyse data
 import datetime # For current time
 import logging
-import shutil
 
 
-def prepare_sepia(countries,scenario):
+def prepare_sepia(countries):
  '''This function prepares data from excel files for sepia visulaisation'''
 
  # Import country data
@@ -313,7 +312,7 @@ def prepare_sepia(countries,scenario):
 
 
  def generate_results(flows, tot_results, country):
-    xls_file_name = snakemake.output.excelfile[ALL_COUNTRIES.index(country)]
+    xls_file_name = snakemake.output.excelfile[countries.index(country)]
     xls_file_name = str(xls_file_name)
  
     file_handle = open(xls_file_name, 'wb')
@@ -650,7 +649,6 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     countries = snakemake.params.countries
-    scenario = snakemake.config['run']['name']
     
-    prepare_sepia(countries,scenario)
+    prepare_sepia(countries)
 

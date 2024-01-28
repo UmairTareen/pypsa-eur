@@ -14,11 +14,10 @@ import shutil
 from datetime import datetime
 import plotly.express as px
 
-prepare_folder_website = False
 
 def scenario_costs(country):
-    costs_bau = pd.read_csv(f"../results/csvs/{country}_costs_bau.csv")
-    costs_suff = pd.read_csv(f"../results/csvs/{country}_costs_ncdr.csv")
+    costs_bau = pd.read_csv(f"results/csvs/{country}_costs_bau.csv")
+    costs_suff = pd.read_csv(f"results/csvs/{country}_costs_ncdr.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     costs_reff = costs_bau[['tech', '2020']]
     costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
@@ -72,8 +71,8 @@ def scenario_costs(country):
     
 #%%
 def scenario_capacities(country):
-    caps_bau = pd.read_csv(f"../results/csvs/{country}_capacities_bau.csv")
-    caps_suff = pd.read_csv(f"../results/csvs/{country}_capacities_ncdr.csv")
+    caps_bau = pd.read_csv(f"results/csvs/{country}_capacities_bau.csv")
+    caps_suff = pd.read_csv(f"results/csvs/{country}_capacities_ncdr.csv")
     # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
     caps_reff = caps_bau[['tech', '2020']]
     caps_bau = caps_bau[['tech', '2030', '2040', '2050']]
@@ -174,10 +173,10 @@ def scenario_demands(country):
     colors["electricity demand for rail network"] = "blue"
     colors["H2 for non-energy"] = "violet" 
     
-    data_ncdr = pd.read_csv(f"../results/csvs/{country}_sectordemands_ncdr.csv", index_col=0)
+    data_ncdr = pd.read_csv(f"results/csvs/{country}_sectordemands_ncdr.csv", index_col=0)
     columns_to_drop = ['2020']
     data_ncdr = data_ncdr.drop(columns=columns_to_drop)
-    data_bau = pd.read_csv(f"../results/csvs/{country}_sectordemands_bau.csv", index_col=0)
+    data_bau = pd.read_csv(f"results/csvs/{country}_sectordemands_bau.csv", index_col=0)
     
     # Rename columns
     data_bau.rename(columns={'2020': 'reff', '2030': 'bau-2030', '2040': 'bau-2040', '2050': 'bau-2050'}, inplace=True)
@@ -208,7 +207,7 @@ def scenario_demands(country):
      col.update(tickangle=-45)
     return fig
     
-def create_combined_scenario_chart_country(country, output_folder='../results/pypsa_results/scenario'):
+def create_combined_scenario_chart_country(country, output_folder='results/scenario_results/'):
     # Create output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
 
@@ -251,7 +250,7 @@ if __name__ == "__main__":
         create_combined_scenario_chart_country(country)
         
 #%%
-
+prepare_folder_website = config["prepare_folder_for_website"]
 if prepare_folder_website == True:  
     
  def create_website_files(source_directories, target_directory, new_names, files_to_delete):
@@ -294,9 +293,9 @@ if prepare_folder_website == True:
 
  if __name__ == "__main__":
     # Specify the list of source directories, the target directory, new names, and files to delete
-    source_directories = ["../results/pypsa_results", "../results/bau/htmls", "../results/ncdr/htmls"]
-    target_directory = "../results/" 
-    new_names = ["Pypsa_results", "bau", "suff"]  # Replace with the desired new names
+    source_directories = ["results/bau/pypsa_results/bau", "results/ncdr/pypsa_results/ncdr","results/scenario_results", "results/bau/htmls", "results/ncdr/htmls"]
+    target_directory = "results/" 
+    new_names = ["Pypsa_results_bau","Pypsa_results_ncdr", "Pypsa_results_scenarios","bau", "suff"]  # Replace with the desired new names
     files_to_delete = ["ChartData_BE.xlsx","ChartData_DE.xlsx","ChartData_FR.xlsx","ChartData_GB.xlsx", "ChartData_NL.xlsx","ChartData_EU.xlsx"]  # Specify the names of files to delete
 
     create_website_files(source_directories, target_directory, new_names, files_to_delete)

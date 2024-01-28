@@ -54,9 +54,10 @@ dependencies:
 - descartes
 - rasterio!=1.2.10
   # For post-processing scripts
-- plotly
-- kaleido
+- python-kaleido
 
 - pip:
   - tsam>=1.1.0
   - pypsa==0.25.1
+  - plotly
+  - hvplot

@@ -91,6 +91,7 @@ co2_budget_national:
     'FR': 0.70
     'GB': 0.70
     'NL': 0.70
+country_summary: 'BE'
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   voltages: [220., 300., 380.]
@@ -512,7 +513,7 @@ sector:
   gas_network_connectivity_upgrade: 1
   gas_distribution_grid: true
   gas_distribution_grid_cost_factor: 1.0
-  biomass_spatial: false
+  biomass_spatial: true
   biomass_transport: false
   conventional_generation:
     OCGT: gas

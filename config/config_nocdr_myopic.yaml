@@ -186,7 +186,7 @@ TYNDP_values:
   de_nl: 5000
   be_de: 0
   max_expansion: 1.5
-  
+country_summary: 'BE'  
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
   onwind:
@@ -709,7 +709,7 @@ solving:
 
   mem: 60000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
   walltime: "12:00:00"
-
+prepare_folder_for_website: false
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#plotting
 plotting:
   map:
@@ -1005,5 +1005,9 @@ plotting:
     onshore curtailment: "navy"
     offshore curtailment: "lightskyblue"
     LULUCF: "greenyellow"
+    solar curtailment: "gold"
+    onshore curtailment: "navy"
+    offshore curtailment: "lightskyblue"
+    load shedding: "black"
     load: "black"
     coal for industry: '#343434'

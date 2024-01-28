@@ -14,12 +14,11 @@ logger = logging.getLogger(__name__)
 
 import pandas as pd
 import pypsa
-import shutil
 from prepare_sector_network import prepare_costs
 idx = pd.IndexSlice
 
-scenario = 'bau'
-country = 'BE'
+
+
 
 
 opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
@@ -166,11 +165,7 @@ def calculate_energy(n, label, energy, config):
             )
         else:
             c_energies = pd.Series(0.0, c.df.carrier.unique())
-            if scenario == "ncdr" or planning_horizons == 2020:
-                x = 2
-            else:
-                x = 3
-            for port in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
+            for port in [col[2:] for col in c.df.columns if col[:2] == "bus"]:
                 totals = (
                     c.pnl["p" + port].filter(like=country)
                     .multiply(n.snapshot_weightings.generators, axis=0)
@@ -223,11 +218,7 @@ def calculate_supply(n, label, supply, config):
             supply.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            if scenario == "ncdr" or planning_horizons == 2020:
-                x = 2
-            else:
-                x = 3
-            for end in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
+            for end in [col[2:] for col in c.df.columns if col[:2] == "bus"]:
                 items = c.df.index[c.df["bus" + end].map(bus_map).fillna(False)]
 
                 if len(items) == 0:
@@ -279,11 +270,7 @@ def calculate_supply_energy(n, label, supply_energy, config):
             supply_energy.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            if scenario == "ncdr" or planning_horizons == 2020:
-                x = 2
-            else:
-                x = 3
-            for end in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
+            for end in [col[2:] for col in c.df.columns if col[:2] == "bus"]:
                 items = c.df.index[c.df["bus" + str(end)].map(bus_map).fillna(False)]
 
                 if len(items) == 0:
@@ -439,7 +426,7 @@ def make_summaries(networks_dict, config):
 
 def to_csv(df):
     for key in df:
-       df[key].to_csv(snakemake.output[key] + f"_{country}")
+       df[key].to_csv(snakemake.output[key])
 
 
 if __name__ == "__main__":
@@ -448,24 +435,19 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake("make_country_summary")
         
-        snakemake.params.scenario["simpl"] = [""]
-        snakemake.params.scenario["clusters"] = [6]
-        snakemake.params.scenario["opts"] = ["EQ0.70c"]
-        snakemake.params.scenario["sector_opts"] = ["1H-T-H-B-I-A-dist1"]
-        snakemake.params.scenario["ll"] = ["vopt"]
-        snakemake.params.scenario["planning_horizons"] = [2020, 2030, 2040, 2050]
-
+    simpl = ""
+    cluster = 6
+    opt = "EQ0.70c"
+    sector_opt = "1H-T-H-B-I-A-dist1"
+    ll = "vopt"
+    planning_horizons = [2020, 2030, 2040, 2050]
+    study = snakemake.params.study
     networks_dict = {
-        (cluster, ll, opt + sector_opt, planning_horizon): f"../results/{scenario}"
-        + snakemake.params.RDIR
-        + f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
-        for simpl in snakemake.params.scenario["simpl"]
-        for cluster in snakemake.params.scenario["clusters"]
-        for opt in snakemake.params.scenario["opts"]
-        for sector_opt in snakemake.params.scenario["sector_opts"]
-        for ll in snakemake.params.scenario["ll"]
-        for planning_horizon in snakemake.params.scenario["planning_horizons"]
-    }
+            (cluster, ll, opt + sector_opt, planning_horizon): f"results/{study}" +
+            f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
+            for planning_horizon in planning_horizons
+        }
+    country = snakemake.params.country
     planning_horizons = snakemake.params.planning_horizons
     planning_horizons = int(''.join(map(str, planning_horizons)))
     logging.basicConfig(level=snakemake.config["logging"]["level"])
@@ -481,16 +463,3 @@ if __name__ == "__main__":
 
 
     to_csv(df)
-
-
-def move_folder(source_paths, destination_path):
-    try:
-        for source_path in source_paths:
-            shutil.move(source_path, destination_path)
-            print(f"Folder moved successfully from {source_path} to {destination_path}")
-    except Exception as e:
-        print(f"Error: {e}")
-
-source_folder = ['../results/country_csvs']
-destination_folder = f'../results/{scenario}/'
-move_folder(source_folder, destination_folder)

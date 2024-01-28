@@ -75,7 +75,7 @@ def create_ghg_chart(results, NODES, main_params, type="area", title='', xls_wri
     )]
 
     line_width = 1
-    fig.update_layout(hovermode='x', legend_title_text='', yaxis_title=unit, title=title)
+    fig.update_layout(hovermode='x', legend_title_text='', yaxis_title='MtCO2/year', title=title)
     if len(targets) > 0:
         fig.add_scatter(y=targets['y'], x=targets['x'], mode=targets['mode'], name=targets['title'], marker_size=15,
                         marker_color='black')

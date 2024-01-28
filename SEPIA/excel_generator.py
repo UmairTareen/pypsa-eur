@@ -3,35 +3,33 @@ import pypsa
 import os
 import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
-import logging
 
 
-def prepare_files(simpl, cluster, opt, sector_opt, ll, scenario):
+def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
     file_name = 'elec_s_6_lv1.0__Co2L0.7-1H-T-H-B-I-A-dist1_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
-    source_directory = '../results/reff/postnetworks/'
-    destination_directory = f'../results/{scenario}/postnetworks/'
+    source_directory = 'results/reff/postnetworks/'
+    destination_directory = f'results/{study}/postnetworks/'
     source_path = os.path.join(source_directory, file_name)
     destination_path = os.path.join(destination_directory, new_file_name)
     shutil.copy(source_path, destination_path)
 
     # CSV files
-    csv_source_directory = '../resources/reff/'
-    csv_destination_directory = f'../resources/{scenario}/'
-    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv", f"co2_totals_s{simpl}_{cluster}_2020.csv",
-                 f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
+    csv_source_directory = 'resources/reff/'
+    csv_destination_directory = f'resources/{study}/'
+    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv",f"co2_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
 
     for csv_file in csv_files:
         source_csv_path = os.path.join(csv_source_directory, csv_file)
         destination_csv_path = os.path.join(csv_destination_directory, csv_file)
         shutil.copy(source_csv_path, destination_csv_path)
-
-
-def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenario):
-    prefix = f"../results/{scenario}/postnetworks/elec_"
-    return prefix + "s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
+    
+    
+def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
+    prefix=f"results/{study}/postnetworks/elec_"
+    return prefix+"s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
         simpl=simpl,
         cluster=cluster,
         opt=opt,
@@ -41,28 +39,28 @@ def build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenari
     )
 
 
-def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenario):
-    results_dict = {}
-    for country in countries:
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenario)
+def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, country):
+        results_dict = {}
+    
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
         n = pypsa.Network(filename)
         config = snakemake.config
 
         energy_demand = pd.read_csv(
-            f"../resources/{scenario}/energy_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
+            f"resources/{study}/energy_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
             index_col=0).T
 
-        if planning_horizon == 2020 or scenario == 'bau':
+        if planning_horizon == 2020 or study == 'bau':
             H2_nonenergyy = 0
-        if scenario == 'ncdr':
+        if study == 'ncdr':
             clever_industry = (
-                pd.read_csv("../data/clever_Industry_" + str(planning_horizon) + ".csv", index_col=0)).T
+                pd.read_csv("data/clever_Industry_" + str(planning_horizon) + ".csv", index_col=0)).T
 
             H2_nonenergyy = clever_industry.loc[
                 "Non-energy consumption of hydrogen for the feedstock production"].filter(like=country).sum()
             H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
         industry_demand = pd.read_csv(
-            f"../resources/{scenario}/industrial_energy_demand_elec_s_" + str(cluster) + "_" + str(
+            f"resources/{study}/industrial_energy_demand_elec_s_" + str(cluster) + "_" + str(
                 planning_horizon) + ".csv", index_col=0).T
         Rail_demand = energy_demand.loc["total rail"].filter(like=country).sum()
 
@@ -143,7 +141,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenar
 
         load = load.loc[~load.label.str.contains("emissions")]
         load.target += " demand"
-        if scenario == 'ncdr':
+        if study == 'ncdr':
             load.loc[
                 load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
         value = load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
@@ -244,7 +242,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenar
                     'source': 'Electricity grid',
                     'target': 'Rail Network',
                     'value': Rail_demand}
-        if scenario == 'ncdr':
+        if study == 'ncdr':
             new_row2 = {'label': 'H2 for non-energy',
                         'source': 'hyd',
                         'target': 'Non-energy',
@@ -287,7 +285,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenar
         connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
         results_dict[country] = connections
 
-    return results_dict
+        return results_dict
 
 
 # %%
@@ -652,14 +650,14 @@ entry_label_mapping = {
 
 
 # %%
-def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon):
-    '''
-    This function prepare the data for co2 emissions sankey chart. All the emissions from
-    the technologies are compiled together
-    '''
-    results_dict_co2 = {}
-    for country in countries:
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenario)
+def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country):
+        '''
+         This function prepare the data for co2 emissions sankey chart. All the emissions from
+         the technologies are compiled together
+        '''
+        results_dict_co2 = {}
+
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
         n = pypsa.Network(filename)
         fn = snakemake.input.costs
         options = pd.read_csv(fn, index_col=[0, 1]).sort_index()
@@ -1297,7 +1295,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon):
         # LULUCF
         # if planning_horizon != 2020:
         LULUCF = (
-            pd.read_csv(f"../resources/{scenario}/co2_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
+            pd.read_csv(f"resources/{study}/co2_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
                         index_col=0)).T
         V = LULUCF.loc['LULUCF'].filter(like=country).sum()
         if country == 'NL':
@@ -1319,7 +1317,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon):
         cf.rename(columns={'value': str(planning_horizon)}, inplace=True)
         results_dict_co2[country] = cf
 
-    return results_dict_co2
+        return results_dict_co2
 
 
 # %%
@@ -1438,23 +1436,19 @@ entry_label_mapping_c = {
                                                'target': 'emmbmsngcccb'},
     'Sabatier': {'label': 'Sabatier"', 'source': 'MtCO2', 'target': 'emmsaba'},
 }
-
-
-def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, countries, scenario,
-                   filename='../SEPIA/inputs_country.xlsx'):
+def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries, filename):
     '''
     Function that writes the simulation results to the SEPIA excel input file
     :param filename_template: Template for the excel file name with a placeholder for the country
     '''
-
     for country in countries:
         # Generate the filename for the current country
 
-        merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0],scenario)
+        merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0], country)
         merged_df = merged_df[country]
 
         for planning_horizon in planning_horizons[1:]:
-            temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon,scenario)
+            temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, country)
             temp = temp[country]
             merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
 
@@ -1464,8 +1458,8 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, count
 
         df = connections
         selected_entries_df = pd.DataFrame()
-
-        country_filename = ''.join(filename)[:-5] + country + ".xlsx"
+        filename=snakemake.output.excelfile[countries.index(country)]
+        country_filename = str(filename)
 
         with pd.ExcelWriter(country_filename, engine='openpyxl') as writer:
             for entry in entries_to_select:
@@ -1504,10 +1498,10 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, count
 
         # Deal with the emissions:
     for country in countries:
-        merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+        merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0], country)
         merged_emissions = merged_emissions[country]
         for planning_horizon in planning_horizons[1:]:
-            temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+            temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country)
             temp = temp[country]
             merged_emissions = pd.merge(merged_emissions, temp, on=['label', 'source', 'target'], how='outer')
 
@@ -1526,8 +1520,9 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, count
                 return f"{label}_{suffix_counter[label]}"
             return label
 
-        merged_emissions['label'] = merged_emissions['label'].apply(generate_new_label)
-        country_filename = ''.join(filename)[:-5] + country + ".xlsx"
+        merged_emissions['label'] =  merged_emissions['label'].apply(generate_new_label)
+        filename=snakemake.output.excelfile[countries.index(country)]
+        country_filename = str(filename)
 
         selected_entries_cf = pd.DataFrame()
         with pd.ExcelWriter(country_filename, engine='openpyxl', mode='a',
@@ -1561,16 +1556,16 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons, count
         print("Different elements between the list and the Emissions dataFrame:", different_elements_list_c)
 
 
-def process_countries(countries, scenario):
+def process_countries(countries, study):
     total_energy = {}
     total_co2 = {}
     total_country = 'EU'
 
     for country in countries:
-        total_energy[country] = pd.read_excel(f"../results/{scenario}/sepia/inputs{country}.xlsx",
+        total_energy[country] = pd.read_excel(f"results/{study}/sepia/inputs{country}.xlsx",
                                               sheet_name="Inputs", index_col=0, usecols="C:G")
-        total_co2[country] = pd.read_excel(f"../results/{scenario}/sepia/inputs{country}.xlsx",
-                                           sheet_name="Inputs_co2", index_col=0, usecols="C:G")
+        total_co2[country] = pd.read_excel(f"results/{study}/sepia/inputs{country}.xlsx",
+                                            sheet_name="Inputs_co2", index_col=0, usecols="C:G")
 
     dataframes_energy = list(total_energy.values())
     tot_energy = pd.concat(dataframes_energy, axis=0)
@@ -1580,7 +1575,7 @@ def process_countries(countries, scenario):
     tota_co2 = pd.concat(dataframes_co2, axis=0)
     tota_co2 = tota_co2.groupby(tota_co2.index).sum()
 
-    excel_file_path = f"../results/{scenario}/sepia/inputs{total_country}.xlsx"
+    excel_file_path = f"results/{study}/sepia/inputs{total_country}.xlsx"
 
     with pd.ExcelWriter(excel_file_path) as writer:
         tot_energy.to_excel(writer, sheet_name='Inputs')
@@ -1594,46 +1589,34 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_sepia")
 
-        # Updating the configuration from the standard config file to run in standalone:
-        snakemake.params.scenario["simpl"] = [""]
-        snakemake.params.scenario["clusters"] = [6]
-        snakemake.params.scenario["opts"] = ["EQ0.70c"]
-        snakemake.params.scenario["sector_opts"] = ["1H-T-H-B-I-A-dist1"]
-        snakemake.params.scenario["ll"] = ["vopt"]
-        snakemake.params.scenario["planning_horizons"] = [2020, 2030, 2040, 2050]
+        
 
-    scenario = snakemake.config['run']['name']
-    # List the input files for  this script:
-    networks_dict = {
-        (cluster, ll, opt + sector_opt, planning_horizon): "results/"
-                                                           + snakemake.params.RDIR
-                                                           + f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
-        for simpl in snakemake.params.scenario["simpl"]
-        for cluster in snakemake.params.scenario["clusters"]
-        for opt in snakemake.params.scenario["opts"]
-        for sector_opt in snakemake.params.scenario["sector_opts"]
-        for ll in snakemake.params.scenario["ll"]
-        for planning_horizon in snakemake.params.scenario["planning_horizons"]
-    }
+    simpl = ""
+    cluster = 6
+    opt = "EQ0.70c"
+    sector_opt = "1H-T-H-B-I-A-dist1"
+    ll = "vopt"
+    planning_horizons = [2020, 2030, 2040, 2050] 
 
-    prepare_files(simpl="", cluster="6", opt="EQ0.70c", sector_opt="1H-T-H-B-I-A-dist1", ll="vopt", scenario=scenario)
-
-    logging.basicConfig(level=snakemake.config["logging"]["level"])
-
-    # TODO: embed this function call in a loop for the case where there is more than one scenario
-    # for country in countries:
     countries = snakemake.params.countries
+    study = snakemake.params.study
+    prepare_files(simpl, cluster, opt, sector_opt, ll)
+    networks_dict = {
+            (cluster, ll, opt + sector_opt, planning_horizon): f"results/{study}" +
+            f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"
+            for planning_horizon in planning_horizons
+        }
 
+        
     write_to_excel(
-        snakemake.params.scenario["simpl"][0],
-        snakemake.params.scenario["clusters"][0],
-        snakemake.params.scenario["opts"][0],
-        snakemake.params.scenario["sector_opts"][0],
-        snakemake.params.scenario["ll"][0],
-        snakemake.params.scenario["planning_horizons"],
-        countries,  # Pass the current country as a list
-        scenario,
-        filename=snakemake.output.excelfile,
-    )
+            snakemake.params.scenario["simpl"][0],
+            snakemake.params.scenario["clusters"][0],
+            snakemake.params.scenario["opts"][0],
+            snakemake.params.scenario["sector_opts"][0],
+            snakemake.params.scenario["ll"][0],
+            snakemake.params.planning_horizons,
+            countries,
+            filename=snakemake.output.excelfile,
+        )
 
-    process_countries(countries, scenario)
+    process_countries(countries,study)
