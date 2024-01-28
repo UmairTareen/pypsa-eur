@@ -980,4 +980,7 @@ plotting:
     DC: "#8a1caf"
     DC-DC: "#8a1caf"
     DC link: "#8a1caf"
+    solar curtailment: "gold"
+    onshore curtailment: "navy"
+    offshore curtailment: "lightskyblue"
     LULUCF: "greenyellow"

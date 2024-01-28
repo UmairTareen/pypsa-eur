@@ -1188,13 +1188,13 @@ if __name__ == "__main__":
         from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
-            "solve_sector_network",
-            configfiles="test/config.overnight.yaml",
+            "solve_sector_network_myopic",
+            #configfiles="test/config.overnight.yaml",
             simpl="",
-            opts="",
-            clusters="5",
-            ll="v1.5",
-            sector_opts="CO2L0-24H-T-H-B-I-A-solar+p3-dist1",
+            opts="EQ0.70c",
+            clusters="6",
+            ll="vopt",
+            sector_opts="1H-T-H-B-I-A-dist1",
             planning_horizons="2030",
         )
     configure_logging(snakemake)
