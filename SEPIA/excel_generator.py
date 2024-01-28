@@ -39,9 +39,9 @@ def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     )
 
 
-def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon):
-    results_dict = {}
-    for country in countries:
+def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, country):
+        results_dict = {}
+    
         filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
         n = pypsa.Network(filename)
         config = snakemake.config
@@ -285,7 +285,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon):
         connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
         results_dict[country] = connections
 
-    return results_dict
+        return results_dict
 
 
 # %%
@@ -650,13 +650,13 @@ entry_label_mapping = {
 
 
 # %%
-def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon):
-    '''
-    This function prepare the data for co2 emissions sankey chart. All the emissions from
-    the technologies are compiled together
-    '''
-    results_dict_co2 = {}
-    for country in countries:
+def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country):
+        '''
+         This function prepare the data for co2 emissions sankey chart. All the emissions from
+         the technologies are compiled together
+        '''
+        results_dict_co2 = {}
+
         filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
         n = pypsa.Network(filename)
         fn = snakemake.input.costs
@@ -1317,7 +1317,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon):
         cf.rename(columns={'value': str(planning_horizon)}, inplace=True)
         results_dict_co2[country] = cf
 
-    return results_dict_co2
+        return results_dict_co2
 
 
 # %%
@@ -1444,11 +1444,11 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
     for country in countries:
         # Generate the filename for the current country
 
-        merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+        merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0], country)
         merged_df = merged_df[country]
 
         for planning_horizon in planning_horizons[1:]:
-            temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+            temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, country)
             temp = temp[country]
             merged_df = pd.merge(merged_df, temp, on=['label', 'source', 'target'], how='outer')
 
@@ -1498,10 +1498,10 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
 
         # Deal with the emissions:
     for country in countries:
-        merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0])
+        merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0], country)
         merged_emissions = merged_emissions[country]
         for planning_horizon in planning_horizons[1:]:
-            temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+            temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country)
             temp = temp[country]
             merged_emissions = pd.merge(merged_emissions, temp, on=['label', 'source', 'target'], how='outer')
 
