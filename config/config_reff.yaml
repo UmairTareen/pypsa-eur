@@ -44,7 +44,7 @@ scenario:
   opts:
   - ''
   sector_opts:
-  - Co2L0.7-12H-T-H-B-I-A-dist1
+  - Co2L0.7-1H-T-H-B-I-A-dist1
   planning_horizons:
   #- 2020
   #- 2030
@@ -91,6 +91,7 @@ co2_budget_national:
     'FR': 0.70
     'GB': 0.70
     'NL': 0.70
+country_summary: 'BE'
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   voltages: [220., 300., 380.]

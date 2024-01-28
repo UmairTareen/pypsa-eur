@@ -20,7 +20,7 @@ if config["run"]["name"] == "reff":
 else:
  rule all:
     input:
-        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=config["countries"]),
+        htmlfile=expand(RESULTS + "pypsa_results/{study}/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
     default_target: True
 
 

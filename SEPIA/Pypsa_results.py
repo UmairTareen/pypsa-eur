@@ -24,7 +24,6 @@ from plot_network import assign_location
 from plot_network import add_legend_circles, add_legend_patches, add_legend_lines
 from make_summary import assign_carriers
 
-scenario = 'ncdr'
 
 
 def rename_techs_tyndp(tech):
@@ -110,7 +109,8 @@ html_content = """
 <div class="tab">
 """
 
-def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon,prefix=f"../results/{scenario}/postnetworks/elec_"):
+def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
+    prefix=f"results/{study}/postnetworks/elec_"
     return prefix+"s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc".format(
         simpl=simpl,
         cluster=cluster,
@@ -148,7 +148,7 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
     results_dict = {}
 
     for planning_horizon in planning_horizons:
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon, prefix=f"../results/{scenario}/postnetworks/elec_")
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
         n = pypsa.Network(filename)
 
         cap_ac = pd.DataFrame(index=['BE', 'DE', 'FR', 'NL'])
@@ -191,7 +191,7 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
 def costs(countries, results):
     costs = {}
     for country in countries:
-      df=pd.read_csv(f"../results/{scenario}/csvs/nodal_costs.csv", index_col=2)
+      df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 2:]
       df = df.iloc[9:, :]
       df.index = df.index.str[:2]
@@ -202,7 +202,7 @@ def costs(countries, results):
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
 
-      cf = pd.read_csv("../results/reff/csvs/nodal_costs.csv", index_col=2)
+      cf = pd.read_csv("results/reff/csvs/nodal_costs.csv", index_col=2)
       cf = cf.iloc[:, 2:]
       cf = cf.iloc[4:, :]
       cf.index = cf.index.str[:2]
@@ -242,11 +242,11 @@ def costs(countries, results):
       
        for country, dataframe in costs.items():
          # Specify the file path within the output directory
-         output_directory = "../results/csvs"
+         output_directory = "results/csvs"
          if not os.path.exists(output_directory):
              os.makedirs(output_directory)
          # file_path = os.path.join(output_directory, f"{country}_costs_{scenario}.csv")
-         file_path = f"../results/csvs/{country}_costs_{scenario}.csv"
+         file_path = f"results/csvs/{country}_costs_{study}.csv"
     
          # Save the DataFrame to a CSV file
          dataframe.to_csv(file_path, index=True)
@@ -258,8 +258,8 @@ def costs(countries, results):
 def capacities(countries, results):
     capacities = {}
     for country in countries:
-      df=pd.read_csv("../results/reff//csvs/nodal_capacities.csv", index_col=1)
-      cf = pd.read_csv(f"../results/{scenario}/csvs/nodal_capacities.csv", index_col=1)
+      df=pd.read_csv("results/reff/csvs/nodal_capacities.csv", index_col=1)
+      cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
       df = df.iloc[:, 1:]
       df = df.iloc[4:, :]
       df.index = df.index.str[:2]
@@ -307,7 +307,7 @@ def capacities(countries, results):
         
        for country, dataframe in capacities.items():
         # Specify the file path where you want to save the CSV file
-        file_path = f"../results/csvs/{country}_capacities_{scenario}.csv"
+        file_path = f"results/csvs/{country}_capacities_{study}.csv"
     
          # Save the DataFrame to a CSV file
         dataframe.to_csv(file_path, index=True)
@@ -367,7 +367,7 @@ def plot_demands(countries):
     }
     
     for country in countries:
-        data = pd.read_excel(f"../results/{scenario}/sepia/inputs{country}.xlsx", index_col=0)
+        data = pd.read_excel(f"results/{study}/sepia/inputs{country}.xlsx", index_col=0)
         columns_to_drop = ['source', 'target']
         data = data.drop(columns=columns_to_drop)
         data = data.groupby(data.index).sum()
@@ -396,11 +396,11 @@ def plot_demands(countries):
 
         # Show the plot
         html_filename = f"{country}_sectoral_demands.html"
-        output_folder = f'../results/pypsa_results/{scenario}' # Set your desired output folder
+        output_folder = f'results/{study}/pypsa_results/{study}' # Set your desired output folder
         os.makedirs(output_folder, exist_ok=True)
         html_filepath = os.path.join(output_folder, html_filename)
         fig.write_html(html_filepath)
-        file_path = f"../results/csvs/{country}_sectordemands_{scenario}.csv"
+        file_path = f"results/csvs/{country}_sectordemands_{study}.csv"
         data.to_csv(file_path, index=True)
         
         
@@ -577,7 +577,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
         tabs.append((f"{planning_horizon}", tab))
         
      html_filename = title + " - " + country + '.html'
-     output_folder = f'../results/pypsa_results/{scenario}' # Set your desired output folder
+     output_folder = f'results/{study}/pypsa_results/{study}' # Set your desired output folder
      os.makedirs(output_folder, exist_ok=True)
      html_filepath = os.path.join(output_folder, html_filename)
      tabs.save(html_filepath)
@@ -705,7 +705,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 
         # Save the tabs as an HTML file
      html_filename = title + " - " + country + '.html'
-     output_folder = f'../results/pypsa_results/{scenario}'  # Set your desired output folder
+     output_folder = f'results/{study}/pypsa_results/{study}'  # Set your desired output folder
      os.makedirs(output_folder, exist_ok=True)
      html_filepath = os.path.join(output_folder, html_filename)
      tabs.save(html_filepath)
@@ -999,9 +999,8 @@ def plot_h2_map(network):
 
         h2_retro["index_orig"] = h2_retro.index
         h2_retro.index = h2_retro.apply(
-            lambda x: f"H2 pipeline {x.bus0.replace(' H2', '')} -> {x.bus1.replace(' H2', '')}",
-            axis=1,
-        )
+         lambda x: f"H2 pipeline {str(x.bus0).replace(' H2', '')} -> {str(x.bus1).replace(' H2', '')}",
+         axis=1,)
 
         retro_w_new_i = h2_retro.index.intersection(h2_new.index)
         h2_retro_w_new = h2_retro.loc[retro_w_new_i]
@@ -1366,7 +1365,7 @@ def create_map_plots(planning_horizons):
         )
         plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
-        output_image_path = f"../results/pypsa_results/{scenario}/map_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/pypsa_results/{study}/map_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1395,7 +1394,7 @@ def create_map_plots(planning_horizons):
         )
         plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
-        output_image_path = f"../results/pypsa_results/{scenario}/map_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/pypsa_results/{study}/map_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1434,7 +1433,7 @@ function openTab(evt, tabName) {
 """
 
     # Save the entire HTML content to a single file
-    output_combined_html_path = f"../results/pypsa_results/{scenario}/map_plots.html"
+    output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_plots.html"
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content)
 
@@ -1453,7 +1452,7 @@ def create_H2_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"../results/pypsa_results/{scenario}/map_h2_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/pypsa_results/{study}/map_h2_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1478,7 +1477,7 @@ def create_H2_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"../results/pypsa_results/{scenario}/map_h2_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/pypsa_results/{study}/map_h2_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1516,7 +1515,7 @@ function openTab(evt, tabName) {
 """
 
     # Save the entire HTML content to a single file
-    output_combined_html_path = f"../results/pypsa_results/{scenario}/map_h2_plots.html"
+    output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_h2_plots.html"
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content)
 
@@ -1534,7 +1533,7 @@ def create_gas_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"../results/pypsa_results/{scenario}/map_ch4_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/pypsa_results/{study}/map_ch4_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1559,7 +1558,7 @@ def create_gas_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"../results/pypsa_results/{scenario}/map_ch4_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/pypsa_results/{study}/map_ch4_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1597,13 +1596,11 @@ function openTab(evt, tabName) {
 """
 
     # Save the entire HTML content to a single file
-    output_combined_html_path = f"../results/pypsa_results/{scenario}/map_ch4_plots.html"
+    output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_ch4_plots.html"
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content) 
         
-def create_bar_chart(costs, country, output_folder = f'../results/pypsa_results/{scenario}', unit='Billion Euros/year'):
-    # Create output folder if it doesn't exist
-    os.makedirs(output_folder, exist_ok=True)
+def create_bar_chart(costs, country,  unit='Billion Euros/year'):
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
     colors["AC Transmission"] = "#FF3030"
@@ -1632,9 +1629,7 @@ def create_bar_chart(costs, country, output_folder = f'../results/pypsa_results/
 
     return fig
 
-def create_capacity_chart(capacities, country, output_folder = f'../results/pypsa_results/{scenario}', unit='Capacity [GW]'):
-    # Create output folder if it doesn't exist
-    os.makedirs(output_folder, exist_ok=True)
+def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
     colors["AC Transmission lines"] = "#FF3030"
@@ -1681,8 +1676,9 @@ def create_capacity_chart(capacities, country, output_folder = f'../results/pyps
 
     return fig
 
-def create_combined_chart_country(costs, capacities, country, output_folder = f'../results/pypsa_results/{scenario}'):
+def create_combined_chart_country(costs, capacities, country):
     # Create output folder if it doesn't exist
+    output_folder = f"results/{study}/pypsa_results/{study}"
     os.makedirs(output_folder, exist_ok=True)
 
     # Create combined HTML
@@ -1693,11 +1689,11 @@ def create_combined_chart_country(costs, capacities, country, output_folder = f'
         plot_demands_html = plot_demands_file.read()
         combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{plot_demands_html}</div>"
     # Create bar chart
-    bar_chart = create_bar_chart(costs, country, output_folder)
+    bar_chart = create_bar_chart(costs, country)
     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
 
     # Create capacities chart
-    capacities_chart = create_capacity_chart(capacities, country, output_folder)
+    capacities_chart = create_capacity_chart(capacities, country)
     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
 
     # Save the Panel object to HTML
@@ -1749,17 +1745,18 @@ if __name__ == "__main__":
         
 
         # Updating the configuration from the standard config file to run in standalone:
-        simpl = ""
-        cluster = 6
-        opt = "EQ0.70c"
-        sector_opt = "1H-T-H-B-I-A-dist1"
-        ll = "vopt"
-        planning_horizons = [2020, 2030, 2040, 2050]
+    simpl = ""
+    cluster = 6
+    opt = "EQ0.70c"
+    sector_opt = "1H-T-H-B-I-A-dist1"
+    ll = "vopt"
+    planning_horizons = [2020, 2030, 2040, 2050]
 
 
     countries = snakemake.params.countries 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     config = snakemake.config
+    study = snakemake.params.study
     results = calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_horizons)
     costs = costs(countries, results)
     capacities = capacities(countries, results)
@@ -1779,7 +1776,7 @@ if __name__ == "__main__":
 
 files_to_keep = ["BE_combined_chart.html","DE_combined_chart.html","FR_combined_chart.html","GB_combined_chart.html","NL_combined_chart.html"]
 # Directory path
-directory_path = f'../results/pypsa_results/{scenario}'
+directory_path = f"results/{study}/pypsa_results/{study}"
 # Remove files not in the list
 for file_name in os.listdir(directory_path):
     file_path = os.path.join(directory_path, file_name)

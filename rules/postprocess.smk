@@ -100,111 +100,6 @@ rule make_summary:
     script:
         "../scripts/make_summary.py"
         
-rule make_country_summary:
-    params:
-        foresight=config["foresight"],
-        costs=config["costs"],
-        snapshots=config["snapshots"],
-        scenario=config["scenario"],
-        planning_horizons=config["scenario"]["planning_horizons"],
-        RDIR=RDIR,
-    input:
-        networks=expand(
-            RESULTS
-            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
-            **config["scenario"]
-        ),
-        costs="data/costs_{}.csv".format(config["costs"]["year"])
-        if config["foresight"] == "overnight"
-        else "data/costs_{}.csv".format(config["scenario"]["planning_horizons"][0]),
-        plots=expand(
-            RESULTS
-            + "maps/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}-costs-all_{planning_horizons}.pdf",
-            **config["scenario"]
-        ),
-    output:
-        nodal_costs=RESULTS + "country_csvs/nodal_costs.csv",
-        nodal_capacities=RESULTS + "country_csvs/nodal_capacities.csv",
-        nodal_cfs=RESULTS + "country_csvs/nodal_cfs.csv",
-        cfs=RESULTS + "country_csvs/cfs.csv",
-        costs=RESULTS + "country_csvs/costs.csv",
-        capacities=RESULTS + "country_csvs/capacities.csv",
-        curtailment=RESULTS + "country_csvs/curtailment.csv",
-        energy=RESULTS + "country_csvs/energy.csv",
-        supply=RESULTS + "country_csvs/supply.csv",
-        supply_energy=RESULTS + "country_csvs/supply_energy.csv",
-        prices=RESULTS + "country_csvs/prices.csv",
-        weighted_prices=RESULTS + "country_csvs/weighted_prices.csv",
-        market_values=RESULTS + "country_csvs/market_values.csv",
-        price_statistics=RESULTS + "country_csvs/price_statistics.csv",
-        metrics=RESULTS + "country_csvs/metrics.csv",
-    threads: 2
-    resources:
-        mem_mb=10000,
-    log:
-        LOGS + "make_country_summary.log",
-    benchmark:
-        BENCHMARKS + "make_country_summary"
-    conda:
-        "../envs/environment.yaml"
-    script:
-        "../scripts/make_country_summary.py"
-        
-        
-rule prepare_results:
-    params:
-        countries=config["countries"],
-        planning_horizons=config["scenario"]["planning_horizons"],
-        sector_opts=config["scenario"]["sector_opts"],
-        emissions_scope=config["energy"]["emissions"],
-        eurostat_report_year=config["energy"]["eurostat_report_year"],
-        plotting=config["plotting"],
-        scenario=config["scenario"],
-        RDIR=RDIR,
-    input:
-        networks=expand(
-            RESULTS
-            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
-            **config["scenario"]
-        ),
-        
-    output:
-        htmlfile=expand(RESULTS + "pypsa_results/outputs.html", country=config["countries"]),
-    threads: 1
-    resources:
-        mem_mb=10000,
-    log:
-        LOGS + "prepare_results.log",
-    benchmark:
-        BENCHMARKS + "prepare_results",
-    conda:
-        "../envs/environment.yaml"
-    script:
-        "../SEPIA/Pypsa_results.py"
-
-rule prepare_scenarios:
-    params:
-        countries=config["countries"],
-        RDIR=RDIR,
-    input:
-        csvs_files=expand(
-            RESULTS
-            + "csvs/{country}_capacities.csv", country=config["countries"]),
-        
-    output:
-        htmlfile=expand(RESULTS + "pypsa_results/scenario/output.html", country=config["countries"]),
-    threads: 1
-    resources:
-        mem_mb=10000,
-    log:
-        LOGS + "scenario_results.log",
-    benchmark:
-        BENCHMARKS + "scenario_results",
-    conda:
-        "../envs/environment.yaml"
-    script:
-        "../SEPIA/scenario_results.py"
-        
 rule plot_summary:
     params:
         countries=config["countries"],
@@ -300,7 +195,83 @@ rule generate_sepia:
     script:
         "../SEPIA/SEPIA.py"
         
-                
+rule make_country_summary:
+    params:
+        foresight=config["foresight"],
+        costs=config["costs"],
+        snapshots=config["snapshots"],
+        scenario=config["scenario"],
+        planning_horizons=planning_horizons,
+        country = config["country_summary"],
+        study = config["run"]["name"],
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        costs="data/costs_{}.csv".format(config["costs"]["year"])
+        if config["foresight"] == "overnight"
+        else "data/costs_{}.csv".format(config["scenario"]["planning_horizons"][0]),
+        plots=expand(
+            RESULTS
+            + "maps/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}-costs-all_{planning_horizons}.pdf",
+            **config["scenario"]
+        ),
+        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=local_countries),
+    output:
+        cfs=RESULTS + "country_csvs/cfs.csv",
+        costs=RESULTS + "country_csvs/costs.csv",
+        capacities=RESULTS + "country_csvs/capacities.csv",
+        curtailment=RESULTS + "country_csvs/curtailment.csv",
+        energy=RESULTS + "country_csvs/energy.csv",
+        supply=RESULTS + "country_csvs/supply.csv",
+        supply_energy=RESULTS + "country_csvs/supply_energy.csv",
+        prices=RESULTS + "country_csvs/prices.csv",
+        price_statistics=RESULTS + "country_csvs/price_statistics.csv",
+        market_values=RESULTS + "country_csvs/market_values.csv",
+    threads: 2
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "make_country_summary.log",
+    benchmark:
+        BENCHMARKS + "make_country_summary"
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../scripts/make_country_summary.py"
+
+rule prepare_results:
+    params:
+        countries=config["countries"],
+        planning_horizons=planning_horizons,
+        sector_opts=config["scenario"]["sector_opts"],
+        plotting=config["plotting"],
+        scenario=config["scenario"],
+        study = config["run"]["name"],
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        market_values=RESULTS + "country_csvs/market_values.csv",
+        
+    output:
+        htmlfile=expand(RESULTS + "pypsa_results/{study}/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "prepare_results.log",
+    benchmark:
+        BENCHMARKS + "prepare_results",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/Pypsa_results.py"
+                               
 STATISTICS_BARPLOTS = [
     "capacity_factor",
     "installed_capacity",

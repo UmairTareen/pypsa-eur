@@ -66,6 +66,7 @@ doc/_build
 run_snakefile_bau.done
 run_snakefile_reff.done
 run_snakefile_nocdr.done
+run_prepare_scenarios.done
 
 merger-todos.md
 .idea/*

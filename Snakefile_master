@@ -27,6 +27,38 @@ rule run_snakefile_nocdr:
 rule run_all_snakefiles:
     input: "run_snakefile_nocdr.done"
 
-
-
+configfile: 'config/config_nocdr_myopic.yaml'
+rule run_prepare_scenarios:
+    input: "run_snakefile_nocdr.done"
+    output: touch("run_prepare_scenarios.done")
+    log: "logs/run_prepare_scenarios.done"
+    shell:
+        "snakemake --snakefile Snakefile_master --cores 1 -call prepare_scenarios"
+rule prepare_scenarios:
+    params:
+        countries = config["countries"],
+    input:
+        cap_files_bau=expand("results/csvs/{country}_capacities_bau.csv", country=config["countries"]),
+        cost_files_bau=expand("results/csvs/{country}_costs_bau.csv", country=config["countries"]),
+        dem_files_bau=expand("results/csvs/{country}_sectordemands_bau.csv", country=config["countries"]),
+        cap_files_ncdr=expand("results/csvs/{country}_capacities_ncdr.csv", country=config["countries"]),
+        cost_files_ncdr=expand("results/csvs/{country}_costs_ncdr.csv", country=config["countries"]),
+        dem_files_ncdr=expand("results/csvs/{country}_sectordemands_ncdr.csv", country=config["countries"]),
+        
+    output:
+        htmlfile=expand("results/scenario_results/{country}_combined_scenario_chart.html", country=config["countries"]),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        "logs/scenario_results.log",
+    benchmark:
+        "benchmarks/scenario_results",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "SEPIA/scenario_results.py"
+        
+rule run_all_scenarios:
+    input: "run_prepare_scenarios.done"
 

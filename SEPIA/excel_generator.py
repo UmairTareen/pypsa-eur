@@ -8,7 +8,7 @@ from pypsa.descriptors import get_switchable_as_dense as as_dense
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
-    file_name = 'elec_s_6_lv1.0__Co2L0.7-12H-T-H-B-I-A-dist1_2020.nc'
+    file_name = 'elec_s_6_lv1.0__Co2L0.7-1H-T-H-B-I-A-dist1_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
     source_directory = 'results/reff/postnetworks/'
     destination_directory = f'results/{study}/postnetworks/'
@@ -1594,7 +1594,7 @@ if __name__ == "__main__":
     simpl = ""
     cluster = 6
     opt = "EQ0.70c"
-    sector_opt = "12H-T-H-B-I-A-dist1"
+    sector_opt = "1H-T-H-B-I-A-dist1"
     ll = "vopt"
     planning_horizons = [2020, 2030, 2040, 2050] 
 
