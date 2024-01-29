@@ -45,6 +45,7 @@ dependencies:
 - pyxlsb
 - graphviz
 - linopy==0.2.5
+- hvplot
 
   # Keep in conda environment when calling ipython
 - ipython
