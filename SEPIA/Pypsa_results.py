@@ -1657,15 +1657,16 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
         col_idx = i if i <= len(groups) // 2 else i - len(groups) // 2
 
         for tech in tech_group:
-            y_values = [val / 1000 for val in df.loc[tech, years]]
-            trace = go.Bar(
-                x=years,
-                y=y_values,
-                name=f"{tech}",
-                marker_color=tech_colors.get(tech, 'gray')
-            )
-            fig.add_trace(trace, row=row_idx, col=col_idx)
-            fig.update_yaxes(title_text=unit, row=2, col=1)
+            if tech in df.index:
+                y_values = [val / 1000 for val in df.loc[tech, years]]
+                trace = go.Bar(
+                    x=years,
+                    y=y_values,
+                    name=f"{tech}",
+                    marker_color=tech_colors.get(tech, 'gray')
+                )
+                fig.add_trace(trace, row=row_idx, col=col_idx)
+                fig.update_yaxes(title_text=unit, row=2, col=1)
 
     # Update layout
     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}", yaxis_title=unit)
@@ -1774,11 +1775,11 @@ if __name__ == "__main__":
     
 
 
-files_to_keep = ["BE_combined_chart.html","DE_combined_chart.html","FR_combined_chart.html","GB_combined_chart.html","NL_combined_chart.html"]
-# Directory path
-directory_path = f"results/{study}/pypsa_results/{study}"
-# Remove files not in the list
-for file_name in os.listdir(directory_path):
-    file_path = os.path.join(directory_path, file_name)
-    if file_name not in files_to_keep and os.path.isfile(file_path):
-        os.remove(file_path)    
+    files_to_keep = ["BE_combined_chart.html","DE_combined_chart.html","FR_combined_chart.html","GB_combined_chart.html","NL_combined_chart.html"]
+    # Directory path
+    directory_path = f"results/{study}/pypsa_results/{study}"
+    # Remove files not in the list
+    for file_name in os.listdir(directory_path):
+        file_path = os.path.join(directory_path, file_name)
+        if file_name not in files_to_keep and os.path.isfile(file_path):
+            os.remove(file_path)
