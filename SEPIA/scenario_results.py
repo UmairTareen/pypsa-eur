@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Nov 27 10:59:23 2023
-
-@author: umair
-"""
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -132,6 +127,7 @@ def scenario_capacities(country):
         col_idx = i if i <= len(groups) // 2 else i - len(groups) // 2
 
         for tech in tech_group:
+         if tech in df.index:
             y_values = [val / 1000 for val in df.loc[tech]]
             trace = go.Bar(
                 x=df.columns,

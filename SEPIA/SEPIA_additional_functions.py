@@ -297,8 +297,8 @@ def combine_charts(combinations, main_params, description=pd.DataFrame(), title=
                 number_traces = (len(combination2[1].columns) if isinstance(combination2[1], pd.DataFrame) else 1)
                 if len(combination2)>2 and len(combination2[2])>0:
                     number_traces += 1 # In case a "targets" trace has been defined
-                # if chart_type == 'areachart': number_traces += 1 # For the "total" line
-                # visibility_toggles += [j==i] * number_traces
+                if chart_type == 'areachart': number_traces += 1 # For the "total" line
+                visibility_toggles += [j==i] * number_traces
         button_args[0] = {"visible": visibility_toggles}
         buttons.append(dict(args = button_args,
             label=button_label[0].upper() + button_label[1:],

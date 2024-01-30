@@ -59,55 +59,7 @@ def rename_techs_tyndp(tech):
     elif tech == "coal" or tech == "lignite":
           return "coal"
     else:
-        return tech
-   
-html_content = """
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-/* Style the tab content */
-.tabcontent {
-  display: none;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-top: none;
-}
-
-/* Style the tabs */
-.tab {
-  overflow: hidden;
-  border: 1px solid #ccc;
-  background-color: #f1f1f1;
-}
-
-/* Style the tab buttons */
-.tab button {
-  background-color: inherit;
-  float: left;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  padding: 14px 16px;
-  transition: 0.3s;
-  font-size: 17px;
-  margin-top: 15px;  /* Add margin to move the buttons down */
-}
-
-/* Change background color of buttons on hover */
-.tab button:hover {
-  background-color: #ddd;
-}
-
-/* Create an active/current tablink class */
-.tab button.active {
-  background-color: #ccc;
-}
-</style>
-</head>
-<body>
-<div class="tab">
-"""
+        return tech   
 
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     prefix=f"results/{study}/postnetworks/elec_"
@@ -261,7 +213,7 @@ def capacities(countries, results):
       df=pd.read_csv("results/reff/csvs/nodal_capacities.csv", index_col=1)
       cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
       df = df.iloc[:, 1:]
-      df = df.iloc[4:, :]
+      df = df.iloc[3:, :]
       df.index = df.index.str[:2]
       df = df[df.index == country]
       df = df.rename(columns={'Unnamed: 2': 'tech', '6': '2020'})
@@ -271,7 +223,7 @@ def capacities(countries, results):
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
       cf = cf.iloc[:, 1:]
-      cf = cf.iloc[7:, :]
+      cf = cf.iloc[6:, :]
       cf.index = cf.index.str[:2]
       cf = cf[cf.index == country]
       cf = cf.rename(columns={'Unnamed: 2': 'tech', '6': '2030','6.1': '2040','6.2': '2050',})
@@ -1349,6 +1301,14 @@ def plot_ch4_map(network):
 def create_map_plots(planning_horizons):
     
     html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+    /* ... (existing styles) ... */
+    </style>
+    </head>
+    <body>
     <div class="tab">
     """
     for i, planning_horizon in enumerate(planning_horizons):
@@ -1375,8 +1335,8 @@ def create_map_plots(planning_horizons):
 
         # Add tab content for each planning horizon with embedded image data
         html_content += f"""
-    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, 'map_{planning_horizon}')">{planning_horizon}</button>
-    """
+        <button class="map-tablinks{' active' if i == 0 else ''}" onclick="openMapTab(event, 'map_{planning_horizon}_{i + 1}')">{planning_horizon}</button>
+        """
 
     html_content += """
     </div>
@@ -1404,33 +1364,33 @@ def create_map_plots(planning_horizons):
 
         # Add tab content for each planning horizon with embedded image data
         html_content += f"""
-    <div id="map_{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
-        <h2>Map Plot - {planning_horizon}</h2>
-        <img src="data:image/png;base64,{encoded_image}" alt="Map Plot" width="1200" height="800">
-    </div>
-    """
+        <div id="map_{planning_horizon}_{i + 1}" class="map-tabcontent" style="display: {'block' if i == 0 else 'none'};">
+            <h2>Map Plot - {planning_horizon}</h2>
+            <img src="data:image/png;base64,{encoded_image}" alt="Map Plot" width="1200" height="800">
+        </div>
+        """
 
 
     # Add JavaScript for tab functionality
     html_content += """
-<script>
-function openTab(evt, tabName) {
-  var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
-  document.getElementById(tabName).style.display = "block";
-  evt.currentTarget.className += " active";
-}
-</script>
-</body>
-</html>
-"""
+    <script>
+    function openMapTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("map-tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("map-tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+    </script>
+    </body>
+    </html>
+    """
 
     # Save the entire HTML content to a single file
     output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_plots.html"
@@ -1438,7 +1398,16 @@ function openTab(evt, tabName) {
         html_file.write(html_content)
 
 def create_H2_map_plots(planning_horizons):
+    
     html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+    /* ... (existing styles) ... */
+    </style>
+    </head>
+    <body>
     <div class="tab">
     """
     planning_horizons = [2030, 2040, 2050]
@@ -1462,8 +1431,8 @@ def create_H2_map_plots(planning_horizons):
 
         # Add tab content for each planning horizon with embedded image data
         html_content += f"""
-    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, 'h2_{planning_horizon}')">{planning_horizon}</button>
-    """
+       <button class="h2-tablinks{' active' if i == 0 else ''}" onclick="openH2Tab(event, 'h2_{planning_horizon}_{i + 1}')">{planning_horizon}</button>
+       """
 
     html_content += """
     </div>
@@ -1484,35 +1453,31 @@ def create_H2_map_plots(planning_horizons):
         # Encode the image as base64
         with open(output_image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-
-        # Add tab content for each planning horizon with embedded image data
         html_content += f"""
-    <div id="h2_{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
-        <h2>H2 Map Plot - {planning_horizon}</h2>
-        <img src="data:image/png;base64,{encoded_image}" alt="H2 Map Plot" width="1200" height="800">
-    </div>
-    """
-
-    # Add JavaScript for tab functionality
+        <div id="h2_{planning_horizon}_{i + 1}" class="h2-tabcontent" style="display: {'block' if i == 0 else 'none'};">
+            <h2>H2 Map Plot - {planning_horizon}</h2>
+            <img src="data:image/png;base64,{encoded_image}" alt="H2 Map Plot" width="1200" height="800">
+        </div>
+        """
     html_content += """
-<script>
-function openTab(evt, tabName) {
-  var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
-  document.getElementById(tabName).style.display = "block";
-  evt.currentTarget.className += " active";
-}
-</script>
-</body>
-</html>
-"""
+    <script>
+    function openH2Tab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("h2-tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("h2-tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+    </script>
+    </body>
+    </html>
+    """
 
     # Save the entire HTML content to a single file
     output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_h2_plots.html"
@@ -1520,7 +1485,16 @@ function openTab(evt, tabName) {
         html_file.write(html_content)
 
 def create_gas_map_plots(planning_horizons):
+   
     html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+    /* ... (existing styles) ... */
+    </style>
+    </head>
+    <body>
     <div class="tab">
     """
     for i, planning_horizon in enumerate(planning_horizons):
@@ -1543,13 +1517,13 @@ def create_gas_map_plots(planning_horizons):
 
         # Add tab content for each planning horizon with embedded image data
         html_content += f"""
-    <button class="tablinks{' active' if i == 0 else ''}" onclick="openTab(event, 'ch4_{planning_horizon}')">{planning_horizon}</button>
-    """
+        <button class="gas-tablinks{' active' if i == 0 else ''}" onclick="openGasTab(event, 'gas_{planning_horizon}_{i + 1}')">{planning_horizon}</button>
+        """
 
     html_content += """
     </div>
     """
-
+    
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
         filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
@@ -1568,37 +1542,37 @@ def create_gas_map_plots(planning_horizons):
 
         # Add tab content for each planning horizon with embedded image data
         html_content += f"""
-    <div id="ch4_{planning_horizon}" class="tabcontent" style="display: {'block' if i == 0 else 'none'};">
-        <h2>Gas Map Plot - {planning_horizon}</h2>
-        <img src="data:image/png;base64,{encoded_image}" alt="H2 Map Plot" width="1200" height="800">
-    </div>
-    """
+        <div id="gas_{planning_horizon}_{i + 1}" class="gas-tabcontent" style="display: {'block' if i == 0 else 'none'};">
+            <h2>Gas Map Plot - {planning_horizon}</h2>
+            <img src="data:image/png;base64,{encoded_image}" alt="Gas Map Plot" width="1200" height="800">
+        </div>
+        """
 
     # Add JavaScript for tab functionality
     html_content += """
-<script>
-function openTab(evt, tabName) {
-  var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
-  document.getElementById(tabName).style.display = "block";
-  evt.currentTarget.className += " active";
-}
-</script>
-</body>
-</html>
-"""
+    <script>
+    function openGasTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("gas-tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("gas-tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+    </script>
+    </body>
+    </html>
+    """
 
     # Save the entire HTML content to a single file
     output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_ch4_plots.html"
     with open(output_combined_html_path, "w") as html_file:
-        html_file.write(html_content) 
+        html_file.write(html_content)
         
 def create_bar_chart(costs, country,  unit='Billion Euros/year'):
     tech_colors = config["plotting"]["tech_colors"]
