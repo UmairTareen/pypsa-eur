@@ -18,14 +18,14 @@ dependencies:
 - openpyxl!=3.1.1
 - pycountry
 - seaborn
-- snakemake-minimal>=7.7.0
+- snakemake-minimal>=7.7.0,<8.0.0
 - memory_profiler
 - yaml
 - pytables
 - lxml
 - powerplantmatching>=0.5.5
 - numpy
-- pandas>=1.4
+- pandas==2.0.3
 - geopandas>=0.11.0
 - xarray==2023.8.0
 - rioxarray
@@ -46,6 +46,7 @@ dependencies:
 - graphviz
 - linopy==0.2.5
 - hvplot
+- plotly
 
   # Keep in conda environment when calling ipython
 - ipython
@@ -59,6 +60,4 @@ dependencies:
 
 - pip:
   - tsam>=1.1.0
-  - pypsa==0.25.1
-  - plotly
-  - hvplot
+  - pypsa==0.25.2
