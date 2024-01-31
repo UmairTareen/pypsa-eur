@@ -198,7 +198,7 @@ def costs(countries, results):
          if not os.path.exists(output_directory):
              os.makedirs(output_directory)
          # file_path = os.path.join(output_directory, f"{country}_costs_{scenario}.csv")
-         file_path = f"results/csvs/{country}_costs_{study}.csv"
+         file_path = f"results/{study}/country_csvs/{country}_costs.csv"
     
          # Save the DataFrame to a CSV file
          dataframe.to_csv(file_path, index=True)
@@ -259,7 +259,7 @@ def capacities(countries, results):
         
        for country, dataframe in capacities.items():
         # Specify the file path where you want to save the CSV file
-        file_path = f"results/csvs/{country}_capacities_{study}.csv"
+        file_path = f"results/{study}/country_csvs/{country}_capacities_.csv"
     
          # Save the DataFrame to a CSV file
         dataframe.to_csv(file_path, index=True)
@@ -348,11 +348,11 @@ def plot_demands(countries):
 
         # Show the plot
         html_filename = f"{country}_sectoral_demands.html"
-        output_folder = f'results/{study}/pypsa_results/{study}' # Set your desired output folder
+        output_folder = f'results/{study}/htmls/raw_html' # Set your desired output folder
         os.makedirs(output_folder, exist_ok=True)
         html_filepath = os.path.join(output_folder, html_filename)
         fig.write_html(html_filepath)
-        file_path = f"results/csvs/{country}_sectordemands_{study}.csv"
+        file_path = f"results/{study}/country_csvs/{country}_sectordemands.csv"
         data.to_csv(file_path, index=True)
         
         
@@ -529,7 +529,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
         tabs.append((f"{planning_horizon}", tab))
         
      html_filename = title + " - " + country + '.html'
-     output_folder = f'results/{study}/pypsa_results/{study}' # Set your desired output folder
+     output_folder = f'results/{study}/htmls/raw_html' # Set your desired output folder
      os.makedirs(output_folder, exist_ok=True)
      html_filepath = os.path.join(output_folder, html_filename)
      tabs.save(html_filepath)
@@ -657,7 +657,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 
         # Save the tabs as an HTML file
      html_filename = title + " - " + country + '.html'
-     output_folder = f'results/{study}/pypsa_results/{study}'  # Set your desired output folder
+     output_folder = f'results/{study}/htmls/raw_html'  # Set your desired output folder
      os.makedirs(output_folder, exist_ok=True)
      html_filepath = os.path.join(output_folder, html_filename)
      tabs.save(html_filepath)
@@ -1325,7 +1325,7 @@ def create_map_plots(planning_horizons):
         )
         plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
-        output_image_path = f"results/{study}/pypsa_results/{study}/map_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1354,7 +1354,7 @@ def create_map_plots(planning_horizons):
         )
         plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
-        output_image_path = f"results/{study}/pypsa_results/{study}/map_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1393,7 +1393,7 @@ def create_map_plots(planning_horizons):
     """
 
     # Save the entire HTML content to a single file
-    output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_plots.html"
+    output_combined_html_path = f"results/{study}/htmls/raw_html/map_plots.html"
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content)
 
@@ -1421,7 +1421,7 @@ def create_H2_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"results/{study}/pypsa_results/{study}/map_h2_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/htmls/raw_html/map_h2_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1446,7 +1446,7 @@ def create_H2_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"results/{study}/pypsa_results/{study}/map_h2_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/htmls/raw_html/map_h2_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1480,7 +1480,7 @@ def create_H2_map_plots(planning_horizons):
     """
 
     # Save the entire HTML content to a single file
-    output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_h2_plots.html"
+    output_combined_html_path = f"results/{study}/htmls/raw_html/map_h2_plots.html"
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content)
 
@@ -1507,7 +1507,7 @@ def create_gas_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"results/{study}/pypsa_results/{study}/map_ch4_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/htmls/raw_html/map_ch4_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1532,7 +1532,7 @@ def create_gas_map_plots(planning_horizons):
         plt.rcParams['legend.title_fontsize'] = '20'
 
         # Save the H2 map plot as an image
-        output_image_path = f"results/{study}/pypsa_results/{study}/map_ch4_plot_{planning_horizon}.png"
+        output_image_path = f"results/{study}/htmls/raw_html/map_ch4_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
@@ -1570,7 +1570,7 @@ def create_gas_map_plots(planning_horizons):
     """
 
     # Save the entire HTML content to a single file
-    output_combined_html_path = f"results/{study}/pypsa_results/{study}/map_ch4_plots.html"
+    output_combined_html_path = f"results/{study}/htmls/raw_html/map_ch4_plots.html"
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content)
         
@@ -1653,13 +1653,15 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
 
 def create_combined_chart_country(costs, capacities, country):
     # Create output folder if it doesn't exist
-    output_folder = f"results/{study}/pypsa_results/{study}"
+    output_folder = f"results/{study}/htmls"
+    raw_html = os.path.join(output_folder,'raw_html/')
     os.makedirs(output_folder, exist_ok=True)
+    os.makedirs(raw_html, exist_ok=True)
 
     # Create combined HTML
     combined_html = "<html><head><title>Combined Plots</title></head><body>"
     
-    plot_demands_file_path = os.path.join(output_folder, f"{country}_sectoral_demands.html")
+    plot_demands_file_path = os.path.join(raw_html, f"{country}_sectoral_demands.html")
     with open(plot_demands_file_path, "r") as plot_demands_file:
         plot_demands_html = plot_demands_file.read()
         combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{plot_demands_html}</div>"
@@ -1672,13 +1674,13 @@ def create_combined_chart_country(costs, capacities, country):
     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
 
     # Save the Panel object to HTML
-    plot_series_file_path = os.path.join(output_folder, f"Power Dispatch (Winter Week) - {country}.html")
-    plot_series_file_path_sum = os.path.join(output_folder, f"Power Dispatch (Summer Week) - {country}.html")
-    plot_series_heat_file_path = os.path.join(output_folder, f"Heat Dispatch (Winter Week) - {country}.html")
-    plot_series_heat_file_path_sum = os.path.join(output_folder, f"Heat Dispatch (Summer Week) - {country}.html")
-    plot_map_path = os.path.join(output_folder, "map_plots.html")
-    plot_map_h2_path = os.path.join(output_folder, "map_h2_plots.html")
-    plot_map_ch4_path = os.path.join(output_folder, "map_ch4_plots.html")
+    plot_series_file_path = os.path.join(raw_html, f"Power Dispatch (Winter Week) - {country}.html")
+    plot_series_file_path_sum = os.path.join(raw_html, f"Power Dispatch (Summer Week) - {country}.html")
+    plot_series_heat_file_path = os.path.join(raw_html, f"Heat Dispatch (Winter Week) - {country}.html")
+    plot_series_heat_file_path_sum = os.path.join(raw_html, f"Heat Dispatch (Summer Week) - {country}.html")
+    plot_map_path = os.path.join(raw_html, "map_plots.html")
+    plot_map_h2_path = os.path.join(raw_html, "map_h2_plots.html")
+    plot_map_ch4_path = os.path.join(raw_html, "map_ch4_plots.html")
 
     # Include the saved HTML in the combined HTML
     with open(plot_series_heat_file_path, "r") as plot_series_heat_file:
@@ -1749,11 +1751,11 @@ if __name__ == "__main__":
     
 
 
-    files_to_keep = ["BE_combined_chart.html","DE_combined_chart.html","FR_combined_chart.html","GB_combined_chart.html","NL_combined_chart.html"]
-    # Directory path
-    directory_path = f"results/{study}/pypsa_results/{study}"
-    # Remove files not in the list
-    for file_name in os.listdir(directory_path):
-        file_path = os.path.join(directory_path, file_name)
-        if file_name not in files_to_keep and os.path.isfile(file_path):
-            os.remove(file_path)
+    # files_to_keep = ["BE_combined_chart.html","DE_combined_chart.html","FR_combined_chart.html","GB_combined_chart.html","NL_combined_chart.html"]
+    # # Directory path
+    # directory_path = f"results/{study}/htmls"
+    # # Remove files not in the list
+    # for file_name in os.listdir(directory_path):
+    #     file_path = os.path.join(directory_path, file_name)
+    #     if file_name not in files_to_keep and os.path.isfile(file_path):
+    #         os.remove(file_path)

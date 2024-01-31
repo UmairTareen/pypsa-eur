@@ -259,7 +259,7 @@ rule prepare_results:
         market_values=RESULTS + "country_csvs/market_values.csv",
         
     output:
-        htmlfile=expand(RESULTS + "pypsa_results/{study}/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
+        htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
     threads: 1
     resources:
         mem_mb=10000,
