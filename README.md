@@ -43,8 +43,8 @@ After running the whole snakemake, the options can be set back to:
 > pip install -U kaleido
 
 **Selection of the scenario**:
-- To run the default workflow, activate pypsa-eur and run:
-> snakemake -call all
+- To run the default workflow, activate pypsa-eur and run, this will run all scenarios in a sequence:
+> snakemake -s Snakefile_master -call run_all_scenarios
 
 - Tu run a different scenario/workflow, use the dedicated Snakefile, e.g:
 > snakemake -s Snakefile_suff -call all
