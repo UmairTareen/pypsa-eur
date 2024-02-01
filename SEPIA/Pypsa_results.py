@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 import pandas as pd
 import pypsa
 import logging
-import hvplot.pandas
 import os
 import sys
 import panel as pn
@@ -44,7 +43,7 @@ def rename_techs_tyndp(tech):
         return "power-to-liquid"
     elif "offshore wind" in tech:
         return "offshore wind"
-    elif tech in ["CO2 sequestration", "co2", "SMR CC", "process emissions CC", "solid biomass for industry CC", "gas for industry CC"]:
+    elif tech in ["CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
          return "CCS"
     elif tech in ["biomass", "biomass boiler", "solid biomass", "solid biomass for industry"]:
          return "biomass"
@@ -54,12 +53,10 @@ def rename_techs_tyndp(tech):
         return "V2G"
     elif "load" in tech:
         return "load shedding"
-    elif tech == "oil" or tech == "gas":
-         return "fossil oil and gas"
     elif tech == "coal" or tech == "lignite":
           return "coal"
     else:
-        return tech   
+        return tech
 
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     prefix=f"results/{study}/postnetworks/elec_"
@@ -142,6 +139,8 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
 
 def costs(countries, results):
     costs = {}
+    fn = snakemake.input.costs
+    options = pd.read_csv(fn, index_col=[0, 1]).sort_index()
     for country in countries:
       df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 2:]
@@ -167,8 +166,15 @@ def costs(countries, results):
 
       result_df = pd.merge(cf, df, on='tech', how='outer')
       result_df.fillna(0, inplace=True)
-      mask = ~(result_df['tech'] == 'load shedding')
+      mask = ~(result_df['tech'].isin(['load shedding']))
       result_df = result_df[mask]
+      #calculationg gas costs for each country as in pypsa they are treated on EU level
+      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 23", index_col=0)
+      gas_val.columns = gas_val.iloc[1]
+      result_df.loc[result_df['tech'] == "gas", "2020"] = gas_val.loc["2020", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
+      result_df.loc[result_df['tech'] == "gas", "2030"] = gas_val.loc["2030", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
+      result_df.loc[result_df['tech'] == "gas", "2040"] = gas_val.loc["2040", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
+      result_df.loc[result_df['tech'] == "gas", "2050"] = gas_val.loc["2050", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -495,35 +501,56 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
         supplyn = supplyn.T
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
-
+        
+        positive_supplyn = positive_supplyn.loc[start:stop]
+        negative_supplyn = negative_supplyn.loc[start:stop]
+        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn != 0).any()]
         
 
         
-        positive_plot = positive_supplyn.loc[start:stop].hvplot.area(
-           x='index', y=list(positive_supplyn.columns),
-           color=[colors[tech] for tech in positive_supplyn.columns],
-           line_dash='solid', line_width=0,
-           xlabel='Time', ylabel='Power [GW]',
-           title=title + " - " + country + ' - ' + str(planning_horizon),
-           width=1200, height=600,
-           responsive=False,
-           stacked=True,)
+        fig = go.Figure()
 
-        negative_plot = negative_supplyn.loc[start:stop].hvplot.area(
-           x='index', y=list(negative_supplyn.columns),
-           color=[colors[tech] for tech in negative_supplyn.columns],
-           line_dash='solid', line_width=0,
-           xlabel='Time', ylabel='Power [GW]',
-           width=1200, height=600,
-           responsive=False,
-           stacked=True,)
+        for col in positive_supplyn.columns:
+         fig.add_trace(go.Scatter(
+         x=positive_supplyn.index,
+         y=positive_supplyn[col],
+         mode='lines',
+         line=dict(color=colors.get(col, 'black')),
+         stackgroup='positive',
+         showlegend=False,
+         hovertemplate='%{y:.2f}',
+         name=col))
 
-# Combine positive and negative plots using the + operator
-        plot = positive_plot * negative_plot
+        for col in negative_supplyn.columns:
+         fig.add_trace(go.Scatter(
+         x=negative_supplyn.index,
+         y=negative_supplyn[col],
+         mode='lines',
+         line=dict(color=colors.get(col, 'black')),
+         stackgroup='negative',
+         legendgroup='supply',
+         hovertemplate='%{y:.2f}',
+         name=col ))
+         
+        fig.add_trace(go.Scatter(
+         x=[None],
+         y=[None],
+         mode='lines',
+         line=dict(color='white'),
+         legendgroup='supply',
+         showlegend=True,
+         name=''))
+        # Update layout to customize axes, title, etc.
+        fig.update_layout(
+         xaxis=dict(title='Time', tickformat="%m-%d"),
+         yaxis=dict(title='Power [GW]',),
+         title=title + " - " + country + ' - ' + str(planning_horizon),
+         width=1200, height=600,
+         hovermode='x',)
     
 
             # Add the plot to the tabs
-        tab.append((f"{planning_horizon}", plot))
+        tab.append((f"{planning_horizon}", fig))
 
             # Add the tab for the planning horizon to the main Tabs
         tabs.append((f"{planning_horizon}", tab))
@@ -622,34 +649,55 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
 
+        positive_supplyn = positive_supplyn.loc[start:stop]
+        negative_supplyn = negative_supplyn.loc[start:stop]
+        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn != 0).any()]
         
 
         
-        positive_plot = positive_supplyn.loc[start:stop].hvplot.area(
-           x='index', y=list(positive_supplyn.columns),
-           color=[colors[tech] for tech in positive_supplyn.columns],
-           line_dash='solid', line_width=0,
-           xlabel='Time', ylabel='Heat [GW]',
-           title=title + " - " + country + ' - ' + str(planning_horizon),
-           width=1200, height=600,
-           responsive=False,
-           stacked=True,)
+        fig = go.Figure()
 
-        negative_plot = negative_supplyn.loc[start:stop].hvplot.area(
-           x='index', y=list(negative_supplyn.columns),
-           color=[colors[tech] for tech in negative_supplyn.columns],
-           line_dash='solid', line_width=0,
-           xlabel='Time', ylabel='Heat [GW]',
-           width=1200, height=600,
-           responsive=False,
-           stacked=True,)
+        for col in positive_supplyn.columns:
+         fig.add_trace(go.Scatter(
+         x=positive_supplyn.index,
+         y=positive_supplyn[col],
+         mode='lines',
+         line=dict(color=colors.get(col, 'black')),
+         stackgroup='positive',
+         showlegend=False,
+         hovertemplate='%{y:.2f}',
+         name=col))
 
-        # Combine positive and negative plots using the + operator
-        plot = positive_plot * negative_plot
+        for col in negative_supplyn.columns:
+         fig.add_trace(go.Scatter(
+         x=negative_supplyn.index,
+         y=negative_supplyn[col],
+         mode='lines',
+         line=dict(color=colors.get(col, 'black')),
+         stackgroup='negative',
+         legendgroup='supply',
+         hovertemplate='%{y:.2f}',
+         name=col ))
+         
+        fig.add_trace(go.Scatter(
+         x=[None],
+         y=[None],
+         mode='lines',
+         line=dict(color='white'),
+         legendgroup='supply',
+         showlegend=True,
+         name=''))
+        # Update layout to customize axes, title, etc.
+        fig.update_layout(
+         xaxis=dict(title='Time', tickformat="%m-%d"),
+         yaxis=dict(title='Heat [GW]',),
+         title=title + " - " + country + ' - ' + str(planning_horizon),
+         width=1200, height=600,
+         hovermode='x',)
     
 
             # Add the plot to the tabs
-        tab.append((f"{planning_horizon}", plot))
+        tab.append((f"{planning_horizon}", fig))
 
             # Add the tab for the planning horizon to the main Tabs
         tabs.append((f"{planning_horizon}", tab))

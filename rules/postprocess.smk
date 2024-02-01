@@ -257,7 +257,8 @@ rule prepare_results:
             **config["scenario"]
         ),
         market_values=RESULTS + "country_csvs/market_values.csv",
-        
+        excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
+        costs = "data/costs_2050.csv",         
     output:
         htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
     threads: 1

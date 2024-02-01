@@ -564,11 +564,11 @@ def prepare_sepia(countries):
         combinations = [(NODES.loc[node,'Label'],tot_results[('cov_ratio',node)]) for node in node_list]
         html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, country_list, 'Local prod coverage ratios -', 'map', results_xls_writer, '%', min_scale=0, mid_scale=50)
     combinations = [('All energies',fec_sector)]
+    grouped_flows = flows.T.groupby(['Source', 'Target', 'Type']).sum().T
     for energy in FE_NODES:
-        combinations += [(NODES.loc[energy,'Label'], sf.node_consumption(flows_bk, energy, direction='forward', splitby='target'))]
+        combinations += [(NODES.loc[energy,'Label'], sf.node_consumption(grouped_flows, energy, direction='forward', splitby='target'))]
     html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
     combinations = []
-    grouped_flows = flows.T.groupby(['Source', 'Target', 'Type']).sum().T
     for energy in SE_NODES:
         df = sf.node_consumption(grouped_flows, energy, direction='backward', splitby='source')
         combinations += [(NODES.loc[energy,'Label'], df)]
@@ -581,7 +581,7 @@ def prepare_sepia(countries):
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
     combinations = [('All sectors',fec_carrier)]
     for sector in DS_NODES:
-        df = sf.node_consumption(flows_bk, sector, direction='backwards', splitby='target')
+        df = sf.node_consumption(grouped_flows, sector, direction='backwards', splitby='target')
         combinations += [(NODES.loc[sector,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'fec.'+sector)
     html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
