@@ -171,10 +171,8 @@ def costs(countries, results):
       #calculationg gas costs for each country as in pypsa they are treated on EU level
       gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 23", index_col=0)
       gas_val.columns = gas_val.iloc[1]
-      result_df.loc[result_df['tech'] == "gas", "2020"] = gas_val.loc["2020", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
-      result_df.loc[result_df['tech'] == "gas", "2030"] = gas_val.loc["2030", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
-      result_df.loc[result_df['tech'] == "gas", "2040"] = gas_val.loc["2040", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
-      result_df.loc[result_df['tech'] == "gas", "2050"] = gas_val.loc["2050", "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
+      for year in planning_horizons:
+        result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[str(year), "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -200,10 +198,6 @@ def costs(countries, results):
       
        for country, dataframe in costs.items():
          # Specify the file path within the output directory
-         output_directory = "results/csvs"
-         if not os.path.exists(output_directory):
-             os.makedirs(output_directory)
-         # file_path = os.path.join(output_directory, f"{country}_costs_{scenario}.csv")
          file_path = f"results/{study}/country_csvs/{country}_costs.csv"
     
          # Save the DataFrame to a CSV file
@@ -265,7 +259,7 @@ def capacities(countries, results):
         
        for country, dataframe in capacities.items():
         # Specify the file path where you want to save the CSV file
-        file_path = f"results/{study}/country_csvs/{country}_capacities_.csv"
+        file_path = f"results/{study}/country_csvs/{country}_capacities.csv"
     
          # Save the DataFrame to a CSV file
         dataframe.to_csv(file_path, index=True)
