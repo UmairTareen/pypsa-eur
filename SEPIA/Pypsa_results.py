@@ -217,7 +217,82 @@ def costs(countries, results):
          print(f"CSV file for {country} saved at: {file_path}")
         
     return costs
+
+def Investment_costs(countries, results):
+    investment_costs = {}
+    for country in countries:
+      df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
+      df = df.iloc[:, 1:]
+      df = df.iloc[6:, :]
+      df.index = df.index.str[:2]
+      df = df[df.index == country]
+      df = df.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', '6': '2030','6.1': '2040','6.2': '2050',})
+      df[['2030', '2040', '2050']] = df[['2030', '2040', '2050']].apply(pd.to_numeric, errors='coerce')
+      df = df[df['Costs'] == 'capital']
+      df = df.groupby('tech').sum().reset_index()
+      df = df.drop(columns=['Costs'])
+      df['tech'] = df['tech'].map(rename_techs_tyndp)
+      df = df.groupby('tech').sum().reset_index()
+      tech_mapping = {'oil': 'oil storage', 'gas': 'gas storage'}
+      df['tech'] = df['tech'].replace(tech_mapping)
+      condition = df[['2030', '2040', '2050']].eq(0).all(axis=1)
+      df = df[~condition]
+
+      cf = pd.read_csv("results/reff/csvs/nodal_costs.csv", index_col=2)
+      cf = cf.iloc[:, 1:]
+      cf = cf.iloc[3:, :]
+      cf.index = cf.index.str[:2]
+      cf = cf[cf.index == country]
+      cf = cf.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', '6': '2020'})
+      cf[['2020']] = cf[['2020']].apply(pd.to_numeric, errors='coerce')
+      cf = cf[cf['Costs'] == 'capital']
+      cf = cf.groupby('tech').sum().reset_index()
+      cf = cf.drop(columns=['Costs'])
+      cf['tech'] = cf['tech'].map(rename_techs_tyndp)
+      cf = cf.groupby('tech').sum().reset_index()
+      tech_mapping = {'oil': 'oil storage', 'gas': 'gas storage'}
+      cf['tech'] = cf['tech'].replace(tech_mapping)
+      condition = cf[['2020']].eq(0).all(axis=1)
+      cf = cf[~condition]
+      
+      result_df = pd.merge(cf, df, on='tech', how='outer')
+      result_df.fillna(0, inplace=True)
+      mask = ~(result_df['tech'].isin(['load shedding']))
+      result_df = result_df[mask]
+      if not result_df.empty:
+            years = ['2020', '2030', '2040', '2050']
+            technologies = result_df['tech'].unique()
+            
+            investment_costs[country] = result_df.set_index('tech').loc[technologies, years]
+
+    for country in countries:
+
+       for planning_horizon in planning_horizons:
+        # Convert planning_horizon to string for column name
+        planning_horizon_str = str(planning_horizon)
+
+        # Check if the planning horizon key exists in the results dictionary
+        if planning_horizon in results:
+            cos_ac_df = results[planning_horizon]['cos_ac']
+            cos_dc_df = results[planning_horizon]['cos_dc']
+            ac_transmission_values = cos_ac_df.loc[country, 'transmission_AC']
+            dc_transmission_values = cos_dc_df.loc[country, 'transmission_DC']
+
+            # Assign values to existing columns for each year
+            investment_costs[country].loc['AC Transmission', planning_horizon_str] = ac_transmission_values
+            investment_costs[country].loc['DC Transmission', planning_horizon_str] = dc_transmission_values
+      
+       for country, dataframe in investment_costs.items():
+         # Specify the file path within the output directory
+         file_path = f"results/{study}/country_csvs/{country}_investment costs.csv"
     
+         # Save the DataFrame to a CSV file
+         dataframe.to_csv(file_path, index=True)
+
+         print(f"CSV file for {country} saved at: {file_path}")
+        
+    return investment_costs 
+   
 def capacities(countries, results):
     capacities = {}
     for country in countries:
@@ -1637,7 +1712,7 @@ def create_bar_chart(costs, country,  unit='Billion Euros/year'):
 
     for tech in df_transposed.columns:
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
-
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
     fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
@@ -1647,6 +1722,33 @@ def create_bar_chart(costs, country,  unit='Billion Euros/year'):
     # fig.write_html(output_file_path)
 
     return fig
+
+def create_investment_costs(investment_costs, country,  unit='Billion Euros/year'):
+    tech_colors = config["plotting"]["tech_colors"]
+    colors = config["plotting"]["tech_colors"]
+    colors["AC Transmission"] = "#FF3030"
+    colors["DC Transmission"] = "#104E8B"
+
+    title = f"{country} - Investment Costs"
+    df = investment_costs[country]
+    df = df.rename_axis(unit)
+    df = df.reset_index()
+    df.index = df.index.astype(str)
+
+    # Create a bar chart using Plotly
+    fig = go.Figure()
+    df_transposed = df.set_index(unit).T
+
+    for tech in df_transposed.columns:
+        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
+    
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
+    # Configure layout and labels
+    fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(hovermode='y')
+
+    return fig
+
 
 def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     tech_colors = config["plotting"]["tech_colors"]
@@ -1696,7 +1798,7 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
 
     return fig
 
-def create_combined_chart_country(costs, capacities, country):
+def create_combined_chart_country(costs,investment_costs, capacities, country):
     # Create output folder if it doesn't exist
     output_folder = f"results/{study}/htmls"
     raw_html = os.path.join(output_folder,'raw_html/')
@@ -1713,7 +1815,10 @@ def create_combined_chart_country(costs, capacities, country):
     # Create bar chart
     bar_chart = create_bar_chart(costs, country)
     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
-
+    
+    # Create Investment Costs
+    bar_chart_investment = create_investment_costs(investment_costs, country)
+    combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
     # Create capacities chart
     capacities_chart = create_capacity_chart(capacities, country)
     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
@@ -1782,6 +1887,7 @@ if __name__ == "__main__":
     loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     results = calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_horizons)
     costs = costs(countries, results)
+    investment_costs = Investment_costs(countries, results)
     capacities = capacities(countries, results)
     plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Power Dispatch (Winter Week)")
     plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Power Dispatch (Summer Week)")
@@ -1793,7 +1899,7 @@ if __name__ == "__main__":
     create_gas_map_plots(planning_horizons)
     
     for country in countries:
-        create_combined_chart_country(costs, capacities, country)
+        create_combined_chart_country(costs,investment_costs, capacities, country)
     
 
 

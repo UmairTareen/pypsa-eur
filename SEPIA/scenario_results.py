@@ -56,7 +56,60 @@ def scenario_costs(country):
 
     for tech in df_transposed.columns:
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
+    # Configure layout and labels
+    fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(hovermode='y')
+    
+    return fig
 
+def scenario_investment_costs(country):
+    costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_investment costs.csv")
+    costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_investment costs.csv")
+    # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
+    costs_reff = costs_bau[['tech', '2020']]
+    costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
+    costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
+    # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
+    
+    costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
+    
+    costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
+    costs_bau = costs_bau[['tech', 'Total']]
+    costs_bau['Total'] = costs_bau['Total'] / 3
+    costs_bau = costs_bau.rename(columns={'Total': 'BAU'})
+    
+    costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
+    costs_suff = costs_suff[['tech', 'Total']]
+    costs_suff['Total'] = costs_suff['Total'] / 3
+    costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
+    
+    # costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
+    # costs_ncdr = costs_ncdr[['tech', 'Total']]
+    # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
+    # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
+    
+    combined_df = pd.merge(costs_reff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
+    # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = combined_df.fillna(0)
+    combined_df = combined_df.set_index('tech')
+    
+    unit='Billion Euros/year'
+    title=f'Total Investment Costs Comparison for {country}'
+    tech_colors = config["plotting"]["tech_colors"]
+    colors = config["plotting"]["tech_colors"]
+    colors["AC Transmission"] = "#FF3030"
+    colors["DC Transmission"] = "#104E8B"
+    colors["AC Transmission lines"] = "#FF3030"
+    colors["DC Transmission lines"] = "#104E8B"
+    
+    fig = go.Figure()
+    df_transposed = combined_df.T
+
+    for tech in df_transposed.columns:
+        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
     fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
@@ -213,6 +266,9 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     # Create bar chart
     bar_chart = scenario_costs(country)
     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+    
+    bar_chart_investment = scenario_investment_costs(country)
+    combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
 
     # Create capacities chart
     capacities_chart = scenario_capacities(country)
