@@ -37,13 +37,21 @@ def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
         ll=ll,
         planning_horizon=planning_horizon
     )
+def load_file(filename):
+    # Use pypsa.Network to load the network from the filename
+    return pypsa.Network(filename)
 
+def load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll):
+    files = {}
+    for planning_horizon in planning_horizons:
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        files[planning_horizon] = load_file(filename)
+    return files
 
 def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, country):
         results_dict = {}
     
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
         config = snakemake.config
 
         energy_demand = pd.read_csv(
@@ -657,8 +665,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         '''
         results_dict_co2 = {}
 
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
         fn = snakemake.input.costs
         options = pd.read_csv(fn, index_col=[0, 1]).sort_index()
 
@@ -1600,6 +1607,7 @@ if __name__ == "__main__":
 
     countries = snakemake.params.countries
     study = snakemake.params.study
+    loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     prepare_files(simpl, cluster, opt, sector_opt, ll)
     networks_dict = {
             (cluster, ll, opt + sector_opt, planning_horizon): f"results/{study}" +

@@ -289,9 +289,9 @@ if prepare_folder_website == True:
 
  if __name__ == "__main__":
     # Specify the list of source directories, the target directory, new names, and files to delete
-    source_directories = ["results/bau/pypsa_results/bau", "results/ncdr/pypsa_results/ncdr","results/scenario_results", "results/bau/htmls", "results/ncdr/htmls"]
+    source_directories = ["results/scenario_results", "results/bau/htmls", "results/ncdr/htmls"]
     target_directory = "results/" 
-    new_names = ["Pypsa_results_bau","Pypsa_results_ncdr", "Pypsa_results_scenarios","bau", "suff"]  # Replace with the desired new names
+    new_names = ["Pypsa_results_scenarios","bau", "suff"]  # Replace with the desired new names
     files_to_delete = ["ChartData_BE.xlsx","ChartData_DE.xlsx","ChartData_FR.xlsx","ChartData_GB.xlsx", "ChartData_NL.xlsx","ChartData_EU.xlsx"]  # Specify the names of files to delete
 
     create_website_files(source_directories, target_directory, new_names, files_to_delete)

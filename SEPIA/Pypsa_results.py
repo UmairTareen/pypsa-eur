@@ -69,6 +69,18 @@ def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
         planning_horizon=planning_horizon
     )
 
+def load_file(filename):
+    # Use pypsa.Network to load the network from the filename
+    return pypsa.Network(filename)
+
+def load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll):
+    files = {}
+    for planning_horizon in planning_horizons:
+        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
+        files[planning_horizon] = load_file(filename)
+    return files
+
+
 def calculate_ac_transmission(lines, regex_pattern):
     transmission_ac = lines.s_nom_opt.filter(regex=regex_pattern).sum()
 
@@ -97,8 +109,7 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
     results_dict = {}
 
     for planning_horizon in planning_horizons:
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
 
         cap_ac = pd.DataFrame(index=['BE', 'DE', 'FR', 'NL'])
         cos_ac = pd.DataFrame(index=['BE', 'DE', 'FR', 'NL'])
@@ -372,8 +383,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
 
      for planning_horizon in planning_horizons:
         tab = pn.Tabs()
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
 
         assign_location(n)
         assign_carriers(n)
@@ -568,8 +578,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 
      for planning_horizon in planning_horizons:
         tab = pn.Tabs()
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
 
         assign_location(n)
         assign_carriers(n)
@@ -1355,8 +1364,7 @@ def create_map_plots(planning_horizons):
     """
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
 
         # Plot the map and get the figure
         fig = plot_map(
@@ -1386,8 +1394,7 @@ def create_map_plots(planning_horizons):
 
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
         fig = plot_map(
             n,
             components=["generators", "links", "stores", "storage_units"],
@@ -1455,8 +1462,7 @@ def create_H2_map_plots(planning_horizons):
     planning_horizons = [2030, 2040, 2050]
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
 
         # Plot the H2 map and get the figure
         fig = plot_h2_map(network=n)
@@ -1482,8 +1488,7 @@ def create_H2_map_plots(planning_horizons):
 
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
         fig = plot_h2_map(network=n)
         plt.rcParams['legend.title_fontsize'] = '20'
 
@@ -1541,8 +1546,7 @@ def create_gas_map_plots(planning_horizons):
     """
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
 
         # Plot the H2 map and get the figure
         fig = plot_ch4_map(network=n)
@@ -1568,8 +1572,7 @@ def create_gas_map_plots(planning_horizons):
     
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        filename = build_filename(simpl, cluster, opt, sector_opt, ll, planning_horizon)
-        n = pypsa.Network(filename)
+        n = loaded_files[planning_horizon]
         fig = plot_ch4_map(network=n)
         plt.rcParams['legend.title_fontsize'] = '20'
 
@@ -1776,6 +1779,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     config = snakemake.config
     study = snakemake.params.study
+    loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     results = calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_horizons)
     costs = costs(countries, results)
     capacities = capacities(countries, results)
