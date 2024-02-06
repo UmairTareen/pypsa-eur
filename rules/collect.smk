@@ -20,7 +20,7 @@ if config["run"]["name"] == "reff":
 else:
  rule all:
     input:
-        htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
+        heatfile=expand(RESULTS + "htmls/raw_html/Heat Dispatch-{country}_{planning_horizons}.html", country=config["countries"], planning_horizons=config["scenario"]["planning_horizons"]),
     default_target: True
 
 

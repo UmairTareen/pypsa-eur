@@ -272,6 +272,36 @@ rule prepare_results:
         "../envs/environment.yaml"
     script:
         "../SEPIA/Pypsa_results.py"
+        
+rule prepare_dispatch_plots:
+    params:
+        countries=config["countries"],
+        planning_horizons=planning_horizons,
+        sector_opts=config["scenario"]["sector_opts"],
+        plotting=config["plotting"],
+        scenario=config["scenario"],
+        study = config["run"]["name"],
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),      
+    output:
+        powerfile=expand(RESULTS + "htmls/raw_html/Power Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
+        heatfile=expand(RESULTS + "htmls/raw_html/Heat Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "prepare_dispatch_plots.log",
+    benchmark:
+        BENCHMARKS + "prepare_dispatch_plots",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/Dispatch_plots_weekly.py"
                                
 STATISTICS_BARPLOTS = [
     "capacity_factor",

@@ -513,7 +513,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
            
         if country == 'FR':
            ac_lines = n.lines_t.p0.filter(items=['1', '3']).sum(axis=1)
-           dc_lines = n.links_t.p1.filter(items=['14826','T2', 'T12', 'T19', 'T21']).sum(axis=1)
+           dc_lines = n.links_t.p0.filter(items=['14826','T2', 'T12', 'T19', 'T21']).sum(axis=1)
            merged_series = pd.concat([ac_lines, dc_lines], axis=1)
            imp_exp = merged_series.sum(axis=1)
            imp_exp = imp_exp.rename('Imports_Exports')
