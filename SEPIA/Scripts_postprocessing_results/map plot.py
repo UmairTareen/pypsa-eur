@@ -30,7 +30,7 @@ plt.style.use(["bmh", "matplotlibrc"])
 xr.set_options(display_style="html")
 
 
-scenario = "bau"
+scenario = "ncdr"
 
     
 
@@ -414,7 +414,8 @@ def plot_ch4_map(network):
         "biogas": "seagreen",
     }
 
-    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": ccrs.EqualEarth()})
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.Sinusoidal()})
+    fig.set_size_inches(15, 15)
 
     n.plot(
         bus_sizes=bus_sizes,
@@ -650,10 +651,8 @@ def plot_h2_map(network):
     n.links.bus0 = n.links.bus0.str.replace(" H2", "")
     n.links.bus1 = n.links.bus1.str.replace(" H2", "")
 
-    proj = ccrs.EqualEarth()
-    #regions = regions.to_crs(proj.proj4_init)
-
-    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.Sinusoidal()})
+    fig.set_size_inches(15, 15)
 
     color_h2_pipe = "#b3f3f4"
     color_retrofit = "#499a9c"
