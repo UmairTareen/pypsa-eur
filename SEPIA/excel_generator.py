@@ -74,6 +74,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
 
         if planning_horizon == 2020:
             ammonia = 0
+            H2_industry = industry_demand.loc["hydrogen"].filter(like=country).sum()
         else:
             ammonia_t = industry_demand.loc["ammonia"]
             ammonia = ammonia_t.filter(like=country).sum()
@@ -1607,8 +1608,9 @@ if __name__ == "__main__":
 
     countries = snakemake.params.countries
     study = snakemake.params.study
-    loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     prepare_files(simpl, cluster, opt, sector_opt, ll)
+    loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
+    
     networks_dict = {
             (cluster, ll, opt + sector_opt, planning_horizon): f"results/{study}" +
             f"/postnetworks/elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_{planning_horizon}.nc"

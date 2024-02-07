@@ -94,6 +94,9 @@ def prepare_sepia(countries):
 
     '''subtract agriculture heating demand from residential and tertiary sector'''
     data["prespaccfraa"] = data["prespaccfraa"] - data["presvapcfagr"]
+    data['pregazcfagr'] = 0.0
+    data.loc['2020', 'pregazcfagr'] = data.loc['2020', 'presvapcfagr']
+    data.loc['2020', 'presvapcfagr'] = 0
     
     '''Remove any duplicated data'''
     data = data.loc[:,~data.columns.duplicated()] 
@@ -219,8 +222,9 @@ def prepare_sepia(countries):
         flows_co2[(en_code + '_ghg', 'oil_ghg', '')] = values_oil_emm * co2_intensity_oil
         
     for en_code in ['fgs']:
+        values_agr_emm = flows[('gaz_fe','agr', '')].squeeze().rename_axis(None) * co2_intensity_gas
         values_gas_emm = fec_p['gaz_pe'] 
-        flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
+        flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas - values_agr_emm
     
     for en_code in ['oil']:
         value_so = flows[('pet_fe', 'wati', '')].squeeze().rename_axis(None) * co2_intensity_oil

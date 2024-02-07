@@ -734,7 +734,7 @@ def add_EQ_constraints(n, level, by_country, config):
         i for i in [line_imports, link_imports] if i is not None
     )
 
-    local_factor = 1 - 1 / level
+    local_factor = level - 1/1
 
     n.model.add_constraints(
         local_factor * local_energy + imported_energy <= 0, name="equity_min"
