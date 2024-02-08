@@ -450,11 +450,11 @@ def prepare_sepia(countries):
     ren_cov_ratios['enc_fe'] = (ren_bm/result_bm_t)*100
     ren_cov_ratios['enc_fe'] = ren_cov_ratios['enc_fe'].clip(upper=100)
     
-    dh_columns = ['enc_pe','cms_pe','pet_pe','gaz_se','bgl_pe','elc_se','pac_pe','tes_se']
+    dh_columns = ['enc_pe','cms_pe','pet_pe','gaz_se','hyd_se','bgl_pe','elc_se','pac_pe','tes_se']
     filtered_columns = [col for col in flows_bk.columns if col[0] in dh_columns and col[1] in ['vap_se']]
     result_dh = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum()
     result_dh_t = flows_bk[filtered_columns].groupby(level='Source', axis=1).sum().sum(axis=1)
-    ren_dh = ['enc_pe','bgl_pe','elc_se','pac_pe']
+    ren_dh = ['enc_pe','bgl_pe','elc_se','pac_pe', 'hyd_se', 'tes_se']
     ren_dh = result_dh[ren_dh].sum(axis=1)
     ren_cov_ratios['vap_fe'] = (ren_dh/result_dh_t)*100
     ren_cov_ratios['vap_fe'] = ren_cov_ratios['vap_fe'].clip(upper=100)
