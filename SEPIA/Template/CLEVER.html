@@ -1,13 +1,93 @@
 <!-- <!DOCTYPE html> -->
 <html class="no-js" lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" >
-        <meta name='robots' content='index, follow' />
-		<title>Scenario results</title>
+
+        <link rel='stylesheet' id='twentytwenty-css' href='https://clever-energy-scenario.eu/wp-content/themes/twentytwenty/style.css?ver=6.1.1' media='all' />
+        <link rel='stylesheet' id='twentytwenty-style-css' href='https://clever-energy-scenario.eu/wp-content/themes/clever/style.css?ver=1.' media='all' />
+        <style>
+        /* SEPIA style changes */
+        #navsticky .menu-item { display: inline-block !important }
+        #menu-item-59 img { display: inline-block }
+        .site-main { padding:0 5%; }
+        /* #menu-dropdown { top:-11px !important } */
+        #navsticky li { top: -15px; }
+        #navsticky #menu-dropdown { top: -21px; }
+        #navsticky .menu-item-70 A { background:none; }
+        #navsticky .menu-item-70 { margin-left:0; }
+        #navsticky #return-arrow {
+            font-size: 30px;
+            display: inline;
+            padding-right: 7px;
+        }
+        </style>
 
     <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+
+    <!-- GA Google Analytics @ https://m0n.co/ga -->
+    <script type="text/plain" data-service="google-analytics" data-category="statistics" async data-cmplz-src="https://www.googletagmanager.com/gtag/js?id=G-VP0W0EPDS9"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-VP0W0EPDS9');
+    </script>
 </head>
+
+<body class="home page-template page-template-homepage page-template-homepage-php page page-id-7 page-parent wp-custom-logo wp-embed-responsive singular enable-search-modal has-post-thumbnail has-no-pagination not-showing-comments show-avatars homepage footer-top-visible">
+    <div id="top"></div>
+
+    <div id="navsticky">
+    <A HREF="https://www.negawatt.be/"><img src="https://www.negawatt.be/wp-content/uploads/2022/06/Rectangle_Tekengebied-1-1024x359.png" class="logo_stiky"><style>
+    .logo_stiky {
+        width: 250px; /* Adjust the width as needed */
+        height: auto; /* Maintain aspect ratio */
+    }
+</style>
+</a>
+        <li id="menu-item-59" class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-59"></li>
+        <li id="menu-dropdown" >
+            <form>
+            <select name="country" id="country-select" onChange="top.location.href = this.form.country.options[this.form.country.selectedIndex].value;return false;">
+                <option value="">Other results</option>
+                <option value="">---</option>
+                <option value="Results_EU.html">EU27</option>
+                <option value="Results_ALL.html">EU30</option>
+                <option value="">---</option>
+                <option value="Results_AT.html">Austria</option>
+                <option value="Results_BE.html">Belgium</option>
+                <option value="Results_BG.html">Bulgaria</option>
+                <option value="Results_CH.html">Switzerland</option>
+                <option value="Results_CY.html">Cyprus</option>
+                <option value="Results_CZ.html">Czech Republic</option>
+                <option value="Results_DE.html">Germany</option>
+                <option value="Results_DK.html">Denmark</option>
+                <option value="Results_EE.html">Estonia</option>
+                <option value="Results_EL.html">Greece</option>
+                <option value="Results_ES.html">Spain</option>
+                <option value="Results_FI.html">Finland</option>
+                <option value="Results_FR.html">France</option>
+                <option value="Results_HR.html">Croatia</option>
+                <option value="Results_HU.html">Hungary</option>
+                <option value="Results_IE.html">Ireland</option>
+                <option value="Results_IT.html">Italy</option>
+                <option value="Results_LT.html">Lithuania</option>
+                <option value="Results_LU.html">Luxembourg</option>
+                <option value="Results_LV.html">Latvia</option>
+                <option value="Results_MT.html">Malta</option>
+                <option value="Results_NL.html">Netherlands</option>
+                <option value="Results_NO.html">Norway</option>
+                <option value="Results_PL.html">Poland</option>
+                <option value="Results_PT.html">Portugal</option>
+                <option value="Results_RO.html">Romania</option>
+                <option value="Results_SE.html">Sweden</option>
+                <option value="Results_SI.html">Slovenia</option>
+                <option value="Results_SK.html">Slovakia</option>
+                <option value="Results_UK.html">United Kingdom</option>
+            </select>
+            </form>
+        </li>
+        <li id="menu-item-70" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-70"><a href="https://www.negawatt.be/" target="_blank" aria-current="page"><span id="return-arrow">&#5130;</span>	
+             Back to <br>project website</a></li>
+    </div>
 
     <main id="main" class="site-main main_large" role="main">
         <div class="encart">
@@ -20,5 +100,4 @@
         
         {{MAIN}}
     </main>
-    </body>
     </html>

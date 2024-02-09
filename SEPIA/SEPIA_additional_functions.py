@@ -244,7 +244,7 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
     # add_sankey_label(fig, (nodes.loc['fgs_ghg','PositionX']+nodes.loc['net_ghg','PositionX'])/2, 'Final Emissions')
     # add_sankey_label(fig, nodes.loc['met_ghg','PositionX'], 'Secondary Emissions')
     add_sankey_label(fig, 1, 'Final Emissions')
-    format_chart(fig, "carbon sankey", main_params)
+    format_chart(fig, "sankey", main_params)
     return fig
 
 # Combine several charts into one (with buttons)
