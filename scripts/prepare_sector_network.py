@@ -703,27 +703,32 @@ def add_dac(n, costs):
     )
 
 
-# def add_co2limit(n, nyears=1.0, limit=0.0):
-#     logger.info(f"Adding CO2 budget limit as per unit of 1990 levels of {limit}")
+def add_co2limit(n, nyears=1.0, limit=0.0):
+    logger.info(f"Adding CO2 budget limit as per unit of 1990 levels of {limit}")
 
-#     countries = snakemake.params.countries
+    countries = snakemake.params.countries
 
-#     sectors = emission_sectors_from_opts(opts)
+    sectors = emission_sectors_from_opts(opts)
 
-#     # convert Mt to tCO2
-#     co2_totals = 1e6 * pd.read_csv(snakemake.input.co2_totals_name, index_col=0)
+    # convert Mt to tCO2
+    co2_totals = 1e6 * pd.read_csv(snakemake.input.co2_totals_name, index_col=0)
 
-#     co2_limit = co2_totals.loc[countries, sectors].sum().sum()
+    co2_limit = co2_totals.loc[countries, sectors].sum().sum()
+    lulucf = co2_totals.loc[countries, 'LULUCF']
+    lulucf = lulucf * -1
+    lulucf['NL'] = 0
+    lulucf = lulucf.sum().sum()
 
-#     co2_limit *= limit * nyears
+    co2_limit *= limit * nyears
+    co2_limit = co2_limit + lulucf
 
-#     n.add(
-#         "GlobalConstraint",
-#         "CO2Limit",
-#         carrier_attribute="co2_emissions",
-#         sense="<=",
-#         constant=co2_limit,
-#     )
+    n.add(
+        "GlobalConstraint",
+        "CO2Limit",
+        carrier_attribute="co2_emissions",
+        sense="<=",
+        constant=co2_limit,
+    )
 
 
 # TODO PyPSA-Eur merge issue
@@ -3617,7 +3622,7 @@ if __name__ == "__main__":
         limit = float(limit.replace("p", ".").replace("m", "-"))
         break
     logger.info(f"Add CO2 limit from {limit_type}")
-    # add_co2limit(n, nyears, limit)
+    add_co2limit(n, nyears, limit)
 
     for o in opts:
         if not o[:10] == "linemaxext":

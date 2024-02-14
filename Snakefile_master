@@ -44,9 +44,11 @@ rule prepare_scenarios:
         cap_files_ncdr=expand("results/ncdr/country_csvs/{country}_capacities.csv", country=config["countries"]),
         cost_files_ncdr=expand("results/ncdr/country_csvs/{country}_costs.csv", country=config["countries"]),
         dem_files_ncdr=expand("results/ncdr/country_csvs/{country}_sectordemands.csv", country=config["countries"]),
+        sepia_config = "SEPIA/SEPIA_config.xlsx",
+        template = "SEPIA/Template/pypsa.html",
         
     output:
-        htmlfile=expand("results/scenario_results/{country}_combined_scenario_chart.html", country=config["countries"]),
+        htmlfile=expand("results/scenario_results/{country}_combined_chart.html", country=config["countries"]),
     threads: 1
     resources:
         mem_mb=10000,

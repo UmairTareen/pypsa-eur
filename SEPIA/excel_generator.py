@@ -951,7 +951,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
             pd.Series(
                 dict(
                     label="solid biomass solid biomass to gas", source="solid biomass", target="gas",
-                    value=value * options.loc[("BioSNG", "CO2 stored"), "value"]
+                    value=value * options.loc[("gas", "CO2 intensity"), "value"],
                     # CO2 stored in bioSNG from cost data
                 )
             )

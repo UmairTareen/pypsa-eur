@@ -258,7 +258,10 @@ rule prepare_results:
         ),
         market_values=RESULTS + "country_csvs/market_values.csv",
         excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
-        costs = "data/costs_2050.csv",         
+        costs = "data/costs_2050.csv",
+        sepia_config = "SEPIA/SEPIA_config.xlsx",
+        template = "SEPIA/Template/pypsa.html",
+        logo = "SEPIA/Template/logo.png",         
     output:
         htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
     threads: 1

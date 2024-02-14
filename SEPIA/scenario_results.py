@@ -8,7 +8,23 @@ import os
 import shutil
 from datetime import datetime
 import plotly.express as px
+from jinja2 import Template
 
+def logo():
+    file = snakemake.input.sepia_config
+    excel_file = pd.read_excel(file, ['MAIN_PARAMS'], index_col=0)
+    excel_file = excel_file["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
+    logo = dict(source=excel_file['PROJECT_LOGO'],
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=1,
+        xanchor="center",
+        yanchor="bottom",
+        sizex=0.2,
+        sizey=0.2,
+        layer="below")
+    return logo
 
 def scenario_costs(country):
     costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_costs.csv")
@@ -60,6 +76,7 @@ def scenario_costs(country):
     # Configure layout and labels
     fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
+    fig.add_layout_image(logo)
     
     return fig
 
@@ -113,6 +130,7 @@ def scenario_investment_costs(country):
     # Configure layout and labels
     fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
+    fig.add_layout_image(logo)
     
     return fig
     
@@ -193,7 +211,8 @@ def scenario_capacities(country):
 
     # Update layout
     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit)
-    
+    logo['y']=1.021
+    fig.add_layout_image(logo)
     return fig
 
 def scenario_demands(country):
@@ -254,6 +273,8 @@ def scenario_demands(country):
     )
     for col in fig.select_xaxes():
      col.update(tickangle=-45)
+    logo['y']=1.025
+    fig.add_layout_image(logo)
     return fig
     
 def create_combined_scenario_chart_country(country, output_folder='results/scenario_results/'):
@@ -279,11 +300,35 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
 
     combined_html += "</body></html>"
+    table_of_contents_content = ""
+    main_content = ""
+    # Create the content for the "Table of Contents" and "Main" sections
+    table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
 
-    # Save the combined HTML file
-    combined_file_path = os.path.join(output_folder, f"{country}_combined_scenario_chart.html")
+    # Add more links for other plots
+    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
+    # Add more content for other plots
+    
+    template_path =  snakemake.input.template
+    with open(template_path, "r") as template_file:
+        template_content = template_file.read()
+        template = Template(template_content)
+        
+    rendered_html = template.render(
+    title=f"{country} - Combined Plots",
+    country=country,
+    TABLE_OF_CONTENTS=table_of_contents_content,
+    MAIN=main_content,)
+    
+    combined_file_path = os.path.join(output_folder, f"{country}_combined_chart.html")
     with open(combined_file_path, "w") as combined_file:
-        combined_file.write(combined_html)
+     combined_file.write(rendered_html)
 
 
 
@@ -297,60 +342,9 @@ if __name__ == "__main__":
         
     countries = snakemake.params.countries 
     config = snakemake.config
-    
+    logo = logo()
     for country in countries:
         create_combined_scenario_chart_country(country)
         
-#%%
-prepare_folder_website = config["prepare_folder_for_website"]
-if prepare_folder_website == True:  
-    
- def create_website_files(source_directories, target_directory, new_names, files_to_delete):
-    # Get the current date
-    current_date = datetime.now()
-
-    # Format the date in the "year_month_day" format
-    folder_name = current_date.strftime("%Y%m%d")
-
-    # Create a new folder with the formatted name in the target directory
-    new_folder_path = os.path.join(target_directory, folder_name)
-    try:
-        os.makedirs(new_folder_path)
-        print(f"Folder '{folder_name}' created successfully in '{target_directory}'.")
-    except OSError as e:
-        print(f"Error creating folder: {e}")
-        return
-
-    # Copy, rename, and delete files in each source folder
-    for source_folder, new_name in zip(source_directories, new_names):
-        try:
-            source_folder_name = os.path.basename(source_folder)
-            destination_folder_name = f"{new_name}"
-            destination_folder_path = os.path.join(new_folder_path, destination_folder_name)
-
-            shutil.copytree(source_folder, destination_folder_path)
-            print(f"Folder '{source_folder_name}' copied and renamed to '{destination_folder_name}' in '{new_folder_path}'.")
-
-            # Delete specified files inside the copied folder
-            for file_to_delete in files_to_delete:
-                file_path = os.path.join(destination_folder_path, file_to_delete)
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    print(f"File '{file_to_delete}' deleted from '{destination_folder_name}'.")
-                else:
-                    print(f"File '{file_to_delete}' not found in '{destination_folder_name}'.")
-        except shutil.Error as e:
-            print(f"Error copying folder '{source_folder}': {e}")
- 
-
- if __name__ == "__main__":
-    # Specify the list of source directories, the target directory, new names, and files to delete
-    source_directories = ["results/scenario_results", "results/bau/htmls", "results/ncdr/htmls"]
-    target_directory = "results/" 
-    new_names = ["Pypsa_results_scenarios","bau", "suff"]  # Replace with the desired new names
-    files_to_delete = ["ChartData_BE.xlsx","ChartData_DE.xlsx","ChartData_FR.xlsx","ChartData_GB.xlsx", "ChartData_NL.xlsx","ChartData_EU.xlsx"]  # Specify the names of files to delete
-
-    create_website_files(source_directories, target_directory, new_names, files_to_delete)
-
     
  

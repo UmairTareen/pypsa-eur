@@ -1054,14 +1054,11 @@ def add_co2limit_country(n, limit_countries, nyears=1.0):
 
         idx = n.links[mask].index
 
-        international = n.links.carrier.map(
-            lambda x: 0.4 if x in ["kerosene for aviation", "shipping oil"] else 1.0
-        )
         grouping = country.loc[idx]
 
         if not grouping.isnull().all():
             expr = (
-                (p.loc[:, idx] * efficiency[idx] * international[idx])
+                (p.loc[:, idx] * efficiency[idx])
                 .groupby(grouping, axis=1)
                 .sum()
                 * n.snapshot_weightings.generators

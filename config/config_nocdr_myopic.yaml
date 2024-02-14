@@ -82,7 +82,7 @@ co2_budget:
   2035: 0.150
   2040: 0.15
   2045: 0.032
-  2050: 0.0
+  2050: 0.00
 co2_budget_national:
   2030:
     'BE': 0.45
@@ -98,11 +98,11 @@ co2_budget_national:
     'NL': 0.15
     
   2050:
-    'BE': 0.0
-    'DE': 0.0
-    'FR': 0.0
-    'GB': 0.0
-    'NL': 0.05
+    'BE': 0.031
+    'DE': 0.01
+    'FR': 0.00
+    'GB': 0.00
+    'NL': 0.051
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   voltages: [220., 300., 380.]
@@ -709,7 +709,7 @@ solving:
 
   mem: 60000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
   walltime: "12:00:00"
-prepare_folder_for_website: false
+prepare_folder_for_website: true
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#plotting
 plotting:
   map:

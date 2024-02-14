@@ -32,12 +32,12 @@ cp ../results/bau/htmls/Results_NL.html ../results/html_folder/other_countries/N
 cp ../results/ncdr/htmls/Results_EU.html ../results/html_folder/other_countries/EU_results_suff.html
 cp ../results/bau/htmls/Results_EU.html ../results/html_folder/other_countries/EU_results_bau.html
 
-cp ../results/scenario_results/BE_combined_scenario_chart.html ../results/html_folder/BE_combined_scenario_chart.html
+cp ../results/scenario_results/BE_combined_chart.html ../results/html_folder/BE_combined_scenario_chart.html
 
-cp ../results/scenario_results/DE_combined_scenario_chart.html ../results/html_folder/other_countries/DE_combined_scenario_chart.html
-cp ../results/scenario_results/NL_combined_scenario_chart.html ../results/html_folder/other_countries/NL_combined_scenario_chart.html
-cp ../results/scenario_results/FR_combined_scenario_chart.html ../results/html_folder/other_countries/FR_combined_scenario_chart.html
-cp ../results/scenario_results/GB_combined_scenario_chart.html ../results/html_folder/other_countries/GB_combined_scenario_chart.html
+cp ../results/scenario_results/DE_combined_chart.html ../results/html_folder/other_countries/DE_combined_scenario_chart.html
+cp ../results/scenario_results/NL_combined_chart.html ../results/html_folder/other_countries/NL_combined_scenario_chart.html
+cp ../results/scenario_results/FR_combined_chart.html ../results/html_folder/other_countries/FR_combined_scenario_chart.html
+cp ../results/scenario_results/GB_combined_chart.html ../results/html_folder/other_countries/GB_combined_scenario_chart.html
 
 
 

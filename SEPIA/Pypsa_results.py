@@ -11,10 +11,12 @@ import sys
 import panel as pn
 import base64
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import cartopy.crs as ccrs
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots 
+from jinja2 import Template
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_path = os.path.join(current_script_dir, "../scripts/")
 sys.path.append(scripts_path)
@@ -22,7 +24,6 @@ from plot_summary import rename_techs, preferred_order
 from plot_network import assign_location
 from plot_network import add_legend_circles, add_legend_patches, add_legend_lines
 from make_summary import assign_carriers
-
 
 
 def rename_techs_tyndp(tech):
@@ -57,6 +58,22 @@ def rename_techs_tyndp(tech):
           return "coal"
     else:
         return tech
+
+def logo():
+    file = snakemake.input.sepia_config
+    excel_file = pd.read_excel(file, ['MAIN_PARAMS'], index_col=0)
+    excel_file = excel_file["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
+    logo = dict(source=excel_file['PROJECT_LOGO'],
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=1,
+        xanchor="center",
+        yanchor="bottom",
+        sizex=0.2,
+        sizey=0.2,
+        layer="below")
+    return logo
 
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     prefix=f"results/{study}/postnetworks/elec_"
@@ -431,7 +448,8 @@ def plot_demands(countries):
         facet_col='Demand',
         labels={'year': '', 'value': 'Final energy and non-energy demand [TWh/a]'}
         )
-
+        logo['y']=1.021
+        fig.add_layout_image(logo)
         # Show the plot
         html_filename = f"{country}_sectoral_demands.html"
         output_folder = f'results/{study}/htmls/raw_html' # Set your desired output folder
@@ -627,7 +645,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
          width=1200, height=600,
          hovermode='x',)
     
-
+        fig.add_layout_image(logo)
             # Add the plot to the tabs
         tab.append((f"{planning_horizon}", fig))
 
@@ -773,7 +791,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
          width=1200, height=600,
          hovermode='x',)
     
-
+        fig.add_layout_image(logo)
             # Add the plot to the tabs
         tab.append((f"{planning_horizon}", fig))
 
@@ -928,9 +946,9 @@ def plot_map(
     legend_kw = dict(
         loc="upper left",
         bbox_to_anchor=(0.05, 0.75),
-        labelspacing=2,
+        labelspacing=3,
         frameon=False,
-        fontsize=20,
+        fontsize=15,
         handletextpad=1,
         title="investment costs",
     )
@@ -969,7 +987,7 @@ def plot_map(
     legend_kw = dict(
         bbox_to_anchor=(1.3, 1),
         frameon=False,
-        fontsize=15,
+        fontsize=13,
     )
 
     if with_legend:
@@ -982,7 +1000,11 @@ def plot_map(
             labels,
             legend_kw=legend_kw,
         )
-    
+    logo = snakemake.input.logo
+    img = plt.imread(logo)
+    imagebox = OffsetImage(img, zoom=0.25)
+    ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
+    ax.add_artist(ab)
     return fig
 
 def group_pipes(df, drop_direction=False):
@@ -1210,7 +1232,11 @@ def plot_h2_map(network):
     add_legend_patches(ax, colors, labels, legend_kw=legend_kw)
 
     ax.set_facecolor("white")
-    
+    logo = snakemake.input.logo
+    img = plt.imread(logo)
+    imagebox = OffsetImage(img, zoom=0.25)
+    ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
+    ax.add_artist(ab)
     return fig
 
 def plot_ch4_map(network):
@@ -1421,6 +1447,11 @@ def plot_ch4_map(network):
         labels,
         legend_kw=legend_kw,
     )
+    logo = snakemake.input.logo
+    img = plt.imread(logo)
+    imagebox = OffsetImage(img, zoom=0.25)
+    ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
+    ax.add_artist(ab)
     return fig
 
 def create_map_plots(planning_horizons):
@@ -1699,7 +1730,7 @@ def create_bar_chart(costs, country,  unit='Billion Euros/year'):
     colors["AC Transmission"] = "#FF3030"
     colors["DC Transmission"] = "#104E8B"
 
-    title = f"{country} - Results"
+    title = f"{country} - Total Annual Costs"
     df = costs[country]
     df = df.rename_axis(unit)
     df = df.reset_index()
@@ -1715,7 +1746,7 @@ def create_bar_chart(costs, country,  unit='Billion Euros/year'):
     # Configure layout and labels
     fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
-
+    fig.add_layout_image(logo)
     # Save the HTML file for each country
     # output_file_path = os.path.join(output_folder, f"{country}_bar_chart.html")
     # fig.write_html(output_file_path)
@@ -1745,7 +1776,7 @@ def create_investment_costs(investment_costs, country,  unit='Billion Euros/year
     # Configure layout and labels
     fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
-
+    fig.add_layout_image(logo)
     return fig
 
 
@@ -1790,7 +1821,8 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
 
     # Update layout
     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}", yaxis_title=unit)
-
+    logo['y']=1.03
+    fig.add_layout_image(logo)
     # Save plot as HTML
     # html_file_path = os.path.join(output_folder, f"{country}_capacities_chart.html")
     # fig.write_html(html_file_path)
@@ -1818,6 +1850,7 @@ def create_combined_chart_country(costs,investment_costs, capacities, country):
     # Create Investment Costs
     bar_chart_investment = create_investment_costs(investment_costs, country)
     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+
     # Create capacities chart
     capacities_chart = create_capacity_chart(capacities, country)
     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
@@ -1836,15 +1869,15 @@ def create_combined_chart_country(costs,investment_costs, capacities, country):
         plot_series_heat_html = plot_series_heat_file.read()
         combined_html += f"<div><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html}</div>"
     with open(plot_series_heat_file_path_sum, "r") as plot_series_heat_file_sum:
-        plot_series_heat_html = plot_series_heat_file_sum.read()
-        combined_html += f"<div><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html}</div>"
+        plot_series_heat_html_w = plot_series_heat_file_sum.read()
+        combined_html += f"<div><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html_w}</div>"
         
     with open(plot_series_file_path, "r") as plot_series_file:
         plot_series_html = plot_series_file.read()
         combined_html += f"<div><h2>{country} - Power Dispatch</h2>{plot_series_html}</div>"
     with open(plot_series_file_path_sum, "r") as plot_series_file_sum:
-        plot_series_html = plot_series_file_sum.read()
-        combined_html += f"<div><h2>{country} - Power Dispatch</h2>{plot_series_html}</div>"
+        plot_series_html_w = plot_series_file_sum.read()
+        combined_html += f"<div><h2>{country} - Power Dispatch</h2>{plot_series_html_w}</div>"
     with open(plot_map_path, "r") as plot_map_path:
         plot_map_html = plot_map_path.read()
         combined_html += f"<div><h2> Map Plots</h2>{plot_map_html}</div>"
@@ -1854,12 +1887,49 @@ def create_combined_chart_country(costs,investment_costs, capacities, country):
     with open(plot_map_ch4_path, "r") as plot_map_ch4_path:
         plot_map_ch4_html = plot_map_ch4_path.read()
         combined_html += f"<div><h2>Gas Map Plots</h2>{plot_map_ch4_html}</div>"
+
+    # Create the content for the "Table of Contents" and "Main" sections
+    table_of_contents_content = f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Heat Dispatch'>Heat Dispatch Winter</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Heat Dispatch'>Heat Dispatch Summer</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Power Dispatch'>Power Dispatch Winter</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Power Dispatch'>Power Dispatch Summer</a><br>"
+    table_of_contents_content += "<a href='#Map Plots'>Map Plots</a><br>"
+    table_of_contents_content += "<a href='#H2 Map Plots'>H2 Map Plots</a><br>"
+    table_of_contents_content += "<a href='#Gas Map Plots'>Gas Map Plots</a><br>"
+    
+    # Add more links for other plots
+
+    main_content = f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{plot_demands_html}</div>"
+    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html}</div>"
+    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html_w}</div>"
+    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{plot_series_html}</div>"
+    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{plot_series_html_w}</div>"
+    main_content += f"<div id='Map Plots'><h2>Map Plots</h2>{plot_map_html}</div>"
+    main_content += f"<div id='H2 Map Plots'><h2>H2 Map Plots</h2>{plot_map_h2_html}</div>"
+    main_content += f"<div id='Gas Map Plots'><h2>Gas Map Plots</h2>{plot_map_ch4_html}</div>"
+    # Add more content for other plots
+    
+    template_path =  snakemake.input.template
+    with open(template_path, "r") as template_file:
+        template_content = template_file.read()
+        template = Template(template_content)
         
-    combined_html += "</body></html>"
-    # Save the combined HTML file
+    rendered_html = template.render(
+    title=f"{country} - Combined Plots",
+    country=country,
+    TABLE_OF_CONTENTS=table_of_contents_content,
+    MAIN=main_content,)
+    
     combined_file_path = os.path.join(output_folder, f"{country}_combined_chart.html")
     with open(combined_file_path, "w") as combined_file:
-        combined_file.write(combined_html)
+     combined_file.write(rendered_html)
 
     
 if __name__ == "__main__":
@@ -1883,6 +1953,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     config = snakemake.config
     study = snakemake.params.study
+    logo = logo()
     loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     results = calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_horizons)
     costs = costs(countries, results)
@@ -1900,13 +1971,3 @@ if __name__ == "__main__":
     for country in countries:
         create_combined_chart_country(costs,investment_costs, capacities, country)
     
-
-
-    # files_to_keep = ["BE_combined_chart.html","DE_combined_chart.html","FR_combined_chart.html","GB_combined_chart.html","NL_combined_chart.html"]
-    # # Directory path
-    # directory_path = f"results/{study}/htmls"
-    # # Remove files not in the list
-    # for file_name in os.listdir(directory_path):
-    #     file_path = os.path.join(directory_path, file_name)
-    #     if file_name not in files_to_keep and os.path.isfile(file_path):
-    #         os.remove(file_path)
