@@ -291,11 +291,7 @@ def calculate_energy(n, label, energy, config):
             )
         else:
             c_energies = pd.Series(0.0, c.df.carrier.unique())
-            if config["run"]["name"] == "ncdr" or config["run"]["name"] == "reff":
-                x = 2
-            else:
-                x = 3
-            for port in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
+            for port in [col[len("bus"):] for col in c.df.columns if col.startswith("bus")]:
                 totals = (
                     c.pnl["p" + port]
                     .multiply(n.snapshot_weightings.generators, axis=0)
@@ -348,11 +344,7 @@ def calculate_supply(n, label, supply, config):
             supply.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            if config["run"]["name"] == "ncdr" or config["run"]["name"] == "reff":
-                x = 2
-            else:
-                x = 3
-            for end in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
+            for end in [col[len("bus"):] for col in c.df.columns if col.startswith("bus")]:
                 items = c.df.index[c.df["bus" + end].map(bus_map).fillna(False)]
 
                 if len(items) == 0:
@@ -404,11 +396,7 @@ def calculate_supply_energy(n, label, supply_energy, config):
             supply_energy.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            if config["run"]["name"] == "ncdr" or config["run"]["name"] == "reff":
-                x = 2
-            else:
-                x = 3
-            for end in [col[x:] for col in c.df.columns if col[:x] == "bus"]:
+            for end in [col[len("bus"):] for col in c.df.columns if col.startswith("bus")]:
                 items = c.df.index[c.df["bus" + str(end)].map(bus_map).fillna(False)]
 
                 if len(items) == 0:

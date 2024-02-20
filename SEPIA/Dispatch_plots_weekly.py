@@ -268,7 +268,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
             # Add the tab for the planning horizon to the main Tabs
         tabs.append((f"{planning_horizon}", tab))
         
-        html_filename = f'Power Dispatch-{country}_{planning_horizon}.html'
+        html_filename = f'Power_Dispatch-{country}_{planning_horizon}.html'
         output_folder = f'results/{study}/htmls/raw_html'
         os.makedirs(output_folder, exist_ok=True)
         html_filepath = os.path.join(output_folder, html_filename)
@@ -414,7 +414,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,titl
             # Add the tab for the planning horizon to the main Tabs
         tabs.append((f"{planning_horizon}", tab))
         
-        html_filename = f'Heat Dispatch-{country}_{planning_horizon}.html'
+        html_filename = f'Heat_Dispatch-{country}_{planning_horizon}.html'
         output_folder = f'results/{study}/htmls/raw_html'
         os.makedirs(output_folder, exist_ok=True)
         html_filepath = os.path.join(output_folder, html_filename)

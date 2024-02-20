@@ -242,6 +242,31 @@ rule make_country_summary:
     script:
         "../scripts/make_country_summary.py"
 
+rule plot_country_summary:
+    params:
+        planning_horizons=config["scenario"]["planning_horizons"],
+        sector_opts=config["scenario"]["sector_opts"],
+        emissions_scope=config["energy"]["emissions"],
+        eurostat_report_year=config["energy"]["eurostat_report_year"],
+        plotting=config["plotting"],
+        RDIR=RDIR,
+    input:
+        balances=RESULTS + "country_csvs/supply_energy.csv",
+    output:
+        balances=RESULTS + "country_graphs/balances-oil.pdf",
+    threads: 2
+    resources:
+        mem_mb=10000,
+    log:
+        LOGS + "plot_country_summary.log",
+    benchmark:
+        BENCHMARKS + "plot_country_summary"
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../scripts/plot_country_summary.py"
+
+
 rule prepare_results:
     params:
         countries=config["countries"],
@@ -256,7 +281,7 @@ rule prepare_results:
             + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
             **config["scenario"]
         ),
-        market_values=RESULTS + "country_csvs/market_values.csv",
+        balances=RESULTS + "country_graphs/balances-oil.pdf",
         excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
         costs = "data/costs_2050.csv",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
@@ -292,8 +317,8 @@ rule prepare_dispatch_plots:
         ),
         htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),      
     output:
-        powerfile=expand(RESULTS + "htmls/raw_html/Power Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
-        heatfile=expand(RESULTS + "htmls/raw_html/Heat Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
+        powerfile=expand(RESULTS + "htmls/raw_html/Power_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
+        heatfile=expand(RESULTS + "htmls/raw_html/Heat_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
     threads: 1
     resources:
         mem_mb=10000,

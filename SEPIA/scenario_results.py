@@ -326,7 +326,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     TABLE_OF_CONTENTS=table_of_contents_content,
     MAIN=main_content,)
     
-    combined_file_path = os.path.join(output_folder, f"{country}_combined_chart.html")
+    combined_file_path = os.path.join(output_folder, f"{country}_combined_scenario_chart.html")
     with open(combined_file_path, "w") as combined_file:
      combined_file.write(rendered_html)
 

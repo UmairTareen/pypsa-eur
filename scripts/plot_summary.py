@@ -266,6 +266,11 @@ def plot_balances():
     balances["energy"] = [
         i for i in balances_df.index.levels[0] if i not in co2_carriers
     ]
+    balances_to_drop = ['agriculture_machinery_oil', 'biogas', 'coal', 'gas_for_industry', 'kerosene_for_aviation',
+                        'land_transport_oil', 'lignite', 'naphtha_for_industry', 'shipping_methanol', 'shipping_oil',
+                        'solid_biomass_for_industry', 'uranium', 'urban_central_water_tanks']
+
+    balances = {key: value for key, value in balances.items() if key not in balances_to_drop}
 
     fig, ax = plt.subplots(figsize=(12, 8))
 

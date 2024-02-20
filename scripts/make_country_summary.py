@@ -165,17 +165,15 @@ def calculate_energy(n, label, energy, config):
             )
         else:
             c_energies = pd.Series(0.0, c.df.carrier.unique())
-            for port in [col[2:] for col in c.df.columns if col[:2] == "bus"]:
+            for port in [col[len("bus"):] for col in c.df.columns if col.startswith("bus")]:
                 totals = (
                     c.pnl["p" + port].filter(like=country)
                     .multiply(n.snapshot_weightings.generators, axis=0)
                     .sum()
                 )
                 # remove values where bus is missing (bug in nomopyomo)
-                no_bus = c.df.index[c.df["bus" + port] == ""].filter(like=country)
-                totals.loc[no_bus] = float(
-                    n.component_attrs[c.name].loc["p" + port, "default"]
-                )
+                mask = (c.df["bus" + port] == "") & c.df.index.str.contains(country)
+                totals[mask] = float(n.component_attrs[c.name].loc["p" + port, "default"])
                 c_energies -= totals.groupby(c.df.carrier).sum()
 
         c_energies = pd.concat([c_energies], keys=[c.list_name])
@@ -218,16 +216,18 @@ def calculate_supply(n, label, supply, config):
             supply.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            for end in [col[2:] for col in c.df.columns if col[:2] == "bus"]:
-                items = c.df.index[c.df["bus" + end].map(bus_map).fillna(False)]
+            for c in n.iterate_components(n.branch_components):
+             for end in [col[len("bus"):] for col in c.df.columns if col.startswith("bus")]:
+                items = c.df.index[(c.df["bus" + end].map(bus_map).fillna(False)) & c.df.index.str.contains(country)]
+
 
                 if len(items) == 0:
                     continue
-
                 # lots of sign compensation for direction and to do maximums
+                items_to_keep = items.intersection(c.pnl["p" + end].columns)
                 s = (-1) ** (1 - int(end)) * (
-                    (-1) ** int(end) * c.pnl["p" + end][items]
-                ).filter(like=country).max().groupby(c.df.loc[items, "carrier"]).sum()
+                    (-1) ** int(end) * c.pnl["p" + end][items_to_keep]
+                ).filter(like=country).max().groupby(c.df.loc[items_to_keep, "carrier"]).sum()
                 s.index = s.index + end
                 s = pd.concat([s], keys=[c.list_name])
                 s = pd.concat([s], keys=[i])
@@ -270,15 +270,15 @@ def calculate_supply_energy(n, label, supply_energy, config):
             supply_energy.loc[s.index, label] = s
 
         for c in n.iterate_components(n.branch_components):
-            for end in [col[2:] for col in c.df.columns if col[:2] == "bus"]:
-                items = c.df.index[c.df["bus" + str(end)].map(bus_map).fillna(False)]
+            for end in [col[len("bus"):] for col in c.df.columns if col.startswith("bus")]:
+                items = c.df.index[(c.df["bus" + str(end)].map(bus_map).fillna(False)) & c.df.index.str.contains(country)]
 
                 if len(items) == 0:
                     continue
-
-                s = (-1) * c.pnl["p" + end][items].filter(like=country).multiply(
+                items_to_keep = items.intersection(c.pnl["p" + end].columns)
+                s = (-1) * c.pnl["p" + end][items_to_keep].filter(like=country).multiply(
                     n.snapshot_weightings.generators, axis=0
-                ).sum().groupby(c.df.loc[items, "carrier"]).sum()
+                ).sum().groupby(c.df.loc[items_to_keep, "carrier"]).sum()
                 s.index = s.index + end
                 s = pd.concat([s], keys=[c.list_name])
                 s = pd.concat([s], keys=[i])

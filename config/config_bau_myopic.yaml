@@ -52,7 +52,7 @@ scenario:
   - 2050
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
-countries: ['BE', 'DE', 'FR', 'GB', 'NL']
+countries: ['DE', 'BE', 'FR', 'GB', 'NL']
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#snapshots
 snapshots:
@@ -77,18 +77,18 @@ enable:
 co2_budget:
   2020: 0.701
   2025: 0.524
-  2030: 0.45
+  2030: 0.50
   2035: 0.15
   2040: 0.15
   2045: 0.032
   2050: 0.00
 co2_budget_national:
   2030:
-    'BE': 0.45
-    'DE': 0.45
-    'FR': 0.45
-    'GB': 0.45
-    'NL': 0.45
+    'BE': 0.50
+    'DE': 0.50
+    'FR': 0.50
+    'GB': 0.50
+    'NL': 0.50
   2040:
     'BE': 0.15
     'DE': 0.15
@@ -101,7 +101,7 @@ co2_budget_national:
     'DE': 0.01
     'FR': 0.00
     'GB': 0.00
-    'NL': 0.051
+    'NL': 0.05
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   voltages: [220., 300., 380.]
@@ -860,7 +860,7 @@ plotting:
     home battery storage: '#80c944'
     home battery charger: '#5e8032'
     home battery discharger: '#3c5221'
-    BEV charger: '#baf238'
+    EV charger: '#baf238'
     V2G: '#e5ffa8'
     land transport EV: '#baf238'
     Li ion: '#baf238'
@@ -1010,3 +1010,4 @@ plotting:
     load shedding: "black"
     load: "black"
     coal for industry: '#343434'
+    Imports: 'darkgrey'

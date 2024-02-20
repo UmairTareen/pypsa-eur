@@ -962,7 +962,7 @@ def insert_electricity_distribution_grid(n, costs, config):
     loads = n.loads.index[n.loads.carrier.str.contains("electric")]
     n.loads.loc[loads, "bus"] += " low voltage"
 
-    bevs = n.links.index[n.links.carrier == "BEV charger"]
+    bevs = n.links.index[n.links.carrier == "EV charger"]
     n.links.loc[bevs, "bus0"] += " low voltage"
 
     v2gs = n.links.index[n.links.carrier == "V2G"]
@@ -1545,11 +1545,11 @@ def add_land_transport(n, costs, config):
         n.madd(
             "Link",
             nodes,
-            suffix=" BEV charger",
+            suffix=" EV charger",
             bus0=nodes,
             bus1=nodes + " EV battery",
             p_nom=p_nom,
-            carrier="BEV charger",
+            carrier="EV charger",
             p_max_pu=avail_profile[nodes],
             efficiency=options.get("bev_charge_efficiency", 0.9),
             # These were set non-zero to find LU infeasibility when availability = 0.25

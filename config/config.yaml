@@ -835,7 +835,7 @@ plotting:
     home battery storage: '#80c944'
     home battery charger: '#5e8032'
     home battery discharger: '#3c5221'
-    BEV charger: '#baf238'
+    EV charger: '#baf238'
     V2G: '#e5ffa8'
     land transport EV: '#baf238'
     Li ion: '#baf238'
@@ -981,3 +981,4 @@ plotting:
     load shedding: "black"
     load: "black"
     coal for industry: '#343434'
+    Imports: 'darkgrey'

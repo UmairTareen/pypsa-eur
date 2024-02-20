@@ -30,6 +30,108 @@
         gtag('js', new Date());
         gtag('config', 'G-VP0W0EPDS9');
     </script>
+    <script>
+        var selectedFileType = "combined_chart"; // Initialize with the default file type
+
+        function updateDropdown() {
+            var dropdown = document.getElementById("country-select");
+
+            // Clear existing options
+            dropdown.innerHTML = '<option value="">Other results</option>';
+
+            // Define a mapping between short codes and full names
+            var countryMapping = {
+                BE: "Belgium",
+                DE: "Germany",
+                FR: "France",
+                NL: "Netherlands",
+                GB: "United Kingdom"
+                // Add more entries for other countries as needed
+            };
+
+            // Loop through short codes and add options
+            Object.keys(countryMapping).forEach(function (code) {
+                // Check if any file exists for the given code
+                var fileExists = checkFileExistence(code);
+
+                // If at least one file exists, add the option
+                if (fileExists) {
+                    dropdown.innerHTML += `<option value="${code}">${countryMapping[code]}</option>`;
+                }
+            });
+
+            // Restore the selected file type
+            var fileTypeSelect = document.getElementById("file-type-select");
+            fileTypeSelect.value = selectedFileType;
+        }
+
+        function changeCountry() {
+            var selectedCode = document.getElementById("country-select").value;
+            updateUrl(selectedCode);
+        }
+
+        function changeFileType() {
+            selectedFileType = getSelectedFileType();
+            console.log("Selected File Type:", selectedFileType);
+        }
+
+        function getSelectedFileType() {
+            var fileTypeSelect = document.getElementById("file-type-select");
+            return fileTypeSelect.value;
+        }
+
+        function updateUrl(countryCode) {
+            var url = countryCode + "_" + selectedFileType + ".html";
+            console.log("Updating URL:", url);
+            window.location.href = url;
+        }
+
+        function checkFileExistence(code) {
+            // Implement your logic to check if at least one file exists for the given code
+            // You can customize this function based on your file naming conventions
+
+            // Example: Check if at least one file exists for the specified code and file type
+            var predefinedFiles = [
+                code + "_combined_chart.html",
+                code + "_combined_scenario_chart.html",
+                code + "_combined_chart_suff.html",
+                code + "_combined_chart_bau.html",
+                // Add more files as needed
+            ];
+
+            return predefinedFiles.some(function (filename) {
+                return checkFileExistenceHelper(filename);
+            });
+        }
+
+        function checkFileExistenceHelper(filename) {
+            // Replace this with your actual logic to check file existence
+            // For simplicity, let's assume you have a function or method to check the existence of the file
+            var exists = checkFileExistence(filename);
+
+            // Print a message to the console for debugging
+            console.log(`${filename} exists: ${exists}`);
+
+            return exists;
+        }
+
+        // Placeholder function for file existence (replace with your actual logic)
+        function checkFileExistence(filename) {
+            // Replace this with your actual logic to check file existence
+            // For simplicity, let's assume the file always exists
+            return true;
+        }
+
+        // Call updateDropdown on page load
+        window.onload = function () {
+            updateDropdown();
+
+            // Attach event listeners using JavaScript
+            document.getElementById("country-select").addEventListener("change", changeCountry);
+            document.getElementById("file-type-select").addEventListener("change", changeFileType);
+        };
+    </script>
+    </script>
 </head>
 
 <body class="home page-template page-template-homepage page-template-homepage-php page page-id-7 page-parent wp-custom-logo wp-embed-responsive singular enable-search-modal has-post-thumbnail has-no-pagination not-showing-comments show-avatars homepage footer-top-visible">
@@ -45,17 +147,24 @@
 </a>
         <li id="menu-item-59" class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-59"></li>
         <li id="menu-dropdown" >
-            <form>
-            <select name="country" id="country-select" onChange="top.location.href = this.form.country.options[this.form.country.selectedIndex].value;return false;">
-                <option value="">Other results</option>
-                <option value="">---</option>
-                <option value="BE_combined_chart.html">Belgium</option>
-                <option value="DE_combined_chart.html">Germany</option>
-                <option value="FR_combined_chart.html">France</option>
-                <option value="NL_combined_chart.html">Netherlands</option>
-                <option value="GB_combined_chart.html">United Kingdom</option>
-            </select>
-            </form>
+            <div id="menu-dropdown">
+             <form>
+    <select id="country-select">
+        <!-- Options will be dynamically added here -->
+        <option value="">Other results</option>
+    </select>
+
+    <!-- Add this HTML element for the file type dropdown in your document -->
+    <select id="file-type-select">
+        <option value="combined_chart">Country results</option>
+        <option value="combined_scenario_chart">Country scenario results</option>
+        <option value="combined_chart_suff">Country results Suff</option>
+        <option value="combined_chart_bau">Country results BAU</option>
+    </select>
+</form>
+
+
+
         </li>
         <li id="menu-item-70" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-70"><a href="https://www.negawatt.be/" target="_blank" aria-current="page"><span id="return-arrow">&#5130;</span>	
              Back to <br>project website</a></li>

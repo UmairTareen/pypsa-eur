@@ -48,7 +48,7 @@ rule prepare_scenarios:
         template = "SEPIA/Template/pypsa.html",
         
     output:
-        htmlfile=expand("results/scenario_results/{country}_combined_chart.html", country=config["countries"]),
+        htmlfile=expand("results/scenario_results/{country}_combined_scenario_chart.html", country=config["countries"]),
     threads: 1
     resources:
         mem_mb=10000,

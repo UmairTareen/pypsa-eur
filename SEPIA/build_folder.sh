@@ -1,6 +1,7 @@
 #!/bin/bash
 
 mkdir -p ../results/html_folder/other_countries
+mkdir -p ../results/html_folder/other_countries/dispatch_plots/
 
 cp -R ../results/bau/country_csvs ../results/html_folder/csvs_bau
 cp -R ../results/ncdr/country_csvs ../results/html_folder/csvs_suff
@@ -32,16 +33,22 @@ cp ../results/bau/htmls/Results_NL.html ../results/html_folder/other_countries/N
 cp ../results/ncdr/htmls/Results_EU.html ../results/html_folder/other_countries/EU_results_suff.html
 cp ../results/bau/htmls/Results_EU.html ../results/html_folder/other_countries/EU_results_bau.html
 
-cp ../results/scenario_results/BE_combined_chart.html ../results/html_folder/BE_combined_scenario_chart.html
+cp ../results/scenario_results/BE_combined_scenario_chart.html ../results/html_folder/BE_combined_scenario_chart.html
 
-cp ../results/scenario_results/DE_combined_chart.html ../results/html_folder/other_countries/DE_combined_scenario_chart.html
-cp ../results/scenario_results/NL_combined_chart.html ../results/html_folder/other_countries/NL_combined_scenario_chart.html
-cp ../results/scenario_results/FR_combined_chart.html ../results/html_folder/other_countries/FR_combined_scenario_chart.html
-cp ../results/scenario_results/GB_combined_chart.html ../results/html_folder/other_countries/GB_combined_scenario_chart.html
+cp ../results/scenario_results/DE_combined_scenario_chart.html ../results/html_folder/other_countries/DE_combined_scenario_chart.html
+cp ../results/scenario_results/NL_combined_scenario_chart.html ../results/html_folder/other_countries/NL_combined_scenario_chart.html
+cp ../results/scenario_results/FR_combined_scenario_chart.html ../results/html_folder/other_countries/FR_combined_scenario_chart.html
+cp ../results/scenario_results/GB_combined_scenario_chart.html ../results/html_folder/other_countries/GB_combined_scenario_chart.html
 
+cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2020.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2020_ncdr.html
+cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2030.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2030_ncdr.html
+cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2040.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2040_ncdr.html
+cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2050_ncdr.html
 
-
-
+cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2020.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2020_bau.html
+cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2030.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2030_bau.html
+cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2040.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2040_bau.html
+cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2050_bau.html
 
 
 

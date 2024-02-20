@@ -97,6 +97,7 @@ def prepare_sepia(countries):
     data['pregazcfagr'] = 0.0
     data.loc['2020', 'pregazcfagr'] = data.loc['2020', 'presvapcfagr']
     data.loc['2020', 'presvapcfagr'] = 0
+    data.loc['2020', 'prespaccfraa'] = 0
     
     '''Remove any duplicated data'''
     data = data.loc[:,~data.columns.duplicated()] 
