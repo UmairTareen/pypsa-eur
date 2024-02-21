@@ -28,8 +28,32 @@ rule run_all_snakefiles:
     input: "run_snakefile_nocdr.done"
 
 configfile: 'config/config_nocdr_myopic.yaml'
+
+rule plot_country_summary:
+    params:
+        planning_horizons=config["scenario"]["planning_horizons"],
+        sector_opts=config["scenario"]["sector_opts"],
+        emissions_scope=config["energy"]["emissions"],
+        eurostat_report_year=config["energy"]["eurostat_report_year"],
+        plotting=config["plotting"],
+    input:
+        "run_snakefile_nocdr.done"
+    output:
+        balances="results/scenario_results/country_graphs/balances-oil.pdf",
+    threads: 2
+    resources:
+        mem_mb=10000,
+    log:
+        "logs/plot_country_summary.log",
+    benchmark:
+        "benchmarks/plot_country_summary",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "scripts/plot_country_summary.py"
+        
 rule run_prepare_scenarios:
-    input: "run_snakefile_nocdr.done"
+    input: balances="results/scenario_results/country_graphs/balances-oil.pdf",
     output: touch("run_prepare_scenarios.done")
     log: "logs/run_prepare_scenarios.done"
     shell:

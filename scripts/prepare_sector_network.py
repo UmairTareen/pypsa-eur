@@ -1112,9 +1112,8 @@ def add_storage_and_grids(n, costs, config):
     )
 
     if options["hydrogen_fuel_cell"]:
-        logger.info("Adding hydrogen fuel cell for re-electrification.")
-
-        n.madd(
+      logger.info("Adding hydrogen fuel cell for re-electrification.")
+      n.madd(
             "Link",
             nodes + " H2 Fuel Cell",
             bus0=nodes + " H2",
@@ -1826,6 +1825,7 @@ def add_heat(n, costs, config):
         )
 
         if options["tes"]:
+         if int(snakemake.wildcards.planning_horizons)!=2030:
             n.add("Carrier", name + " water tanks")
 
             n.madd(

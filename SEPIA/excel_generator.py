@@ -359,7 +359,8 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind', 'offwind',
                      'urban central solid biomass CHP CC', 'urban central solid biomass CHP CC_2',
                      'urban central solid biomass CHP CC_3',
                      'DAC', 'DAC_2', 'DAC_3', 'H2 for shipping', 'fossil oil', 'biomass',
-                     'nuclear_3','urban central gas CHP CC','urban central gas CHP CC_2','urban central gas CHP CC_3']  # Add moe entries if needed
+                     'nuclear_3','urban central gas CHP CC','urban central gas CHP CC_2','urban central gas CHP CC_3',
+                     'H2 Fuel Cell', 'H2 Fuel Cell_2','H2 Fuel Cell_3']  # Add moe entries if needed
 
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
@@ -620,6 +621,10 @@ entry_label_mapping = {
                                              'target': 'prbvapchpccgaz'},
     'urban central gas CHP CC_3': {'label': 'losses gas CC CHP plants', 'source': 'TWh',
                                              'target': 'lossgazchpcc'},
+    'H2 Fuel Cell': {'label': 'H2 fuell cell to electricity', 'source': 'TWh', 'target': 'prbelcchphyd'},
+    'H2 Fuel Cell_2': {'label': 'H2 fuell cell to heat', 'source': 'TWh', 'target': 'prbvapchphyd'},
+    'H2 Fuel Cell_3': {'label': 'H2 fuell cell losses', 'source': 'TWh', 'target': 'afzf'},
+    
 }
 
 
@@ -891,7 +896,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
             collection.append(
                 pd.Series(
                     dict(
-                        label="gas for industry CC",
+                        label="gas for industry CC1",
                         source="gas",
                         target="co2 atmosphere",
                         value=value,
@@ -905,7 +910,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
             collection.append(
                 pd.Series(
                     dict(
-                        label="gas for industry CC", source="gas", target="co2 stored", value=value
+                        label="gas for industry CC2", source="gas", target="co2 stored", value=value
                     )
                 )
             )
@@ -1312,8 +1317,8 @@ entries_to_select_c = ['process emissions', 'process emissions CC', 'process emi
                        'kerosene for aviation', 'agriculture machinery oil emissions', 'land transport oil emissions',
                        'shipping oil emissions',
                        'shipping methanol emissions', 'LULUCF', 'fossil gas', 'fossil oil', 'net co2 emissions',
-                       'gas for industry CC',
-                       'gas for industry CC_3', 'gas for industry CC_2', 'solid biomass for industry CC',
+                       'gas for industry CC1',
+                       'gas for industry CC2', 'solid biomass for industry CC',
                        'solid biomass for industry CC_2',
                        'urban central solid biomass CHP', 'urban central solid biomass CHP_2', 'coal',
                        'solid biomass biomass to liquid',
@@ -1371,9 +1376,8 @@ entry_label_mapping_c = {
     'fossil gas': {'label': 'fossil gas', 'source': 'MtCO2', 'target': 'emmfossgas'},
     'fossil oil': {'label': 'fossil oil', 'source': 'MtCO2', 'target': 'emmfossoil'},
     'net co2 emissions': {'label': 'net co2 emissions', 'source': 'MtCO2', 'target': 'emmnet'},
-    'gas for industry CC': {'label': 'gas for industry CC', 'source': 'MtCO2', 'target': 'emmgascc'},
-    'gas for industry CC_2': {'label': 'gas for industry CC', 'source': 'MtCO2', 'target': 'emmgasccx'},
-    'gas for industry CC_3': {'label': 'gas for industry CC', 'source': 'MtCO2', 'target': 'emmgasccxx'},
+    'gas for industry CC1': {'label': 'gas for industry CC', 'source': 'MtCO2', 'target': 'emmgascc'},
+    'gas for industry CC2': {'label': 'gas for industry CC', 'source': 'MtCO2', 'target': 'emmgasccx'},
     'solid biomass for industry CC': {'label': 'solid biomass for industry CC', 'source': 'MtCO2',
                                       'target': 'emmindatmbm'},
     'solid biomass for industry CC_2': {'label': 'solid biomass for industry CC', 'source': 'MtCO2',
