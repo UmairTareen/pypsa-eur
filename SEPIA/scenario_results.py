@@ -30,12 +30,12 @@ def scenario_costs(country):
     costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_costs.csv")
     costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_costs.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
-    costs_reff = costs_bau[['tech', '2020']]
+    # costs_reff = costs_bau[['tech', '2020']]
     costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
-    costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
+    # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
     costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
     costs_bau = costs_bau[['tech', 'Total']]
@@ -52,8 +52,8 @@ def scenario_costs(country):
     # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
     # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
     
-    combined_df = pd.merge(costs_reff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
-    combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
+    combined_df = pd.merge(costs_suff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
     # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
@@ -74,7 +74,7 @@ def scenario_costs(country):
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
     fig.add_layout_image(logo)
     
@@ -84,12 +84,12 @@ def scenario_investment_costs(country):
     costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_investment costs.csv")
     costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_investment costs.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
-    costs_reff = costs_bau[['tech', '2020']]
+    # costs_reff = costs_bau[['tech', '2020']]
     costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
-    costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
+    # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
     costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
     costs_bau = costs_bau[['tech', 'Total']]
@@ -106,8 +106,8 @@ def scenario_investment_costs(country):
     # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
     # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
     
-    combined_df = pd.merge(costs_reff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
-    combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
+    combined_df = pd.merge(costs_suff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
     # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
@@ -128,13 +128,67 @@ def scenario_investment_costs(country):
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
     fig.add_layout_image(logo)
     
     return fig
     
+def scenario_cumulative_costs(country):
+    costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_investment costs.csv")
+    costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_investment costs.csv")
+    # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
+    # costs_reff = costs_bau[['tech', '2020']]
+    costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
+    costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
+    # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
+    # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
+    
+    costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
+    costs_bau = costs_bau[['tech', 'Total']]
+    costs_bau['Total'] = costs_bau['Total'] / 3
+    costs_bau['Total'] = costs_bau['Total'] * 27
+    costs_bau = costs_bau.rename(columns={'Total': 'BAU'})
+    
+    costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
+    costs_suff = costs_suff[['tech', 'Total']]
+    costs_suff['Total'] = costs_suff['Total'] / 3
+    costs_suff['Total'] = costs_suff['Total'] * 27
+    costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
+    
+    # costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
+    # costs_ncdr = costs_ncdr[['tech', 'Total']]
+    # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
+    # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
+    
+    combined_df = pd.merge(costs_suff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
+    # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = combined_df.fillna(0)
+    combined_df = combined_df.set_index('tech')
+    
+    unit='Billion Euros'
+    title=f'Total Comulative Costs (2023-2050) for {country}'
+    tech_colors = config["plotting"]["tech_colors"]
+    colors = config["plotting"]["tech_colors"]
+    colors["AC Transmission"] = "#FF3030"
+    colors["DC Transmission"] = "#104E8B"
+    colors["AC Transmission lines"] = "#FF3030"
+    colors["DC Transmission lines"] = "#104E8B"
+    
+    fig = go.Figure()
+    df_transposed = combined_df.T
+
+    for tech in df_transposed.columns:
+        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
+    # Configure layout and labels
+    fig.update_layout(height=1000, width=1000, showlegend=True,title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(hovermode='y')
+    fig.add_layout_image(logo)
+    
+    return fig   
 #%%
 def scenario_capacities(country):
     caps_bau = pd.read_csv(f"results/bau/country_csvs/{country}_capacities.csv")
@@ -145,7 +199,7 @@ def scenario_capacities(country):
     caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
     # caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
     
-    caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
+    # caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
     
     caps_bau = caps_bau[['tech', '2050']]
     caps_bau = caps_bau.rename(columns={'2050': 'BAU'})
@@ -211,6 +265,80 @@ def scenario_capacities(country):
 
     # Update layout
     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit)
+    logo['y']=1.021
+    fig.add_layout_image(logo)
+    return fig
+
+def storage_capacities(country):
+    caps_bau = pd.read_csv(f"results/bau/country_csvs/{country}_storage_capacities.csv")
+    caps_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_storage_capacities.csv")
+    # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
+    caps_reff = caps_bau[['tech', '2020']]
+    caps_bau = caps_bau[['tech', '2030', '2040', '2050']]
+    caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
+    # caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
+    
+    # caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
+    
+    caps_bau = caps_bau[['tech', '2050']]
+    caps_bau = caps_bau.rename(columns={'2050': 'BAU'})
+    
+    caps_suff = caps_suff[['tech', '2050']]
+    caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
+    
+    # caps_suff['Total'] = caps_suff[['2030', '2040', '2050']].sum(axis=1)
+    # caps_suff = caps_suff[['tech', 'Total']]
+    # caps_suff['Total'] = caps_suff['Total'] / 3
+    # caps_suff = caps_suff.rename(columns={'Total': 'Suff'})
+    
+    # caps_ncdr = caps_ncdr[['tech', '2050']]
+    # caps_ncdr = caps_ncdr.rename(columns={'2050': 'Ncdr'})
+    
+    combined_df = pd.merge(caps_reff, caps_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
+    # combined_df = pd.merge(combined_df, caps_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = combined_df.fillna(0)
+    combined_df = combined_df.set_index('tech')
+    
+    unit='Capacity [GWh]'
+    title=f"Storage Capacities for {country}"
+    tech_colors = config["plotting"]["tech_colors"]
+    colors = config["plotting"]["tech_colors"]
+    colors["Thermal Energy storage"] = colors["urban central water tanks"]
+    colors["Grid-scale"] = 'green'
+    colors["home battery"] = 'blue'
+    
+    fig = go.Figure()
+    groups = [
+        ["Grid-scale battery", "home battery", "V2G"],
+        ["H2 Store"],
+        ["Thermal Energy storage"],
+        ["biogas"],
+    ]
+
+    fig = make_subplots(rows=1, cols=len(groups) // 1, subplot_titles=[
+        f"{', '.join(tech_group)}" for tech_group in groups], shared_yaxes=False)
+
+    df = combined_df
+
+    for i, tech_group in enumerate(groups, start=1):
+        row_idx = 1 if i <= len(groups) // 1 else 2
+        col_idx = i if i <= len(groups) // 1 else i - len(groups) // 1
+
+        for tech in tech_group:
+         if tech in df.index:
+            y_values = [val / 1000 for val in df.loc[tech]]
+            trace = go.Bar(
+                x=df.columns,
+                y=y_values,
+                name=f"{tech}",
+                marker_color=tech_colors.get(tech, 'gray')
+            )
+            fig.add_trace(trace, row=row_idx, col=col_idx)
+            fig.update_yaxes(title_text=unit, row=2, col=1)
+
+    # Update layout
+    fig.update_layout(height=600, width=1400, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit)
     logo['y']=1.021
     fig.add_layout_image(logo)
     return fig
@@ -290,10 +418,17 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     
     bar_chart_investment = scenario_investment_costs(country)
     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
-
+    
+    bar_chart_cumulative = scenario_cumulative_costs(country)
+    combined_html += f"<div><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
+    
     # Create capacities chart
     capacities_chart = scenario_capacities(country)
     combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    
+    # Create capacities chart
+    storage_capacities_chart = storage_capacities(country)
+    combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
     
     # Create demands chart
     demands_chart = scenario_demands(country)
@@ -305,13 +440,17 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     # Create the content for the "Table of Contents" and "Main" sections
     table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
     table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2023-2050)'>Cummulative Investment Costs (2023-2050)</a><br>"
     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Capacities</a><br>"
     table_of_contents_content += f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
 
     # Add more links for other plots
     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+    main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
     # Add more content for other plots
     

@@ -169,8 +169,12 @@ def prepare_sepia(countries):
     fec_carrier_p = flows.loc[:, selected_columns_p]
     grouped_fec_p = fec_carrier_p.groupby(level='Source', axis=1).sum()
     fec_p = grouped_fec_p
-    for en_code in ['hdr','eon','eof','spv','cms','pac','ura','enc','bgl','blq']:
+    if country == 'EU':
+     for en_code in ['hdr','eon','eof','spv','cms','pac','enc','ura','bgl']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe']
+    else: 
+     for en_code in ['hdr','eon','eof','spv','cms','pac','ura','bgl']:
+        flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
     for en_code in ['gaz']:
      values = fec_p[en_code + '_pe']
      imp_values = values
@@ -179,6 +183,21 @@ def prepare_sepia(countries):
      values = fec_p[en_code + '_pe']
      imp_values = values
      flows[('imp', en_code + '_pe', '')] = imp_values
+     
+    ''' Compute biomass imports and local production from model data'''
+    biomass_potentials = snakemake.input.biomass_potentials
+    biomass_p = pd.read_csv(biomass_potentials, index_col=0)
+    # Conver MWh to TWh
+    biomass_p = biomass_p/1E6
+    biomass_p.index = biomass_p.index.str[:2]
+    biomass_p = biomass_p.groupby(biomass_p.index).sum()
+    bm_potentials = biomass_p.loc[biomass_p.index == country, 'solid biomass'].sum()
+    if country != 'EU':
+     for en_code in ['enc']:
+      flows[('prod',en_code+'_pe','')] = bm_potentials
+      imp_values = fec_p[en_code + '_pe'] - bm_potentials
+      flows[('imp', en_code + '_pe', '')] = imp_values
+      flows[(en_code + '_pe', 'exp', '')] = bm_potentials - fec_p[en_code + '_pe']
     
     sec_imports = flows.columns.get_level_values('Target').isin(SE_NODES)
     sec_imports = flows.loc[:, sec_imports]
@@ -259,7 +278,7 @@ def prepare_sepia(countries):
     for en_code in ['pet']:
         if flows[('hyd_se',en_code + '_fe',  '')].squeeze().rename_axis(None).sum()>0:
             pet_pro = flows[('hyd_se', en_code + '_fe', '')].squeeze().rename_axis(None)
-            pet_bm = flows[('blq_pe', en_code + '_fe', '')].squeeze().rename_axis(None)
+            pet_bm = flows[('enc_pe', en_code + '_fe', '')].squeeze().rename_axis(None)
             value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) 
             tot_pet = pet_pro + pet_bm 
             exp_pet = tot_pet - value_ker - value_naph -  value_agr
@@ -359,7 +378,7 @@ def prepare_sepia(countries):
     value_total = ((value_biogas + value_bl + value_hy)/(value_gaz + value_biogas + value_bl + value_hy))*100
     cov_ratios['gaz_se'] = value_total
     value_petr = flows_bk[('pet_pe', 'pet_fe', '')].squeeze().rename_axis(None)
-    value_biml = flows_bk[('blq_pe', 'pet_fe', '')].squeeze().rename_axis(None)
+    value_biml = flows_bk[('enc_pe', 'pet_fe', '')].squeeze().rename_axis(None)
     value_fish = flows_bk[('hyd_se', 'pet_fe', '')].squeeze().rename_axis(None)
     value_toltal = ((value_biml + value_fish)/(value_petr + value_biml + value_fish))*100
     cov_ratios['pet_fe'] = value_toltal
@@ -375,7 +394,7 @@ def prepare_sepia(countries):
     selected_columns_de = flows_bk.columns.get_level_values('Source').isin(FE_NODES)
     flows_to_node = flows_bk.loc[:, selected_columns_de]
     flows_to_node = flows_to_node.groupby(level='Source', axis=1).sum()
-    ren_columns = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe', 'pac_pe','bgl_pe','blq_pe']
+    ren_columns = ['spv_pe', 'eon_pe', 'eof_pe', 'hdr_pe', 'enc_pe', 'pac_pe','bgl_pe']
     fos_columns = ['cms_pe', 'gaz_pe', 'pet_pe']
     nuk_columns = ['ura_pe']
 

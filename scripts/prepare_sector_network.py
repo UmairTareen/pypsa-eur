@@ -1167,12 +1167,15 @@ def add_storage_and_grids(n, costs, config):
         logger.info("Add hydrogen underground storage")
 
         h2_capital_cost = costs.at["hydrogen storage underground", "fixed"]
-
+        if config["run"]["name"] == "reff":
+            value = False
+        else:
+            value = True
         n.madd(
             "Store",
             h2_caverns.index + " H2 Store",
             bus=h2_caverns.index + " H2",
-            e_nom_extendable=True,
+            e_nom_extendable=value,
             e_nom_max=h2_caverns.values,
             e_cyclic=True,
             carrier="H2 Store",
@@ -1185,12 +1188,15 @@ def add_storage_and_grids(n, costs, config):
         "hydrogen storage tank type 1 including compressor", "fixed"
     ]
     nodes_overground = h2_caverns.index.symmetric_difference(nodes)
-
+    if config["run"]["name"] == "reff":
+        value = False
+    else:
+        value = True
     n.madd(
         "Store",
         nodes_overground + " H2 Store",
         bus=nodes_overground + " H2",
-        e_nom_extendable=True,
+        e_nom_extendable=value,
         e_cyclic=True,
         carrier="H2 Store",
         capital_cost=h2_capital_cost,
@@ -2187,8 +2193,8 @@ def add_biomass(n, costs, config):
         carrier="solid biomass",
         unit="MWh_LHV",
     )
-
-    n.madd(
+    if config["run"]["name"] != "reff":
+     n.madd(
         "Store",
         spatial.gas.biogas,
         bus=spatial.gas.biogas,

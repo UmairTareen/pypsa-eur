@@ -11,6 +11,7 @@ import sys
 import panel as pn
 import base64
 import matplotlib.pyplot as plt
+from pandas.plotting import table
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import cartopy.crs as ccrs
 import plotly.graph_objects as go
@@ -50,7 +51,7 @@ def rename_techs_tyndp(tech):
          return "biomass"
     elif "Li ion" in tech:
         return "battery storage"
-    elif "BEV charger" in tech:
+    elif "EV charger" in tech:
         return "V2G"
     elif "load" in tech:
         return "load shedding"
@@ -370,6 +371,46 @@ def capacities(countries, results):
         print(f"CSV file for {country} saved at: {file_path}")  
 
     return capacities
+
+def storage_capacities(countries):
+    s_capacities = {}
+    for country in countries:
+      df=pd.read_csv("results/reff/csvs/nodal_capacities.csv", index_col=1)
+      cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
+      df = df[df['cluster'] == 'stores']
+      df = df.iloc[2:, :]
+      df.index = df.index.str[:2]
+      df = df[df.index == country]
+      df = df.rename(columns={'Unnamed: 2': 'tech', '6': '2020'})
+      columns_to_convert = ['2020']
+      df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
+      df = df.groupby('tech').sum().reset_index()
+      cf = cf[cf['cluster'] == 'stores']
+      cf = cf.iloc[1:, :]
+      cf.index = cf.index.str[:2]
+      cf = cf[cf.index == country]
+      cf = cf.rename(columns={'Unnamed: 2': 'tech', '6': '2030','6.1': '2040','6.2': '2050',})
+      columns_to_convert = ['2030', '2040', '2050']
+      cf[columns_to_convert] = cf[columns_to_convert].apply(pd.to_numeric, errors='coerce')
+      cf = cf.groupby('tech').sum().reset_index()
+      result_df = pd.merge(df, cf, on='tech', how='outer')
+      result_df.fillna(0, inplace=True)
+      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'battery storage':'V2G'})
+      if not result_df.empty:
+            years = ['2020', '2030', '2040', '2050']
+            technologies = result_df['tech'].unique()
+
+            s_capacities[country] = result_df.set_index('tech').loc[technologies, years]
+            for country, dataframe in s_capacities.items():
+             # Specify the file path where you want to save the CSV file
+             file_path = f"results/{study}/country_csvs/{country}_storage_capacities.csv"
+         
+              # Save the DataFrame to a CSV file
+             dataframe.to_csv(file_path, index=True)
+
+             print(f"CSV file for {country} saved at: {file_path}") 
+
+    return s_capacities
 
 def plot_demands(countries):
     colors = config["plotting"]["tech_colors"] 
@@ -807,7 +848,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
      tabs.save(html_filepath)
 
 def plot_map(
-    network,
+    network,country,
     components=["links", "stores", "storage_units", "generators"],
     bus_size_factor=1.7e10,
     transmission=True,
@@ -925,9 +966,10 @@ def plot_map(
             line_lower_threshold = 0.0
             title = "total grid"
 
+
     fig, ax = plt.subplots(subplot_kw={"projection": ccrs.Sinusoidal()})
     fig.set_size_inches(15, 15)
-
+    
     n.plot(
         bus_sizes=costs / bus_size_factor,
         bus_colors=tech_colors,
@@ -937,7 +979,7 @@ def plot_map(
         link_widths=link_widths / linewidth_factor,
         ax=ax,
     )
-
+    
     #sizes = [20, 10, 5]
     sizes = [30, 20, 10]
     labels = [f"{s} bEUR/a" for s in sizes]
@@ -945,7 +987,7 @@ def plot_map(
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.05, 0.75),
+        bbox_to_anchor=(0.001, 0.85),
         labelspacing=3,
         frameon=False,
         fontsize=15,
@@ -972,7 +1014,7 @@ def plot_map(
         value = "total grid"
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.05, 0.35),
+        bbox_to_anchor=(0.001, 0.45),
         fontsize=15,
         frameon=False,
         labelspacing=1,
@@ -985,9 +1027,9 @@ def plot_map(
     )
 
     legend_kw = dict(
-        bbox_to_anchor=(1.3, 1),
+        bbox_to_anchor=(1.35, 1),
         frameon=False,
-        fontsize=13,
+        fontsize=15,
     )
 
     if with_legend:
@@ -1000,11 +1042,57 @@ def plot_map(
             labels,
             legend_kw=legend_kw,
         )
+
+    lines = pd.DataFrame(n.lines)
+    links = pd.DataFrame(n.links)
+
+    # Filter rows for lines and links
+    lines = n.lines[(n.lines['bus0'].str.contains(country)) | (n.lines['bus1'].str.contains(country))]
+    links = n.links[(n.links['bus0'].str.contains(country)) | (n.links['bus1'].str.contains(country))]
+
+    # Create 'BusCombination' column
+    lines['BusCombination'] = (lines['bus0'].str.extract(r'([A-Z]+)').fillna('') +
+                            ' - ' +
+                            lines['bus1'].str.extract(r'([A-Z]+)').fillna(''))
+    links['BusCombination'] = (links['bus0'].str.extract(r'([A-Z]+)').fillna('') +
+                            ' - ' +
+                            links['bus1'].str.extract(r'([A-Z]+)').fillna(''))
+
+    # Collect data for the combined table
+    table_data = pd.concat([
+    pd.DataFrame({
+        'Lines': lines['BusCombination'],
+        'Capacity [GW]': lines['s_nom_opt'] / 1000,
+        'Type': 'AC'
+    }),
+    pd.DataFrame({
+        'Lines': links['BusCombination'],
+        'Capacity [GW]': links['p_nom_opt'] / 1000,
+        'Type': 'DC'
+    })
+    ], ignore_index=True)
+    table_data['Capacity [GW]'] = table_data['Capacity [GW]'].round(1)
+    table_data = table_data[table_data['Capacity [GW]'] != 0]
+
+    # Plot the table on the same subplot as the map
+    left, bottom, width, height = 0.05, 0.15, 0.4, 0.12
+    tab = table(ax, table_data, bbox=[left, bottom, width, height],fontsize=20)
+    type_col_index = table_data.columns.get_loc('Type')
+
+    # Set text color based on 'Type' value
+    for key, cell in tab.get_celld().items():
+        if key[0] != 0:
+            type_value = table_data.iloc[key[0] - 1, type_col_index]
+            for idx, cell_text in enumerate(table_data.iloc[key[0] - 1]):
+                cell.set_text_props(color='rosybrown' if type_value == 'AC' else 'darkseagreen', weight='bold' if idx == type_col_index else 'normal')
+
+    fig.tight_layout()
     logo = snakemake.input.logo
     img = plt.imread(logo)
     imagebox = OffsetImage(img, zoom=0.25)
     ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
     ax.add_artist(ab)
+    
     return fig
 
 def group_pipes(df, drop_direction=False):
@@ -1454,7 +1542,7 @@ def plot_ch4_map(network):
     ax.add_artist(ab)
     return fig
 
-def create_map_plots(planning_horizons):
+def create_map_plots(planning_horizons, country):
     
     html_content = """
     <!DOCTYPE html>
@@ -1469,27 +1557,27 @@ def create_map_plots(planning_horizons):
     """
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        n = loaded_files[planning_horizon]
+         n = loaded_files[planning_horizon]
 
         # Plot the map and get the figure
-        fig = plot_map(
-            n,
+         fig = plot_map(
+            n,country,
             components=["generators", "links", "stores", "storage_units"],
             bus_size_factor=90e9,
             transmission=True,
-        )
-        plt.rcParams['legend.title_fontsize'] = '20'
+         )
+         plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
-        output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}.png"
-        fig.savefig(output_image_path, bbox_inches="tight")
-        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+         output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
+         fig.savefig(output_image_path, bbox_inches="tight")
+         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
         # Encode the image as base64
-        with open(output_image_path, "rb") as image_file:
+         with open(output_image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
         # Add tab content for each planning horizon with embedded image data
-        html_content += f"""
+         html_content += f"""
         <button class="map-tablinks{' active' if i == 0 else ''}" onclick="openMapTab(event, 'map_{planning_horizon}_{i + 1}')">{planning_horizon}</button>
         """
 
@@ -1499,25 +1587,25 @@ def create_map_plots(planning_horizons):
 
     for i, planning_horizon in enumerate(planning_horizons):
         # Load network for the current planning horizon
-        n = loaded_files[planning_horizon]
-        fig = plot_map(
-            n,
+         n = loaded_files[planning_horizon]
+         fig = plot_map(
+            n,country,
             components=["generators", "links", "stores", "storage_units"],
             bus_size_factor=90e9,
             transmission=True,
-        )
-        plt.rcParams['legend.title_fontsize'] = '20'
+         )
+         plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
-        output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}.png"
-        fig.savefig(output_image_path, bbox_inches="tight")
-        plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+         output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
+         fig.savefig(output_image_path, bbox_inches="tight")
+         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
         # Encode the image as base64
-        with open(output_image_path, "rb") as image_file:
+         with open(output_image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
         # Add tab content for each planning horizon with embedded image data
-        html_content += f"""
+         html_content += f"""
         <div id="map_{planning_horizon}_{i + 1}" class="map-tabcontent" style="display: {'block' if i == 0 else 'none'};">
             <h2>Map Plot - {planning_horizon}</h2>
             <img src="data:image/png;base64,{encoded_image}" alt="Map Plot" width="1200" height="800">
@@ -1547,7 +1635,8 @@ def create_map_plots(planning_horizons):
     """
 
     # Save the entire HTML content to a single file
-    output_combined_html_path = f"results/{study}/htmls/raw_html/map_plots.html"
+    
+    output_combined_html_path = f"results/{study}/htmls/raw_html/map_plots_{country}.html"
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content)
 
@@ -1829,7 +1918,51 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
 
     return fig
 
-def create_combined_chart_country(costs,investment_costs, capacities, country):
+def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
+    tech_colors = config["plotting"]["tech_colors"]
+    colors = config["plotting"]["tech_colors"]
+    colors["Thermal Energy storage"] = colors["urban central water tanks"]
+    colors["Grid-scale"] = 'green'
+    colors["home battery"] = 'blue'
+    groups = [
+        ["Grid-scale battery", "home battery", "V2G"],
+        ["H2 Store"],
+        ["Thermal Energy storage"],
+        ["biogas"],
+    ]
+
+    # Create a subplot for each technology
+    years = ['2020', '2030', '2040', '2050']
+    fig = make_subplots(rows=1, cols=len(groups) // 1, subplot_titles=[
+        f"{', '.join(tech_group)}" for tech_group in groups], shared_yaxes=False)
+
+    df = s_capacities[country]
+
+    for i, tech_group in enumerate(groups, start=1):
+        row_idx = 1 if i <= len(groups) // 1 else 2
+        col_idx = i if i <= len(groups) // 1 else i - len(groups) // 1
+
+        for tech in tech_group:
+            if tech in df.index:
+                y_values = [val / 1000 for val in df.loc[tech, years]]
+                trace = go.Bar(
+                    x=years,
+                    y=y_values,
+                    name=f"{tech}",
+                    marker_color=tech_colors.get(tech, 'gray')
+                )
+                fig.add_trace(trace, row=row_idx, col=col_idx)
+                fig.update_yaxes(title_text=unit, row=2, col=1)
+    
+    # Update layout
+    fig.update_layout(height=600, width=1400, showlegend=True, title=f" Storage Capacities for {country}", yaxis_title=unit)
+    logo['y']=1.03
+    fig.add_layout_image(logo)
+    
+
+    return fig
+
+def create_combined_chart_country(costs,investment_costs, capacities, s_capacities, country):
     # Create output folder if it doesn't exist
     output_folder = f"results/{study}/htmls"
     raw_html = os.path.join(output_folder,'raw_html/')
@@ -1854,13 +1987,17 @@ def create_combined_chart_country(costs,investment_costs, capacities, country):
     # Create capacities chart
     capacities_chart = create_capacity_chart(capacities, country)
     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
+    
+    # Create storage capacities chart
+    s_capacities_chart = storage_capacity_chart(s_capacities, country)
+    combined_html += f"<div><h2>{country} - Storage Capacities </h2>{s_capacities_chart.to_html()}</div>"
 
     # Save the Panel object to HTML
     plot_series_file_path = os.path.join(raw_html, f"Power Dispatch (Winter Week) - {country}.html")
     plot_series_file_path_sum = os.path.join(raw_html, f"Power Dispatch (Summer Week) - {country}.html")
     plot_series_heat_file_path = os.path.join(raw_html, f"Heat Dispatch (Winter Week) - {country}.html")
     plot_series_heat_file_path_sum = os.path.join(raw_html, f"Heat Dispatch (Summer Week) - {country}.html")
-    plot_map_path = os.path.join(raw_html, "map_plots.html")
+    plot_map_path = os.path.join(raw_html, f"map_plots_{country}.html")
     plot_map_h2_path = os.path.join(raw_html, "map_h2_plots.html")
     plot_map_ch4_path = os.path.join(raw_html, "map_ch4_plots.html")
 
@@ -1880,7 +2017,7 @@ def create_combined_chart_country(costs,investment_costs, capacities, country):
         combined_html += f"<div><h2>{country} - Power Dispatch</h2>{plot_series_html_w}</div>"
     with open(plot_map_path, "r") as plot_map_path:
         plot_map_html = plot_map_path.read()
-        combined_html += f"<div><h2> Map Plots</h2>{plot_map_html}</div>"
+        combined_html += f"<div><h2>Map Plots</h2>{plot_map_html}</div>"
     with open(plot_map_h2_path, "r") as plot_map_h2_path:
         plot_map_h2_html = plot_map_h2_path.read()
         combined_html += f"<div><h2>H2 Map Plots</h2>{plot_map_h2_html}</div>"
@@ -1893,6 +2030,7 @@ def create_combined_chart_country(costs,investment_costs, capacities, country):
     table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
     table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Capacities</a><br>"
     table_of_contents_content += f"<a href='#{country} - Heat Dispatch'>Heat Dispatch Winter</a><br>"
     table_of_contents_content += f"<a href='#{country} - Heat Dispatch'>Heat Dispatch Summer</a><br>"
     table_of_contents_content += f"<a href='#{country} - Power Dispatch'>Power Dispatch Winter</a><br>"
@@ -1907,6 +2045,7 @@ def create_combined_chart_country(costs,investment_costs, capacities, country):
     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Capacities</h2>{s_capacities_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html}</div>"
     main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html_w}</div>"
     main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{plot_series_html}</div>"
@@ -1959,15 +2098,17 @@ if __name__ == "__main__":
     costs = costs(countries, results)
     investment_costs = Investment_costs(countries, results)
     capacities = capacities(countries, results)
+    s_capacities = storage_capacities(countries)
     plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Power Dispatch (Winter Week)")
     plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Power Dispatch (Summer Week)")
     plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Heat Dispatch (Winter Week)")
     plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Heat Dispatch (Summer Week)")
     plot_demands(countries)
-    create_map_plots(planning_horizons)
+    for country in countries:
+        create_map_plots(planning_horizons, country)
     create_H2_map_plots(planning_horizons)
     create_gas_map_plots(planning_horizons)
     
     for country in countries:
-        create_combined_chart_country(costs,investment_costs, capacities, country)
+        create_combined_chart_country(costs,investment_costs, capacities,s_capacities, country)
     
