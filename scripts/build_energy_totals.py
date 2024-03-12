@@ -766,11 +766,6 @@ if __name__ == "__main__":
         df= pd.read_csv(fn ,index_col=0)
         return df
 
-     def clever_AFOLUB_data():
-        fn = snakemake.input.clever_AFOLUB
-        df= pd.read_csv(fn ,index_col=0)
-        return df
-
      def clever_macro_data():
         fn = snakemake.input.clever_Macro
         df= pd.read_csv(fn ,index_col=0)
@@ -780,9 +775,13 @@ if __name__ == "__main__":
      clever_Transport = clever_transport_data()
      clever_Tertairy = clever_tertiary_data()
      clever_Agriculture = clever_agriculture_data()
-     clever_AFOLUB = clever_AFOLUB_data()
      clever_Macro = clever_macro_data()
     
+    def clever_AFOLUB_data():
+       fn = snakemake.input.clever_AFOLUB
+       df= pd.read_csv(fn ,index_col=0)
+       return df
+    clever_AFOLUB = clever_AFOLUB_data()
     countries = snakemake.params.countries
     nuts3 = gpd.read_file(snakemake.input.nuts3_shapes).set_index("index")
     population = nuts3["pop"].groupby(nuts3.country).sum()
@@ -856,7 +855,7 @@ if __name__ == "__main__":
     eurostat_co2 = build_eurostat_co2(
         input_eurostat, countries, report_year, base_year_emissions
     )
-
+    
     co2 = build_co2_totals(countries, eea_co2, eurostat_co2)
     if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
      for country in countries:
@@ -866,7 +865,8 @@ if __name__ == "__main__":
         co2.loc[country, 'waste management'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in waste management']
         co2.loc[country, 'other'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in other sectors (industrial product use)']
     else:
-        co2 = co2
+     for country in countries:
+        co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']
     co2.to_csv(snakemake.output.co2_name)
 
     transport = build_transport_data(countries, population, idees)

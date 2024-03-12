@@ -8,7 +8,7 @@ from pypsa.descriptors import get_switchable_as_dense as as_dense
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
-    file_name = 'elec_s_6_lv1.0__Co2L0.7-1H-T-H-B-I-A-dist1_2020.nc'
+    file_name = 'elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
     source_directory = 'results/reff/postnetworks/'
     destination_directory = f'results/{study}/postnetworks/'
@@ -339,7 +339,7 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind', 'offwind',
                      'H2 for non-energy', 'agriculture machinery oil', 'agriculture electricity',
                      'agriculture heat', 'EV charger', 'EV charger_2', 'V2G', 'V2G_2', 'NH3',
                      'urban central air heat pump', 'urban central air heat pump_2', 'urban central gas boiler',
-                     'urban central gas boiler_2',
+                     'urban central gas boiler_2','methanolisation_3',
                      'urban central oil boiler', 'urban central resistive heater', 'urban central resistive heater_2',
                      'urban central water tanks charger',
                      'urban central water tanks discharger',
@@ -398,6 +398,7 @@ entry_label_mapping = {
     'Haber-Bosch_2': {'label': 'Production of ammonia from H2)', 'source': 'TWh', 'target': 'prohydclam'},
     'residential rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh',
                                            'target': 'lossbb'},
+    'methanolisation_3': {'label': 'electricity to metaholisation', 'source': 'TWh', 'target': 'pretareen'},
     'residential urban decentral biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)',
                                                      'source': 'TWh', 'target': 'lossbbb'},
     'services rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh',

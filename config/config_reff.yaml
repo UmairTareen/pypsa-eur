@@ -44,7 +44,7 @@ scenario:
   opts:
   - ''
   sector_opts:
-  - Co2L0.7-1H-T-H-B-I-A-dist1
+  - Co2L0.8-1H-T-H-B-I-A-dist1
   planning_horizons:
   #- 2020
   #- 2030
@@ -77,7 +77,7 @@ enable:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#co2-budget
 co2_budget:
-  2020: 0.701
+  2020: 0.801
   2025: 0.524
   2030: 0.45
   2035: 0.150
@@ -86,11 +86,11 @@ co2_budget:
   2050: 0.000
 co2_budget_national:
   2020:
-    'BE': 0.70
-    'DE': 0.70
-    'FR': 0.70
-    'GB': 0.70
-    'NL': 0.70
+    'BE': 0.80
+    'DE': 0.80
+    'FR': 0.80
+    'GB': 0.80
+    'NL': 0.80
 country_summary: 'BE'
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:

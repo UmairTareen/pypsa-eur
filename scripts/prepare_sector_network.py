@@ -1112,6 +1112,7 @@ def add_storage_and_grids(n, costs, config):
     )
 
     if options["hydrogen_fuel_cell"]:
+     if int(snakemake.wildcards.planning_horizons)!=2030:
       logger.info("Adding hydrogen fuel cell for re-electrification.")
       n.madd(
             "Link",
@@ -1127,6 +1128,7 @@ def add_storage_and_grids(n, costs, config):
         )
 
     if options["hydrogen_turbine"]:
+     if int(snakemake.wildcards.planning_horizons)!=2030:
         logger.info(
             "Adding hydrogen turbine for re-electrification. Assuming OCGT technology costs."
         )
@@ -3113,6 +3115,7 @@ def add_waste_heat(n):
             )
 
         if options["use_fuel_cell_waste_heat"]:
+         if int(snakemake.wildcards.planning_horizons)!=2030:
             n.links.loc[urban_central + " H2 Fuel Cell", "bus2"] = (
                 urban_central + " urban central heat"
             )

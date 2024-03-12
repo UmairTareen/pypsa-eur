@@ -78,18 +78,18 @@ enable:
 co2_budget:
   2020: 0.701
   2025: 0.524
-  2030: 0.45
+  2030: 0.60
   2035: 0.150
   2040: 0.15
   2045: 0.032
   2050: 0.00
 co2_budget_national:
   2030:
-    'BE': 0.55
-    'DE': 0.45
-    'FR': 0.45
-    'GB': 0.45
-    'NL': 0.45
+    'BE': 0.60
+    'DE': 0.60
+    'FR': 0.60
+    'GB': 0.60
+    'NL': 0.60
   2040:
     'BE': 0.15
     'DE': 0.15
@@ -173,11 +173,11 @@ atlite:
 imposed_values: #MW offshore total is 5.7 GW, assuming alrge portion would be ac, 
   country: 'BE'
   nuclear: 2000
-  onwind: 5300  
-  offshore_ac: 3700
-  offshore_dc: 2000
+  onwind: 6000  
+  offshore_ac: 5000
+  offshore_dc: 3000
   solar: 12000
-  solar-rooftop: 9000
+  solar-rooftop: 2000
   
 TYNDP_values:
   be_fr: 4300
