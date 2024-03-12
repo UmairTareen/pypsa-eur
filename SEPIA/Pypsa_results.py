@@ -173,10 +173,13 @@ def costs(countries, results):
     for country in countries:
       df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 2:]
-      df = df.iloc[9:, :]
+      df = df.iloc[8:, :]
       df.index = df.index.str[:2]
-      df = df[df.index == country]
-      df = df.rename(columns={'Unnamed: 3': 'tech', '6': '2030','6.1': '2040','6.2': '2050',})
+      if country != 'EU':
+       df = df[df.index == country]
+      else:
+       df = df
+      df = df.rename(columns={'Unnamed: 3': 'tech', f'{cluster}': '2030',f'{cluster}.1': '2040',f'{cluster}.2': '2050'})
       df[['2030', '2040', '2050']] = df[['2030', '2040', '2050']].apply(pd.to_numeric, errors='coerce')
       df = df.groupby('tech').sum().reset_index()
       df['tech'] = df['tech'].map(rename_techs_tyndp)
@@ -184,10 +187,13 @@ def costs(countries, results):
 
       cf = pd.read_csv("results/reff/csvs/nodal_costs.csv", index_col=2)
       cf = cf.iloc[:, 2:]
-      cf = cf.iloc[4:, :]
+      cf = cf.iloc[3:, :]
       cf.index = cf.index.str[:2]
-      cf = cf[cf.index == country]
-      cf = cf.rename(columns={'Unnamed: 3': 'tech', '6': '2020'})
+      if country != 'EU':
+       cf = cf[cf.index == country]
+      else:
+       cf=cf
+      cf = cf.rename(columns={'Unnamed: 3': 'tech', f'{cluster}': '2020'})
       cf[['2020']] = cf[['2020']].apply(pd.to_numeric, errors='coerce')
       cf = cf.groupby('tech').sum().reset_index()
       cf['tech'] = cf['tech'].map(rename_techs_tyndp)
@@ -200,8 +206,11 @@ def costs(countries, results):
       #calculationg gas costs for each country as in pypsa they are treated on EU level
       gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 23", index_col=0)
       gas_val.columns = gas_val.iloc[1]
-      for year in planning_horizons:
+      if country != 'EU':
+       for year in planning_horizons:
         result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[str(year), "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
+      else:
+        result_df = result_df
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -216,6 +225,7 @@ def costs(countries, results):
 
         # Check if the planning horizon key exists in the results dictionary
         if planning_horizon in results:
+         if country != 'EU':
             cos_ac_df = results[planning_horizon]['cos_ac']
             cos_dc_df = results[planning_horizon]['cos_dc']
             ac_transmission_values = cos_ac_df.loc[country, 'transmission_AC']
@@ -243,8 +253,11 @@ def Investment_costs(countries, results):
       df = df.iloc[:, 1:]
       df = df.iloc[6:, :]
       df.index = df.index.str[:2]
-      df = df[df.index == country]
-      df = df.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', '6': '2030','6.1': '2040','6.2': '2050',})
+      if country != 'EU':
+       df = df[df.index == country]
+      else:
+       df=df
+      df = df.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', f'{cluster}': '2030',f'{cluster}.1': '2040',f'{cluster}.2': '2050'})
       df[['2030', '2040', '2050']] = df[['2030', '2040', '2050']].apply(pd.to_numeric, errors='coerce')
       df = df[df['Costs'] == 'capital']
       df = df.groupby('tech').sum().reset_index()
@@ -260,8 +273,11 @@ def Investment_costs(countries, results):
       cf = cf.iloc[:, 1:]
       cf = cf.iloc[3:, :]
       cf.index = cf.index.str[:2]
-      cf = cf[cf.index == country]
-      cf = cf.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', '6': '2020'})
+      if country != 'EU':
+       cf = cf[cf.index == country]
+      else:
+       cf=cf
+      cf = cf.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', f'{cluster}': '2020'})
       cf[['2020']] = cf[['2020']].apply(pd.to_numeric, errors='coerce')
       cf = cf[cf['Costs'] == 'capital']
       cf = cf.groupby('tech').sum().reset_index()
@@ -291,6 +307,7 @@ def Investment_costs(countries, results):
 
         # Check if the planning horizon key exists in the results dictionary
         if planning_horizon in results:
+         if country != 'EU':
             cos_ac_df = results[planning_horizon]['cos_ac']
             cos_dc_df = results[planning_horizon]['cos_dc']
             ac_transmission_values = cos_ac_df.loc[country, 'transmission_AC']
@@ -319,18 +336,24 @@ def capacities(countries, results):
       df = df.iloc[:, 1:]
       df = df.iloc[3:, :]
       df.index = df.index.str[:2]
-      df = df[df.index == country]
-      df = df.rename(columns={'Unnamed: 2': 'tech', '6': '2020'})
+      if country != 'EU':
+       df = df[df.index == country]
+      else:
+       df=df
+      df = df.rename(columns={'Unnamed: 2': 'tech', f'{cluster}': '2020'})
       columns_to_convert = ['2020']
       df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
       df = df.groupby('tech').sum().reset_index()
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
       cf = cf.iloc[:, 1:]
-      cf = cf.iloc[6:, :]
+      cf = cf.iloc[3:, :]
       cf.index = cf.index.str[:2]
-      cf = cf[cf.index == country]
-      cf = cf.rename(columns={'Unnamed: 2': 'tech', '6': '2030','6.1': '2040','6.2': '2050',})
+      if country != 'EU':
+       cf = cf[cf.index == country]
+      else:
+       cf=cf
+      cf = cf.rename(columns={'Unnamed: 2': 'tech', f'{cluster}': '2030',f'{cluster}.1': '2040',f'{cluster}.2': '2050'})
       columns_to_convert = ['2030', '2040', '2050']
       cf[columns_to_convert] = cf[columns_to_convert].apply(pd.to_numeric, errors='coerce')
       cf = cf.groupby('tech').sum().reset_index()
@@ -352,6 +375,7 @@ def capacities(countries, results):
 
         # Check if the planning horizon key exists in the results dictionary
         if planning_horizon in results:
+         if country != 'EU':
             cap_ac_df = results[planning_horizon]['cap_ac']
             cap_dc_df = results[planning_horizon]['cap_dc']
             ac_transmission_values = cap_ac_df.loc[country, 'transmission_AC']
@@ -380,16 +404,22 @@ def storage_capacities(countries):
       df = df[df['cluster'] == 'stores']
       df = df.iloc[2:, :]
       df.index = df.index.str[:2]
-      df = df[df.index == country]
-      df = df.rename(columns={'Unnamed: 2': 'tech', '6': '2020'})
+      if country != 'EU':
+       df = df[df.index == country]
+      else:
+       df=df
+      df = df.rename(columns={'Unnamed: 2': 'tech', f'{cluster}': '2020'})
       columns_to_convert = ['2020']
       df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
       df = df.groupby('tech').sum().reset_index()
       cf = cf[cf['cluster'] == 'stores']
       cf = cf.iloc[1:, :]
       cf.index = cf.index.str[:2]
-      cf = cf[cf.index == country]
-      cf = cf.rename(columns={'Unnamed: 2': 'tech', '6': '2030','6.1': '2040','6.2': '2050',})
+      if country != 'EU':
+       cf = cf[cf.index == country]
+      else:
+       cf=cf
+      cf = cf.rename(columns={'Unnamed: 2': 'tech',  f'{cluster}': '2030',f'{cluster}.1': '2040',f'{cluster}.2': '2050'})
       columns_to_convert = ['2030', '2040', '2050']
       cf[columns_to_convert] = cf[columns_to_convert].apply(pd.to_numeric, errors='coerce')
       cf = cf.groupby('tech').sum().reset_index()
@@ -461,12 +491,44 @@ def plot_demands(countries):
         "solid biomass for Industry": "solid biomass",
         "NH3":"hydrogen",
     }
+    mapping_eu = {
+            "preshydcfind": "hydrogen for industry",
+            "preshydcfneind": "H2 for non-energy",
+            "preshydwati": "shipping hydrogen",
+            "preslqfcffrewati": "shipping oil",
+            "preselccfagr": "agriculture electricity",
+            "presvapcfagr": "agriculture heat",
+            "prespetcfagr": "agriculture oil",
+            "preselccfres": "electricity demand of residential and tertairy",
+            "presgazcfind": "gas for Industry",
+            "presgazcfindd": "gas for Industry",
+            "preselccfind": "electricity for Industry",
+            "preslqfcfavi": "aviation oil demand",
+            "preselccftra": "land transport EV",
+            "preshydcftra": "land transport hydrogen demand",
+            "preslqfcftra": "oil to transport demand",
+            "presvapcfind": "low-temperature heat for industry",
+            "prespetcfneind": "naphtha for non-energy",
+            "preserail": "electricity demand for rail network",
+            "presvapcfdhs": "Residential and tertiary DH demand",
+            "demandheat": "Residential and tertiary heat demand",
+            "demandheata": "Residential and tertiary heat demand",
+            "demandheatb": "Residential and tertiary heat demand",
+            "demandheats": "Residential and tertiary heat demand",
+            "presenccfind": "solid biomass for Industry",
+            "presenccfindd": "solid biomass for Industry",
+            "preammind":"NH3",
+    }
     
     for country in countries:
         data = pd.read_excel(f"results/{study}/sepia/inputs{country}.xlsx", index_col=0)
-        columns_to_drop = ['source', 'target']
-        data = data.drop(columns=columns_to_drop)
-        data = data.groupby(data.index).sum()
+        if country != 'EU':
+         columns_to_drop = ['source', 'target']
+         data = data.drop(columns=columns_to_drop)
+         data = data.groupby(data.index).sum()
+        else:
+         data.rename(index=mapping_eu, inplace=True)
+         data = data.groupby(data.index).sum()
 
         # Apply your mapping to the data
         data = data[data.index.isin(mapping.keys())]
@@ -526,7 +588,8 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
 
         supplyn = pd.DataFrame(index=n.snapshots)
 
-        for c in n.iterate_components(n.branch_components):
+        if country != 'EU':
+         for c in n.iterate_components(n.branch_components):
             n_port = 4 if c.name == "Link" else 2  # port3
             for i in range(n_port):
                 supplyn = pd.concat(
@@ -540,8 +603,23 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
                     ),
                     axis=1,
                 )
-
-        for c in n.iterate_components(n.one_port_components):
+        else:
+         for c in n.iterate_components(n.branch_components):
+            n_port = 4 if c.name == "Link" else 2  # port3
+            for i in range(n_port):
+                supplyn = pd.concat(
+                    (
+                        supplyn,
+                        (-1)
+                        * c.pnl["p" + str(i)]
+                        .loc[:, c.df.index[c.df["bus" + str(i)].isin(busesn)]]
+                        .groupby(c.df.carrier, axis=1)
+                        .sum(),
+                    ),
+                    axis=1,
+                )
+        if country != 'EU':
+         for c in n.iterate_components(n.one_port_components):
             comps = c.df.index[c.df.bus.isin(busesn)]
             supplyn = pd.concat(
                 (
@@ -552,6 +630,18 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
                 ),
                 axis=1,
             )
+        else:
+         for c in n.iterate_components(n.one_port_components):
+            comps = c.df.index[c.df.bus.isin(busesn)]
+            supplyn = pd.concat(
+                (
+                    supplyn,
+                    ((c.pnl["p"].loc[:, comps]).multiply(c.df.loc[comps, "sign"]))
+                    .groupby(c.df.carrier, axis=1)
+                    .sum(),
+                ),
+                axis=1,
+            ) 
 
         supplyn = supplyn.groupby(rename_techs_tyndp, axis=1).sum()
         if country == 'BE':
@@ -620,15 +710,26 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
 
         supplyn = supplyn.groupby(supplyn.columns, axis=1).sum()
 
-        c_solarn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
+        if country != 'EU':
+         c_solarn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
             like="solar", axis=1
-        ).filter(like=country).sum(axis=1) / 1e3
-        c_onwindn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
+         ).filter(like=country).sum(axis=1) / 1e3
+         c_onwindn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
             like="onwind", axis=1
-        ).filter(like=country).sum(axis=1) / 1e3
-        c_offwindn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
+         ).filter(like=country).sum(axis=1) / 1e3
+         c_offwindn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
             like="offwind", axis=1
-        ).filter(like=country).sum(axis=1) / 1e3
+         ).filter(like=country).sum(axis=1) / 1e3
+        else:
+         c_solarn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
+            like="solar", axis=1
+         ).sum(axis=1) / 1e3
+         c_onwindn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
+            like="onwind", axis=1
+         ).sum(axis=1) / 1e3
+         c_offwindn = ((n.generators_t.p_max_pu * n.generators.p_nom_opt) - n.generators_t.p).filter(
+            like="offwind", axis=1
+         ).sum(axis=1) / 1e3
         supplyn = supplyn.T
         supplyn.loc["solar"] = supplyn.loc["solar"] + c_solarn
         supplyn.loc["onshore wind"] = supplyn.loc["onshore wind"] + c_onwindn
@@ -721,7 +822,8 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 
         supplyn = pd.DataFrame(index=n.snapshots)
 
-        for c in n.iterate_components(n.branch_components):
+        if country != 'EU':
+         for c in n.iterate_components(n.branch_components):
             n_port = 4 if c.name == "Link" else 2  # port3
             for i in range(n_port):
                 supplyn = pd.concat(
@@ -735,13 +837,40 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
                     ),
                     axis=1,
                 )
-
-        for c in n.iterate_components(n.one_port_components):
+        else:
+         for c in n.iterate_components(n.branch_components):
+            n_port = 4 if c.name == "Link" else 2  # port3
+            for i in range(n_port):
+                supplyn = pd.concat(
+                    (
+                        supplyn,
+                        (-1)
+                        * c.pnl["p" + str(i)]
+                        .loc[:, c.df.index[c.df["bus" + str(i)].isin(busesn)]]
+                        .groupby(c.df.carrier, axis=1)
+                        .sum(),
+                    ),
+                    axis=1,
+                )
+        if country != 'EU':
+         for c in n.iterate_components(n.one_port_components):
             comps = c.df.index[c.df.bus.isin(busesn)]
             supplyn = pd.concat(
                 (
                     supplyn,
                     ((c.pnl["p"].loc[:, comps]).multiply(c.df.loc[comps, "sign"])).filter(like=country)
+                    .groupby(c.df.carrier, axis=1)
+                    .sum(),
+                ),
+                axis=1,
+            )
+        else:
+         for c in n.iterate_components(n.one_port_components):
+            comps = c.df.index[c.df.bus.isin(busesn)]
+            supplyn = pd.concat(
+                (
+                    supplyn,
+                    ((c.pnl["p"].loc[:, comps]).multiply(c.df.loc[comps, "sign"]))
                     .groupby(c.df.carrier, axis=1)
                     .sum(),
                 ),
@@ -1034,7 +1163,7 @@ def plot_map(
 
     if with_legend:
         colors = [tech_colors[c] for c in carriers] + [ac_color, dc_color]
-        labels = carriers + ["HVAC line", "HVDC link"]
+        labels = carriers + ["HVAC line", "HVDC line"]
 
         add_legend_patches(
             ax,
@@ -1042,45 +1171,45 @@ def plot_map(
             labels,
             legend_kw=legend_kw,
         )
+    if country != 'EU':
+     lines = pd.DataFrame(n.lines)
+     links = pd.DataFrame(n.links)
 
-    lines = pd.DataFrame(n.lines)
-    links = pd.DataFrame(n.links)
+     # Filter rows for lines and links
+     lines = n.lines[(n.lines['bus0'].str.contains(country)) | (n.lines['bus1'].str.contains(country))]
+     links = n.links[(n.links['bus0'].str.contains(country)) | (n.links['bus1'].str.contains(country))]
 
-    # Filter rows for lines and links
-    lines = n.lines[(n.lines['bus0'].str.contains(country)) | (n.lines['bus1'].str.contains(country))]
-    links = n.links[(n.links['bus0'].str.contains(country)) | (n.links['bus1'].str.contains(country))]
-
-    # Create 'BusCombination' column
-    lines['BusCombination'] = (lines['bus0'].str.extract(r'([A-Z]+)').fillna('') +
+     # Create 'BusCombination' column
+     lines['BusCombination'] = (lines['bus0'].str.extract(r'([A-Z]+)').fillna('') +
                             ' - ' +
                             lines['bus1'].str.extract(r'([A-Z]+)').fillna(''))
-    links['BusCombination'] = (links['bus0'].str.extract(r'([A-Z]+)').fillna('') +
+     links['BusCombination'] = (links['bus0'].str.extract(r'([A-Z]+)').fillna('') +
                             ' - ' +
                             links['bus1'].str.extract(r'([A-Z]+)').fillna(''))
 
-    # Collect data for the combined table
-    table_data = pd.concat([
-    pd.DataFrame({
+     # Collect data for the combined table
+     table_data = pd.concat([
+     pd.DataFrame({
         'Lines': lines['BusCombination'],
         'Capacity [GW]': lines['s_nom_opt'] / 1000,
         'Type': 'AC'
-    }),
-    pd.DataFrame({
+     }),
+     pd.DataFrame({
         'Lines': links['BusCombination'],
         'Capacity [GW]': links['p_nom_opt'] / 1000,
         'Type': 'DC'
-    })
-    ], ignore_index=True)
-    table_data['Capacity [GW]'] = table_data['Capacity [GW]'].round(1)
-    table_data = table_data[table_data['Capacity [GW]'] != 0]
+     })
+     ], ignore_index=True)
+     table_data['Capacity [GW]'] = table_data['Capacity [GW]'].round(1)
+     table_data = table_data[table_data['Capacity [GW]'] != 0]
 
-    # Plot the table on the same subplot as the map
-    left, bottom, width, height = 0.05, 0.15, 0.4, 0.12
-    tab = table(ax, table_data, bbox=[left, bottom, width, height],fontsize=20)
-    type_col_index = table_data.columns.get_loc('Type')
+     # Plot the table on the same subplot as the map
+     left, bottom, width, height = 0.05, 0.15, 0.4, 0.12
+     tab = table(ax, table_data, bbox=[left, bottom, width, height],fontsize=20)
+     type_col_index = table_data.columns.get_loc('Type')
 
-    # Set text color based on 'Type' value
-    for key, cell in tab.get_celld().items():
+     # Set text color based on 'Type' value
+     for key, cell in tab.get_celld().items():
         if key[0] != 0:
             type_value = table_data.iloc[key[0] - 1, type_col_index]
             for idx, cell_text in enumerate(table_data.iloc[key[0] - 1]):
@@ -2086,9 +2215,9 @@ if __name__ == "__main__":
     sector_opt = "1H-T-H-B-I-A-dist1"
     ll = "vopt"
     planning_horizons = [2020, 2030, 2040, 2050]
-
-
+    total_country = 'EU'
     countries = snakemake.params.countries 
+    countries.append(total_country)
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     config = snakemake.config
     study = snakemake.params.study

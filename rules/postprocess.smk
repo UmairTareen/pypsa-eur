@@ -265,7 +265,7 @@ rule prepare_results:
         template = "SEPIA/Template/pypsa.html",
         logo = "SEPIA/Template/logo.png",         
     output:
-        htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),
+        htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=local_countries),
     threads: 1
     resources:
         mem_mb=10000,

@@ -58,21 +58,24 @@ rule run_prepare_scenarios:
     log: "logs/run_prepare_scenarios.done"
     shell:
         "snakemake --snakefile Snakefile_master --cores 1 -call prepare_scenarios"
+local_countries = config["countries"].copy()
+if "EU" not in local_countries:
+    local_countries.append("EU") 
 rule prepare_scenarios:
     params:
         countries = config["countries"],
     input:
-        cap_files_bau=expand("results/bau/country_csvs/{country}_capacities.csv", country=config["countries"]),
-        cost_files_bau=expand("results/bau/country_csvs/{country}_costs.csv", country=config["countries"]),
-        dem_files_bau=expand("results/bau/country_csvs/{country}_sectordemands.csv", country=config["countries"]),
-        cap_files_ncdr=expand("results/ncdr/country_csvs/{country}_capacities.csv", country=config["countries"]),
-        cost_files_ncdr=expand("results/ncdr/country_csvs/{country}_costs.csv", country=config["countries"]),
-        dem_files_ncdr=expand("results/ncdr/country_csvs/{country}_sectordemands.csv", country=config["countries"]),
+        cap_files_bau=expand("results/bau/country_csvs/{country}_capacities.csv", country=local_countries),
+        cost_files_bau=expand("results/bau/country_csvs/{country}_costs.csv", country=local_countries),
+        dem_files_bau=expand("results/bau/country_csvs/{country}_sectordemands.csv", country=local_countries),
+        cap_files_ncdr=expand("results/ncdr/country_csvs/{country}_capacities.csv", country=local_countries),
+        cost_files_ncdr=expand("results/ncdr/country_csvs/{country}_costs.csv", country=local_countries),
+        dem_files_ncdr=expand("results/ncdr/country_csvs/{country}_sectordemands.csv", country=local_countries),
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         template = "SEPIA/Template/pypsa.html",
         
     output:
-        htmlfile=expand("results/scenario_results/{country}_combined_scenario_chart.html", country=config["countries"]),
+        htmlfile=expand("results/scenario_results/{country}_combined_scenario_chart.html", country=local_countries),
     threads: 1
     resources:
         mem_mb=10000,

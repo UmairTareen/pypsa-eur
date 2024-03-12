@@ -479,7 +479,9 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_scenarios")
         
+    total_country = 'EU'
     countries = snakemake.params.countries 
+    countries.append(total_country) 
     config = snakemake.config
     logo = logo()
     for country in countries:

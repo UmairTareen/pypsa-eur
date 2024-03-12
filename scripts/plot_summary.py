@@ -65,8 +65,8 @@ def rename_techs(label):
         "NH3": "ammonia",
         "co2 Store": "DAC",
         "co2 stored": "CO2 sequestration",
-        "AC": "transmission lines",
-        "DC": "transmission lines",
+        "AC": "AC Transmission lines",
+        "DC": "DC Transmission lines",
         "B2B": "transmission lines",
     }
 

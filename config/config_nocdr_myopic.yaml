@@ -1012,3 +1012,5 @@ plotting:
     load: "black"
     coal for industry: '#343434'
     Imports: 'darkgrey'
+    DC Transmission lines: "#8a1caf"
+    AC Transmission lines: "#70af1d"
