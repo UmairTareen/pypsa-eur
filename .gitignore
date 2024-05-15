@@ -35,6 +35,7 @@ dconf
 /data/retro/tabula-calculator-calcsetbuilding.csv
 data/gas_network/scigrid-gas/
 data/bundle
+data/eurostat
 data/load_raw.csv
 data/shipdensity_global.zip
 data/ENSPRESO_BIOMASS.xlsx
