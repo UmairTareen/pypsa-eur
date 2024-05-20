@@ -1211,6 +1211,8 @@ plotting:
     solar curtailment: "goldenrod"
     onshore wind curtailment: "navy"
     offshore wind curtailment: "lightskyblue"
+    onshore curtailment: "navy"
+    offshore curtailment: "lightskyblue"
     load: "black"
     coal for industry: '#343434'
     Imports: 'darkgrey'
