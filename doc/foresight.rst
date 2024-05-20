@@ -1,5 +1,5 @@
 ..
-  SPDX-FileCopyrightText: 2021-2023 The PyPSA-Eur Authors
+  SPDX-FileCopyrightText: 2021-2024 The PyPSA-Eur Authors
 
   SPDX-License-Identifier: CC-BY-4.0
 
@@ -41,10 +41,10 @@ Perfect foresight scenarios
 
 .. warning::
 
-  Perfect foresight is currently under development and not yet implemented.
+  Perfect foresight is currently implemented as an experimental test version.
 
-For running perfect foresight scenarios, in future versions you will be able to
-set in the ``config/config.yaml``:
+For running perfect foresight scenarios, you can adjust the
+ ``config/config.perfect.yaml``:
 
 .. code:: yaml
 

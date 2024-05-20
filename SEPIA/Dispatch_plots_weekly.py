@@ -16,7 +16,7 @@ current_script_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_path = os.path.join(current_script_dir, "../scripts/")
 sys.path.append(scripts_path)
 from plot_summary import rename_techs
-from plot_network import assign_location
+from plot_power_network import assign_location
 from make_summary import assign_carriers
 
 
@@ -129,42 +129,20 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
             )
 
         supplyn = supplyn.groupby(rename_techs_tyndp, axis=1).sum()
-        if country == 'BE':
-           ac_lines = n.lines_t.p1.filter(items=['0', '1', '2']).sum(axis=1)
-           dc_lines = n.links_t.p0.filter(items=['14801','T6']).sum(axis=1)
-           merged_series = pd.concat([ac_lines, dc_lines], axis=1)
-           imp_exp = merged_series.sum(axis=1)
-           imp_exp = imp_exp.rename('Imports_Exports')
-           supplyn['Imports_Exports'] = imp_exp
-         
-        if country == 'DE':
-           ac_lines = n.lines_t.p1.filter(items=['0', '3', '4']).sum(axis=1)
-           dc_lines = n.links_t.p0.filter(items=['14801','T22']).sum(axis=1)
-           merged_series = pd.concat([ac_lines, dc_lines], axis=1)
-           imp_exp = merged_series.sum(axis=1)
-           imp_exp = imp_exp.rename('Imports_Exports')
-           supplyn['Imports_Exports'] = imp_exp
-           
-        if country == 'FR':
-           ac_lines = n.lines_t.p0.filter(items=['1', '3']).sum(axis=1)
-           dc_lines = n.links_t.p0.filter(items=['14826','T2', 'T12', 'T19', 'T21']).sum(axis=1)
-           merged_series = pd.concat([ac_lines, dc_lines], axis=1)
-           imp_exp = merged_series.sum(axis=1)
-           imp_exp = imp_exp.rename('Imports_Exports')
-           supplyn['Imports_Exports'] = imp_exp
-           
-        if country == 'GB':
-           dc_lines = n.links_t.p1.filter(items=['14814','14826','T2','T6', 'T12', 'T19', 'T21','T22']).sum(axis=1)
-           imp_exp = dc_lines.rename('Imports_Exports')
-           supplyn['Imports_Exports'] = imp_exp
-           
-        if country == 'NL':
-           ac_lines = n.lines_t.p0.filter(items=['2', '4']).sum(axis=1)
-           dc_lines = n.links_t.p0.filter(items=['14814']).sum(axis=1)
-           merged_series = pd.concat([ac_lines, dc_lines], axis=1)
-           imp_exp = merged_series.sum(axis=1)
-           imp_exp = imp_exp.rename('Imports_Exports')
-           supplyn['Imports_Exports'] = imp_exp
+        filtered_ac_lines = n.lines.bus0.str[:2] == country
+        ac_lines = n.lines_t.p0.filter(items=filtered_ac_lines[filtered_ac_lines == True].index).sum(axis=1)
+        filtered_ac_lines_r = n.lines.bus1.str[:2] == country
+        ac_lines_r = n.lines_t.p1.filter(items=filtered_ac_lines_r[filtered_ac_lines_r == True].index).sum(axis=1)
+        filtered_dc_lines = (n.links.carrier == 'DC') & (n.links.bus0.str[:2] == country)
+        dc_lines = n.links_t.p0.filter(items=filtered_dc_lines[filtered_dc_lines == True].index).sum(axis=1)
+        filtered_dc_lines_r = (n.links.carrier == 'DC') & (n.links.bus1.str[:2] == country)
+        dc_lines_r = n.links_t.p1.filter(items=filtered_dc_lines_r[filtered_dc_lines_r == True].index).sum(axis=1)
+        merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines, dc_lines_r], axis=1)
+        imp_exp = merged_series.sum(axis=1)
+        imp_exp = imp_exp.rename('Imports_Exports')
+        imp_exp=-imp_exp
+        supplyn['Imports_Exports'] = imp_exp
+        
 
         bothn = supplyn.columns[(supplyn < 0.0).any() & (supplyn > 0.0).any()]
 
@@ -205,12 +183,15 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
             like="offwind", axis=1
         ).filter(like=country).sum(axis=1) / 1e3
         supplyn = supplyn.T
-        supplyn.loc["solar"] = supplyn.loc["solar"] + c_solarn
-        supplyn.loc["onshore wind"] = supplyn.loc["onshore wind"] + c_onwindn
-        supplyn.loc["offshore wind"] = supplyn.loc["offshore wind"] + c_offwindn
-        supplyn.loc["solar curtailment"] = -abs(c_solarn)
-        supplyn.loc["onshore curtailment"] = -abs(c_onwindn)
-        supplyn.loc["offshore curtailment"] = -abs(c_offwindn)
+        if "solar" in supplyn.index:
+         supplyn.loc["solar"] = supplyn.loc["solar"] + c_solarn
+         supplyn.loc["solar curtailment"] = -abs(c_solarn)
+        if "onshore wind" in supplyn.index:
+         supplyn.loc["onshore wind"] = supplyn.loc["onshore wind"] + c_onwindn
+         supplyn.loc["onshore curtailment"] = -abs(c_onwindn)
+        if "offshore wind" in supplyn.index:
+         supplyn.loc["offshore wind"] = supplyn.loc["offshore wind"] + c_offwindn
+         supplyn.loc["offshore curtailment"] = -abs(c_offwindn)
         supplyn = supplyn.T
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
@@ -429,11 +410,11 @@ if __name__ == "__main__":
         
 
         # Updating the configuration from the standard config file to run in standalone:
-    simpl = ""
-    cluster = 6
-    opt = "EQ0.70c"
-    sector_opt = "1H-T-H-B-I-A-dist1"
-    ll = "vopt"
+    simpl = snakemake.params.scenario["simpl"][0]
+    cluster = snakemake.params.scenario["clusters"][0]
+    opt = snakemake.params.scenario["opts"][0]
+    sector_opt = snakemake.params.scenario["sector_opts"][0]
+    ll = snakemake.params.scenario["ll"][0]
     planning_horizons = [2020, 2030, 2040, 2050]
 
 

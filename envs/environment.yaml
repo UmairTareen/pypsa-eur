@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: : 2017-2023 The PyPSA-Eur Authors
+# SPDX-FileCopyrightText: : 2017-2024 The PyPSA-Eur Authors
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,6 +11,8 @@ dependencies:
 - pip
 
 - atlite>=0.2.9
+- pypsa>=0.26.1
+- linopy
 - dask
 
   # Dependencies of the workflow itself
@@ -18,23 +20,24 @@ dependencies:
 - openpyxl!=3.1.1
 - pycountry
 - seaborn
-- snakemake-minimal>=7.7.0,<8.0.0
+- snakemake-minimal>=8.5
 - memory_profiler
 - yaml
 - pytables
 - lxml
-- powerplantmatching>=0.5.5
+- powerplantmatching>=0.5.5,!=0.5.9
 - numpy
-- pandas==2.0.3
+- pandas>=2.1
 - geopandas>=0.11.0
-- xarray==2023.8.0
+- xarray>=2023.11.0
 - rioxarray
 - netcdf4
 - networkx
 - scipy
+- glpk
 - shapely>=2.0
-- pyomo
-- matplotlib<3.6
+- pyscipopt
+- matplotlib
 - proj
 - fiona
 - country_converter
@@ -44,8 +47,9 @@ dependencies:
 - tabula-py
 - pyxlsb
 - graphviz
-- linopy==0.2.5
+- pre-commit
 - plotly
+- panel
 
   # Keep in conda environment when calling ipython
 - ipython
@@ -54,9 +58,11 @@ dependencies:
 - cartopy
 - descartes
 - rasterio!=1.2.10
-  # For post-processing scripts
-- python-kaleido
+
 
 - pip:
-  - tsam>=1.1.0
-  - pypsa==0.25.2
+  - tsam>=2.3.1
+  - snakemake-storage-plugin-http
+  - snakemake-executor-plugin-slurm
+  - snakemake-executor-plugin-cluster-generic
+  - highspy

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# SPDX-FileCopyrightText: : 2020-2023 The PyPSA-Eur Authors
+# SPDX-FileCopyrightText: : 2020-2024 The PyPSA-Eur Authors
 #
 # SPDX-License-Identifier: MIT
 """
@@ -8,18 +8,16 @@ capacity factors, curtailment, energy balances, prices and other metrics.
 """
 
 import logging
-
-logger = logging.getLogger(__name__)
-
 import sys
 
 import numpy as np
 import pandas as pd
 import pypsa
+from _helpers import configure_logging, get_snapshots, set_scenario_config
 from prepare_sector_network import prepare_costs
 
 idx = pd.IndexSlice
-
+logger = logging.getLogger(__name__)
 opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
 
 
@@ -33,13 +31,10 @@ def assign_locations(n):
         ifind = pd.Series(c.df.index.str.find(" ", start=4), c.df.index)
         for i in ifind.unique():
             names = ifind.index[ifind == i]
-            if i == -1:
-                c.df.loc[names, "location"] = ""
-            else:
-                c.df.loc[names, "location"] = names.str[:i]
+            c.df.loc[names, "location"] = "" if i == -1 else names.str[:i]
 
 
-def calculate_nodal_cfs(n, label, nodal_cfs, config):
+def calculate_nodal_cfs(n, label, nodal_cfs):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         (n.branch_components ^ {"Line", "Transformer"})
@@ -72,7 +67,7 @@ def calculate_nodal_cfs(n, label, nodal_cfs, config):
     return nodal_cfs
 
 
-def calculate_cfs(n, label, cfs, config):
+def calculate_cfs(n, label, cfs):
     for c in n.iterate_components(
         n.branch_components
         | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
@@ -101,7 +96,7 @@ def calculate_cfs(n, label, cfs, config):
     return cfs
 
 
-def calculate_nodal_costs(n, label, nodal_costs, config):
+def calculate_nodal_costs(n, label, nodal_costs):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
@@ -145,7 +140,7 @@ def calculate_nodal_costs(n, label, nodal_costs, config):
     return nodal_costs
 
 
-def calculate_costs(n, label, costs, config):
+def calculate_costs(n, label, costs):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -230,7 +225,7 @@ def calculate_cumulative_cost():
     return cumulative_cost
 
 
-def calculate_nodal_capacities(n, label, nodal_capacities, config):
+def calculate_nodal_capacities(n, label, nodal_capacities):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
@@ -247,7 +242,7 @@ def calculate_nodal_capacities(n, label, nodal_capacities, config):
     return nodal_capacities
 
 
-def calculate_capacities(n, label, capacities, config):
+def calculate_capacities(n, label, capacities):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -265,7 +260,7 @@ def calculate_capacities(n, label, capacities, config):
     return capacities
 
 
-def calculate_curtailment(n, label, curtailment, config):
+def calculate_curtailment(n, label, curtailment):
     avail = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
         .sum()
@@ -279,7 +274,7 @@ def calculate_curtailment(n, label, curtailment, config):
     return curtailment
 
 
-def calculate_energy(n, label, energy, config):
+def calculate_energy(n, label, energy):
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
             c_energies = (
@@ -313,7 +308,7 @@ def calculate_energy(n, label, energy, config):
     return energy
 
 
-def calculate_supply(n, label, supply, config):
+def calculate_supply(n, label, supply):
     """
     Calculate the max dispatch of each component at the buses aggregated by
     carrier.
@@ -364,7 +359,7 @@ def calculate_supply(n, label, supply, config):
     return supply
 
 
-def calculate_supply_energy(n, label, supply_energy, config):
+def calculate_supply_energy(n, label, supply_energy):
     """
     Calculate the total energy supply/consuption of each component at the buses
     aggregated by carrier.
@@ -397,7 +392,7 @@ def calculate_supply_energy(n, label, supply_energy, config):
 
         for c in n.iterate_components(n.branch_components):
             for end in [col[len("bus"):] for col in c.df.columns if col.startswith("bus")]:
-                items = c.df.index[c.df["bus" + str(end)].map(bus_map).fillna(False)]
+                items = c.df.index[c.df[f"bus{str(end)}"].map(bus_map).fillna(False)]
 
                 if len(items) == 0:
                     continue
@@ -418,7 +413,7 @@ def calculate_supply_energy(n, label, supply_energy, config):
     return supply_energy
 
 
-def calculate_metrics(n, label, metrics, config):
+def calculate_metrics(n, label, metrics):
     metrics_list = [
         "line_volume",
         "line_volume_limit",
@@ -449,10 +444,14 @@ def calculate_metrics(n, label, metrics, config):
     if "CO2Limit" in n.global_constraints.index:
         metrics.at["co2_shadow", label] = n.global_constraints.at["CO2Limit", "mu"]
 
+    if "co2_sequestration_limit" in n.global_constraints.index:
+        metrics.at["co2_storage_shadow", label] = n.global_constraints.at[
+            "co2_sequestration_limit", "mu"
+        ]
     return metrics
 
 
-def calculate_prices(n, label, prices, config):
+def calculate_prices(n, label, prices):
     prices = prices.reindex(prices.index.union(n.buses.carrier.unique()))
 
     # WARNING: this is time-averaged, see weighted_prices for load-weighted average
@@ -461,7 +460,7 @@ def calculate_prices(n, label, prices, config):
     return prices
 
 
-def calculate_weighted_prices(n, label, weighted_prices, config):
+def calculate_weighted_prices(n, label, weighted_prices):
     # Warning: doesn't include storage units as loads
 
     weighted_prices = weighted_prices.reindex(
@@ -493,7 +492,7 @@ def calculate_weighted_prices(n, label, weighted_prices, config):
         "H2": ["Sabatier", "H2 Fuel Cell"],
     }
 
-    for carrier in link_loads:
+    for carrier, value in link_loads.items():
         if carrier == "electricity":
             suffix = ""
         elif carrier[:5] == "space":
@@ -508,22 +507,16 @@ def calculate_weighted_prices(n, label, weighted_prices, config):
 
         if carrier in ["H2", "gas"]:
             load = pd.DataFrame(index=n.snapshots, columns=buses, data=0.0)
-        elif carrier[:5] == "space":
-            load = heat_demand_df[buses.str[:2]].rename(
-                columns=lambda i: str(i) + suffix
-            )
         else:
-            load = n.loads_t.p_set[buses]
+            load = n.loads_t.p_set[buses.intersection(n.loads.index)]
 
-        for tech in link_loads[carrier]:
+        for tech in value:
             names = n.links.index[n.links.index.to_series().str[-len(tech) :] == tech]
 
-            if names.empty:
-                continue
-
-            load += (
-                n.links_t.p0[names].groupby(n.links.loc[names, "bus0"], axis=1).sum()
-            )
+            if not names.empty:
+                load += (
+                    n.links_t.p0[names].T.groupby(n.links.loc[names, "bus0"]).sum().T
+                )
 
         # Add H2 Store when charging
         # if carrier == "H2":
@@ -542,7 +535,7 @@ def calculate_weighted_prices(n, label, weighted_prices, config):
     return weighted_prices
 
 
-def calculate_market_values(n, label, market_values, config):
+def calculate_market_values(n, label, market_values):
     # Warning: doesn't include storage units
 
     carrier = "AC"
@@ -562,14 +555,16 @@ def calculate_market_values(n, label, market_values, config):
 
         dispatch = (
             n.generators_t.p[gens]
-            .groupby(n.generators.loc[gens, "bus"], axis=1)
+            .T.groupby(n.generators.loc[gens, "bus"])
             .sum()
-            .reindex(columns=buses, fill_value=0.0)
+            .T.reindex(columns=buses, fill_value=0.0)
         )
-
         revenue = dispatch * n.buses_t.marginal_price[buses]
 
-        market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
+        if total_dispatch := dispatch.sum().sum():
+            market_values.at[tech, label] = revenue.sum().sum() / total_dispatch
+        else:
+            market_values.at[tech, label] = np.nan
 
     ## Now do market value of links ##
 
@@ -585,19 +580,22 @@ def calculate_market_values(n, label, market_values, config):
 
             dispatch = (
                 n.links_t["p" + i][links]
-                .groupby(n.links.loc[links, "bus" + i], axis=1)
+                .T.groupby(n.links.loc[links, "bus" + i])
                 .sum()
-                .reindex(columns=buses, fill_value=0.0)
+                .T.reindex(columns=buses, fill_value=0.0)
             )
 
             revenue = dispatch * n.buses_t.marginal_price[buses]
 
-            market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
+            if total_dispatch := dispatch.sum().sum():
+                market_values.at[tech, label] = revenue.sum().sum() / total_dispatch
+            else:
+                market_values.at[tech, label] = np.nan
 
     return market_values
 
 
-def calculate_price_statistics(n, label, price_statistics, config):
+def calculate_price_statistics(n, label, price_statistics):
     price_statistics = price_statistics.reindex(
         price_statistics.index.union(
             pd.Index(["zero_hours", "mean", "standard_deviation"])
@@ -627,7 +625,7 @@ def calculate_price_statistics(n, label, price_statistics, config):
     return price_statistics
 
 
-def make_summaries(networks_dict, config):
+def make_summaries(networks_dict):
     outputs = [
         "nodal_costs",
         "nodal_capacities",
@@ -647,14 +645,11 @@ def make_summaries(networks_dict, config):
     ]
 
     columns = pd.MultiIndex.from_tuples(
-        networks_dict.keys(), names=["cluster", "ll", "opt", "planning_horizon"]
+        networks_dict.keys(),
+        names=["cluster", "ll", "opt", "planning_horizon"],
     )
 
-    df = {}
-
-    for output in outputs:
-        df[output] = pd.DataFrame(columns=columns, dtype=float)
-
+    df = {output: pd.DataFrame(columns=columns, dtype=float) for output in outputs}
     for label, filename in networks_dict.items():
         logger.info(f"Make summary for scenario {label}, using {filename}")
 
@@ -664,7 +659,7 @@ def make_summaries(networks_dict, config):
         assign_locations(n)
 
         for output in outputs:
-            df[output] = globals()["calculate_" + output](n, label, df[output], config)
+            df[output] = globals()["calculate_" + output](n, label, df[output])
 
     return df
 
@@ -678,9 +673,10 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake
 
-        snakemake = mock_snakemake("make_summary",configfiles=["config/config (BAU-Suff-2050).yaml"])
+        snakemake = mock_snakemake("make_summary")
 
-    logging.basicConfig(level=snakemake.config["logging"]["level"])
+    configure_logging(snakemake)
+    set_scenario_config(snakemake)
 
     networks_dict = {
         (cluster, ll, opt + sector_opt, planning_horizon): "results/"
@@ -694,15 +690,16 @@ if __name__ == "__main__":
         for planning_horizon in snakemake.params.scenario["planning_horizons"]
     }
 
-    Nyears = len(pd.date_range(freq="h", **snakemake.params.snapshots)) / 8760
+    time = get_snapshots(snakemake.params.snapshots, snakemake.params.drop_leap_day)
+    Nyears = len(time) / 8760
 
     costs_db = prepare_costs(
         snakemake.input.costs,
         snakemake.params.costs,
         Nyears,
     )
-    config=snakemake.config
-    df = make_summaries(networks_dict, config)
+
+    df = make_summaries(networks_dict)
 
     df["metrics"].loc["total costs"] = df["costs"].sum()
 

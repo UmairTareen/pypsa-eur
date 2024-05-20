@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# SPDX-FileCopyrightText: : 2020-2023 The PyPSA-Eur Authors
+# SPDX-FileCopyrightText: : 2020-2024 The PyPSA-Eur Authors
 #
 # SPDX-License-Identifier: MIT
 """
@@ -7,7 +7,9 @@ Build industrial production per model region.
 """
 
 from itertools import product
+
 import pandas as pd
+from _helpers import set_scenario_config
 
 # map JRC/our sectors to hotmaps sector, where mapping exist
 sector_mapping = {
@@ -140,6 +142,7 @@ def build_nodal_industrial_production():
      nodal_production = nodal_production
     nodal_production.to_csv(snakemake.output.industrial_production_per_node)
 
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from _helpers import mock_snakemake
@@ -150,6 +153,6 @@ if __name__ == "__main__":
             clusters=48,
             planning_horizons=2030,
         )
-    params = snakemake.params.planning_horizons
-    build_nodal_industrial_production()
+    set_scenario_config(snakemake)
 
+    build_nodal_industrial_production()

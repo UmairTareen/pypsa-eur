@@ -8,7 +8,7 @@ from pypsa.descriptors import get_switchable_as_dense as as_dense
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
-    file_name = 'elec_s_6_lv1.0__Co2L0.8-1H-T-H-B-I-A-dist1_2020.nc'
+    file_name = f'elec_s_{cluster}_lv1.0__Co2L0.8-{sector_opt}_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
     source_directory = 'results/reff/postnetworks/'
     destination_directory = f'results/{study}/postnetworks/'
@@ -19,7 +19,7 @@ def prepare_files(simpl, cluster, opt, sector_opt, ll):
     # CSV files
     csv_source_directory = 'resources/reff/'
     csv_destination_directory = f'resources/{study}/'
-    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv",f"co2_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv"]
+    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv",f"co2_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv",f"biomass_potentials_s{simpl}_{cluster}_2020.csv"]
 
     for csv_file in csv_files:
         source_csv_path = os.path.join(csv_source_directory, csv_file)
@@ -56,7 +56,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
 
         energy_demand = pd.read_csv(
             f"resources/{study}/energy_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
-            index_col=0).T
+            index_col=0)
 
         if planning_horizon == 2020 or study == 'bau':
             H2_nonenergyy = 0
@@ -70,7 +70,8 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
         industry_demand = pd.read_csv(
             f"resources/{study}/industrial_energy_demand_elec_s_" + str(cluster) + "_" + str(
                 planning_horizon) + ".csv", index_col=0).T
-        Rail_demand = energy_demand.loc["total rail"].filter(like=country).sum()
+        Rail_demand = energy_demand.loc[(energy_demand['year'] == year),'total rail']
+        Rail_demand = Rail_demand[country].sum()
 
         if planning_horizon == 2020:
             ammonia = 0
@@ -285,6 +286,8 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
             return label
 
         connections['label'] = connections['label'].apply(generate_new_label)
+        dac_value = n.links_t.p0.filter(like="DAC").filter(like=country).sum().sum()/1e6
+        connections.loc[connections.label.str.contains("DAC") & ~connections.label.str.contains("DAC_3") & connections.target.str.contains("DAC"), "value"] = dac_value
         connections.rename(columns={'value': str(planning_horizon)}, inplace=True)
         results_dict[country] = connections
 
@@ -337,7 +340,7 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind', 'offwind',
                      'gas for industry CC', 'industry electricity',
                      'low-temperature heat for industry', 'H2 for industry', 'naphtha for industry',
                      'H2 for non-energy', 'agriculture machinery oil', 'agriculture electricity',
-                     'agriculture heat', 'EV charger', 'EV charger_2', 'V2G', 'V2G_2', 'NH3',
+                     'EV charger', 'EV charger_2', 'V2G', 'V2G_2', 'NH3',
                      'urban central air heat pump', 'urban central air heat pump_2', 'urban central gas boiler',
                      'urban central gas boiler_2','methanolisation_3',
                      'urban central oil boiler', 'urban central resistive heater', 'urban central resistive heater_2',
@@ -358,9 +361,9 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind', 'offwind',
                      'biogas to gas', 'BioSNG', 'Sabatier',
                      'urban central solid biomass CHP CC', 'urban central solid biomass CHP CC_2',
                      'urban central solid biomass CHP CC_3',
-                     'DAC', 'DAC_2', 'DAC_3', 'H2 for shipping', 'fossil oil', 'biomass',
+                     'DAC', 'DAC_3', 'H2 for shipping', 'fossil oil', 'biomass','BioSNG_2',
                      'nuclear_3','urban central gas CHP CC','urban central gas CHP CC_2','urban central gas CHP CC_3',
-                     'H2 Fuel Cell', 'H2 Fuel Cell_2','H2 Fuel Cell_3']  # Add moe entries if needed
+                     'H2 Fuel Cell', 'H2 Fuel Cell_2','H2 Fuel Cell_3','coal for industry','biogas to gas CC']  # Add moe entries if needed
 
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
@@ -398,7 +401,7 @@ entry_label_mapping = {
     'Haber-Bosch_2': {'label': 'Production of ammonia from H2)', 'source': 'TWh', 'target': 'prohydclam'},
     'residential rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh',
                                            'target': 'lossbb'},
-    'methanolisation_3': {'label': 'electricity to metaholisation', 'source': 'TWh', 'target': 'pretareen'},
+    # 'methanolisation_3': {'label': 'electricity to metaholisation', 'source': 'TWh', 'target': 'pretareen'},
     'residential urban decentral biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)',
                                                      'source': 'TWh', 'target': 'lossbbb'},
     'services rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh',
@@ -540,7 +543,7 @@ entry_label_mapping = {
     'H2 for non-energy': {'label': 'H2 for non-energy', 'source': 'TWh', 'target': 'preshydcfneind'},
     'agriculture machinery oil': {'label': 'agriculture oil', 'source': 'TWh', 'target': 'prespetcfagr'},
     'agriculture electricity': {'label': 'agriculture electricity', 'source': 'TWh', 'target': 'preselccfagr'},
-    'agriculture heat': {'label': 'agriculture heat', 'source': 'TWh', 'target': 'presvapcfagr'},
+    # 'agriculture heat': {'label': 'agriculture heat', 'source': 'TWh', 'target': 'pregazcfagr'},
     'EV charger': {'label': 'BEV charging', 'source': 'TWh', 'target': 'prebev'},
     'EV charger_2': {'label': 'BEV charging losses', 'source': 'TWh', 'target': 'prebevloss'},
     'V2G': {'label': 'vehicle to grid', 'source': 'TWh', 'target': 'prevtg'},
@@ -553,7 +556,7 @@ entry_label_mapping = {
     'urban central gas boiler': {'label': 'Heat energy output from gas-fired boilers', 'source': 'TWh',
                                  'target': 'prbrchgaz'},
     'urban central gas boiler_2': {'label': 'Heat energy output from gas-fired boilers', 'source': 'TWh',
-                                   'target': 'prbrchgazz'},
+                                   'target': 'prbrchgazzloss'},
     'urban central oil boiler': {'label': 'Heat energy output from oil-fired boilers', 'source': 'TWh',
                                  'target': 'prbrchpet'},
     'urban central resistive heater': {'label': 'Heat energy output from centralised resistive heaters',
@@ -597,6 +600,7 @@ entry_label_mapping = {
     'OCGT_2': {'label': 'Gas-fired power generation losses', 'source': 'TWh', 'target': 'proelcgazoclo'},
     'biogas to gas': {'label': 'biogas to gas', 'source': 'TWh', 'target': 'prodombgr'},
     'BioSNG': {'label': 'BioSNG', 'source': 'TWh', 'target': 'probiosng'},
+    'BioSNG_2': {'label': 'BioSNG losses', 'source': 'TWh', 'target': 'probiosngloss'},
     'Sabatier': {'label': 'Sabatier', 'source': 'TWh', 'target': 'presaba'},
     'Sabatier_2': {'label': 'Sabatier losses', 'source': 'TWh', 'target': 'presabaloss'},
     'urban central solid biomass CHP CC': {'label': 'Power output from solid biomass CHP plants', 'source': 'TWh',
@@ -606,7 +610,7 @@ entry_label_mapping = {
     'urban central solid biomass CHP CC_3': {'label': 'losses solid biomass CHP plants', 'source': 'TWh',
                                              'target': 'prbelccbmccl'},
     'DAC': {'label': 'DAC', 'source': 'TWh', 'target': 'predacelc'},
-    'DAC_2': {'label': 'DAC', 'source': 'TWh', 'target': 'predache'},
+    # 'DAC_2': {'label': 'DAC', 'source': 'TWh', 'target': 'predache'},
     'DAC_3': {'label': 'DAC', 'source': 'TWh', 'target': 'predachee'},
     'fossil oil': {'label': 'fossil oil', 'source': 'TWh', 'target': 'prefossiloil'},
     'residential rural heat': {'label': 'Residential and tertiary heat demand', 'source': 'TWh',
@@ -625,10 +629,11 @@ entry_label_mapping = {
     'H2 Fuel Cell': {'label': 'H2 fuell cell to electricity', 'source': 'TWh', 'target': 'prbelcchphyd'},
     'H2 Fuel Cell_2': {'label': 'H2 fuell cell to heat', 'source': 'TWh', 'target': 'prbvapchphyd'},
     'H2 Fuel Cell_3': {'label': 'H2 fuell cell losses', 'source': 'TWh', 'target': 'afzf'},
+    'coal for industry': {'label': 'coal for industry', 'source': 'TWh', 'target': 'cmscfind'},
+    # 'fossil gas': {'label': 'fossil gas', 'source': 'TWh', 'target': 'prefossilgas'},
+    'biogas to gas CC': {'label': 'biogas to gas CC', 'source': 'TWh', 'target': 'prodombgrcc'},
     
 }
-
-
 # %%
 def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country):
         '''
@@ -644,7 +649,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         collection = []
 
         # DAC
-        value = -(n.snapshot_weightings.generators @ n.links_t.p1.filter(like="DAC").filter(like=country)).sum()
+        value = -(n.snapshot_weightings.generators @ n.links_t.p3.filter(like="DAC").filter(like=country)).sum()
         collection.append(
             pd.Series(
                 dict(label="DAC", source="co2 atmosphere", target="co2 stored", value=value)
@@ -812,6 +817,41 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         collection.append(
             pd.Series(dict(label="biogas to gas", source="biogas", target="gas", value=value))
         )
+        
+        # biogas to gas with CO2 upgradation
+        value = -(
+                n.snapshot_weightings.generators @ n.links_t.p2.filter(like="biogas to gas CC")
+                .filter(like=country)).sum()
+        collection.append(
+            pd.Series(
+                dict(
+                    label="biogas to gas CC", source="biogas", target="co2 stored", value=value
+                )
+            )
+        )
+    
+        value = (
+                n.snapshot_weightings.generators @ n.links_t.p3.filter(like="biogas to gas CC")
+                .filter(like=country)).sum()
+        # valuee = value - valuee
+        collection.append(
+            pd.Series(
+                dict(
+                    label="biogas to gas CC2", source="co2 atmosphere", target="biogas", value=value
+                )
+            )
+        )
+        value = -(
+                n.snapshot_weightings.generators @ n.links_t.p1.filter(like="biogas to gas CC")
+                .filter(like=country)).sum()
+        # valuee = value - valuee
+        collection.append(
+            pd.Series(
+                dict(
+                    label="biogas to gas CC3", source="biogas", target="gas", value=value * options.loc[("gas", "CO2 intensity"), "value"]
+                )
+            )
+        )
 
         # solid biomass for industry
         value = (
@@ -917,7 +957,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
             )
         # solid biomass to gas
         value = -(
-                n.snapshot_weightings.generators @ n.links_t.p1.filter(regex="solid biomass solid biomass to gas$")
+                n.snapshot_weightings.generators @ n.links_t.p1.filter(like="solid biomass solid biomass to gas")
                 .filter(like=country)).sum()
         collection.append(
             pd.Series(
@@ -928,7 +968,9 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
                 )
             )
         )
-
+        collection.append(
+            pd.Series(dict(label="solid biomass solid biomass to gas1", source="co2 atmosphere", target="solid biomass",
+                           value=value * options.loc[("gas", "CO2 intensity"), "value"])))
         # solid biomass to gas CC
         value = -(
                 n.snapshot_weightings.generators @ n.links_t.p1.filter(like="solid biomass solid biomass to gas CC")
@@ -1212,7 +1254,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
                 )
             )
         )
-
+        
         cf = pd.concat(collection, axis=1).T
         cf.value /= 1e6  # Mt
 
@@ -1236,7 +1278,7 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         )
         cf = pd.concat([cf, row], axis=0)
 
-        # sequestration
+        #sequestration
         value = (
                 cf.loc[cf.target == "co2 stored", "value"].sum()
                 - cf.loc[cf.source == "co2 stored", "value"].sum()
@@ -1253,6 +1295,27 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         )
 
         cf = pd.concat([cf, row], axis=0)
+        
+        # LULUCF
+        LULUCF = (
+            pd.read_csv(f"resources/{study}/co2_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
+                        index_col=0)).T
+        LULUCF = LULUCF.loc['LULUCF']
+        LULUCF[LULUCF > 0] = 0
+        V = LULUCF.filter(like=(country)).sum()
+        V= -V
+        row = pd.DataFrame(
+            [
+                dict(
+                    label="LULUCF",
+                    source="co2 atmosphere",
+                    target="LULUCF",
+                    value=V,
+                )
+            ]
+        )
+        cf = pd.concat([cf, row], axis=0)
+        
 
         # net co2 emissions
         value = (
@@ -1271,27 +1334,6 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         )
         cf = pd.concat([cf, row], axis=0)
         cf = cf.loc[(cf.value >= 0.1)]
-        # LULUCF
-        # if planning_horizon != 2020:
-        LULUCF = (
-            pd.read_csv(f"resources/{study}/co2_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
-                        index_col=0)).T
-        V = LULUCF.loc['LULUCF'].filter(like=country).sum()
-        if country == 'NL':
-            V = 0
-        else:
-            V = -V
-        row = pd.DataFrame(
-            [
-                dict(
-                    label="LULUCF",
-                    source="co2 atmosphere",
-                    target="LULUCF",
-                    value=V,
-                )
-            ]
-        )
-        cf = pd.concat([cf, row], axis=0)
 
         cf.rename(columns={'value': str(planning_horizon)}, inplace=True)
         results_dict_co2[country] = cf
@@ -1317,20 +1359,21 @@ entries_to_select_c = ['process emissions', 'process emissions CC', 'process emi
                        'services rural biomass boiler_2',
                        'kerosene for aviation', 'agriculture machinery oil emissions', 'land transport oil emissions',
                        'shipping oil emissions',
-                       'shipping methanol emissions', 'LULUCF', 'fossil gas', 'fossil oil', 'net co2 emissions',
+                       'shipping methanol emissions', 'LULUCF', 'fossil oil', 'net co2 emissions',
                        'gas for industry CC1',
                        'gas for industry CC2', 'solid biomass for industry CC',
                        'solid biomass for industry CC_2',
                        'urban central solid biomass CHP', 'urban central solid biomass CHP_2', 'coal',
                        'solid biomass biomass to liquid',
                        'solid biomass biomass to liquid_2', 'biogas to gas', 'biogas to gas_2', 'urban central gas CHP',
-                       'Fischer-Tropsch',
+                       'Fischer-Tropsch','solid biomass solid biomass to gas1',
                        'OCGT', 'SMR', 'urban central solid biomass CHP CC', 'urban central solid biomass CHP CC_2',
                        'DAC', 'co2 sequestration',
                        'solid biomass solid biomass to gas', 'solid biomass solid biomass to gas CC1',
                        'solid biomass solid biomass to gas CC2',
                        'solid biomass solid biomass to gas CC3', 'solid biomass solid biomass to gas CC4', 'Sabatier',
-                       'urban central gas CHP CC1','urban central gas CHP CC2']  # Add moe entries if needed
+                       'urban central gas CHP CC1','urban central gas CHP CC2','biogas to gas CC','biogas to gas CC2',
+                       'biogas to gas CC3','naphtha for industry']  # Add moe entries if needed
 
 entry_label_mapping_c = {
     'process emissions': {'label': 'process emissions', 'source': 'MtCO2', 'target': 'emmprocess'},
@@ -1374,7 +1417,7 @@ entry_label_mapping_c = {
     'shipping oil emissions': {'label': 'shipping oil emissions', 'source': 'MtCO2', 'target': 'emmoilwati'},
     'shipping methanol emissions': {'label': 'shipping methanol emissions', 'source': 'MtCO2', 'target': 'emmmetwati'},
     'LULUCF': {'label': 'LULUCF', 'source': 'MtCO2', 'target': 'emmluf'},
-    'fossil gas': {'label': 'fossil gas', 'source': 'MtCO2', 'target': 'emmfossgas'},
+    # 'fossil gas': {'label': 'fossil gas', 'source': 'MtCO2', 'target': 'emmfossgas'},
     'fossil oil': {'label': 'fossil oil', 'source': 'MtCO2', 'target': 'emmfossoil'},
     'net co2 emissions': {'label': 'net co2 emissions', 'source': 'MtCO2', 'target': 'emmnet'},
     'gas for industry CC1': {'label': 'gas for industry CC', 'source': 'MtCO2', 'target': 'emmgascc'},
@@ -1408,6 +1451,8 @@ entry_label_mapping_c = {
     'co2 sequestration': {'label': 'co2 sequestration', 'source': 'MtCO2', 'target': 'emmseq'},
     'solid biomass solid biomass to gas': {'label': 'solid biomass solid biomass to gas', 'source': 'MtCO2',
                                            'target': 'emmbmsng'},
+    'solid biomass solid biomass to gas1': {'label': 'solid biomass solid biomass to gas', 'source': 'MtCO2',
+                                           'target': 'emmbmsngatm'},
     'solid biomass solid biomass to gas CC1': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2',
                                                'target': 'emmbmsngcc'},
     'solid biomass solid biomass to gas CC2': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2',
@@ -1417,6 +1462,9 @@ entry_label_mapping_c = {
     'solid biomass solid biomass to gas CC4': {'label': 'solid biomass solid biomass to gas CC', 'source': 'MtCO2',
                                                'target': 'emmbmsngcccb'},
     'Sabatier': {'label': 'Sabatier"', 'source': 'MtCO2', 'target': 'emmsaba'},
+    'biogas to gas CC': {'label': 'biogas to gas CC', 'source': 'MtCO2', 'target': 'emmbiogasatcc'},
+    'biogas to gas CC2': {'label': 'biogas to gas CC2', 'source': 'MtCO2', 'target': 'emmbiogascc'},
+    'biogas to gas CC3': {'label': 'biogas to gas CC', 'source': 'MtCO2', 'target': 'emmbiogasccc'},
 }
 def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries, filename):
     '''
@@ -1573,15 +1621,16 @@ if __name__ == "__main__":
 
         
 
-    simpl = ""
-    cluster = 6
-    opt = "EQ0.70c"
-    sector_opt = "1H-T-H-B-I-A-dist1"
-    ll = "vopt"
+    simpl = snakemake.params.scenario["simpl"][0]
+    cluster = snakemake.params.scenario["clusters"][0]
+    opt = snakemake.params.scenario["opts"][0]
+    sector_opt = snakemake.params.scenario["sector_opts"][0]
+    ll = snakemake.params.scenario["ll"][0]
     planning_horizons = [2020, 2030, 2040, 2050] 
 
     countries = snakemake.params.countries
     study = snakemake.params.study
+    year = snakemake.params.year
     prepare_files(simpl, cluster, opt, sector_opt, ll)
     loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     

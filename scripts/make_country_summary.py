@@ -435,11 +435,11 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake("make_country_summary")
         
-    simpl = ""
-    cluster = 6
-    opt = "EQ0.70c"
-    sector_opt = "1H-T-H-B-I-A-dist1"
-    ll = "vopt"
+    simpl = snakemake.params.scenario["simpl"][0]
+    cluster = snakemake.params.scenario["clusters"][0]
+    opt = snakemake.params.scenario["opts"][0]
+    sector_opt = snakemake.params.scenario["sector_opts"][0]
+    ll = snakemake.params.scenario["ll"][0]
     planning_horizons = [2020, 2030, 2040, 2050]
     study = snakemake.params.study
     networks_dict = {

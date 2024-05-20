@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# SPDX-FileCopyrightText: : 2023 The PyPSA-Eur Authors
+# SPDX-FileCopyrightText: : 2023-2024 The PyPSA-Eur Authors
 #
 # SPDX-License-Identifier: MIT
 """
@@ -10,6 +10,7 @@ database_en>`_.
 
 import geopandas as gpd
 import pandas as pd
+from _helpers import set_scenario_config
 
 
 def area(gdf):
@@ -39,9 +40,11 @@ if __name__ == "__main__":
             "build_sequestration_potentials", simpl="", clusters="181"
         )
 
+    set_scenario_config(snakemake)
+
     cf = snakemake.params.sequestration_potential
 
-    gdf = gpd.read_file(snakemake.input.sequestration_potential[0])
+    gdf = gpd.read_file(snakemake.input.sequestration_potential)
 
     regions = gpd.read_file(snakemake.input.regions_offshore)
     if cf["include_onshore"]:

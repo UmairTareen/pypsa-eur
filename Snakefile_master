@@ -36,6 +36,7 @@ rule plot_country_summary:
         emissions_scope=config["energy"]["emissions"],
         eurostat_report_year=config["energy"]["eurostat_report_year"],
         plotting=config["plotting"],
+        scenario=config["scenario"],
     input:
         "run_snakefile_nocdr.done"
     output:

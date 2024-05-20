@@ -132,19 +132,19 @@ preferred_order = pd.Index(
 
 
 def plot_balances(country, study):
- for study in studies:
     file = f"results/{study}/htmls/ChartData_{country}.xlsx"
 
     balances_df = pd.read_csv(f"results/{study}/country_csvs/supply_energy.csv")
     balances_df = balances_df[3:]
+    year_columns = ['2030', '2040', '2050']
     column_mapping = {
             'cluster': 'energy',
             'Unnamed: 1': 'components',
             'Unnamed: 2': 'techs',
-            '6': '2020',
-            '6.1': '2030',
-            '6.2': '2040',
-            '6.3': '2050',}
+            f'{cluster}': '2020',
+            f'{cluster}.1': '2030',
+            f'{cluster}.2': '2040',
+            f'{cluster}.3': '2050',}
 
     balances_df.rename(columns=column_mapping, inplace=True)
 
@@ -156,39 +156,55 @@ def plot_balances(country, study):
     h2_val.columns = h2_val.iloc[1]
     lulucf_val = pd.read_excel(file, sheet_name="Chart 2", index_col=0)
     lulucf_val.columns = lulucf_val.iloc[1]
+    
     for year in balances_df.columns[3:]:
         condition = (balances_df['energy'] == 'gas') & (balances_df['components'] == 'generators') & (balances_df['techs'] == 'gas')
         balances_df.loc[condition, [year]] = gas_val.loc[str(year), "Natural gas"] * 1e6
+
+    rows_to_append = []
+
+    # Row data for AC Imports
+    row_elc_data = {
+    'energy': 'AC',
+    'components': 'links',
+    'techs': 'Imports',}
+    for year_col in year_columns:
+     row_elc_data[year_col] = 0
+    rows_to_append.append(row_elc_data)
+
+    # Row data for H2 Imports
+    row_data = {
+    'energy': 'H2',
+    'components': 'links',
+    'techs': 'Imports',}
+    for year_col in year_columns:
+     row_data[year_col] = 0
+    rows_to_append.append(row_data)
+
+    # Row data for LULUCF
+    row_data = {
+    'energy': 'co2',
+    'components': 'stores',
+    'techs': 'LULUCF',}
+    for year_col in year_columns:
+     row_data[year_col] = 0
+    rows_to_append.append(row_data)
+
+    df_to_append = pd.DataFrame(rows_to_append)
+
+    # Concatenate original DataFrame with the new DataFrame
+    balances_df = pd.concat([balances_df, df_to_append], ignore_index=True)
+
+    for year in year_columns:
+     # Update values for AC Imports
+     balances_df.loc[(balances_df['energy'] == 'AC') & (balances_df['components'] == 'links') & (balances_df['techs'] == 'Imports'), year] = elec_imp.loc[str(year), "Imports"] * 1e6
+    
+     # Update values for H2 Imports
+     balances_df.loc[(balances_df['energy'] == 'H2') & (balances_df['components'] == 'links') & (balances_df['techs'] == 'Imports'), year] = h2_val.loc[str(year), "Imports"] * 1e6
+    
+     # Update values for LULUCF
+     balances_df.loc[(balances_df['energy'] == 'co2') & (balances_df['components'] == 'stores') & (balances_df['techs'] == 'LULUCF'), year] = lulucf_val.loc[str(year), "Land use and forestry"] * 1e6
         
-
-    for year in balances_df.columns[3:]:
-        row_elc_data = {
-            'energy': 'AC',
-            'components': 'links',
-            'techs': 'Imports',
-        }
-        row_elc_data[year] = elec_imp.loc[year, 'Imports'] * 1e6
-
-        elc_row_df = pd.DataFrame([row_elc_data])
-        balances_df = pd.concat([balances_df, elc_row_df], ignore_index=True)
-    for year in balances_df.columns[3:]:
-        row_data = {
-            'energy': 'H2',
-            'components': 'links',
-            'techs': 'Imports',
-        }
-        row_data[year] = h2_val.loc[year, 'Imports'] * 1e6
-        h2_row_df = pd.DataFrame([row_data])
-        balances_df = pd.concat([balances_df, h2_row_df], ignore_index=True)
-    for year in balances_df.columns[3:]:
-        row_data = {
-            'energy': 'co2',
-            'components': 'stores',
-            'techs': 'LULUCF',
-        }
-        row_data[year] = lulucf_val.loc[year, 'Land use and forestry'] * 1e6
-        lulucf_row_df = pd.DataFrame([row_data])
-        balances_df = pd.concat([balances_df, lulucf_row_df], ignore_index=True)
     balances_df = balances_df.set_index("energy")
     balances_df = balances_df.drop(columns='2020')
     columns_to_convert = ['2030', '2040', '2050']
@@ -286,6 +302,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("plot_summary")
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
+    cluster = snakemake.params.scenario["clusters"][0]
     studies = ['bau', 'ncdr']
     country = snakemake.config["country_summary"]
 

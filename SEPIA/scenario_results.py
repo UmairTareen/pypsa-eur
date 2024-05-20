@@ -241,15 +241,29 @@ def scenario_capacities(country):
         ["CCGT"],
         ["nuclear"],
     ]
+    groupss = [
+        ["solar"],
+        ["onshore wind", "offshore wind"],
+        ["SMR"],
+        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["transmission lines"],
+        ["gas pipeline","gas pipeline new"],
+        ["CCGT"],
+        ["nuclear"],
+    ]
+    if country != "EU":
+        value = groups
+    else:
+        value = groupss
 
-    fig = make_subplots(rows=2, cols=len(groups) // 2, subplot_titles=[
-        f"{', '.join(tech_group)}" for tech_group in groups], shared_yaxes=True)
+    fig = make_subplots(rows=2, cols=len(value) // 2, subplot_titles=[
+        f"{', '.join(tech_group)}" for tech_group in value], shared_yaxes=True)
 
     df = combined_df
 
-    for i, tech_group in enumerate(groups, start=1):
-        row_idx = 1 if i <= len(groups) // 2 else 2
-        col_idx = i if i <= len(groups) // 2 else i - len(groups) // 2
+    for i, tech_group in enumerate(value, start=1):
+        row_idx = 1 if i <= len(value) // 2 else 2
+        col_idx = i if i <= len(value) // 2 else i - len(value) // 2
 
         for tech in tech_group:
          if tech in df.index:
@@ -311,7 +325,7 @@ def storage_capacities(country):
     fig = go.Figure()
     groups = [
         ["Grid-scale battery", "home battery", "V2G"],
-        ["H2 Store"],
+        ["H2"],
         ["Thermal Energy storage"],
         ["biogas"],
     ]

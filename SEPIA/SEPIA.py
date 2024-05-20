@@ -14,6 +14,29 @@ import pandas as pd # Read/analyse data
 import datetime # For current time
 import logging
 
+def biomass_potentials():
+    # Create an empty DataFrame
+    ALL_COUNTRIES = snakemake.params.countries
+    planning_horizons = snakemake.params.planning_horizons
+    cluster = snakemake.params.cluster
+    cluster = cluster[0]
+    df = pd.DataFrame(index=planning_horizons, columns=ALL_COUNTRIES)
+
+    # Iterate over countries and planning horizons
+    for country in ALL_COUNTRIES:
+        for planning_horizon in planning_horizons:
+            biomass_potentials_file = f"resources/{study}/biomass_potentials_s_{cluster}_{planning_horizon}.csv"
+            biomass_p = pd.read_csv(biomass_potentials_file, index_col=0)
+            
+            # Convert MWh to TWh
+            biomass_p = biomass_p / 1E6
+            biomass_p.index = biomass_p.index.str[:2]
+            biomass_p = biomass_p.groupby(biomass_p.index).sum()
+            
+            # Assign the summed biomass potential for the country and planning horizon to the DataFrame
+            df.loc[planning_horizon, country] = biomass_p.loc[country, 'solid biomass']
+
+    return df
 
 def prepare_sepia(countries):
  '''This function prepares data from excel files for sepia visulaisation'''
@@ -92,12 +115,15 @@ def prepare_sepia(countries):
      data_co2.reset_index(drop=True, inplace=False)
      data_co2=data_co2.T
 
-    '''subtract agriculture heating demand from residential and tertiary sector'''
-    data["prespaccfraa"] = data["prespaccfraa"] - data["presvapcfagr"]
-    data['pregazcfagr'] = 0.0
-    data.loc['2020', 'pregazcfagr'] = data.loc['2020', 'presvapcfagr']
-    data.loc['2020', 'presvapcfagr'] = 0
-    data.loc['2020', 'prespaccfraa'] = 0
+    # '''subtract agriculture heating demand from residential and tertiary sector'''
+    # # if study == 'ncdr':
+    # #  data["prespaccfraa"] = data["prespaccfraa"] - data["presvapcfagr"]
+    # #  data['pregazcfagr'] = 0.0
+    # #  data.loc['2020', 'pregazcfagr'] = data.loc['2020', 'presvapcfagr']
+    # #  data.loc['2020', 'presvapcfagr'] = 0
+    # #  data.loc['2020', 'prespaccfraa'] = 0
+    # # else:
+    # data["presgazcfg"] = data["presgazcfg"] - data["pregazcfagr"] - data["lossgbb"]
     
     '''Remove any duplicated data'''
     data = data.loc[:,~data.columns.duplicated()] 
@@ -148,12 +174,13 @@ def prepare_sepia(countries):
     fec_carrier_pe = flows.loc[:, selected_columns_pe]
     grouped_fec_pe = fec_carrier_pe.groupby(level='Source', axis=1).sum()
     fec_pe = grouped_fec_pe
-    for en_code in ['pac','enc']:
+    for en_code in ['pac','enc','cms']:
         flows[(en_code+'_pe',en_code+'_fe','')] = fec_pe[en_code+'_fe']
   
-    biogas_p = flows['bgl_pe','gaz_se']
-    biosng_p = flows['enc_pe','gaz_se']
-    meth_p = flows['hyd_se','gaz_se']
+    biogas_p = flows['bgl_pe','gaz_se',''].squeeze().rename_axis(None)
+    biogas_cc = flows['bgl_pe','gaz_se','cc'].squeeze().rename_axis(None)
+    biosng_p = flows['enc_pe','gaz_se',''].squeeze().rename_axis(None)
+    meth_p = flows['hyd_se','gaz_se',''].squeeze().rename_axis(None)
    
         
     selected_columns_se = flows.columns.get_level_values('Source').isin(SE_NODES)
@@ -161,7 +188,7 @@ def prepare_sepia(countries):
     grouped_fec_se = fec_carrier_se.groupby(level='Source', axis=1).sum()
     fec_se = grouped_fec_se
     for en_code in ['gaz']:
-        flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p-biosng_p-meth_p
+        flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p-biosng_p-meth_p-biogas_cc
         
     
     '''Attaching local production and imports'''
@@ -185,14 +212,10 @@ def prepare_sepia(countries):
      flows[('imp', en_code + '_pe', '')] = imp_values
      
     ''' Compute biomass imports and local production from model data'''
-    biomass_potentials = snakemake.input.biomass_potentials
-    biomass_p = pd.read_csv(biomass_potentials, index_col=0)
-    # Conver MWh to TWh
-    biomass_p = biomass_p/1E6
-    biomass_p.index = biomass_p.index.str[:2]
-    biomass_p = biomass_p.groupby(biomass_p.index).sum()
-    bm_potentials = biomass_p.loc[biomass_p.index == country, 'solid biomass'].sum()
     if country != 'EU':
+     df[country] = df[country].astype(float)
+     bm_potentials = df[[country]]
+     bm_potentials = bm_potentials.loc[:, country].values
      for en_code in ['enc']:
       flows[('prod',en_code+'_pe','')] = bm_potentials
       imp_values = fec_p[en_code + '_pe'] - bm_potentials
@@ -230,31 +253,30 @@ def prepare_sepia(countries):
     tot_emm_s = flows_co2.loc[:, tot_emm_s]
     tot_emm_s = tot_emm_s.groupby(level='Source', axis=1).sum() 
     
-    '''using co2 intensities from pypsa and compuing it from demands as on pypsa they are solved on EU level'''
-    co2_intensity_oil = options.loc[("oil", "CO2 intensity"), "value"]
+    # '''using co2 intensities from pypsa and compuing it from demands as on pypsa they are solved on EU level'''
     co2_intensity_gas = options.loc[("gas", "CO2 intensity"), "value"]
-    co2_intensity_met = options.loc[("gas", "CO2 intensity"), "value"]
-    demand_side_emm = flows.columns.get_level_values('Target').isin(DS_NODES)
-    demand_side_emm = flows.loc[:, demand_side_emm]
-    demand_side_emm = demand_side_emm.groupby(level='Target', axis=1).sum() 
-    for en_code in ['fol']:
-        values_oil_emm = fec_p['pet_pe']
-        flows_co2[(en_code + '_ghg', 'oil_ghg', '')] = values_oil_emm * co2_intensity_oil
+    co2_intensity_met = options.loc[("methanolisation", "carbondioxide-input"), "value"]
+    # demand_side_emm = flows.columns.get_level_values('Target').isin(DS_NODES)
+    # demand_side_emm = flows.loc[:, demand_side_emm]
+    # demand_side_emm = demand_side_emm.groupby(level='Target', axis=1).sum() 
+    # for en_code in ['fol']:
+    #     values_oil_emm = fec_p['pet_pe']
+    #     flows_co2[(en_code + '_ghg', 'oil_ghg', '')] = values_oil_emm * co2_intensity_oil
         
     for en_code in ['fgs']:
-        values_agr_emm = flows[('gaz_fe','agr', '')].squeeze().rename_axis(None) * co2_intensity_gas
+        # values_agr_emm = flows[('gaz_fe','agr', '')].squeeze().rename_axis(None) * co2_intensity_gas
         values_gas_emm = fec_p['gaz_pe'] 
-        flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas - values_agr_emm
+        flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
     
-    for en_code in ['oil']:
-        value_so = flows[('pet_fe', 'wati', '')].squeeze().rename_axis(None) * co2_intensity_oil
-        value_naph = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
-        value_ker = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
-        value_tra = flows[('pet_fe', 'tra', '')].squeeze().rename_axis(None) * co2_intensity_oil
-        value_tot =  value_naph * co2_intensity_oil
-        flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
-        flows_co2[(en_code + '_ghg', 'atm', 'oil')] = value_tot
-        flows_co2[(en_code + '_ghg', 'atm', 'tra')] = value_tra
+    # for en_code in ['oil']:
+    #     value_so = flows[('pet_fe', 'wati', '')].squeeze().rename_axis(None) * co2_intensity_oil
+    #     value_naph = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
+    #     value_ker = flows[('pet_fe', 'avi', '')].squeeze().rename_axis(None)
+    #     value_tra = flows[('pet_fe', 'tra', '')].squeeze().rename_axis(None) * co2_intensity_oil
+    #     value_tot =  value_naph * co2_intensity_oil
+    #     flows_co2[(en_code + '_ghg', 'atm', 'so')] = value_so
+    #     flows_co2[(en_code + '_ghg', 'atm', 'oil')] = value_tot
+    #     flows_co2[(en_code + '_ghg', 'atm', 'tra')] = value_tra
   
     
     
@@ -263,51 +285,64 @@ def prepare_sepia(countries):
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
     for en_code in ['net']:
         bm_cap = flows_co2[('atm', 'bec' + '_ghg', '')].squeeze().rename_axis(None)
+        blg_cap = flows_co2[('atm', 'blg' + '_ghg', '')].squeeze().rename_axis(None)
+        blg_cap_cc = flows_co2[('atm', 'blg' + '_ghg', 'cc')].squeeze().rename_axis(None)
         dac_cap = flows_co2[('atm', 'stm', '')].squeeze().rename_axis(None)
         bm_cap = bm_cap.sum(axis=1)
-        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['blg_ghg'] - tot_emm['luf_ghg'] - bm_cap - dac_cap
+        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['luf_ghg'] - bm_cap - dac_cap - blg_cap - blg_cap_cc
         flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm
         
-    for en_code in ['pet']:
-        flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
-        flows_ghg[('tra_ghg',  en_code + '_pe', '')] = value_tra
+    if country != 'EU':
+     for en_code in ['met']:
+      met_dem = fec_pe[en_code + '_fe']
+      met_pro = flows[('hyd_se',en_code + '_fe', '')].squeeze().rename_axis(None)
+      imp_met = (met_dem - met_pro) * co2_intensity_met 
+      flows_co2[('hth_ghg',en_code + '_ghg', '')] = imp_met
+      exp_met = (met_pro - met_dem) * co2_intensity_met
+      flows_co2[(en_code + '_ghg',  'eth_ghg', '')] = exp_met
+    # for en_code in ['pet']:
+    #     flows_ghg[('ind_ghg',  en_code + '_pe', 'oil')] = value_tot
+    #     flows_ghg[('tra_ghg',  en_code + '_pe', '')] = value_tra
        
-    for en_code in ['wati']:
-        flows_ghg[(en_code + '_ghg', 'pet_pe',  '')] =value_so
+    # for en_code in ['wati']:
+    #     flows_ghg[(en_code + '_ghg', 'pet_pe',  '')] =value_so
     
-    for en_code in ['pet']:
-        if flows[('hyd_se',en_code + '_fe',  '')].squeeze().rename_axis(None).sum()>0:
-            pet_pro = flows[('hyd_se', en_code + '_fe', '')].squeeze().rename_axis(None)
-            pet_bm = flows[('enc_pe', en_code + '_fe', '')].squeeze().rename_axis(None)
-            value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) 
-            tot_pet = pet_pro + pet_bm 
-            exp_pet = tot_pet - value_ker - value_naph -  value_agr
-            flows[(en_code + '_fe', 'exp', '')] = exp_pet
+    # for en_code in ['pet']:
+    #     if flows[('hyd_se',en_code + '_fe',  '')].squeeze().rename_axis(None).sum()>0:
+    #         pet_pro = flows[('hyd_se', en_code + '_fe', '')].squeeze().rename_axis(None)
+    #         pet_bm = flows[('enc_pe', en_code + '_fe', '')].squeeze().rename_axis(None)
+    #         value_agr = flows[('pet_fe', 'agr', '')].squeeze().rename_axis(None) 
+    #         tot_pet = pet_pro + pet_bm 
+    #         exp_pet = tot_pet - value_ker - value_naph -  value_agr
+    #         flows[(en_code + '_fe', 'exp', '')] = exp_pet
  
     for en_code in ['gaz']:
         if (
     (flows[('hyd_se', en_code + '_se',  '')].squeeze().rename_axis(None).sum() > 0) or
-    (flows[('bgl_pe', en_code + '_se',  '')].squeeze().rename_axis(None).sum() > 0)):
-            tot_pro = biogas_p + biosng_p + meth_p
+    (flows[('bgl_pe', en_code + '_se',  'cc')].squeeze().rename_axis(None).sum() > 0)):
+            tot_pro = biogas_p + biosng_p + meth_p + biogas_cc
             gas_dem = flows[(en_code + '_se', en_code + '_fe','')].squeeze().rename_axis(None)
             gas_los = flows[(en_code + '_se', 'per','')].squeeze().rename_axis(None)
             if isinstance(gas_los, pd.DataFrame):
-             gas_los = gas_los.sum(axis=1)
+              gas_los = gas_los.sum(axis=1)
             gas_elc = flows[(en_code + '_se', 'elc_se', '')].squeeze().rename_axis(None)
             if isinstance(gas_elc, pd.DataFrame):
-             gas_elc = gas_elc.sum(axis=1)
+              gas_elc = gas_elc.sum(axis=1)
             gas_vap = flows[(en_code + '_se', 'vap_se', '')].squeeze().rename_axis(None)
             if isinstance(gas_vap, pd.DataFrame):
-             gas_vap = gas_vap.sum(axis=1)
-            tot_dem = gas_dem + gas_los + gas_elc + gas_vap
+              gas_vap = gas_vap.sum(axis=1)
+            gas_smr = flows[(en_code + '_se', 'hyd_se', 'smr')].squeeze().rename_axis(None)
+            if isinstance(gas_smr, pd.DataFrame):
+              gas_smr = gas_smr.sum(axis=1)
+            tot_dem = gas_dem + gas_los + gas_elc + gas_vap + gas_smr
             exp_gas = tot_pro - tot_dem
             flows[(en_code + '_se', 'exp', '')] = exp_gas
     for en_code in ['exg']:
         exp_emm = flows[('gaz' + '_se', 'exp', '')].squeeze().rename_axis(None) * co2_intensity_gas
         flows_co2[('gas_ghg',en_code + '_ghg', '')] = exp_emm
-    for en_code in ['ext']:
-        exp_emm_p = flows[('pet' + '_fe', 'exp', '')].squeeze().rename_axis(None) * co2_intensity_oil
-        flows_co2[('oil_ghg',en_code + '_ghg', '')] = exp_emm_p
+    # for en_code in ['ext']:
+    #     exp_emm_p = flows[('pet' + '_fe', 'exp', '')].squeeze().rename_axis(None) * co2_intensity_oil
+    #     flows_co2[('oil_ghg',en_code + '_ghg', '')] = exp_emm_p
     
     
     
@@ -373,9 +408,10 @@ def prepare_sepia(countries):
     cov_ratios = 100 * ps_cons.subtract(cov_imports, fill_value=0).filter(impexp_carriers) / ps_cons.subtract(cov_exports, fill_value=0).filter(impexp_carriers)
     value_gaz = flows_bk[('gaz_pe', 'gaz_se', '')].squeeze().rename_axis(None)
     value_biogas = flows_bk[('bgl_pe', 'gaz_se', '')].squeeze().rename_axis(None)
+    value_biogas_cc = flows_bk[('bgl_pe', 'gaz_se', 'cc')].squeeze().rename_axis(None)
     value_bl = flows_bk[('enc_pe', 'gaz_se', '')].squeeze().rename_axis(None)
     value_hy = flows_bk[('hyd_se', 'gaz_se', '')].squeeze().rename_axis(None)
-    value_total = ((value_biogas + value_bl + value_hy)/(value_gaz + value_biogas + value_bl + value_hy))*100
+    value_total = ((value_biogas + value_biogas_cc + value_bl + value_hy)/(value_gaz + value_biogas + value_biogas_cc + value_bl + value_hy))*100
     cov_ratios['gaz_se'] = value_total
     value_petr = flows_bk[('pet_pe', 'pet_fe', '')].squeeze().rename_axis(None)
     value_biml = flows_bk[('enc_pe', 'pet_fe', '')].squeeze().rename_axis(None)
@@ -658,6 +694,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     countries = snakemake.params.countries
-    
+    study = snakemake.params.study
+    df = biomass_potentials()
     prepare_sepia(countries)
 
