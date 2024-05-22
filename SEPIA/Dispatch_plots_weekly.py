@@ -195,6 +195,10 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
         supplyn = supplyn.T
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
+        positive_supplyn = positive_supplyn.applymap(lambda x: x if x >= 0.1 else 0)
+        negative_supplyn = negative_supplyn.applymap(lambda x: x if x <= -0.1 else 0)
+        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn > 0).any()]
+        negative_supplyn = negative_supplyn.loc[:, (negative_supplyn < 0).any()]
         weeks = positive_supplyn.index.isocalendar().week.unique()
         fig = go.Figure()
         slider_steps = []
@@ -228,10 +232,21 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
             mode='lines',
             line=dict(color=colors.get(col, 'black')),
             stackgroup='negative',
-            legendgroup='supply',
+            showlegend=False,
             hovertemplate='%{y:.2f}',
             name=f'{col} - Week {week}'))
-         
+          
+        for col in positive_supplyn.columns.union(negative_supplyn.columns):
+            for i, week in enumerate(weeks):
+                fig.add_trace(go.Scatter(
+                    x=[None],
+                    y=[None],
+                    mode='lines',
+                    line=dict(color=colors.get(col, 'black'), width=4),  # Set the line width here
+                    legendgroup='supply',
+                    showlegend=True,
+                    name=f'{col}'
+                ))
         fig.update_layout(
          xaxis=dict(title='Time', tickformat="%m-%d"),
          yaxis=dict(title='Power [GW]',),
@@ -341,6 +356,10 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,titl
         supplyn = supplyn.groupby(supplyn.columns, axis=1).sum()
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
+        positive_supplyn = positive_supplyn.applymap(lambda x: x if x >= 0.1 else 0)
+        negative_supplyn = negative_supplyn.applymap(lambda x: x if x <= -0.1 else 0)
+        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn > 0).any()]
+        negative_supplyn = negative_supplyn.loc[:, (negative_supplyn < 0).any()]
         weeks = positive_supplyn.index.isocalendar().week.unique()
         fig = go.Figure()
         slider_steps = []
@@ -374,10 +393,21 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,titl
             mode='lines',
             line=dict(color=colors.get(col, 'black')),
             stackgroup='negative',
-            legendgroup='supply',
+            showlegend=False,
             hovertemplate='%{y:.2f}',
             name=f'{col} - Week {week}'))
-         
+        
+        for col in positive_supplyn.columns.union(negative_supplyn.columns):
+            for i, week in enumerate(weeks):
+                fig.add_trace(go.Scatter(
+                    x=[None],
+                    y=[None],
+                    mode='lines',
+                    line=dict(color=colors.get(col, 'black'), width=4),  # Set the line width here
+                    legendgroup='supply',
+                    showlegend=True,
+                    name=f'{col}'
+                ))
         fig.update_layout(
          xaxis=dict(title='Time', tickformat="%m-%d"),
          yaxis=dict(title='Heat [GW]',),
