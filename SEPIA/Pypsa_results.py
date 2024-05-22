@@ -1087,18 +1087,6 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
             like="offwind", axis=1
          ).sum(axis=1) / 1e3
         supplyn = supplyn.T
-        # energy_sources = ["solar", "onshore wind", "offshore wind"]
-        # for source in energy_sources:
-        # # Check if the energy source exists in the supply
-        #  if source in supplyn.index:
-        #   # Perform the desired operations
-        #   supplyn.loc[source] += c_solarn if source == "solar" else 0
-        #   supplyn.loc[source] += c_onwindn if source == "onshore wind" else 0
-        #   supplyn.loc[source] += c_offwindn if source == "offshore wind" else 0
-        
-        #   supplyn.loc[f"{source} curtailment"] = -abs(c_solarn) if source == "solar" else 0
-        #   supplyn.loc[f"{source} curtailment"] = -abs(c_onwindn) if source == "onshore wind" else 0
-        #   supplyn.loc[f"{source} curtailment"] = -abs(c_offwindn) if source == "offshore wind" else 0
         if "solar" in supplyn.index:
          supplyn.loc["solar"] = supplyn.loc["solar"] + c_solarn
          supplyn.loc["solar curtailment"] = -abs(c_solarn)
@@ -1115,42 +1103,52 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
         
         positive_supplyn = positive_supplyn.loc[start:stop]
         negative_supplyn = negative_supplyn.loc[start:stop]
-        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn != 0).any()]
+        positive_supplyn = positive_supplyn.applymap(lambda x: x if x >= 0.1 else 0)
+        negative_supplyn = negative_supplyn.applymap(lambda x: x if x <= -0.1 else 0)
+        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn > 0).any()]
+        negative_supplyn = negative_supplyn.loc[:, (negative_supplyn < 0).any()]
         
 
         
         fig = go.Figure()
 
         for col in positive_supplyn.columns:
-         fig.add_trace(go.Scatter(
-         x=positive_supplyn.index,
-         y=positive_supplyn[col],
-         mode='lines',
-         line=dict(color=colors.get(col, 'black')),
-         stackgroup='positive',
-         showlegend=False,
-         hovertemplate='%{y:.2f}',
-         name=col))
+            fig.add_trace(go.Scatter(
+                x=positive_supplyn.index,
+                y=positive_supplyn[col],
+                mode='lines',
+                line=dict(color=colors.get(col, 'black')),
+                stackgroup='positive',
+                showlegend=False,
+                hovertemplate='%{y:.2f}',
+                name=col
+            ))
 
         for col in negative_supplyn.columns:
-         fig.add_trace(go.Scatter(
-         x=negative_supplyn.index,
-         y=negative_supplyn[col],
-         mode='lines',
-         line=dict(color=colors.get(col, 'black')),
-         stackgroup='negative',
-         legendgroup='supply',
-         hovertemplate='%{y:.2f}',
-         name=col ))
+            fig.add_trace(go.Scatter(
+                x=negative_supplyn.index,
+                y=negative_supplyn[col],
+                mode='lines',
+                line=dict(color=colors.get(col, 'black')),
+                stackgroup='negative',
+                showlegend=False,
+                hovertemplate='%{y:.2f}',
+                name=col
+            ))
          
-        fig.add_trace(go.Scatter(
-         x=[None],
-         y=[None],
-         mode='lines',
-         line=dict(color='white'),
-         legendgroup='supply',
-         showlegend=True,
-         name=''))
+        # Collect unique column names from both positive_supplyn and negative_supplyn
+        unique_columns = set(positive_supplyn.columns).union(set(negative_supplyn.columns))
+        # Add a dummy trace for each unique column name to the legend
+        for col in unique_columns:
+            fig.add_trace(go.Scatter(
+                x=[None],
+                y=[None],
+                mode='lines',
+                line=dict(color=colors.get(col, 'black'), width=4),
+                legendgroup='supply',
+                showlegend=True,
+                name=col
+            ))
         # Update layout to customize axes, title, etc.
         fig.update_layout(
          xaxis=dict(title='Time', tickformat="%m-%d"),
@@ -1289,42 +1287,52 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 
         positive_supplyn = positive_supplyn.loc[start:stop]
         negative_supplyn = negative_supplyn.loc[start:stop]
-        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn != 0).any()]
+        positive_supplyn = positive_supplyn.applymap(lambda x: x if x >= 0.1 else 0)
+        negative_supplyn = negative_supplyn.applymap(lambda x: x if x <= -0.1 else 0)
+        positive_supplyn = positive_supplyn.loc[:, (positive_supplyn > 0).any()]
+        negative_supplyn = negative_supplyn.loc[:, (negative_supplyn < 0).any()]
         
 
         
         fig = go.Figure()
 
         for col in positive_supplyn.columns:
-         fig.add_trace(go.Scatter(
-         x=positive_supplyn.index,
-         y=positive_supplyn[col],
-         mode='lines',
-         line=dict(color=colors.get(col, 'black')),
-         stackgroup='positive',
-         showlegend=False,
-         hovertemplate='%{y:.2f}',
-         name=col))
+            fig.add_trace(go.Scatter(
+                x=positive_supplyn.index,
+                y=positive_supplyn[col],
+                mode='lines',
+                line=dict(color=colors.get(col, 'black')),
+                stackgroup='positive',
+                showlegend=False,
+                hovertemplate='%{y:.2f}',
+                name=col
+            ))
 
         for col in negative_supplyn.columns:
-         fig.add_trace(go.Scatter(
-         x=negative_supplyn.index,
-         y=negative_supplyn[col],
-         mode='lines',
-         line=dict(color=colors.get(col, 'black')),
-         stackgroup='negative',
-         legendgroup='supply',
-         hovertemplate='%{y:.2f}',
-         name=col ))
+            fig.add_trace(go.Scatter(
+                x=negative_supplyn.index,
+                y=negative_supplyn[col],
+                mode='lines',
+                line=dict(color=colors.get(col, 'black')),
+                stackgroup='negative',
+                showlegend=False,
+                hovertemplate='%{y:.2f}',
+                name=col
+            ))
          
-        fig.add_trace(go.Scatter(
-         x=[None],
-         y=[None],
-         mode='lines',
-         line=dict(color='white'),
-         legendgroup='supply',
-         showlegend=True,
-         name=''))
+        # Collect unique column names from both positive_supplyn and negative_supplyn
+        unique_columns = set(positive_supplyn.columns).union(set(negative_supplyn.columns))
+        # Add a dummy trace for each unique column name to the legend
+        for col in unique_columns:
+            fig.add_trace(go.Scatter(
+                x=[None],
+                y=[None],
+                mode='lines',
+                line=dict(color=colors.get(col, 'black'), width=4),
+                legendgroup='supply',
+                showlegend=True,
+                name=col
+            ))
         # Update layout to customize axes, title, etc.
         fig.update_layout(
          xaxis=dict(title='Time', tickformat="%m-%d"),
