@@ -51,143 +51,540 @@ GRID_CODE,CLC_CODE,LABEL1,LABEL2,LABEL3,RGB
 
 """
 
-#import geopandas as gpd
-#import atlite
+import geopandas as gpd
+import atlite
+import matplotlib.pyplot as plt
+from atlite.gis import ExclusionContainer, shape_availability
+from rasterio.plot import show
 import xarray as xr
-import plotly.graph_objects as go
-import plotly.offline as pyo
-#from atlite.gis import shape_availability, ExclusionContainer
-from plotly.subplots import make_subplots
+import os
+import base64
+import yaml
+import functools
+import numpy as np
+import pandas as pd
 
-offwind_ac = xr.open_dataset('../resources/bau/profile_offwind-ac.nc')
-
-data = xr.open_dataset('../results/bau/prenetworks/elec_s_6_lvopt__EQ0.7c-12H-T-H-B-I-A-dist1_2050.nc')
-pmax = data.generators_p_nom_max
-pnow = data.generators_p_nom
-
-bus = 'BE1 0'
-
-wind_generators = [gen for gen in pmax.generators_i.values if 'wind' in gen and bus in gen]
-solar_generators = [gen for gen in pmax.generators_i.values if bus + ' solar' in gen]
-
-for gen in wind_generators+solar_generators:
-    max_power = pmax.sel(generators_i=gen).max().item()
-    print(f"Maximum power for {gen}: {max_power}")
-
-for gen in  wind_generators+solar_generators:
-    power = pnow.sel(generators_i=gen).max().item()
-    print(f"Installed power for {gen}: {power}")
-
-
-
-
-
-'''
-def plot_onshore_wind_potential(shapes, cutout, excluder):
-    cap_per_sqkm = 3
-    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
-    area = xr.DataArray(area, dims=('spatial'))
-
-    A = cutout.availabilitymatrix(shapes, excluder)
-    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
-
-    cutout.prepare()
-    wind_on = cutout.wind(matrix=capacity_matrix, turbine=atlite.windturbines.Vestas_V112_3MW,
-                          index=shapes.index)
-
-    return wind_on
-
-def plot_solar_potential(shapes, cutout, excluder):
-    cap_per_sqkm = 2
-    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
-    area = xr.DataArray(area, dims=('spatial'))
-    A = cutout.availabilitymatrix(shapes, excluder)
-    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
-
-    cutout.prepare()
-    pv = cutout.pv(matrix=capacity_matrix, panel=atlite.solarpanels.CSi,
-                  orientation='latitude_optimal', index=shapes.index)
-
-    return pv
-
-def plot_offshore_wind_potential(offshore_shapes, cutout, excluder):
-    cap_per_sqkm = 3
-    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
-    area = xr.DataArray(area, dims=('spatial'))
-
-    A = cutout.availabilitymatrix(offshore_shapes, excluder)
-    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
-
-    cutout.prepare()
-    wind = cutout.wind(matrix=capacity_matrix, turbine=atlite.windturbines.NREL_ReferenceTurbine_5MW_offshore,
-                      index=offshore_shapes.index)
-
-    return wind
-
-
-def save_combined_plot_to_html(onshore_wind, offshore_wind, solar_pv, country_name, index_column):
-    df_onshore = onshore_wind.to_pandas().div(1e3).reset_index()
-    df_offshore = offshore_wind.to_pandas().div(1e3).reset_index()
-    df_solar = solar_pv.to_pandas().div(1e3).reset_index()
-
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True,
-                        subplot_titles=['Onshore Wind Potential [GW]', 'Offshore Wind Potential [GW]', 'Solar Potential [GW]'])
-
-    for col in df_onshore.columns[1:]:
-        fig.add_scatter(x=df_onshore['time'], y=df_onshore[col], mode='lines', name='Onshore Wind', line_color='green', row=1, col=1)
-
-    for col in df_offshore.columns[1:]:
-        fig.add_scatter(x=df_offshore['time'], y=df_offshore[col], mode='lines', name='Offshore Wind', line_color='blue', row=2, col=1)
-
-    for col in df_solar.columns[1:]:
-        fig.add_scatter(x=df_solar['time'], y=df_solar[col], mode='lines', name='Solar PV', line_color='orange', row=3, col=1)
-
-    fig.update_layout(xaxis_title='Time')
-    fig.update_xaxes(tickformat="%b")
-
-    fig.write_html(f"output_charts/{country_name}_combined_potentials.html")
-
-def max_combined_capacities():
+def generate_max_onshore_potentials(country, output_html):
+    plt.rcParams['figure.figsize'] = [7, 7]
+    
+    with open("../config/config.yaml") as file:
+     config = yaml.safe_load(file)
+     
+    corine_grid_codes = config['renewable']['onwind']['corine']['grid_codes']
+    distance_codes = config['renewable']['onwind']['corine']['distance_grid_codes']
+    buffer = config['renewable']['onwind']['corine']['distance']
+    capacity = config['renewable']['onwind']['capacity_per_sqkm']
+    # Load world shapes
     world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+
+    # Filter for specified countries
+    shapes = world[world.name.isin(countries)].set_index('name')
+    shapes.plot()
+
+    # Define bounds and create cutout
+    bounds = shapes.unary_union.buffer(0.5).bounds
+    cutout = atlite.Cutout(
+        path=f"{country}.nc",
+        module="era5",
+        bounds=bounds,
+        time=slice('2013-01-01', '2013-12-31')
+    )
+
+    # Directory to save images
+    image_dir = 'max_vre_potential_charts/images_onshore'
+    os.makedirs(image_dir, exist_ok=True)
+
+    # Create figures and save them as images
+    fig_list = []
+    titles = [
+        "Country Shape",
+        "Eligible Area (Green) - Onshore",
+        "Eligible Area with Grid cells",
+        "Capacity Factor for eligible area",
+        "Maximum Onshore Wind Potential"
+    ]
+
+    fig1, ax1 = plt.subplots(figsize=(6, 6))
+    shapes.plot(ax=ax1,color='green')
+    cutout.grid.plot(ax=ax1, edgecolor='grey', color='None')
+    fig1_path = os.path.join(image_dir, 'fig1.png')
+    fig1.savefig(fig1_path)
+    fig_list.append(fig1_path)
+    print(f"Saved {fig1_path}")
+
+    CORINE = '../data/bundle/corine/g250_clc06_V18_5.tif'
+    excluder = ExclusionContainer()
+    excluder.add_raster(CORINE, codes=corine_grid_codes,crs=3035, invert=True)
+    excluder.add_raster(CORINE, codes=distance_codes, buffer=buffer,crs=3035)
+    exc = shapes.loc[[country]].geometry.to_crs(excluder.crs)
+    masked, transform = shape_availability(exc, excluder)
+    eligible_share = masked.sum() * excluder.res**2 / exc.geometry.item().area
+
+    fig2, ax2 = plt.subplots()
+    show(masked, transform=transform, cmap='Greens', ax=ax2)
+    exc.plot(ax=ax2, edgecolor='k', color='None')
+    ax2.set_title(f'Eligible area (green) {eligible_share * 100:2.2f}%')
+    fig2_path = os.path.join(image_dir, 'fig2.png')
+    fig2.savefig(fig2_path)
+    fig_list.append(fig2_path)
+    print(f"Saved {fig2_path}")
+
+    fig3, ax3 = plt.subplots()
+    show(masked, transform=transform, cmap='Greens', ax=ax3)
+    exc.plot(ax=ax3, edgecolor='k', color='None')
+    cutout.grid.to_crs(excluder.crs).plot(edgecolor='grey', color='None', ax=ax3, ls=':')
+    ax3.set_title(f'Eligible area (green) {eligible_share * 100:2.2f}%')
+    fig3_path = os.path.join(image_dir, 'fig3.png')
+    fig3.savefig(fig3_path)
+    fig_list.append(fig3_path)
+    print(f"Saved {fig3_path}")
+
+    A = cutout.availabilitymatrix(shapes, excluder)
+    A.name = "Capacity Factor"
+
+    fig4, ax4 = plt.subplots()
+    A.sel(name=country).plot(cmap='Greens')
+    shapes.loc[[country]].plot(ax=ax4, edgecolor='k', color='None')
+    cutout.grid.plot(ax=ax4, color='None', edgecolor='grey', ls=':')
+    fig4_path = os.path.join(image_dir, 'fig4.png')
+    fig4.savefig(fig4_path)
+    fig_list.append(fig4_path)
+    print(f"Saved {fig4_path}")
+
+    cap_per_sqkm = capacity
+    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
+    area = xr.DataArray(area, dims=('spatial'))
+
+    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
+    cutout.prepare()
+    wind = cutout.wind(matrix=capacity_matrix, turbine=atlite.windturbines.Vestas_V112_3MW, index=shapes.index)
+
+    fig5, ax5 = plt.subplots(figsize=(14, 7))
+    wind.to_pandas().div(1e3).plot(ylabel='Onshore Wind [GW]',fontsize=14, ax=ax5, color='green')
+    ax5.set_ylabel('Onshore Wind [GW]', fontsize=14)
+    fig5_path = os.path.join(image_dir, 'fig5.png')
+    fig5.savefig(fig5_path)
+    fig_list.append(fig5_path)
+    print(f"Saved {fig5_path}")
+
+    # Generate HTML file
+    with open(output_html, 'w') as f:
+        f.write('<html><head><title>Figures</title></head><body>\n')
+        for fig_path, title in zip(fig_list, titles):
+            if os.path.exists(fig_path):
+                with open(fig_path, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                f.write(f'<h2>Figure:    {title}</h2>\n')
+                f.write(f'<img src="data:image/png;base64,{encoded_string}" alt="{os.path.basename(fig_path)}" style="width:60%; height:auto;"><br>\n')
+            else:
+                print(f"Image {fig_path} not found.")
+        f.write('</body></html>')
+    print(f"HTML file saved at {output_html}")
+
+
+def generate_max_offshore_ac_potentials(country, output_html):
+    plt.rcParams['figure.figsize'] = [7, 7]
+    
+    with open("../config/config.yaml") as file:
+     config = yaml.safe_load(file)
+     
+    corine_grid_codes = config['renewable']['offwind-ac']['corine']
+    max_shore_distance = config['renewable']['offwind-ac']['max_shore_distance']
+    capacity = config['renewable']['offwind-ac']['capacity_per_sqkm']
+    ship_threshold = config['renewable']['offwind-ac']['ship_threshold']
+    shipping_threshold = (
+        ship_threshold * 8760 * 6
+    ) 
+    func = functools.partial(np.less, shipping_threshold)
+    max_depth = config['renewable']['offwind-ac']['max_depth']
+    func = functools.partial(np.greater, -max_depth)
+    excluder_resolution = config['renewable']['offwind-ac']['excluder_resolution']
+    
+    country_shape = "../resources/ncdr/country_shapes.geojson"
     eez_path = "../data/bundle/eez/World_EEZ_v8_2014.shp"
     eez = gpd.read_file(eez_path)
-    Countries = ['Belgium', 'France', 'Germany', 'Netherlands', 'United Kingdom']
+    # separator = ", "
+    # country= separator.join(country)
+    # Filter for specified countries
+    shapes = eez[eez['Country'] == country]
+    shapes.plot()
+    
+    # Define bounds and create cutout
+    bounds = shapes.unary_union.buffer(0.5).bounds
+    cutout = atlite.Cutout(country, module='era5', bounds=bounds, time=slice('2013-01-01', '2013-12-31'))
 
-    for country_name in Countries:
-        shapes = world[world.name == country_name].set_index('name')
-        offshore_shapes = eez[eez['Country'] == country_name]
+    # Directory to save images
+    image_dir = 'max_vre_potential_charts/images_offshore_ac'
+    os.makedirs(image_dir, exist_ok=True)
 
+    # Create figures and save them as images
+    fig_list = []
+    titles = [
+        "Country Shape",
+        "Eligible Area (Green) - Offshore-ac",
+        "Eligible Area with Grid cells",
+        "Capacity Factor for eligible area",
+        "Maximum Offshore-ac Wind Potential"
+    ]
 
-        # Load CORINE raster file for onshore wind
-        CORINE = '../resources/natura.tiff'
-        excluder_onshore = atlite.ExclusionContainer()
-        excluder_onshore.add_raster(CORINE, codes=[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32], invert=True)
+    fig1, ax1 = plt.subplots(figsize=(6, 6))
+    shapes.plot(ax=ax1,color='blue')
+    cutout.grid.plot(ax=ax1, edgecolor='grey', color='None')
+    fig1_path = os.path.join(image_dir, 'fig1.png')
+    fig1.savefig(fig1_path)
+    fig_list.append(fig1_path)
+    print(f"Saved {fig1_path}")
 
-        # Load CORINE raster file for offshore wind
-        excluder_offshore = atlite.ExclusionContainer()
-        excluder_offshore.add_raster(CORINE, codes=[42, 43, 44, 255], invert=True)
+    CORINE = '../data/bundle/corine/g250_clc06_V18_5.tif'
+    ship_density = '../resources/ncdr/shipdensity_raster.tif'
+    gebco = '../data/bundle/GEBCO_2014_2D.nc'
+    excluder = ExclusionContainer(crs=3035, res = excluder_resolution)
+    excluder.add_raster(CORINE, codes=corine_grid_codes,crs=3035, invert=True)
+    excluder.add_raster(ship_density, codes=func, crs=4326, allow_no_overlap=True)
+    excluder.add_raster(gebco, codes=func, crs=4326, nodata=-1000)
+    excluder.add_geometry(country_shape, buffer=max_shore_distance, invert=True)
+    exc = shapes.geometry.to_crs(excluder.crs)
+    masked, transform = shape_availability(exc, excluder)
+    eligible_share = masked.sum() * excluder.res**2 / exc.geometry.item().area
 
-        # Load CORINE raster file for solar PV
-        excluder_pv = atlite.ExclusionContainer()
-        excluder_pv.add_raster(CORINE, codes=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 26, 31, 32], invert=True)
+    fig2, ax2 = plt.subplots()
+    show(masked, transform=transform, cmap='Blues', ax=ax2)
+    exc.plot(ax=ax2, edgecolor='k', color='None')
+    ax2.set_title(f'Eligible area (green) {eligible_share * 100:2.2f}%')
+    fig2_path = os.path.join(image_dir, 'fig2.png')
+    fig2.savefig(fig2_path)
+    fig_list.append(fig2_path)
+    print(f"Saved {fig2_path}")
 
-        # Create a cutout for onshore wind, offshore wind, and solar PV
-        cutout = atlite.Cutout('../cutouts/europe-2013-era5.nc')
+    fig3, ax3 = plt.subplots()
+    show(masked, transform=transform, cmap='Blues', ax=ax3)
+    exc.plot(ax=ax3, edgecolor='k', color='None')
+    cutout.grid.to_crs(excluder.crs).plot(edgecolor='grey', color='None', ax=ax3, ls=':')
+    ax3.set_title(f'Eligible area (blue) {eligible_share * 100:2.2f}%')
+    fig3_path = os.path.join(image_dir, 'fig3.png')
+    fig3.savefig(fig3_path)
+    fig_list.append(fig3_path)
+    print(f"Saved {fig3_path}")
 
-        shapes_crs_onshore = shapes.geometry.to_crs(excluder_onshore.crs)
-        shapes_crs_offshore = offshore_shapes.geometry.to_crs(excluder_offshore.crs)
-        shapes_crs_pv = shapes.geometry.to_crs(excluder_pv.crs)
+    A = cutout.availabilitymatrix(shapes, excluder)
+    A.name = "Capacity Factor"
 
-        masked_onshore, transform_onshore = shape_availability(shapes_crs_onshore, excluder_onshore)
-        masked_offshore, transform_offshore = shape_availability(shapes_crs_offshore, excluder_offshore)
-        masked_pv, transform_pv = shape_availability(shapes_crs_pv, excluder_pv)
+    fig4, ax4 = plt.subplots()
+    A.plot(cmap='Blues')
+    shapes.plot(ax=ax4, edgecolor='k', color='None')
+    cutout.grid.plot(ax=ax4, color='None', edgecolor='grey', ls=':')
+    ax4.set_title(country)
+    fig4_path = os.path.join(image_dir, 'fig4.png')
+    fig4.savefig(fig4_path)
+    fig_list.append(fig4_path)
+    print(f"Saved {fig4_path}")
 
-        onshore_wind = plot_onshore_wind_potential(shapes, cutout, excluder_onshore)
-        offshore_wind = plot_offshore_wind_potential(offshore_shapes, cutout, excluder_offshore)
-        solar_pv = plot_solar_potential(shapes, cutout, excluder_pv)
+    cap_per_sqkm = capacity
+    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
+    area = xr.DataArray(area, dims=('spatial'))
 
-        save_combined_plot_to_html(onshore_wind, offshore_wind, solar_pv, country_name, shapes.index[0])
+    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
+    cutout.prepare()
+    wind = cutout.wind(matrix=capacity_matrix, turbine=atlite.windturbines.NREL_ReferenceTurbine_5MW_offshore, index=shapes.index)
 
-max_combined_capacities()
+    fig5, ax5 = plt.subplots(figsize=(14, 7))
+    wind.to_pandas().div(1e3).plot(ylabel='Onshore Wind [GW]',fontsize=14, ax=ax5, color='blue')
+    ax5.set_ylabel('Offshore-ac Wind [GW]', fontsize=14)
+    fig5_path = os.path.join(image_dir, 'fig5.png')
+    fig5.savefig(fig5_path)
+    fig_list.append(fig5_path)
+    print(f"Saved {fig5_path}")
 
-'''
+    # Generate HTML file
+    with open(output_html, 'w') as f:
+        f.write('<html><head><title>Figures</title></head><body>\n')
+        for fig_path, title in zip(fig_list, titles):
+            if os.path.exists(fig_path):
+                with open(fig_path, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                f.write(f'<h2>Figure:    {title}</h2>\n')
+                f.write(f'<img src="data:image/png;base64,{encoded_string}" alt="{os.path.basename(fig_path)}" style="width:60%; height:auto;"><br>\n')
+            else:
+                print(f"Image {fig_path} not found.")
+        f.write('</body></html>')
+    print(f"HTML file saved at {output_html}")
+    
+    
+def generate_max_offshore_dc_potentials(country, output_html):
+    plt.rcParams['figure.figsize'] = [7, 7]
+    
+    with open("../config/config.yaml") as file:
+     config = yaml.safe_load(file)
+     
+    corine_grid_codes = config['renewable']['offwind-dc']['corine']
+    min_shore_distance = config['renewable']['offwind-dc']['min_shore_distance']
+    ship_threshold = config['renewable']['offwind-dc']['ship_threshold']
+    capacity = config['renewable']['offwind-dc']['capacity_per_sqkm']
+    shipping_threshold = (
+        ship_threshold * 8760 * 6
+    ) 
+    func = functools.partial(np.less, shipping_threshold)
+    max_depth = config['renewable']['offwind-dc']['max_depth']
+    func = functools.partial(np.greater, -max_depth)
+    excluder_resolution = config['renewable']['offwind-dc']['excluder_resolution']
+    
+    country_shape = "../resources/ncdr/country_shapes.geojson"
+    eez_path = "../data/bundle/eez/World_EEZ_v8_2014.shp"
+    eez = gpd.read_file(eez_path)
+    # separator = ", "
+    # country= separator.join(country)
+    # Filter for specified countries
+    shapes = eez[eez['Country'] == country]
+    shapes.plot()
+    
+    # Define bounds and create cutout
+    bounds = shapes.unary_union.buffer(0.5).bounds
+    cutout = atlite.Cutout(country, module='era5', bounds=bounds, time=slice('2013-01-01', '2013-12-31'))
+
+    # Directory to save images
+    image_dir = 'max_vre_potential_charts/images_offshore_dc'
+    os.makedirs(image_dir, exist_ok=True)
+
+    # Create figures and save them as images
+    fig_list = []
+    titles = [
+        "Country Shape",
+        "Eligible Area (Green) - Offshore-dc",
+        "Eligible Area with Grid cells",
+        "Capacity Factor for eligible area",
+        "Maximum Offshore-dc Wind Potential"
+    ]
+
+    fig1, ax1 = plt.subplots(figsize=(6, 6))
+    shapes.plot(ax=ax1,color='purple')
+    cutout.grid.plot(ax=ax1, edgecolor='grey', color='None')
+    fig1_path = os.path.join(image_dir, 'fig1.png')
+    fig1.savefig(fig1_path)
+    fig_list.append(fig1_path)
+    print(f"Saved {fig1_path}")
+
+    CORINE = '../data/bundle/corine/g250_clc06_V18_5.tif'
+    ship_density = '../resources/ncdr/shipdensity_raster.tif'
+    gebco = '../data/bundle/GEBCO_2014_2D.nc'
+    excluder = ExclusionContainer(crs=3035, res = excluder_resolution)
+    excluder.add_raster(CORINE, codes=corine_grid_codes,crs=3035, invert=True)
+    excluder.add_raster(ship_density, codes=func, crs=4326, allow_no_overlap=True)
+    excluder.add_raster(gebco, codes=func, crs=4326, nodata=-1000)
+    excluder.add_geometry(country_shape, buffer=min_shore_distance)
+    exc = shapes.geometry.to_crs(excluder.crs)
+    masked, transform = shape_availability(exc, excluder)
+    eligible_share = masked.sum() * excluder.res**2 / exc.geometry.item().area
+
+    fig2, ax2 = plt.subplots()
+    show(masked, transform=transform, cmap='Purples', ax=ax2)
+    exc.plot(ax=ax2, edgecolor='k', color='None')
+    ax2.set_title(f'Eligible area (green) {eligible_share * 100:2.2f}%')
+    fig2_path = os.path.join(image_dir, 'fig2.png')
+    fig2.savefig(fig2_path)
+    fig_list.append(fig2_path)
+    print(f"Saved {fig2_path}")
+
+    fig3, ax3 = plt.subplots()
+    show(masked, transform=transform, cmap='Purples', ax=ax3)
+    exc.plot(ax=ax3, edgecolor='k', color='None')
+    cutout.grid.to_crs(excluder.crs).plot(edgecolor='grey', color='None', ax=ax3, ls=':')
+    ax3.set_title(f'Eligible area (purple) {eligible_share * 100:2.2f}%')
+    fig3_path = os.path.join(image_dir, 'fig3.png')
+    fig3.savefig(fig3_path)
+    fig_list.append(fig3_path)
+    print(f"Saved {fig3_path}")
+
+    A = cutout.availabilitymatrix(shapes, excluder)
+    A.name = "Capacity Factor"
+
+    fig4, ax4 = plt.subplots()
+    A.plot(cmap='Purples')
+    shapes.plot(ax=ax4, edgecolor='k', color='None')
+    cutout.grid.plot(ax=ax4, color='None', edgecolor='grey', ls=':')
+    ax4.set_title(country)
+    fig4_path = os.path.join(image_dir, 'fig4.png')
+    fig4.savefig(fig4_path)
+    fig_list.append(fig4_path)
+    print(f"Saved {fig4_path}")
+
+    cap_per_sqkm = capacity
+    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
+    area = xr.DataArray(area, dims=('spatial'))
+
+    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
+    cutout.prepare()
+    wind = cutout.wind(matrix=capacity_matrix, turbine=atlite.windturbines.NREL_ReferenceTurbine_5MW_offshore, index=shapes.index)
+
+    fig5, ax5 = plt.subplots(figsize=(14, 7))
+    wind.to_pandas().div(1e3).plot(ylabel='Onshore Wind [GW]',fontsize=14, ax=ax5, color='purple')
+    ax5.set_ylabel('Offshore-dc Wind [GW]', fontsize=14)
+    fig5_path = os.path.join(image_dir, 'fig5.png')
+    fig5.savefig(fig5_path)
+    fig_list.append(fig5_path)
+    print(f"Saved {fig5_path}")
+
+    # Generate HTML file
+    with open(output_html, 'w') as f:
+        f.write('<html><head><title>Figures</title></head><body>\n')
+        for fig_path, title in zip(fig_list, titles):
+            if os.path.exists(fig_path):
+                with open(fig_path, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                f.write(f'<h2>Figure:    {title}</h2>\n')
+                f.write(f'<img src="data:image/png;base64,{encoded_string}" alt="{os.path.basename(fig_path)}" style="width:60%; height:auto;"><br>\n')
+            else:
+                print(f"Image {fig_path} not found.")
+        f.write('</body></html>')
+    print(f"HTML file saved at {output_html}")
+    
+    
+def generate_max_solar_potentials(country, output_html):
+    plt.rcParams['figure.figsize'] = [7, 7]
+    
+    with open("../config/config.yaml") as file:
+     config = yaml.safe_load(file)
+     
+    corine_grid_codes = config['renewable']['solar']['corine']
+    capacity = config['renewable']['solar']['capacity_per_sqkm']
+    # Load world shapes
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+
+    # Filter for specified countries
+    shapes = world[world.name.isin(countries)].set_index('name')
+    shapes.plot()
+    
+    # Define bounds and create cutout
+    bounds = shapes.unary_union.buffer(0.5).bounds
+    cutout = atlite.Cutout(country, module='era5', bounds=bounds, time=slice('2013-01-01', '2013-12-31'))
+
+    # Directory to save images
+    image_dir = 'max_vre_potential_charts/images_solar'
+    os.makedirs(image_dir, exist_ok=True)
+
+    # Create figures and save them as images
+    fig_list = []
+    titles = [
+        "Country Shape",
+        "Eligible Area (Green) - Solar",
+        "Eligible Area with Grid cells",
+        "Capacity Factor for eligible area",
+        "Maximum solar Potential",
+        "Maximum Solar-Rooftop Potential"
+    ]
+
+    fig1, ax1 = plt.subplots(figsize=(6, 6))
+    shapes.plot(ax=ax1,color='orange')
+    cutout.grid.plot(ax=ax1, edgecolor='grey', color='None')
+    fig1_path = os.path.join(image_dir, 'fig1.png')
+    fig1.savefig(fig1_path)
+    fig_list.append(fig1_path)
+    print(f"Saved {fig1_path}")
+
+    CORINE = '../data/bundle/corine/g250_clc06_V18_5.tif'
+    excluder = ExclusionContainer()
+    excluder.add_raster(CORINE, codes=corine_grid_codes,crs=3035, invert=True)
+    exc = shapes.loc[[country]].geometry.to_crs(excluder.crs)
+    masked, transform = shape_availability(exc, excluder)
+    eligible_share = masked.sum() * excluder.res**2 / exc.geometry.item().area
+
+    fig2, ax2 = plt.subplots()
+    show(masked, transform=transform, cmap='Oranges', ax=ax2)
+    exc.plot(ax=ax2, edgecolor='k', color='None')
+    ax2.set_title(f'Eligible area (orange) {eligible_share * 100:2.2f}%')
+    fig2_path = os.path.join(image_dir, 'fig2.png')
+    fig2.savefig(fig2_path)
+    fig_list.append(fig2_path)
+    print(f"Saved {fig2_path}")
+
+    fig3, ax3 = plt.subplots()
+    show(masked, transform=transform, cmap='Oranges', ax=ax3)
+    exc.plot(ax=ax3, edgecolor='k', color='None')
+    cutout.grid.to_crs(excluder.crs).plot(edgecolor='grey', color='None', ax=ax3, ls=':')
+    ax3.set_title(f'Eligible area (orange) {eligible_share * 100:2.2f}%')
+    fig3_path = os.path.join(image_dir, 'fig3.png')
+    fig3.savefig(fig3_path)
+    fig_list.append(fig3_path)
+    print(f"Saved {fig3_path}")
+
+    A = cutout.availabilitymatrix(shapes, excluder)
+    A.name = "Capacity Factor"
+
+    fig4, ax4 = plt.subplots()
+    A.sel(name=country).plot(cmap='Oranges')
+    shapes.loc[[country]].plot(ax=ax4, edgecolor='k', color='None')
+    cutout.grid.plot(ax=ax4, color='None', edgecolor='grey', ls=':')
+    fig4_path = os.path.join(image_dir, 'fig4.png')
+    fig4.savefig(fig4_path)
+    fig_list.append(fig4_path)
+    print(f"Saved {fig4_path}")
+
+    cap_per_sqkm = capacity
+    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
+    area = xr.DataArray(area, dims=('spatial'))
+
+    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
+    cutout.prepare()
+    pv = cutout.pv(matrix=capacity_matrix, panel=atlite.solarpanels.CSi,orientation='latitude_optimal', index=shapes.index)
+
+    fig5, ax5 = plt.subplots(figsize=(14, 7))
+    pv.to_pandas().div(1e3).plot(ylabel='Solar [GW]',fontsize=14, ax=ax5, color='orange')
+    ax5.set_ylabel('Solar [GW]', fontsize=14)
+    fig5_path = os.path.join(image_dir, 'fig5.png')
+    fig5.savefig(fig5_path)
+    fig_list.append(fig5_path)
+    print(f"Saved {fig5_path}")
+    
+    pop_layout = pd.read_csv(
+        "../resources/ncdr/pop_layout_elec_s_6.csv", index_col=0
+    )
+    pop_solar = pop_layout.total
+    potential = 0.1 * 10 * pop_solar
+    country_code_map = {
+        'Belgium': 'BE',
+        'France': 'FR',
+        'Germany': 'DE',
+        'Netherlands': 'NL',
+        'Great Britain': 'GB'}
+
+    # Create a list of codes from the country names
+    country_codes = [country_code_map.get(country, 'Unknown')]
+    potential=potential[potential.index.str[:2].isin(country_codes)].sum()/1e3
+    fig6, ax6 = plt.subplots(figsize=(10, 10))
+    ax6.bar(0, potential, color='orange', width=0.3)  # Plotting the float value at position 0
+    ax6.set_ylabel('Solar Rooftop Potential [GW]', fontsize=12)  # Labeling the y-axis
+    ax6.set_xticks([])  # Removing x-axis ticks as there's only one bar
+    ax6.set_xlim(-0.5, 0.5)  # Setting x-axis limits
+    ax6.set_title('Solar Rooftop Potential')  # Adding a title
+    ax6.tick_params(axis='y', labelsize=12)
+    fig6_path = os.path.join(image_dir, 'fig6.png')
+    fig6.savefig(fig6_path)
+    fig_list.append(fig6_path)
+    print(f"Saved {fig6_path}")
+    # Generate HTML file
+    with open(output_html, 'w') as f:
+        f.write('<html><head><title>Figures</title></head><body>\n')
+        for fig_path, title in zip(fig_list, titles):
+            if os.path.exists(fig_path):
+                with open(fig_path, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                f.write(f'<h2>Figure:    {title}</h2>\n')
+                f.write(f'<img src="data:image/png;base64,{encoded_string}" alt="{os.path.basename(fig_path)}" style="width:60%; height:auto;"><br>\n')
+            else:
+                print(f"Image {fig_path} not found.")
+        f.write('</body></html>')
+    print(f"HTML file saved at {output_html}")
+# Usage example
+countries = ['Belgium']
+output_dir = "max_vre_potential_charts"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+for country in countries:
+ output_html = os.path.join(output_dir, f"{country}_onshore_potentials.html")
+ generate_max_onshore_potentials(country, output_html)
+ output_html = os.path.join(output_dir, f"{country}_offshore_ac_potentials.html")
+ generate_max_offshore_ac_potentials(country, output_html)
+ output_html = os.path.join(output_dir, f"{country}_offshore_dc_potentials.html")
+ generate_max_offshore_dc_potentials(country, output_html)
+ output_html = os.path.join(output_dir, f"{country}_solar_potentials.html")
+ generate_max_solar_potentials(country, output_html)
+

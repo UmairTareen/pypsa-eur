@@ -73,4 +73,5 @@ run_prepare_scenarios.done
 merger-todos.md
 .idea/*
 SEPIA/SEPIA_functions.py
+SEPIA/max_vre_potential_charts
 SEPIA/Results/*
