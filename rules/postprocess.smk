@@ -245,6 +245,38 @@ rule plot_summary:
     script:
         "../scripts/plot_summary.py"
 
+
+if "sensitivity_analysis" in config["run"]["name"]:
+ rule sensitivity_results:
+    params:
+        countries=config_provider("countries"),
+        planning_horizons=config_provider("scenario", "planning_horizons"),
+        sector_opts=config_provider("scenario", "sector_opts"),
+        plotting=config_provider("plotting"),
+        scenario=config_provider("scenario"),
+        study = config_provider("run", "name"),
+        foresight=config_provider("foresight"),
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        sepia_config = "SEPIA/SEPIA_config.xlsx",
+        template = "SEPIA/Template/pypsa.html",
+        logo = "SEPIA/Template/logo.png",         
+    output:
+        htmlfile=expand(RESULTS + "htmls/{country}_sensitivity_chart.html",study = config["run"]["name"], country=config["countries"]),
+    threads: 1
+    log:
+        RESULTS + "logs/sensitivity_results.log",
+    benchmark:
+        RESULTS + "benchmarks/sensitivity_results",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/sensitivity_results.py"
+
 planning_horizons = [2020, 2030, 2040, 2050] 
 local_countries = config["countries"].copy()
 if "EU" not in local_countries:

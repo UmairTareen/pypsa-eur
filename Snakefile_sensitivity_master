@@ -1,0 +1,69 @@
+from snakemake.utils import min_version
+
+min_version("7.7")
+
+
+rule run_sensitivity_1:
+    output: touch("run_sensitivity_1.done")
+    log: "logs/run_sensitivity_1.done",
+    shell:
+        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_nocdr_sensitivity_pypsa.yaml --cores 1 -call all"
+
+rule run_sensitivity_2:
+    input: "run_sensitivity_1.done"
+    output: touch("run_sensitivity_2.done")
+    log: "logs/run_sensitivity_2.done",
+    shell:
+        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_nocdr_sensitivity_fps.yaml --cores 1 -call all"
+
+rule run_sensitivity_3:
+    input: "run_sensitivity_2.done"
+    output: touch("run_sensitivity_3.done")
+    log: "logs/run_sensitivity_3.done",
+    shell:
+        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_nocdr_sensitivity_mackinze.yaml --cores 1 -call all"
+        
+rule run_sensitivity_4:
+    input: "run_sensitivity_3.done"
+    output: touch("run_sensitivity_4.done")
+    log: "logs/run_sensitivity_4.done",
+    shell:
+        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_nocdr_sensitivity_energyville.yaml --cores 1 -call all"
+
+
+rule run_all_snakefiles:
+    input: "run_sensitivity_4.done"
+
+configfile: 'config/Sensitivity_configs/config_nocdr_sensitivity_pypsa.yaml'
+        
+rule run_prepare_sensitivity_scenarios:
+    input: "run_sensitivity_4.done",
+    output: touch("run_prepare_sensitivity_scenarios.done")
+    log: "logs/run_prepare_sensitivity_scenarios.done"
+    shell:
+        "snakemake --snakefile Snakefile_sensitivity_master --cores 1 -call prepare_sensitivity_scenarios"
+local_countries = config["countries"].copy()
+if "EU" not in local_countries:
+    local_countries.append("EU") 
+rule prepare_sensitivity_scenarios:
+    params:
+        countries = config["countries"],
+    input:
+        sepia_config = "SEPIA/SEPIA_config.xlsx",
+        template = "SEPIA/Template/pypsa.html",      
+    output:
+        htmlfile=expand("results/sensitivity_results/{country}_sensitivity_scenario_chart.html", country=local_countries),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        "logs/sensitivity_scenario.log",
+    benchmark:
+        "benchmarks/sensitivity_scenario",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "SEPIA/sensitivity_scenario.py"
+        
+rule run_all_sensitivity_scenarios:
+    input: "run_prepare_sensitivity_scenarios.done"

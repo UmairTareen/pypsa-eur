@@ -20,7 +20,7 @@ remote:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: "ncdr"
+  name: "sensitivity_analysis_fps"
   scenarios:
     enable: false
     file: config/scenarios.yaml
@@ -54,6 +54,12 @@ scenario:
   - 2040
   - 2050
 
+sensitivity_analysis:
+  tech: nuclear
+  investment_costs:
+    2040: 7500
+    2050: 7000
+  
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 countries: ['BE', 'DE', 'FR', 'GB', 'NL']
 #countries: ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']

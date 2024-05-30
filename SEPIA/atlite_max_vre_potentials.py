@@ -221,7 +221,7 @@ def generate_max_offshore_ac_potentials(country, output_html):
     fig_list = []
     titles = [
         "Country Shape",
-        "Eligible Area (Green) - Offshore-ac",
+        "Eligible Area (blue) - Offshore-ac",
         "Eligible Area with Grid cells",
         "Capacity Factor for eligible area",
         "Maximum Offshore-ac Wind Potential"
@@ -250,7 +250,7 @@ def generate_max_offshore_ac_potentials(country, output_html):
     fig2, ax2 = plt.subplots()
     show(masked, transform=transform, cmap='Blues', ax=ax2)
     exc.plot(ax=ax2, edgecolor='k', color='None')
-    ax2.set_title(f'Eligible area (green) {eligible_share * 100:2.2f}%')
+    ax2.set_title(f'Eligible area (blue) {eligible_share * 100:2.2f}%')
     fig2_path = os.path.join(image_dir, 'fig2.png')
     fig2.savefig(fig2_path)
     fig_list.append(fig2_path)
@@ -349,7 +349,7 @@ def generate_max_offshore_dc_potentials(country, output_html):
     fig_list = []
     titles = [
         "Country Shape",
-        "Eligible Area (Green) - Offshore-dc",
+        "Eligible Area (purple) - Offshore-dc",
         "Eligible Area with Grid cells",
         "Capacity Factor for eligible area",
         "Maximum Offshore-dc Wind Potential"
@@ -378,7 +378,7 @@ def generate_max_offshore_dc_potentials(country, output_html):
     fig2, ax2 = plt.subplots()
     show(masked, transform=transform, cmap='Purples', ax=ax2)
     exc.plot(ax=ax2, edgecolor='k', color='None')
-    ax2.set_title(f'Eligible area (green) {eligible_share * 100:2.2f}%')
+    ax2.set_title(f'Eligible area (purple) {eligible_share * 100:2.2f}%')
     fig2_path = os.path.join(image_dir, 'fig2.png')
     fig2.savefig(fig2_path)
     fig_list.append(fig2_path)
@@ -465,7 +465,7 @@ def generate_max_solar_potentials(country, output_html):
     fig_list = []
     titles = [
         "Country Shape",
-        "Eligible Area (Green) - Solar",
+        "Eligible Area (orange) - Solar",
         "Eligible Area with Grid cells",
         "Capacity Factor for eligible area",
         "Maximum solar Potential",

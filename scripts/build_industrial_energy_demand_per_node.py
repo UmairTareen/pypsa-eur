@@ -30,7 +30,7 @@ if __name__ == "__main__":
     nodal_production = pd.read_csv(fn, index_col=0) / 1e3
     countrries = snakemake.config['countries']
     config=snakemake.config 
-    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
       def clever_industry_data():
         fn = snakemake.input.clever_industry
         df= pd.read_csv(fn ,index_col=0)/1e3
@@ -39,6 +39,7 @@ if __name__ == "__main__":
       for country in countrries:
           # Filter rows in nodal_production DataFrame where index starts with the country code
           country_production = nodal_production[nodal_production.index.str.startswith(country)]
+          #country_production = country_production[~country_production.index.isin(['DK2 0','ES4 0', 'GB5 0', 'IT3 0'])] (for 28 countries)
           country_production = country_production[~country_production.index.isin([f'{country}2 0'])]
           # Update values in nodal_production DataFrame using clever_Industry DataFrame
           nodal_production.loc[country_production.index, 'Electric arc'] = clever_Industry.loc[country, 'Production of primary steel']
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     nodal_df["current electricity"] = nodal_today["electricity"]
 
     nodal_df.index.name = "TWh/a (MtCO2/a)"
-    if config["run"]["name"] == "ncdr" or config["run"]["name"] == "suff":
+    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
      def clever_industry_data():
         fn = snakemake.input.clever_industry
         df= pd.read_csv(fn ,index_col=0)
@@ -86,6 +87,7 @@ if __name__ == "__main__":
      for country in countrries:
         country_energy = nodal_df[nodal_df.index.str.startswith(country)]
         country_energy = country_energy[~country_energy.index.isin([f'{country}2 0'])]
+        #country_energy = country_energy[~country_energy.index.isin(['DK2 0','ES4 0', 'GB5 0', 'IT3 0'])] (for 28 countries)
         nodal_df.loc[country_energy.index, 'ammonia'] = clever_Industry.loc[country, 'Total Final Energy Consumption of the ammonia industry']
         nodal_df.loc[country_energy.index, 'electricity'] = clever_Industry.loc[country, 'Total Final electricity consumption in industry']
         nodal_df.loc[country_energy.index, 'coal'] = clever_Industry.loc[country, 'Total Final energy consumption from solid fossil fuels (coal ...) in industry']

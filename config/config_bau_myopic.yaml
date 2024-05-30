@@ -455,7 +455,6 @@ pypsa_eur:
   - offwind-dc
   - solar
   - ror
-  #- nuclear
   StorageUnit:
   - PHS
   - hydro
@@ -714,6 +713,7 @@ sector:
   conventional_generation:
     OCGT: gas
     CCGT: gas
+    nuclear: uranium
   biomass_to_liquid: true
   biosng: true
   limit_max_growth:

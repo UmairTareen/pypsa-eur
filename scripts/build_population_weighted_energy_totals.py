@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if snakemake.wildcards.kind == "heat":
         years = pd.date_range(freq="h", **snakemake.params.snapshots).year.unique()
         assert len(years) == 1, "Currently only works for single year."
-        if study != "ncdr":
+        if study != "ncdr" or "sensitivity_analysis" in study:
          data_year = years[0]
         else:
          data_year = int(config["energy_totals_year"])

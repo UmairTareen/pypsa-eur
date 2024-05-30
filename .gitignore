@@ -69,6 +69,8 @@ run_snakefile_bau.done
 run_snakefile_reff.done
 run_snakefile_nocdr.done
 run_prepare_scenarios.done
+run_sensitivity_.done
+sensitivity_analysis
 
 merger-todos.md
 .idea/*

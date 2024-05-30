@@ -596,6 +596,8 @@ if __name__ == "__main__":
         snakemake.input.costs,
         snakemake.params.costs,
         Nyears,
+        snakemake.config,
+        int(snakemake.wildcards.planning_horizons[-4:]),
     )
 
     grouping_years_power = snakemake.params.existing_capacities["grouping_years_power"]
