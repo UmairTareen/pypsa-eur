@@ -95,35 +95,15 @@ def prepare_sepia(countries):
     datafile = str(datafile)
     
     '''load energy input data for Sepia'''
-    if country == 'EU':
-     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0)
-     data.reset_index(drop=True, inplace=False)
-     data=data.T
-    else:
-     data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
-     data.reset_index(drop=True, inplace=False)
-     data=data.T
+    data = pd.read_excel(datafile, sheet_name="Inputs", index_col=0, usecols="C:G")
+    data.reset_index(drop=True, inplace=False)
+    data=data.T
     
     
     '''load co2 input data for Sepia'''
-    if country == 'EU':
-     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0)
-     data_co2.reset_index(drop=True, inplace=False)
-     data_co2=data_co2.T
-    else:
-     data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
-     data_co2.reset_index(drop=True, inplace=False)
-     data_co2=data_co2.T
-
-    # '''subtract agriculture heating demand from residential and tertiary sector'''
-    # # if study == 'ncdr':
-    # #  data["prespaccfraa"] = data["prespaccfraa"] - data["presvapcfagr"]
-    # #  data['pregazcfagr'] = 0.0
-    # #  data.loc['2020', 'pregazcfagr'] = data.loc['2020', 'presvapcfagr']
-    # #  data.loc['2020', 'presvapcfagr'] = 0
-    # #  data.loc['2020', 'prespaccfraa'] = 0
-    # # else:
-    # data["presgazcfg"] = data["presgazcfg"] - data["pregazcfagr"] - data["lossgbb"]
+    data_co2 = pd.read_excel(datafile, sheet_name="Inputs_co2", index_col=0, usecols="C:G")
+    data_co2.reset_index(drop=True, inplace=False)
+    data_co2=data_co2.T
     
     '''Remove any duplicated data'''
     data = data.loc[:,~data.columns.duplicated()] 
@@ -262,8 +242,8 @@ def prepare_sepia(countries):
     # for en_code in ['fol']:
     #     values_oil_emm = fec_p['pet_pe']
     #     flows_co2[(en_code + '_ghg', 'oil_ghg', '')] = values_oil_emm * co2_intensity_oil
-        
-    for en_code in ['fgs']:
+    if country != 'EU':     
+     for en_code in ['fgs']:
         # values_agr_emm = flows[('gaz_fe','agr', '')].squeeze().rename_axis(None) * co2_intensity_gas
         values_gas_emm = fec_p['gaz_pe'] 
         flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
@@ -315,8 +295,8 @@ def prepare_sepia(countries):
     #         tot_pet = pet_pro + pet_bm 
     #         exp_pet = tot_pet - value_ker - value_naph -  value_agr
     #         flows[(en_code + '_fe', 'exp', '')] = exp_pet
- 
-    for en_code in ['gaz']:
+    if country != 'EU':
+     for en_code in ['gaz']:
         if (
     (flows[('hyd_se', en_code + '_se',  '')].squeeze().rename_axis(None).sum() > 0) or
     (flows[('bgl_pe', en_code + '_se',  'cc')].squeeze().rename_axis(None).sum() > 0)):

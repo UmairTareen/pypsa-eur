@@ -457,6 +457,8 @@ if __name__ == "__main__":
         snakemake.input.costs,
         snakemake.params.costs,
         Nyears,
+        snakemake.config,
+        snakemake.params.scenario["planning_horizons"],
     )
     config=snakemake.config
     df = make_summaries(networks_dict, config)
