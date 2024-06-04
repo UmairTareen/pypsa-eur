@@ -526,6 +526,8 @@ def plot_demands(countries):
          data = data.drop(columns=columns_to_drop)
          data = data.groupby(data.index).sum()
         else:
+         columns_to_drop = ['source', 'target']
+         data = data.drop(columns=columns_to_drop)
          data.rename(index=mapping_eu, inplace=True)
          data = data.groupby(data.index).sum()
 
