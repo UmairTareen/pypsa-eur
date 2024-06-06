@@ -1,0 +1,13 @@
+mackinsey,Energyville(Central),Energyville(Electrification),Energyville(Clean molecules),Elia(Electrication),Elia (2040-Decentral),Elia(2040-RES),CLEVER,BFP(Diversified energy supply),BFP(Electrification)
+solar,80,96.64,39.4,88.7,50,18,10,50,39,39
+offshore wind,6,8,23.43,8,8,8,5,8.4,8.3,8.3
+onshore wind,20,19.7,11.5,17.77,9,8.4,5.9,12.4,16.7,16.7
+nuclear,0,0,6,0,0,0,0,0,0,0
+Hydrogen Turbines or CHPs,0,8,0,12.2,0,0,0,0.9,0,0
+CCGT/OCGT,0,0.15,0.17,0.19,4,6.7,5.6,0.9,11,15.5
+Interconnections,Not mentioned,13,13,13,20.5,18,18,No info,14,14
+Others,0.5,2.4,2.7,1.7,1,3,3,1,4,4
+Demand (TWh),170,203.75,220.49,201.69,245,97.6,94.1,134,249,243
+Emissions(%),-97,-100,-100,-100,-100,-70,-75,-95,-100,-100
+Annual Costs(Billion Euros/year),no info,4.5,5.3,3.9,No Info,4.9,5.2,No info,No info,NO info
+Investment Costs(Billion Euros/year),3.6,2.3,3,2,No Info,4,4.3,No info,No info,no info

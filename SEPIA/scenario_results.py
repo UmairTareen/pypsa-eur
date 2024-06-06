@@ -418,6 +418,146 @@ def scenario_demands(country):
     logo['y']=1.025
     fig.add_layout_image(logo)
     return fig
+
+def create_scenario_plots():
+ scenarios=pd.read_csv("data/scenario_data.csv")
+
+ capacities_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_capacities.csv", index_col=0)
+ capacities_ncdr_2050 = capacities_ncdr[['2050']]/1e3
+ ac_transmission_ncdr = capacities_ncdr_2050.loc['AC Transmission lines', '2050']
+ dc_transmission_ncdr = capacities_ncdr_2050.loc['DC Transmission lines', '2050']
+ transmission_ncdr = ac_transmission_ncdr + dc_transmission_ncdr
+
+ investment_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_investment costs.csv", index_col=0)
+ investment_ncdr_2050 = investment_ncdr[['2050']].sum().sum()/1e9
+ demands_ncdr=pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx",  sheet_name="Chart 21", index_col=0)
+ elec_demand_ncdr = demands_ncdr.loc[str(2050)].sum()
+ total_costs_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_costs.csv", index_col=0)
+ total_costs_ncdr_2050 = total_costs_ncdr[['2050']].sum().sum()/1e9
+
+ capacities_bau=pd.read_csv("results/bau/country_csvs/BE_capacities.csv", index_col=0)
+ capacities_bau_2050 = capacities_bau[['2050']]/1e3
+ ac_transmission_bau = capacities_bau_2050.loc['AC Transmission lines', '2050']
+ dc_transmission_bau = capacities_bau_2050.loc['DC Transmission lines', '2050']
+ transmission_bau = ac_transmission_bau + dc_transmission_bau
+
+ investment_bau=pd.read_csv("results/bau/country_csvs/BE_investment costs.csv", index_col=0)
+ investment_bau_2050 = investment_bau[['2050']].sum().sum()/1e9
+ demands_bau=pd.read_excel("results/bau/htmls/ChartData_BE.xlsx",  sheet_name="Chart 21", index_col=0)
+ elec_demand_bau = demands_bau.loc[str(2050)].sum()
+ total_costs_bau=pd.read_csv("results/bau/country_csvs/BE_costs.csv", index_col=0)
+ total_costs_bau_2050 = total_costs_bau[['2050']].sum().sum()/1e9
+
+
+ scenarios['Pypsa-sufficiency'] = None
+ scenarios.loc['Demand (TWh)', 'Pypsa-sufficiency'] = elec_demand_ncdr
+ scenarios.loc['Investment Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = investment_ncdr_2050
+ scenarios.loc['Annual Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = total_costs_ncdr_2050
+ scenarios.loc['Emissions(%)', 'Pypsa-sufficiency'] = -100
+
+ scenarios['Pypsa-BAU'] = None
+ scenarios.loc['Demand (TWh)', 'Pypsa-BAU'] = elec_demand_bau
+ scenarios.loc['Investment Costs(Billion Euros/year)', 'Pypsa-BAU'] = investment_bau_2050
+ scenarios.loc['Annual Costs(Billion Euros/year)', 'Pypsa-BAU'] = total_costs_bau_2050
+ scenarios.loc['Emissions(%)', 'Pypsa-BAU'] = -100
+
+ techs = ['solar', 'onshore wind','offshore wind', 'nuclear']
+
+ for tech in techs:
+    scenarios.loc[tech, 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc[tech, '2050']
+    scenarios.loc[tech, 'Pypsa-BAU'] = capacities_bau_2050.loc[tech, '2050']
+
+ scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['H2 turbine', '2050']
+ scenarios.loc['CCGT/OCGT', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['CCGT', '2050']
+ scenarios.loc['Interconnections', 'Pypsa-sufficiency'] = transmission_ncdr
+ scenarios.loc['Others', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['hydroelectricity', '2050']
+
+ scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-BAU'] = capacities_bau_2050.loc['H2 turbine', '2050']
+ scenarios.loc['CCGT/OCGT', 'Pypsa-BAU'] = capacities_bau_2050.loc['CCGT', '2050']
+ scenarios.loc['Interconnections', 'Pypsa-BAU'] = transmission_bau
+ scenarios.loc['Others', 'Pypsa-BAU'] = capacities_bau_2050.loc['hydroelectricity', '2050']
+
+ scenarios = scenarios.apply(pd.to_numeric, errors='coerce').fillna(0)
+
+
+ scenarios_transposed = scenarios.transpose()
+ figures = {}
+ # Plot the bar chart for Demand
+ fig_demand = go.Figure()
+ fig_demand.add_trace(go.Bar(name='Demand (TWh)', x=scenarios_transposed.index, y=scenarios_transposed['Demand (TWh)']))
+ fig_demand.update_layout(
+        title="Electricity demand comparison for scenarios in 2050",
+        xaxis_title="Scenario",
+        yaxis_title="Demand (TWh)"
+    )
+ figures['demand'] = fig_demand
+
+ # Plot the bar chart for VRE capacities
+ columns_to_plot_vre = ['solar', 'onshore wind', 'offshore wind']
+ colors_vre = {
+        'solar': '#f9d002',
+        'onshore wind': '#235ebc',
+        'offshore wind': '#6895dd',
+    }
+ fig_vre = go.Figure()
+ for column in columns_to_plot_vre:
+        color = colors_vre.get(column, None)
+        fig_vre.add_trace(go.Bar(name=column, x=scenarios_transposed.index, y=scenarios_transposed[column], marker_color=color))
+ fig_vre.update_layout(
+        title="VRE capacities for scenarios in 2050",
+        xaxis_title="Scenario",
+        yaxis_title="Capacities (GW)"
+    )
+ figures['vre'] = fig_vre
+
+ # Plot the bar chart for Flexibility options
+ columns_to_plot_flex = ['nuclear', 'Hydrogen Turbines or CHPs', 'CCGT/OCGT', 'Interconnections', 'Others']
+ colors_flex = {
+        'nuclear': '#ff8c00',
+        'Hydrogen Turbines or CHPs': '#bf13a0',
+        'CCGT/OCGT': '#a85522',
+        'Interconnections': '#6c9459',
+        'Others': '#cc1f1f'
+    }
+ fig_flex = go.Figure()
+ for column in columns_to_plot_flex:
+        color = colors_flex.get(column, None)
+        fig_flex.add_trace(go.Bar(name=column, x=scenarios_transposed.index, y=scenarios_transposed[column], marker_color=color))
+ fig_flex.update_layout(
+        title="Flexibility options in electricity grid for scenarios in 2050",
+        xaxis_title="Scenario",
+        yaxis_title="Capacities (GW)"
+    )
+ figures['flexibility'] = fig_flex
+
+ # Plot the bar chart for Costs
+ columns_to_plot_costs = ['Annual Costs(Billion Euros/year)', 'Investment Costs(Billion Euros/year)']
+ colors_costs = {
+        'Annual Costs(Billion Euros/year)': 'blue',
+        'Investment Costs(Billion Euros/year)': 'green'
+    }
+ fig_costs = go.Figure()
+ for column in columns_to_plot_costs:
+        color = colors_costs.get(column, None)
+        fig_costs.add_trace(go.Bar(name=column, x=scenarios_transposed.index, y=scenarios_transposed[column], marker_color=color))
+ fig_costs.update_layout(
+        title="Costs comparison for scenarios",
+        xaxis_title="Scenario",
+        yaxis_title="Costs (Billion Euros/year)"
+    )
+ figures['costs'] = fig_costs
+
+ # Plot the bar chart for Emissions
+ fig_emissions = go.Figure()
+ fig_emissions.add_trace(go.Bar(name='Emissions(%)', x=scenarios_transposed.index, y=scenarios_transposed['Emissions(%)'], marker_color='red'))
+ fig_emissions.update_layout(
+        title="Emissions comparison for scenarios compared to 1990",
+        xaxis_title="Scenario",
+        yaxis_title="%"
+    )
+ figures['emissions'] = fig_emissions
+
+ return figures
     
 def create_combined_scenario_chart_country(country, output_folder='results/scenario_results/'):
     # Create output folder if it doesn't exist
@@ -447,6 +587,20 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     # Create demands chart
     demands_chart = scenario_demands(country)
     combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
+    
+    #Create scenario comparison plots
+    if country == 'BE':
+        scenario_figures = create_scenario_plots()
+        demand_comparison = scenario_figures['demand']
+        combined_html += f"<div><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html()}</div>"
+        vre_comparison = scenario_figures['vre']
+        combined_html += f"<div><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html()}</div>"
+        flexibility_comparison = scenario_figures['flexibility']
+        combined_html += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
+        costs_comparison = scenario_figures['costs']
+        combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
+        emission_comparison = scenario_figures['emissions']
+        combined_html += f"<div><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
@@ -458,6 +612,12 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
     table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Capacities</a><br>"
     table_of_contents_content += f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
+    if country == 'BE':
+        table_of_contents_content += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
+        table_of_contents_content += f"<a href='#{country} - Scenarios VRE Capacities Comparison'>Scenarios VRE Capacities Comparison</a><br>"
+        table_of_contents_content += f"<a href='#{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'>Scenario Flexibility Capacities in Electricity Grid Comparison</a><br>"
+        table_of_contents_content += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
+        table_of_contents_content += f"<a href='#{country} - Scenarios Emissions Comparison'>Scenarios Emissions Comparison</a><br>"
 
     # Add more links for other plots
     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
@@ -466,6 +626,12 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
+    if country == 'BE':
+        main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenarios Emissions Comparison'><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template
