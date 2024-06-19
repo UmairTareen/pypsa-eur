@@ -357,68 +357,6 @@ def storage_capacities(country):
     fig.add_layout_image(logo)
     return fig
 
-def scenario_demands(country):
-    colors = config["plotting"]["tech_colors"] 
-    colors["methane"] = "orange"
-    colors["Non-energy demand"] = "black" 
-    colors["hydrogen for industry"] = "cornflowerblue"
-    colors["agriculture electricity"] = "royalblue"
-    colors["agriculture and industry heat"] = "lightsteelblue"
-    colors["agriculture oil"] = "darkorange"
-    colors["electricity demand of residential and tertairy"] = "navajowhite"
-    colors["gas for Industry"] = "forestgreen"
-    colors["electricity for Industry"] = "limegreen"
-    colors["aviation oil demand"] = "black"
-    colors["land transport EV"] = "lightcoral"
-    colors["land transport hydrogen demand"] = "mediumpurple"
-    colors["oil to transport demand"] = "thistle"
-    colors["low-temperature heat for industry"] = "sienna"
-    colors["naphtha for non-energy"] = "sandybrown"
-    colors["shipping methanol"] = "lawngreen"
-    colors["shipping hydrogen"] = "gold"
-    colors["shipping oil"] = "turquoise"
-    colors["solid biomass for Industry"] = "paleturquoise"
-    colors["Residential and tertiary DH demand"] = "gray"
-    colors["Residential and tertiary heat demand"] = "pink"
-    colors["electricity demand for rail network"] = "blue"
-    colors["H2 for non-energy"] = "violet" 
-    
-    data_ncdr = pd.read_csv(f"results/ncdr/country_csvs/{country}_sectordemands.csv", index_col=0)
-    columns_to_drop = ['2020']
-    data_ncdr = data_ncdr.drop(columns=columns_to_drop)
-    data_bau = pd.read_csv(f"results/bau/country_csvs/{country}_sectordemands.csv", index_col=0)
-    
-    # Rename columns
-    data_bau.rename(columns={'2020': 'reff', '2030': 'bau-2030', '2040': 'bau-2040', '2050': 'bau-2050'}, inplace=True)
-    data_ncdr.rename(columns={'2030': 'suff-2030', '2040': 'suff-2040', '2050': 'suff-2050'}, inplace=True)
-          
-    # Melt dataframes
-    melted_bau = pd.melt(data_bau, id_vars=['Demand', 'Sectors'], var_name='year', value_name='value')
-    melted_ncdr = pd.melt(data_ncdr, id_vars=['Demand', 'Sectors'], var_name='year', value_name='value')
-       
-    # Add color information
-    melted_bau['color'] = melted_bau['Sectors'].map(colors)
-    melted_ncdr['color'] = melted_ncdr['Sectors'].map(colors)
-    
-    # Concatenate the dataframes
-    melted_data = pd.concat([melted_bau,melted_ncdr])
-
-    # Use plotly express to create a stacked bar plot
-    fig = px.bar(
-        melted_data,
-        x='year',
-        y='value',
-        color='Sectors',
-        color_discrete_map=dict(zip(melted_data['Sectors'].unique(), melted_data['color'].unique())),
-        facet_col='Demand',
-        labels={'year': '', 'value': 'Final energy and non-energy demand [TWh/a]'}
-    )
-    for col in fig.select_xaxes():
-     col.update(tickangle=-45)
-    logo['y']=1.025
-    fig.add_layout_image(logo)
-    return fig
-
 def create_scenario_plots():
  scenarios=pd.read_csv("data/scenario_data.csv")
 
@@ -430,7 +368,8 @@ def create_scenario_plots():
 
  investment_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_investment costs.csv", index_col=0)
  investment_ncdr_2050 = investment_ncdr[['2050']].sum().sum()/1e9
- demands_ncdr=pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx",  sheet_name="Chart 21", index_col=0)
+ demands_ncdr=pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8", index_col=0)
+ demands_ncdr = demands_ncdr.drop('Unnamed: 6', axis=1)
  elec_demand_ncdr = demands_ncdr.loc[str(2050)].sum()
  total_costs_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_costs.csv", index_col=0)
  total_costs_ncdr_2050 = total_costs_ncdr[['2050']].sum().sum()/1e9
@@ -443,20 +382,21 @@ def create_scenario_plots():
 
  investment_bau=pd.read_csv("results/bau/country_csvs/BE_investment costs.csv", index_col=0)
  investment_bau_2050 = investment_bau[['2050']].sum().sum()/1e9
- demands_bau=pd.read_excel("results/bau/htmls/ChartData_BE.xlsx",  sheet_name="Chart 21", index_col=0)
+ demands_bau=pd.read_excel("results/bau/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8", index_col=0)
+ demands_bau = demands_bau.drop('Unnamed: 6', axis=1)
  elec_demand_bau = demands_bau.loc[str(2050)].sum()
  total_costs_bau=pd.read_csv("results/bau/country_csvs/BE_costs.csv", index_col=0)
  total_costs_bau_2050 = total_costs_bau[['2050']].sum().sum()/1e9
 
 
  scenarios['Pypsa-sufficiency'] = None
- scenarios.loc['Demand (TWh)', 'Pypsa-sufficiency'] = elec_demand_ncdr
+ scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-sufficiency'] = elec_demand_ncdr
  scenarios.loc['Investment Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = investment_ncdr_2050
  scenarios.loc['Annual Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = total_costs_ncdr_2050
  scenarios.loc['Emissions(%)', 'Pypsa-sufficiency'] = -100
 
  scenarios['Pypsa-BAU'] = None
- scenarios.loc['Demand (TWh)', 'Pypsa-BAU'] = elec_demand_bau
+ scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-BAU'] = elec_demand_bau
  scenarios.loc['Investment Costs(Billion Euros/year)', 'Pypsa-BAU'] = investment_bau_2050
  scenarios.loc['Annual Costs(Billion Euros/year)', 'Pypsa-BAU'] = total_costs_bau_2050
  scenarios.loc['Emissions(%)', 'Pypsa-BAU'] = -100
@@ -484,9 +424,9 @@ def create_scenario_plots():
  figures = {}
  # Plot the bar chart for Demand
  fig_demand = go.Figure()
- fig_demand.add_trace(go.Bar(name='Demand (TWh)', x=scenarios_transposed.index, y=scenarios_transposed['Demand (TWh)']))
+ fig_demand.add_trace(go.Bar(name='Demand (TWh)', x=scenarios_transposed.index, y=scenarios_transposed['Final Energy Demand (Twh)']))
  fig_demand.update_layout(
-        title="Electricity demand comparison for scenarios in 2050",
+        title="Final energy demand comparison for scenarios in 2050",
         xaxis_title="Scenario",
         yaxis_title="Demand (TWh)"
     )
@@ -584,9 +524,6 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     storage_capacities_chart = storage_capacities(country)
     combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
     
-    # Create demands chart
-    demands_chart = scenario_demands(country)
-    combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
     
     #Create scenario comparison plots
     if country == 'BE':
@@ -611,7 +548,6 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2023-2050)'>Cummulative Investment Costs (2023-2050)</a><br>"
     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
     table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Capacities</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
     if country == 'BE':
         table_of_contents_content += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
         table_of_contents_content += f"<a href='#{country} - Scenarios VRE Capacities Comparison'>Scenarios VRE Capacities Comparison</a><br>"
@@ -625,7 +561,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{demands_chart.to_html()}</div>"
+    
     if country == 'BE':
         main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html()}</div>"
         main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html()}</div>"

@@ -40,6 +40,8 @@ def rename_techs_tyndp(tech):
         return "hydrogen storage"
     elif tech in ["OCGT", "CHP", "gas boiler", "H2 Fuel Cell"]:
         return "gas-to-power/heat"
+    # elif "solar rooftop" in tech:
+    #     return "solar rooftop"
     elif "solar" in tech:
         return "solar"
     elif tech == "Fischer-Tropsch":

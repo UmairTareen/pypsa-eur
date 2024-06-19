@@ -262,6 +262,7 @@ if "sensitivity_analysis" in config["run"]["name"]:
             + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
             **config["scenario"]
         ),
+        balances=RESULTS + "graphs/balances-energy.pdf",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         template = "SEPIA/Template/pypsa.html",
         logo = "SEPIA/Template/logo.png",         

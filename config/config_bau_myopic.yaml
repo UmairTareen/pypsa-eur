@@ -253,14 +253,14 @@ atlite:
       sarah_dir:
       features: [influx, temperature]
 
-imposed_values: #MW offshore total is 5.7 GW, assuming alrge portion would be ac, 
-  country: 'BE'
+imposed_values:
+  country: BE
   nuclear: 2000
-  onwind: 6000  
+  onwind: 6000
   offshore_ac: 5000
   offshore_dc: 3000
-  solar: 12000
-  solar-rooftop: 3000
+  solar: 14000
+  solar_max: 104000
   
 TYNDP_values:
   at_ch: 1200
@@ -303,7 +303,7 @@ TYNDP_values:
   pl_sk: 1980
   be_de: 0
   expansion_limit: true
-  max_expansion: 1.5
+  max_expansion: 1.35
 country_summary: 'BE'
 
 
@@ -368,7 +368,7 @@ renewable:
       orientation:
         slope: 35.
         azimuth: 180.
-    capacity_per_sqkm: 5.1
+    capacity_per_sqkm: 6.2
     # correction_factor: 0.854337
     corine: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 26, 31, 32]
     luisa: false # [1111, 1121, 1122, 1123, 1130, 1210, 1221, 1222, 1230, 1241, 1242, 1310, 1320, 1330, 1410, 1421, 1422, 2110, 2120, 2130, 2210, 2220, 2230, 2310, 2410, 2420, 3210, 3320, 3330]
@@ -524,11 +524,11 @@ sector:
     progress:
       2020: 0.0
       2025: 0.15
-      2030: 0.3
+      2030: 0.0
       2035: 0.45
-      2040: 0.6
+      2040: 0.0
       2045: 0.8
-      2050: 1.0
+      2050: 0.0
     district_heating_loss: 0.15
   cluster_heat_buses: false
   heat_demand_cutout: default
@@ -736,29 +736,29 @@ industry:
   St_primary_fraction:
     2020: 0.6
     2025: 0.55
-    2030: 0.5
+    2030: 0.6
     2035: 0.45
-    2040: 0.4
+    2040: 0.6
     2045: 0.35
-    2050: 0.3
+    2050: 0.6
   DRI_fraction:
     2020: 0
     2025: 0
-    2030: 0.05
+    2030: 0
     2035: 0.2
-    2040: 0.4
+    2040: 0
     2045: 0.7
-    2050: 1
+    2050: 0
   H2_DRI: 1.7
   elec_DRI: 0.322
   Al_primary_fraction:
     2020: 0.4
     2025: 0.375
-    2030: 0.35
+    2030: 0.4
     2035: 0.325
-    2040: 0.3
+    2040: 0.4
     2045: 0.25
-    2050: 0.2
+    2050: 0.4
   MWh_NH3_per_tNH3: 5.166
   MWh_CH4_per_tNH3_SMR: 10.8
   MWh_elec_per_tNH3_SMR: 0.7
@@ -774,35 +774,35 @@ industry:
   HVC_primary_fraction:
     2020: 1.0
     2025: 0.9
-    2030: 0.8
+    2030: 1.0
     2035: 0.7
-    2040: 0.6
+    2040: 1.0
     2045: 0.5
-    2050: 0.4
+    2050: 1.0
   HVC_mechanical_recycling_fraction:
     2020: 0.12
     2025: 0.15
-    2030: 0.18
+    2030: 0.12
     2035: 0.21
-    2040: 0.24
+    2040: 0.12
     2045: 0.27
-    2050: 0.30
+    2050: 0.12
   HVC_chemical_recycling_fraction:
     2020: 0.0
     2025: 0.0
-    2030: 0.04
+    2030: 0.0
     2035: 0.08
-    2040: 0.12
+    2040: 0.0
     2045: 0.16
-    2050: 0.20
+    2050: 0.0
   sector_ratios_fraction_future:
     2020: 0.0
     2025: 0.1
-    2030: 0.3
+    2030: 0.0
     2035: 0.5
-    2040: 0.7
+    2040: 0.0
     2045: 0.9
-    2050: 1.0
+    2050: 0.0
   basic_chemicals_without_NH3_production_today: 69. #Mt/a, = 86 Mtethylene-equiv - 17 MtNH3
   HVC_production_today: 52.
   MWh_elec_per_tHVC_mechanical_recycling: 0.547

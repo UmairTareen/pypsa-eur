@@ -13,6 +13,7 @@ import SEPIA_functions as sf # Custom functions
 import pandas as pd # Read/analyse data
 import datetime # For current time
 import logging
+import numpy as np
 
 def biomass_potentials():
     # Create an empty DataFrame
@@ -50,7 +51,7 @@ def prepare_sepia(countries):
 
  # Import config data (nodes, processes, general settings etc.)
  file = snakemake.input.sepia_config
- CONFIG = pd.read_excel(file, ["MAIN_PARAMS","NODES","PROCESSES","PROCESSES_2","PROCESSES_3","IMPORT_MIX","INDICATORS"], index_col=0)
+ CONFIG = pd.read_excel(file, ["MAIN_PARAMS","NODES","PROCESSES","PROCESSES_2","PROCESSES_3","IMPORT_MIX","INDICATORS","GAS_PRO","OIL_PRO"], index_col=0)
 
  # Main settings (cf. SEPIA_config for description of all setting constants)
  MAIN_PARAMS = CONFIG["MAIN_PARAMS"].drop('Description',axis=1).to_dict()['Value']
@@ -71,7 +72,10 @@ def prepare_sepia(countries):
  PROCESSES_3 = CONFIG["PROCESSES_3"].reset_index()
  PROCESSES_3['Type'].fillna('', inplace=True)
  INDICATORS = CONFIG["INDICATORS"]
-
+ LOCAL_GAS = CONFIG["GAS_PRO"]
+ LOCAL_GAS = LOCAL_GAS.drop('Unnamed: 5', axis=1)
+ LOCAL_OIL = CONFIG["OIL_PRO"]
+ LOCAL_OIL = LOCAL_OIL.drop('Unnamed: 5', axis=1)
  # Aggregated results per Country
  tot_results = pd.DataFrame()
  # Dictionnaries storing results of the next section : "Country" => Value
@@ -184,12 +188,18 @@ def prepare_sepia(countries):
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
     for en_code in ['gaz']:
      values = fec_p[en_code + '_pe']
-     imp_values = values
-     flows[('imp', en_code + '_pe', '')] = imp_values
+     local_val = LOCAL_GAS.loc[country]
+     local_val.index = local_val.index.map(str)
+     mask = values >= local_val
+     flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
+     flows[('imp', en_code+'_pe','')] =  np.where(mask, values - local_val, 0)
     for en_code in ['pet']:
      values = fec_p[en_code + '_pe']
-     imp_values = values
-     flows[('imp', en_code + '_pe', '')] = imp_values
+     local_val = LOCAL_OIL.loc[country]
+     local_val.index = local_val.index.map(str)
+     mask = values >= local_val
+     flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
+     flows[('imp', en_code+'_pe', '')] = np.where(mask, values - local_val, 0)
      
     ''' Compute biomass imports and local production from model data'''
     if country != 'EU':

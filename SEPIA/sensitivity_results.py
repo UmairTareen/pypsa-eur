@@ -30,6 +30,8 @@ def rename_techs_tyndp(tech):
         return "hydrogen storage"
     elif tech in ["OCGT", "CHP", "gas boiler", "H2 Fuel Cell"]:
         return "gas-to-power/heat"
+    elif "solar rooftop" in tech:
+        return "solar rooftop"
     elif "solar" in tech:
         return "solar"
     elif tech == "Fischer-Tropsch":
@@ -422,7 +424,7 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
     groups = [
-        ["solar"],
+        ["solar","solar rooftop"],
         ["onshore wind", "offshore wind"],
         ["SMR"],
         ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
@@ -433,7 +435,7 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     ]
     
     groupss = [
-        ["solar"],
+        ["solar","solar rooftop"],
         ["onshore wind", "offshore wind"],
         ["SMR"],
         ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
