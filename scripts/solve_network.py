@@ -468,6 +468,21 @@ def imposed_values_genertion(n, foresight, config):
        
     return n       
 
+def imposed_values_sensitivity_offshore(n, foresight, config):
+  ''' This funtion impse values for offshore technologies for Belgium considering additional
+    capacity in northses'''
+  if "sensitivity_analysis_offshore_northsea" in config["run"]["name"]: 
+    if foresight == "myopic":
+     country = config["imposed_values"]["country"]
+     suffix = "1 0"
+     if f"{country}{suffix} offwind-dc-2040" in n.generators.index:
+         n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] = config["sensitivity_analysis"]["additional_capacity"][2040]
+     if f"{country}{suffix} offwind-dc-2050" in n.generators.index:
+         n.generators.loc[f"{country}{suffix} offwind-dc-2050", "p_nom_max"] = config["sensitivity_analysis"]["additional_capacity"][2050]
+         
+  return n
+
+
 def imposed_TYNDP(n, foresight, config):
    ''' This funtion impse values for TYNDP for transmissions lines'''
    tyndp_values_mapping = {
@@ -1509,6 +1524,10 @@ if __name__ == "__main__":
         n,
         config=snakemake.config,
         foresight=snakemake.params.foresight,)
+    n = imposed_values_sensitivity_offshore(
+        n,
+        foresight=snakemake.params.foresight,
+        config=snakemake.config,)
     n = imposed_TYNDP(
         n,
         config=snakemake.config,

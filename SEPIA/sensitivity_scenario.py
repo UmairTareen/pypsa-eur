@@ -58,13 +58,20 @@ def scenario_costs(country):
     # costs_sensitivity_4 = costs_sensitivity_4[['tech', 'Total']]
     # costs_sensitivity_4['Total'] = costs_sensitivity_4['Total'] / 3
     # costs_sensitivity_4 = costs_sensitivity_4.rename(columns={'Total': 'Energyville'})
-    sensitivity_analyses = [
-    ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_costs.csv"),
-    ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_costs.csv"),
-    ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_costs.csv"),
-    ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_costs.csv")]
-
+    print(f"Config run name: {config['run']['name']}")
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_costs.csv"),
+     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_costs.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_costs.csv"),
+     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_costs.csv")]
+     
+    elif "sensitivity_analysis_offshore" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_costs.csv"),
+     ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_costs.csv")]
     # Dictionary to store the processed dataframes
+    print(f"Selected sensitivity analyses: {sensitivity_analyses}")
     costs_sensitivity = {}
 
     # Process each sensitivity analysis
@@ -94,17 +101,22 @@ def scenario_costs(country):
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
     
-    pypsa_value = "8594 EUR/KW_nuclear"
-    fps_value = "7000 EUR/KW_nuclear"
-    mackinze_value = "6000 EUR/KW_nuclear"
-    energyville_value =  "4500 EUR/KW_nuclear"
-    
-    names_values = [
-    (f"PyPSA value = {pypsa_value}", pypsa_value),
-    (f"FPS value = {fps_value}", fps_value),
-    (f"Mackinze value = {mackinze_value}", mackinze_value),
-    (f"Energyville value = {energyville_value}", energyville_value)
-]
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     pypsa_value = "8594 EUR/KW_nuclear"
+     fps_value = "7000 EUR/KW_nuclear"
+     mackinze_value = "6000 EUR/KW_nuclear"
+     energyville_value =  "4500 EUR/KW_nuclear"
+     names_values = [
+     (f"PyPSA value = {pypsa_value}", pypsa_value),
+     (f"FPS value = {fps_value}", fps_value),
+     (f"Mackinze value = {mackinze_value}", mackinze_value),
+     (f"Energyville value = {energyville_value}", energyville_value)]
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     pypsa_value = "+ 0 GW"
+     nothsea_value = "+ 16 GW"
+     names_values = [
+     (f"PyPSA value = {pypsa_value}", pypsa_value),
+     (f"Nortsea_value = {nothsea_value}", nothsea_value)]
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -127,12 +139,16 @@ def scenario_costs(country):
     return fig
 
 def scenario_investment_costs(country):
-    sensitivity_analyses = [
-    ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_investment costs.csv"),
-    ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_investment costs.csv"),
-    ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_investment costs.csv"),
-    ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_investment costs.csv")]
-    
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_investment costs.csv"),
+     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_investment costs.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_investment costs.csv"),
+     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_investment costs.csv")]
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_investment costs.csv"),
+     ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_investment costs.csv")]
     
     # Dictionary to store the processed dataframes
     costs_sensitivity = {}
@@ -164,17 +180,22 @@ def scenario_investment_costs(country):
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
     
-    pypsa_value = "8594 EUR/KW_nuclear"
-    fps_value = "7000 EUR/KW_nuclear"
-    mackinze_value = "6000 EUR/KW_nuclear"
-    energyville_value =  "4500 EUR/KW_nuclear"
-    
-    names_values = [
-    (f"PyPSA value = {pypsa_value}", pypsa_value),
-    (f"FPS value = {fps_value}", fps_value),
-    (f"Mackinze value = {mackinze_value}", mackinze_value),
-    (f"Energyville value = {energyville_value}", energyville_value)
-]
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     pypsa_value = "8594 EUR/KW_nuclear"
+     fps_value = "7000 EUR/KW_nuclear"
+     mackinze_value = "6000 EUR/KW_nuclear"
+     energyville_value =  "4500 EUR/KW_nuclear"
+     names_values = [
+     (f"PyPSA value = {pypsa_value}", pypsa_value),
+     (f"FPS value = {fps_value}", fps_value),
+     (f"Mackinze value = {mackinze_value}", mackinze_value),
+     (f"Energyville value = {energyville_value}", energyville_value)]
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     pypsa_value = "+ 0 GW"
+     nothsea_value = "+ 16 GW"
+     names_values = [
+     (f"PyPSA value = {pypsa_value}", pypsa_value),
+     (f"Nortsea_value = {nothsea_value}", nothsea_value)]
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -196,11 +217,16 @@ def scenario_investment_costs(country):
     return fig
     
 def scenario_cumulative_costs(country):
-    sensitivity_analyses = [
-    ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_investment costs.csv"),
-    ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_investment costs.csv"),
-    ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_investment costs.csv"),
-    ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_investment costs.csv")]
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_investment costs.csv"),
+     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_investment costs.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_investment costs.csv"),
+     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_investment costs.csv")]
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_investment costs.csv"),
+     ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_investment costs.csv")]
     
     
     # Dictionary to store the processed dataframes
@@ -234,17 +260,22 @@ def scenario_cumulative_costs(country):
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
     
-    pypsa_value = "8594 EUR/KW_nuclear"
-    fps_value = "7000 EUR/KW_nuclear"
-    mackinze_value = "6000 EUR/KW_nuclear"
-    energyville_value =  "4500 EUR/KW_nuclear"
-    
-    names_values = [
-    (f"PyPSA value = {pypsa_value}", pypsa_value),
-    (f"FPS value = {fps_value}", fps_value),
-    (f"Mackinze value = {mackinze_value}", mackinze_value),
-    (f"Energyville value = {energyville_value}", energyville_value)
-]
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     pypsa_value = "8594 EUR/KW_nuclear"
+     fps_value = "7000 EUR/KW_nuclear"
+     mackinze_value = "6000 EUR/KW_nuclear"
+     energyville_value =  "4500 EUR/KW_nuclear"
+     names_values = [
+     (f"PyPSA value = {pypsa_value}", pypsa_value),
+     (f"FPS value = {fps_value}", fps_value),
+     (f"Mackinze value = {mackinze_value}", mackinze_value),
+     (f"Energyville value = {energyville_value}", energyville_value)]
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     pypsa_value = "+ 0 GW"
+     nothsea_value = "+ 16 GW"
+     names_values = [
+     (f"PyPSA value = {pypsa_value}", pypsa_value),
+     (f"Nortsea_value = {nothsea_value}", nothsea_value)]
     fig = go.Figure()
     df_transposed = combined_df.T
 
@@ -265,12 +296,16 @@ def scenario_cumulative_costs(country):
     return fig   
 #%%
 def scenario_capacities(country):
-    sensitivity_analyses = [
-    ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_capacities.csv"),
-    ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_capacities.csv"),
-    ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_capacities.csv"),
-    ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_capacities.csv")]
-    
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_capacities.csv"),
+     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_capacities.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_capacities.csv"),
+     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_capacities.csv")]
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_capacities.csv"),
+     ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_capacities.csv")] 
     
     # Dictionary to store the processed dataframes
     capacity_sensitivity = {}
@@ -352,11 +387,16 @@ def scenario_capacities(country):
     return fig
 
 def storage_capacities(country):
-    sensitivity_analyses = [
-    ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_storage_capacities.csv"),
-    ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_storage_capacities.csv"),
-    ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_storage_capacities.csv"),
-    ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_storage_capacities.csv")]
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_storage_capacities.csv"),
+     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_storage_capacities.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_storage_capacities.csv"),
+     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_storage_capacities.csv")]
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_storage_capacities.csv"),
+     ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_storage_capacities.csv")]
     
     
     # Dictionary to store the processed dataframes

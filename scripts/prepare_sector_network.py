@@ -876,7 +876,7 @@ def prepare_costs(cost_file, params, nyears, config, planning_horizons):
         costs.loc[:, "value"].unstack(level=1).groupby("technology").sum(min_count=1)
     )
     costs = costs.fillna(params["fill_values"])
-    if "sensitivity_analysis" in config["run"]["name"]:
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      if planning_horizons == 2040:
         tech = config["sensitivity_analysis"]["tech"]
         costs.at[tech, "investment"] = config["sensitivity_analysis"]["investment_costs"][2040] * 1e3

@@ -1081,15 +1081,15 @@ if __name__ == "__main__":
     eurostat_co2 = build_eurostat_co2(eurostat, base_year_emissions)
 
     co2 = build_co2_totals(countries, eea_co2, eurostat_co2)
-    if config["run"]["name"] == "ncdr" "sensitivity_analysis" in config["run"]["name"]:
-     for country in countries:
-        co2.loc[country, 'agriculture'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from agriculture'] + clever_Macro.loc[country, 'Total net GHG emissions from non-energy sources in agriculture']
-        co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']
-        co2.loc[country, 'industrial non-elec'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in industry (process emissions)']
-        co2.loc[country, 'waste management'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in waste management']
-        co2.loc[country, 'other'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in other sectors (industrial product use)']
-    else:
-     for country in countries:
+    # if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    #  for country in countries:
+    #     co2.loc[country, 'agriculture'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from agriculture'] + clever_Macro.loc[country, 'Total net GHG emissions from non-energy sources in agriculture']
+    #     co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']
+    #     co2.loc[country, 'industrial non-elec'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in industry (process emissions)']
+    #     co2.loc[country, 'waste management'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in waste management']
+    #     co2.loc[country, 'other'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in other sectors (industrial product use)']
+    # else:
+    for country in countries:
         co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']
     co2.to_csv(snakemake.output.co2_name)
 

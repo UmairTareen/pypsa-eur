@@ -428,9 +428,9 @@ def prepare_sepia(countries):
     fos_sum = flows_from_node[fos_columns].sum(axis=1)
     nuk_sum = flows_from_node[nuk_columns].sum(axis=1)
 
-    flows_from_node['ren'] = ren_sum
-    flows_from_node['fos'] = fos_sum
-    flows_from_node['nuk'] = nuk_sum
+    flows_from_node['ren'] = ren_sum.clip(lower=0)
+    flows_from_node['fos'] = fos_sum.clip(lower=0)
+    flows_from_node['nuk'] = nuk_sum.clip(lower=0)
 
     flows_from_node_t = flows_from_node.drop(columns=ren_columns + fos_columns + nuk_columns)
     gfec_breakdown = flows_from_node_t.loc[:, (flows_from_node_t != 0).any()]
@@ -531,12 +531,14 @@ def prepare_sepia(countries):
     ghg_sector['dac_ghg'] = -ghg_sector['dac_ghg']
     ghg_sector['bec_ghg'] = -ghg_sector['bec_ghg']
     ghg_sector['blq_ghg'] = -ghg_sector['blq_ghg']
+    ghg_sector['bmc_ghg'] = -ghg_sector['bmc_ghg']
     ghg_source = tot_ghg[country].groupby(level='Target', axis=1).sum()
     ghg_source['lufnes_ghg'] = -ghg_source['lufnes_ghg']
     ghg_source['blg_ghg'] = -ghg_source['blg_ghg']
     ghg_source['dac_ghg'] = -ghg_source['dac_ghg']
     ghg_source['bec_ghg'] = -ghg_source['bec_ghg']
     ghg_source['blq_ghg'] = -ghg_source['blq_ghg']
+    ghg_source['bmc_ghg'] = -ghg_source['bmc_ghg']
     
     ghg_sector_cum = ghg_sector.copy()
     ghg_sector_cum.loc['2030'] *= 10

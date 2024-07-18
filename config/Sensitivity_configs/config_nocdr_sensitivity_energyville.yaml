@@ -20,7 +20,7 @@ remote:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: "sensitivity_analysis_energyville"
+  name: "sensitivity_analysis_nuclear_energyville"
   scenarios:
     enable: false
     file: config/scenarios.yaml

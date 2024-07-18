@@ -20,7 +20,7 @@ remote:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: "sensitivity_analysis_nuclear_pypsa"
+  name: "sensitivity_analysis_offshore_pypsa"
   scenarios:
     enable: false
     file: config/scenarios.yaml
@@ -53,12 +53,6 @@ scenario:
   - 2030
   - 2040
   - 2050
-
-sensitivity_analysis:
-  tech: nuclear
-  investment_costs:
-    2040: 8594.1354 
-    2050: 8594.1354
   
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 countries: ['BE', 'DE', 'FR', 'GB', 'NL']

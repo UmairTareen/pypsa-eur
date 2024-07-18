@@ -35,8 +35,10 @@ def create_ghg_chart(results, NODES, main_params, type="area", title='', xls_wri
     df = pd.concat([df, NODES.loc[results.columns,'Label']], axis=1).set_index('Label', drop=True)
     add_data_to_output(xls_writer, title, unit, df.T)
     df = pd.melt(df, ignore_index=False, var_name='Year').reset_index()
+    df['Year'] = pd.to_numeric(df['Year'])
+    df = df.sort_values(by='Year')
     color_map = NODES.loc[results.columns].set_index('Label', drop=True)['Color'].to_dict()
-
+    
     df_positive = df[df['value'] >= 0]
     df_positive = df_positive[df_positive['value'] != 0]
     df_negative = df[df['value'] < 0]
