@@ -30,16 +30,16 @@ from make_summary import assign_carriers
 
 def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
-    if "heat pump" in tech or "resistive heater" in tech:
-        return "power-to-heat"
-    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
+    # if "heat pump" in tech or "resistive heater" in tech:
+    #     return "power-to-heat"
+    if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
     elif tech in ["H2 Store", "H2 storage"]:
         return "hydrogen storage"
-    elif tech in ["OCGT", "CHP", "gas boiler", "H2 Fuel Cell"]:
-        return "gas-to-power/heat"
+    elif tech in [ "CHP", "H2 Fuel Cell"]:
+        return "CHP"
     # elif "solar rooftop" in tech:
     #     return "solar rooftop"
     elif "solar" in tech:
@@ -572,7 +572,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
     colors["fossil oil and gas"] = colors["oil"]
     colors["hydrogen storage"] = colors["H2 Store"]
     colors["load shedding"] = 'black'
-    colors["gas-to-power/heat"] = 'darkred'
+    colors["CHP"] = 'darkred'
     colors["load"] = 'black'
     colors["Imports_Exports"] = colors["oil"]
     tabs = pn.Tabs()
@@ -1084,7 +1084,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
     tech_colors = config["plotting"]["tech_colors"]
     colors = tech_colors 
     colors["agriculture heat"] = "grey"
-    colors["gas-to-power/heat"] = "orange"
+    colors["CHP"] = "orange"
     tabs = pn.Tabs()
 
     for country in countries:
@@ -2278,7 +2278,7 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
         ["solar"],
         ["onshore wind", "offshore wind"],
         ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-liquid"],
         ["AC Transmission lines"],
         ["DC Transmission lines"],
         ["CCGT"],
@@ -2289,7 +2289,7 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
         ["solar"],
         ["onshore wind", "offshore wind"],
         ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-liquid"],
         ["transmission lines"],
         ["gas pipeline","gas pipeline new"],
         ["CCGT"],

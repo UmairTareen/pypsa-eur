@@ -235,7 +235,7 @@ def scenario_capacities(country):
         ["solar"],
         ["onshore wind", "offshore wind"],
         ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-liquid"],
         ["AC Transmission lines"],
         ["DC Transmission lines"],
         ["CCGT"],
@@ -245,7 +245,7 @@ def scenario_capacities(country):
         ["solar"],
         ["onshore wind", "offshore wind"],
         ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-liquid"],
         ["transmission lines"],
         ["gas pipeline","gas pipeline new"],
         ["CCGT"],
@@ -387,6 +387,30 @@ def create_scenario_plots():
  elec_demand_bau = demands_bau.loc[str(2050)].sum()
  total_costs_bau=pd.read_csv("results/bau/country_csvs/BE_costs.csv", index_col=0)
  total_costs_bau_2050 = total_costs_bau[['2050']].sum().sum()/1e9
+ 
+ jrc_historic=pd.read_csv("data/Historic_power_generation_jrc.csv", index_col=0)
+ pypsa = pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx", sheet_name="Chart 21", skiprows=2)
+ pypsa.set_index(pypsa.columns[0], inplace=True)
+ pypsa=pypsa.loc[2020]
+ pypsa = pd.DataFrame(pypsa).T
+ # Drop columns where all values are zero, except for 'Imports'
+ pypsa_tot = pypsa.loc[:, (pypsa != 0).any(axis=0)]
+ if 'Imports' in pypsa.columns:
+     if 'Imports' not in pypsa_tot.columns:
+         pypsa_tot['Imports'] = pypsa['Imports']       
+ pypsa_tot['Wind'] = pypsa_tot['Onshore wind'] + pypsa_tot['Offshore wind']
+ pypsa_tot = pypsa_tot.drop(columns=['Onshore wind', 'Offshore wind'])
+ pypsa_tot = pypsa_tot.T
+ common_index = jrc_historic.index.intersection(pypsa_tot.index)
+ jrc_historic = jrc_historic.loc[common_index]
+ pypsa_tot = pypsa_tot.loc[common_index]
+ # Rename columns
+ jrc_historic.columns = ['JRC-Historic-2020']
+ pypsa_tot.columns = ['PyPSA-2020']
+ # Concatenate the dataframes
+ combined_df = pd.concat([jrc_historic, pypsa_tot], axis=1)
+ rename_dict = {'Uranium': 'Nuclear', 'Gas grid': 'Natural gas'}
+ combined_df.rename(index=rename_dict, inplace=True)
 
 
  scenarios['Pypsa-sufficiency'] = None
@@ -496,7 +520,26 @@ def create_scenario_plots():
         yaxis_title="%"
     )
  figures['emissions'] = fig_emissions
-
+ 
+ fig_historic = go.Figure()
+ fig_historic.add_trace(go.Bar(
+     x=combined_df.index,
+     y=combined_df['JRC-Historic-2020'],
+     name='JRC-Historic-2020',
+     marker_color='blue'))
+ fig_historic.add_trace(go.Bar(
+     x=combined_df.index,
+     y=combined_df['PyPSA-2020'],
+     name='PyPSA-2020',
+     marker_color='red'))
+ fig_historic.update_layout(
+     title="2020 scenario comparison with JRC historic data",
+     yaxis_title='Energy Production (TWh)',
+     # barmode='group',
+     # font=dict(size=15),
+ )
+ figures['historic'] = fig_historic
+ 
  return figures
     
 def create_combined_scenario_chart_country(country, output_folder='results/scenario_results/'):
@@ -538,6 +581,8 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
         emission_comparison = scenario_figures['emissions']
         combined_html += f"<div><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
+        historic_comparison = scenario_figures['historic']
+        combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario</h2>{historic_comparison.to_html()}</div>"
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
@@ -554,6 +599,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         table_of_contents_content += f"<a href='#{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'>Scenario Flexibility Capacities in Electricity Grid Comparison</a><br>"
         table_of_contents_content += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
         table_of_contents_content += f"<a href='#{country} - Scenarios Emissions Comparison'>Scenarios Emissions Comparison</a><br>"
+        table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Reff Scenario</a><br>"
 
     # Add more links for other plots
     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
@@ -568,6 +614,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
         main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
         main_content += f"<div id='{country} - Scenarios Emissions Comparison'><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario</h2>{historic_comparison.to_html()}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template

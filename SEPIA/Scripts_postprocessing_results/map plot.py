@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_path = os.path.join(current_script_dir, "../../scripts/")
 sys.path.append(scripts_path)
-from plot_network import assign_location
-from plot_network import add_legend_circles, add_legend_patches, add_legend_lines
+from plot_power_network import assign_location
+from plot_power_network import add_legend_circles, add_legend_patches, add_legend_lines
 import holoviews as hv
 from make_summary import assign_carriers
 from plot_summary import preferred_order, rename_techs
@@ -275,7 +275,7 @@ def plot_map(
 
 for i, planning_horizon in enumerate(planning_horizons):
     # Load network for the current planning horizon
-    network_path = f"../../results/{scenario}/postnetworks/elec_s_6_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
+    network_path = f"../../results/{scenario}/postnetworks/elec_s_32_lvopt_EQ0.70c_1H-T-H-B-I-A-dist1_{planning_horizon}.nc"
 
     if not os.path.exists(network_path):
         print(f"Network file not found for {planning_horizon}")

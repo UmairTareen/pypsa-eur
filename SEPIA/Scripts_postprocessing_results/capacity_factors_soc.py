@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import os 
-with open("../config/config.yaml") as file:
+with open("../../config/config.yaml") as file:
     config = yaml.safe_load(file)
 def rename_techs(label):
     prefix_to_remove = [
@@ -129,8 +129,8 @@ def rename_techs_tyndp(tech):
         return tech
     
 country = 'BE'   
-cf = pd.read_csv(f"../results/ncdr/csvs/nodal_capacities.csv", index_col=1)
-df=pd.read_csv("../results/reff/csvs/nodal_capacities.csv", index_col=1)
+cf = pd.read_csv(f"../../results/ncdr/csvs/nodal_capacities.csv", index_col=1)
+df=pd.read_csv("../../results/reff/csvs/nodal_capacities.csv", index_col=1)
 df = df.iloc[:, 1:]
 df = df.iloc[3:, :]
 df.index = df.index.str[:2]
@@ -157,6 +157,37 @@ years = ['2020', '2030', '2040', '2050']
 technologies = result_df['tech'].unique()
 capacities = result_df.set_index('tech').loc[technologies, years]
 
+#Computing thermal capacities of residential and tertiary heating systems by considering efficiency
+technologies = [
+    "biomass boiler",  
+    "decentral ground-sourced heat pump",
+    "decentral gas boiler",
+    "decentral oil boiler", 
+    "decentral resistive heater"
+]
+new_names = [
+    "Residential and tertiary Biomass Boilers",
+    "Residential and tertiary HP",
+    "Residential and tertiary Gas Boilers",
+    "Residential and tertiary Oil Boilers",
+    "Residential and tertiary Electric Heaters"
+]
+# years_eff = [2020, 2030, 2040, 2050]
+efficiency_df = pd.DataFrame(index=technologies)
+for technology in technologies:
+    for year in years:
+        eff_data = pd.read_csv(f"/home/umair/pypsa-eur_repository/data/costs_{year}.csv", index_col=[0, 1]).sort_index()
+        eff_data.index = eff_data.index.set_levels([eff_data.index.levels[0], eff_data.index.levels[1].str.lower()])
+        eff_filtered = eff_data.at[(technology, "efficiency"), "value"]
+        efficiency_df.at[technology, year] = eff_filtered
+
+tech_to_group_mapping = dict(zip(technologies, new_names))
+efficiency_df.rename(index=tech_to_group_mapping, inplace=True)
+common_technologies = capacities.index.intersection(efficiency_df.index)
+filtered_capacity_df = capacities.loc[common_technologies]
+filtered_efficiency_df = efficiency_df.loc[common_technologies]
+capacities = filtered_capacity_df * filtered_efficiency_df
+
 tech_colors = config["plotting"]["tech_colors"]
 colors = config["plotting"]["tech_colors"]
 colors["Residential and tertiary HP"] = "blue"
@@ -177,11 +208,10 @@ groups = [
     ["Residential and tertiary Electric Heaters"],
 ]
 
-fig_capacities = make_subplots(rows=1, cols=len(groups) // 1, subplot_titles=[
-    f"{', '.join(tech_group)}" for tech_group in groups], shared_yaxes=True)
+fig_capacities = make_subplots(rows=1, cols=len(groups) // 1, shared_yaxes=True)
 
 df = capacities
-unit='Capacity [GW]'
+unit='Capacity [GW_th]'
 
 for i, tech_group in enumerate(groups, start=1):
     row_idx = 1 if i <= len(groups) // 1 else 1
@@ -200,8 +230,8 @@ for i, tech_group in enumerate(groups, start=1):
             fig_capacities.update_yaxes(title_text=unit, row=2, col=1)
 
 # Update layout
-output_folder = f"test/"
-fig_capacities.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities", yaxis_title=unit)
+output_folder = "test/"
+fig_capacities.update_layout(height=800, width=1200, showlegend=True, yaxis_title=unit, title="Installed Capacities")
 # Save plot as HTML
 output_folder = "test"
 if not os.path.exists(output_folder):
@@ -282,7 +312,7 @@ for planning_horizon in planning_horizons:
         gas_boiler_sum += (n.links_t.p1.filter(like="BE").filter(like=boiler).sum(axis=1).abs().sum()/1e6)
     
     for heat_pump in heat_pumps:
-        heat_pump_sum += (n.links_t.p1.filter(like="BE").filter(like=heat_pump).sum(axis=1).abs().sum()/1e6) -(n.links_t.p0.filter(like="BE").filter(like=heat_pump).sum(axis=1).abs().sum()/1e6)
+        heat_pump_sum += (n.links_t.p1.filter(like="BE").filter(like=heat_pump).sum(axis=1).abs().sum()/1e6)
         
     for boiler in oil_boilers:
         oil_boiler_sum += (n.links_t.p1.filter(like="BE").filter(like=boiler).sum(axis=1).abs().sum()/1e6)
@@ -345,6 +375,18 @@ df_percentages = pd.DataFrame({
     'Biomass Boilers': df_biomass_boilers_percentage,
     'Electric Heaters': df_electric_heaters_percentage
 })
+
+#investment costs data
+costs_tech_df = pd.DataFrame(index=technologies)
+for technology in technologies:
+    for year in years:
+        costs_data = pd.read_csv(f"/home/umair/pypsa-eur_repository/data/costs_{year}.csv", index_col=[0, 1]).sort_index()
+        costs_data.index = costs_data.index.set_levels([costs_data.index.levels[0], costs_data.index.levels[1].str.lower()])
+        costs_filtered = costs_data.at[(technology, "investment"), "value"]
+        costs_tech_df.at[technology, year] = costs_filtered
+tech_to_group_mapping = dict(zip(technologies, new_names))
+costs_tech_df.rename(index=tech_to_group_mapping, inplace=True)
+
 # Plot Capacity Factors
 fig_CF = go.Figure()
 for column in df_CF.columns:
@@ -364,11 +406,36 @@ fig_percentages.update_layout(height=600, width=800, showlegend=True, title="Hea
 percentages_html_file = os.path.join(output_folder, "percentages_chart.html")
 fig_percentages.write_html(percentages_html_file)
 
+# Plot investment costs
+fig_costs = make_subplots(rows=1, cols=len(groups) // 1, shared_yaxes=True)
+
+df = costs_tech_df
+unit='Investment Costs Eur/KW'
+
+for i, tech_group in enumerate(groups, start=1):
+    row_idx = 1 if i <= len(groups) // 1 else 1
+    col_idx = i if i <= len(groups) // 1 else i - len(groups) // 1
+
+    for tech in tech_group:
+        if tech in df.index:
+            y_values = [val for val in df.loc[tech, years]]
+            trace = go.Bar(
+                x=years,
+                y=y_values,
+                name=f"{tech}",
+                marker_color=tech_colors.get(tech, 'gray')
+            )
+            fig_costs.add_trace(trace, row=row_idx, col=col_idx)
+            fig_costs.update_yaxes(title_text=unit, row=2, col=1)
+
+fig_costs.update_layout(height=800, width=1200, showlegend=True, yaxis_title=unit,title="Investment Costs")
+costs_html_file = os.path.join(output_folder, "costs_chart.html")
+fig_costs.write_html(costs_html_file)
 # Combine the two HTML files into one
 combined_html_file = os.path.join(output_folder, "combined_charts.html")
 with open(combined_html_file, "w") as combined_file:
     combined_file.write("<html><head><title>Combined Plots</title></head><body>\n")
-    for file in [capacities_html_file,cf_html_file, percentages_html_file]:
+    for file in [capacities_html_file,cf_html_file, percentages_html_file, costs_html_file]:
         with open(file, "r") as single_file:
             combined_file.write(single_file.read())
             combined_file.write("\n<hr>\n")

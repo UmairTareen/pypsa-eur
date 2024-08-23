@@ -40,16 +40,11 @@ cp ../results/scenario_results/NL_combined_scenario_chart.html ../results/html_f
 cp ../results/scenario_results/FR_combined_scenario_chart.html ../results/html_folder/other_countries/FR_combined_scenario_chart.html
 cp ../results/scenario_results/GB_combined_scenario_chart.html ../results/html_folder/other_countries/GB_combined_scenario_chart.html
 
-cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2020.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2020_ncdr.html
-cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2030.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2030_ncdr.html
-cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2040.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2040_ncdr.html
-cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2050_ncdr.html
+cp ../results/ncdr/htmls/raw_html/Power_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_weekly_ncdr.html
+cp ../results/ncdr/htmls/raw_html/Heat_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Heat_Dispatch-BE_weekly_ncdr.html
 
-cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2020.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2020_bau.html
-cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2030.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2030_bau.html
-cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2040.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2040_bau.html
-cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_2050_bau.html
-
+cp ../results/bau/htmls/raw_html/Power_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_weekly_bau.html
+cp ../results/bau/htmls/raw_html/Heat_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Heat_Dispatch-BE_weekly_bau.html
 
 
 

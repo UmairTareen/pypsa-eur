@@ -77,7 +77,22 @@ def create_ghg_chart(results, NODES, main_params, type="area", title='', xls_wri
     )]
 
     line_width = 1
-    fig.update_layout(hovermode='x', legend_title_text='', yaxis_title='MtCO2/year', title=title)
+    # fig.update_layout(
+    # yaxis=dict(
+    #     range=[-1500, 4000],
+    #     tickfont=dict(
+    #         size=18)  # Adjust the font size as desired
+    #     ))
+    # fig.update_layout(
+    # xaxis=dict(
+    #     range=[2020, 2050],
+    #     tickmode='linear',
+    #     dtick=10,
+    #     tickfont=dict(
+    #         size=18),
+    # ))
+    fig.update_layout(hovermode='x', legend_title_text='', yaxis_title='MtCO2/year', title=title, font=dict(
+                size=18))
     if len(targets) > 0:
         fig.add_scatter(y=targets['y'], x=targets['x'], mode=targets['mode'], name=targets['title'], marker_size=15,
                         marker_color='black')
@@ -86,6 +101,7 @@ def create_ghg_chart(results, NODES, main_params, type="area", title='', xls_wri
     if type == "area":
         fig.add_scatter(y=results.sum(axis=1).to_list(), x=results.index.to_list(), mode='lines', name='Total',
                         line_color="black")
+    
     fig.update_traces(hovertemplate='%{y:.1f}', line_width=line_width)
     format_chart(fig, type, main_params)
     return fig
