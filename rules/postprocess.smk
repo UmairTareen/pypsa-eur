@@ -327,7 +327,7 @@ rule generate_sepia:
         costs = "data/costs_2050.csv",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         template = "SEPIA/Template/CLEVER.html",
-        #biomass_potentials = expand(resources("biomass_potentials_s{simpl}_{clusters}_{planning_horizons}.csv")),**config["scenario"],
+        biomass_potentials = expand(resources("biomass_potentials_s_{clusters}_{planning_horizons}.csv"),**config["scenario"]),
         excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
         
     output:
