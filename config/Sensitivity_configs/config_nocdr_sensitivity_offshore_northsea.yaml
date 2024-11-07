@@ -121,11 +121,11 @@ co2_budget_national:
     'SE': 0.45
     'SK': 0.45
     'RO': 0.45
-    'BE': 0.45
-    'DE': 0.45
-    'FR': 0.45
-    'GB': 0.45
-    'NL': 0.45
+    'BE': 0.60
+    'DE': 0.60
+    'FR': 0.60
+    'GB': 0.60
+    'NL': 0.60
   2040:
     'AT': 0.15
     'BG': 0.15
@@ -150,11 +150,11 @@ co2_budget_national:
     'SE': 0.15
     'SK': 0.15
     'RO': 0.15
-    'BE': 0.15
-    'DE': 0.15
-    'FR': 0.15
-    'GB': 0.15
-    'NL': 0.15
+    'BE': 0.20
+    'DE': 0.20
+    'FR': 0.20
+    'GB': 0.20
+    'NL': 0.20
     
   2050:
     'AT': 0.05
@@ -180,7 +180,7 @@ co2_budget_national:
     'SE': 0.05
     'SK': 0.05
     'RO': 0.05
-    'BE': 0.00
+    'BE': 0.05
     'DE': 0.05
     'FR': 0.05
     'GB': 0.05
@@ -267,7 +267,13 @@ imposed_values:
   offshore_dc: 3000
   solar: 14000
   solar_max: 104000
-  
+  offshore_max: 8000
+ 
+sequestration_potentia_BE: 
+  2030: 2
+  2040: 5
+  2050: 10
+   
 TYNDP_values:
   at_ch: 1200
   at_cz: 900
@@ -670,7 +676,11 @@ sector:
     min_size: 3
     max_size: 25
     years_of_storage: 25
-  co2_sequestration_potential: 200
+  co2_sequestration_potential:
+    2020: 0
+    2030: 100
+    2040: 150
+    2050: 200
   co2_sequestration_cost: 10
   co2_sequestration_lifetime: 50
   co2_spatial: true

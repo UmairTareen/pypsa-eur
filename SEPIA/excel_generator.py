@@ -10,14 +10,14 @@ def prepare_files(simpl, cluster, opt, sector_opt, ll):
 
     file_name = f'elec_s_{cluster}_lv1.0__Co2L0.8-{sector_opt}_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
-    source_directory = 'results/reff/postnetworks/'
+    source_directory = 'results/baseline/postnetworks/'
     destination_directory = f'results/{study}/postnetworks/'
     source_path = os.path.join(source_directory, file_name)
     destination_path = os.path.join(destination_directory, new_file_name)
     shutil.copy(source_path, destination_path)
 
     # CSV files
-    csv_source_directory = 'resources/reff/'
+    csv_source_directory = 'resources/baseline/'
     csv_destination_directory = f'resources/{study}/'
     csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv",f"co2_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv",f"biomass_potentials_s{simpl}_{cluster}_2020.csv"]
 
@@ -70,8 +70,8 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
                H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
             else:
                H2_nonenergyy = clever_industry.loc[
-                "Non-energy consumption of hydrogen for the feedstock production"].sum().sum()
-               H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].sum().sum()
+                "Non-energy consumption of hydrogen for the feedstock production", ["BE", "FR", "DE", "GB", "NL"]].sum().sum()
+               H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry", ["BE", "FR", "DE", "GB", "NL"]].sum().sum()
         industry_demand = pd.read_csv(
             f"resources/{study}/industrial_energy_demand_elec_s_" + str(cluster) + "_" + str(
                 planning_horizon) + ".csv", index_col=0).T
@@ -571,44 +571,44 @@ entry_label_mapping = {
                                                'source': 'TWh', 'target': 'prespaccfftt'},
     'services urban decentral air heat pump_2': {'label': 'Residential and tertiary HP for heating', 'source': 'TWh',
                                                  'target': 'prespaccffff'},
-    'residential rural ground heat pump_3': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'residential rural ground heat pump_3': {'label': 'Residential and tertairy heat from heat pumps',
                                              'source': 'TWh', 'target': 'preehhp'},
-    'residential rural ground heat pump_4': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'residential rural ground heat pump_4': {'label': 'Residential and tertairy heat from heat pumps',
                                              'source': 'TWh', 'target': 'preehhpp'},
     'residential urban decentral air heat pump_3': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh', 'target': 'preehhh'},
+        'label': 'Residential and tertairy heat from heat pumps', 'source': 'TWh', 'target': 'preehhh'},
     'residential urban decentral air heat pump_4': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh',
+        'label': 'Residential and tertairy heat from heat pumps', 'source': 'TWh',
         'target': 'preehhhh'},
-    'services rural ground heat pump_3': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'services rural ground heat pump_3': {'label': 'Residential and tertairy heat from heat pumps',
                                           'source': 'TWh', 'target': 'preehpp'},
-    'services rural ground heat pump_4': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'services rural ground heat pump_4': {'label': 'Residential and tertairy heat from heat pumps',
                                           'source': 'TWh', 'target': 'preehppp'},
     'services urban decentral air heat pump_3': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh',
+        'label': 'Residential and tertairy heat from heat pumps', 'source': 'TWh',
         'target': 'preehplm'},
     'services urban decentral air heat pump_4': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh',
+        'label': 'Residential and tertairy heat from heat pumps', 'source': 'TWh',
         'target': 'preehplmm'},
-    'residential rural resistive heater': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'residential rural resistive heater': {'label': 'Residential and tertairy heat from electric heaters',
                                            'source': 'TWh', 'target': 'preehpln'},
-    'residential rural resistive heater_2': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'residential rural resistive heater_2': {'label': 'Residential and tertairy heat from electric heaters',
                                              'source': 'TWh', 'target': 'preehplnn'},
     'residential urban decentral resistive heater': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh',
+        'label': 'Residential and tertairy heat from electric heaters', 'source': 'TWh',
         'target': 'preehplx'},
     'residential urban decentral resistive heater_2': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh',
+        'label': 'Residential and tertairy heat from electric heaters', 'source': 'TWh',
         'target': 'preehplxx'},
-    'services rural resistive heater': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'services rural resistive heater': {'label': 'Residential and tertairy heat from electric heaters',
                                         'source': 'TWh', 'target': 'preehply'},
-    'services rural resistive heater_2': {'label': 'Residential and tertairy heat from electric heaters and pumps',
+    'services rural resistive heater_2': {'label': 'Residential and tertairy heat from electric heaters',
                                           'source': 'TWh', 'target': 'preehplyy'},
     'services urban decentral resistive heater': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh',
+        'label': 'Residential and tertairy heat from electric heaters', 'source': 'TWh',
         'target': 'preehplyyy'},
     'services urban decentral resistive heater_2': {
-        'label': 'Residential and tertairy heat from electric heaters and pumps', 'source': 'TWh',
+        'label': 'Residential and tertairy heat from electric heaters', 'source': 'TWh',
         'target': 'preehplz'},
     'land transport oil': {'label': 'oil to transport demand', 'source': 'TWh', 'target': 'preslqfcftra'},
     'land transport fuel cell': {'label': 'land transport hydrogen demand', 'source': 'TWh', 'target': 'preshydcftra'},
@@ -726,6 +726,7 @@ entry_label_mapping = {
     'DC': {'label': 'Electricity grid losses', 'source': 'TWh', 'target': 'pregridloss'},
     
 }
+
 # %%
 def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country):
         '''

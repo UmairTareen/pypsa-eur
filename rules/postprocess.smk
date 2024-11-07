@@ -246,7 +246,7 @@ rule plot_summary:
         "../scripts/plot_summary.py"
 
 
-if "sensitivity_analysis" in config["run"]["name"]:
+if "sensitivity" in config["run"]["name"]:
  rule sensitivity_results:
     params:
         countries=config_provider("countries"),
@@ -326,6 +326,7 @@ rule generate_sepia:
         countries = "SEPIA/COUNTRIES.xlsx",
         costs = "data/costs_2050.csv",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
+        file_path = "SEPIA/html_texts.txt",
         template = "SEPIA/Template/CLEVER.html",
         biomass_potentials = expand(resources("biomass_potentials_s_{clusters}_{planning_horizons}.csv"),**config["scenario"]),
         excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
@@ -417,6 +418,7 @@ rule prepare_results:
         excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
         costs = "data/costs_2050.csv",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
+        file_path = "SEPIA/html_texts.txt", 
         template = "SEPIA/Template/pypsa.html",
         logo = "SEPIA/Template/logo.png",         
     output:

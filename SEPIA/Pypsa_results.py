@@ -54,8 +54,8 @@ def rename_techs_tyndp(tech):
          return "biomass"
     elif "Li ion" in tech:
         return "battery storage"
-    elif "EV charger" in tech:
-        return "V2G"
+    # elif "EV charger" in tech:
+    #     return "V2G"
     elif "load" in tech:
         return "load shedding"
     elif tech == "coal" or tech == "lignite":
@@ -186,7 +186,7 @@ def costs(countries, results):
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
 
-      cf = pd.read_csv("results/reff/csvs/nodal_costs.csv", index_col=2)
+      cf = pd.read_csv("results/baseline/csvs/nodal_costs.csv", index_col=2)
       cf = cf.iloc[:, 2:]
       cf = cf.iloc[3:, :]
       cf.index = cf.index.str[:2]
@@ -205,7 +205,7 @@ def costs(countries, results):
       mask = ~(result_df['tech'].isin(['load shedding']))
       result_df = result_df[mask]
       #calculationg gas costs for each country as in pypsa they are treated on EU level
-      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 23", index_col=0)
+      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 25", index_col=0)
       gas_val.columns = gas_val.iloc[1]
       if country != 'EU':
         for year in planning_horizons:
@@ -270,7 +270,7 @@ def Investment_costs(countries, results):
       condition = df[['2030', '2040', '2050']].eq(0).all(axis=1)
       df = df[~condition]
 
-      cf = pd.read_csv("results/reff/csvs/nodal_costs.csv", index_col=2)
+      cf = pd.read_csv("results/baseline/csvs/nodal_costs.csv", index_col=2)
       cf = cf.iloc[:, 1:]
       cf = cf.iloc[3:, :]
       cf.index = cf.index.str[:2]
@@ -332,7 +332,7 @@ def Investment_costs(countries, results):
 def capacities(countries, results):
     capacities = {}
     for country in countries:
-      df=pd.read_csv("results/reff/csvs/nodal_capacities.csv", index_col=1)
+      df=pd.read_csv("results/baseline/csvs/nodal_capacities.csv", index_col=1)
       cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
       df = df.iloc[:, 1:]
       df = df.iloc[3:, :]
@@ -400,7 +400,7 @@ def capacities(countries, results):
 def storage_capacities(countries):
     s_capacities = {}
     for country in countries:
-      df=pd.read_csv("results/reff/csvs/nodal_capacities.csv", index_col=1)
+      df=pd.read_csv("results/baseline/csvs/nodal_capacities.csv", index_col=1)
       cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
       df = df[df['cluster'] == 'stores']
       df = df.iloc[2:, :]
@@ -575,6 +575,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
     colors["CHP"] = 'darkred'
     colors["load"] = 'black'
     colors["Imports_Exports"] = colors["oil"]
+    colors["EV charger"] = colors["V2G"]
     tabs = pn.Tabs()
 
     for country in countries:
@@ -660,291 +661,6 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
         imp_exp = imp_exp.rename('Imports_Exports')
         imp_exp=-imp_exp
         supplyn['Imports_Exports'] = imp_exp
-        # if country == 'BE':
-        #    ac_lines = n.lines_t.p0.filter(items=['6', '7', '8']).sum(axis=1)
-        #    dc_lines = n.links_t.p1.filter(items=['14801','T6']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p0.filter(items=['14801-reversed','T6-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines, dc_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-         
-        # if country == 'DE':
-        #    ac_lines = n.lines_t.p0.filter(items=['18', '19', '20','21','22']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['12', '15','2']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['14801','14848','T36']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14824','5601','T16','T22', 'T33','T39']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['14801-reversed','14848-reversed','T36-reversed']).sum(axis=1)
-        #    dc_lines_r_1 = n.links_t.p0.filter(items=['14824-reversed','5601-reversed','T16-reversed','T22-reversed','T33-reversed','T39-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_1,dc_lines_r,dc_lines_r_1], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'FR':
-        #    ac_lines = n.lines_t.p0.filter(items=['28']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['13', '19','25','6']).sum(axis=1)
-        #    dc_lines = n.links_t.p1.filter(items=['14826','T0','T1', 'T12', 'T19', 'T21','T26']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p0.filter(items=['T2','14825']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p0.filter(items=['14826-reversed','T0-reversed','T1-reversed', 'T12-reversed', 'T19-reversed', 'T21-reversed','T26-reversed']).sum(axis=1)
-        #    dc_lines_r_1 = n.links_t.p1.filter(items=['T2-reversed','14825-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_1,dc_lines_r,dc_lines_r_1], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'GB':
-        #    ac_lines = n.lines_t.p0.filter(items=['29']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['14814','14815','14826','T6', 'T12','T13', 'T19', 'T21','T22','T33','T34','14804+1']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['T2','T17','T25']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['14814-reversed','14815-reversed','14826-reversed','T6-reversed', 'T12-reversed','T13-reversed', 'T19-reversed', 'T21-reversed','T22-reversed','T33-reversed','T34-reversed','14804+1-reversed']).sum(axis=1)
-        #    dc_lines_r_1 = n.links_t.p0.filter(items=['T2-reversed','T17-reversed','T25-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,dc_lines,dc_lines_1,dc_lines_r,dc_lines_r_1], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'NL':
-        #    ac_lines = n.lines_t.p1.filter(items=['21', '8']).sum(axis=1)
-        #    dc_lines = n.links_t.p1.filter(items=['14814','T34']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p0.filter(items=['14803','14821']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p0.filter(items=['14814-reversed','T34-reversed']).sum(axis=1)
-        #    dc_lines_r_1 = n.links_t.p1.filter(items=['14803-reversed','14821-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_1,dc_lines_r,dc_lines_r_1], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'AT':
-        #    ac_lines = n.lines_t.p0.filter(items=['0', '1','2','3','4','5']).sum(axis=1)
-        #    imp_exp = ac_lines.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'CH':
-        #    ac_lines = n.lines_t.p0.filter(items=['12','13','14']).sum(axis=1)
-        #    ac_lines_1 = n.lines_t.p1.filter(items=['0']).sum(axis=1)
-        #    dc_lines = n.links_t.p1.filter(items=['T15']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p0.filter(items=['T15-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_1, dc_lines,dc_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'CZ':
-        #    ac_lines = n.lines_t.p0.filter(items=['15','16','17']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['1']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'BG':
-        #    ac_lines = n.lines_t.p0.filter(items=['9', '10','11']).sum(axis=1)
-        #    imp_exp = ac_lines.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'HR':
-        #    ac_lines = n.lines_t.p0.filter(items=['31','32','33']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['10', '30']).sum(axis=1)
-        #    dc_lines = n.links_t.p1.filter(items=['14802']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p0.filter(items=['14802-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'RO':
-        #    ac_lines = n.lines_t.p1.filter(items=['11', '32','34']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['T37']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['T37-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'IT':
-        #    ac_lines = n.lines_t.p0.filter(items=['36']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['14', '28','4']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['14811','14802','T1','T15']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['T35']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['14811-reversed','14802-reversed','T1-reversed','T15-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p1.filter(items=['T35-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'PL':
-        #    ac_lines = n.lines_t.p0.filter(items=['39']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['16','22']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['14823', '6342']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['14823-reversed', '6342-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'SK':
-        #    ac_lines = n.lines_t.p1.filter(items=['17', '35','39']).sum(axis=1)
-        #    imp_exp = ac_lines.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'DK':
-        #    ac_lines = n.lines_t.p0.filter(items=['23']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['18']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['14824','14822+1']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14803','14819','14809', 'T13']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['14824-reversed','14822+1-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['14803-reversed','14819-reversed','14809-reversed', 'T13-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'LU':
-        #    ac_lines = n.lines_t.p1.filter(items=['20', '7']).sum(axis=1)
-        #    imp_exp = ac_lines.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'SE':
-        #    ac_lines = n.lines_t.p1.filter(items=['23','27','38']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['5601','14819','14809','14818','14817','T16']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14820','14823']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['5601-reversed','14819-reversed','14809-reversed','14818-reversed','14817-reversed','T16-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['14820-reversed','14823-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_r,dc_lines_1,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'EE':
-        #    ac_lines = n.lines_t.p0.filter(items=['24']).sum(axis=1)
-        #    dc_lines = n.links_t.p1.filter(items=['14807','14816','T36']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p0.filter(items=['14807-reversed','14816-reversed','T36-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'LV':
-        #    ac_lines = n.lines_t.p1.filter(items=['24', '37']).sum(axis=1)
-        #    imp_exp = ac_lines.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'ES':
-        #    ac_lines = n.lines_t.p0.filter(items=['25','26']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['T0','T35']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14825']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['T0-reversed','T35-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['14825-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'PT':
-        #    ac_lines = n.lines_t.p1.filter(items=['26']).sum(axis=1)
-        #    imp_exp = ac_lines.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'FI':
-        #    ac_lines = n.lines_t.p0.filter(items=['27']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['14807','14816']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14818','14817']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['14807-reversed','14816-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['14818-reversed','14817-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'IE':
-        #    ac_lines = n.lines_t.p1.filter(items=['29']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['T25','T26']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14815']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['T25-reversed','T26-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['14815-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'HU':
-        #    ac_lines = n.lines_t.p0.filter(items=['34','35']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['3','31']).sum(axis=1)
-        #    dc_lines = n.links_t.p1.filter(items=['T37']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p0.filter(items=['T37-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'GR':
-        #    ac_lines = n.lines_t.p0.filter(items=['30']).sum(axis=1)
-        #    ac_lines_r = n.lines_t.p1.filter(items=['9']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['T39']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14811']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['T39-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['14811-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines,ac_lines_r, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp=-imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'SI':
-        #    ac_lines = n.lines_t.p1.filter(items=['33','36','5']).sum(axis=1)
-        #    imp_exp = ac_lines.rename('Imports_Exports')
-        #    imp_exp = -imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'LT':
-        #    ac_lines = n.lines_t.p0.filter(items=['37']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['14820']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['6342']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['14820-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['6342-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp = -imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
-           
-        # if country == 'NO':
-        #    ac_lines = n.lines_t.p0.filter(items=['38']).sum(axis=1)
-        #    dc_lines = n.links_t.p0.filter(items=['T17']).sum(axis=1)
-        #    dc_lines_1 = n.links_t.p1.filter(items=['14821','14848','14822+1','14804+1']).sum(axis=1)
-        #    dc_lines_r = n.links_t.p1.filter(items=['T17-reversed']).sum(axis=1)
-        #    dc_lines_1_r = n.links_t.p0.filter(items=['14821-reversed','14848-reversed','14822+1-reversed','14804+1-reversed']).sum(axis=1)
-        #    merged_series = pd.concat([ac_lines, dc_lines,dc_lines_1,dc_lines_r,dc_lines_1_r], axis=1)
-        #    imp_exp = merged_series.sum(axis=1)
-        #    imp_exp = imp_exp.rename('Imports_Exports')
-        #    imp_exp = -imp_exp
-        #    supplyn['Imports_Exports'] = imp_exp
 
         bothn = supplyn.columns[(supplyn < 0.0).any() & (supplyn > 0.0).any()]
 
@@ -1005,8 +721,25 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
         if "offshore wind" in supplyn.index:
          supplyn.loc["offshore wind"] = supplyn.loc["offshore wind"] + c_offwindn
          supplyn.loc["offshore curtailment"] = -abs(c_offwindn)
-        
+        if "H2 pipeline" in supplyn.index:
+           supplyn = supplyn.drop('H2 pipeline')
         supplyn = supplyn.T
+        if "V2G" in n.carriers.index:
+         if country != 'EU':
+             v2g = n.links_t.p1.filter(like=country).filter(like="V2G").sum(axis=1)
+             v2g = v2g.to_frame()
+             v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
+             v2g = v2g/1e3
+             supplyn['electricity distribution grid'] = supplyn['electricity distribution grid'] + v2g['V2G']
+             supplyn['V2G'] = v2g['V2G'].abs()
+         else:
+             v2g = n.links_t.p1.filter(like="V2G").sum(axis=1)
+             v2g = v2g.to_frame()
+             v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
+             v2g = v2g/1e3
+             supplyn['electricity distribution grid'] = supplyn['electricity distribution grid'] + v2g['V2G']
+             supplyn['V2G'] = v2g['V2G'].abs()
+        
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
         
@@ -1268,7 +1001,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 def plot_map(
     network,country,
     components=["links", "stores", "storage_units", "generators"],
-    bus_size_factor=2e10,
+    bus_size_factor=1.7e10,
     transmission=True,
     with_legend=True,
 ):
@@ -1315,9 +1048,7 @@ def plot_map(
             logger.warning(f"{item} not in config/plotting/tech_colors")
 
     costs = costs.stack()  # .sort_index()
-
-    # hack because impossible to drop buses...
-    eu_location = snakemake.params.plotting.get("eu_node_location", dict(x=-5.5, y=46))
+    eu_location = config["plotting"].get("eu_node_location", dict(x=-5.5, y=46))
     n.buses.loc["EU gas", "x"] = eu_location["x"]
     n.buses.loc["EU gas", "y"] = eu_location["y"]
 
@@ -1343,7 +1074,7 @@ def plot_map(
     # PDF has minimum width, so set these to zero
     line_lower_threshold = 500.0
     line_upper_threshold = 1e4
-    linewidth_factor = 4e3
+    linewidth_factor = 750
     ac_color = "rosybrown"
     dc_color = "darkseagreen"
 
@@ -1356,7 +1087,7 @@ def plot_map(
         if transmission:
             line_widths = n.lines.s_nom_opt
             link_widths = n.links.p_nom_opt
-            linewidth_factor = 2e3
+            linewidth_factor = 1e3
             line_lower_threshold = 0.0
             title = "current grid"
     else:
@@ -1365,7 +1096,7 @@ def plot_map(
         if transmission:
             line_widths = n.lines.s_nom_opt
             link_widths = n.links.p_nom_opt
-            title = "total grid"
+            title = "total grid capacity"
 
     line_widths = line_widths.clip(line_lower_threshold, line_upper_threshold)
     link_widths = link_widths.clip(line_lower_threshold, line_upper_threshold)
@@ -1373,9 +1104,8 @@ def plot_map(
     line_widths = line_widths.replace(line_lower_threshold, 0)
     link_widths = link_widths.replace(line_lower_threshold, 0)
     
-    fig, ax = plt.subplots(subplot_kw={"projection": proj})
-    fig.set_size_inches(15, 15)
-
+    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
+    
     n.plot(
         bus_sizes=costs / bus_size_factor,
         bus_colors=tech_colors,
@@ -1384,17 +1114,17 @@ def plot_map(
         line_widths=line_widths / linewidth_factor,
         link_widths=link_widths / linewidth_factor,
         ax=ax,
-        **map_opts,
+        # **map_opts,
     )
 
     sizes = [20, 10, 5]
-    labels = [f"{s} bEUR/a" for s in sizes]
+    labels = [f"{s} bEUR/year" for s in sizes]
     sizes = [s / bus_size_factor * 1e9 for s in sizes]
 
     legend_kw = dict(
         loc="upper left",
         bbox_to_anchor=(0.001, 0.85),
-        labelspacing=1,
+        labelspacing=2.25,
         frameon=False,
         handletextpad=1,
         fontsize=15,
@@ -1410,14 +1140,14 @@ def plot_map(
         legend_kw=legend_kw,
     )
 
-    sizes = [10, 5]
+    sizes = [10, 5, 1]
     labels = [f"{s} GW" for s in sizes]
     scale = 1e3 / linewidth_factor
     sizes = [s * scale for s in sizes]
-    if planning_horizons == 2020:
-        value = "current grid"
-    else:
-        value = "total grid"
+    # if planning_horizons == 2020:
+    #     value = "current grid"
+    # else:
+    #     value = "total grid capacity"
     legend_kw = dict(
         loc="upper left",
         bbox_to_anchor=(0.001, 0.45),
@@ -1425,7 +1155,7 @@ def plot_map(
         labelspacing=1,
         handletextpad=1,
         fontsize=15,
-        title=value,
+        title=title,
     )
 
     add_legend_lines(
@@ -1435,7 +1165,7 @@ def plot_map(
     legend_kw = dict(
         bbox_to_anchor=(1.35, 1),
         frameon=False,
-        fontsize=15,
+        fontsize=15
     )
 
     if with_legend:
@@ -1484,7 +1214,7 @@ def plot_map(
      table_data = table_data[table_data['Capacity [GW]'] != 0]
 
      # Plot the table on the same subplot as the map
-     left, bottom, width, height = 0.05, 0.15, 0.4, 0.12
+     left, bottom, width, height = 0.05, 0.05, 0.4, 0.12
      tab = table(ax, table_data, bbox=[left, bottom, width, height],fontsize=20)
      type_col_index = table_data.columns.get_loc('Type')
 
@@ -1501,9 +1231,105 @@ def plot_map(
     imagebox = OffsetImage(img, zoom=0.25)
     ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
     ax.add_artist(ab)
-    
     return fig
 
+def create_map_plots(planning_horizons, country):
+    
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+    /* ... (existing styles) ... */
+    </style>
+    </head>
+    <body>
+    <div class="tab">
+    """
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+         n = loaded_files[planning_horizon]
+
+        # Plot the map and get the figure
+         fig = plot_map(
+             n,country,
+             components=["generators", "links", "stores", "storage_units"],
+             bus_size_factor=90e9,
+             transmission=True,
+         )
+         plt.rcParams['legend.title_fontsize'] = '20'
+        # Save the map plot as an image
+         output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
+         fig.savefig(output_image_path, bbox_inches="tight")
+         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+         with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+         html_content += f"""
+        <button class="map-tablinks{' active' if i == 0 else ''}" onclick="openMapTab(event, 'map_{planning_horizon}_{i + 1}')">{planning_horizon}</button>
+        """
+
+    html_content += """
+    </div>
+    """
+
+    for i, planning_horizon in enumerate(planning_horizons):
+        # Load network for the current planning horizon
+         n = loaded_files[planning_horizon]
+         fig = plot_map(
+             n,country,
+             components=["generators", "links", "stores", "storage_units"],
+             bus_size_factor=90e9,
+             transmission=True,
+         )
+         plt.rcParams['legend.title_fontsize'] = '20'
+        # Save the map plot as an image
+         output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
+         fig.savefig(output_image_path)
+         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
+
+        # Encode the image as base64
+         with open(output_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Add tab content for each planning horizon with embedded image data
+         html_content += f"""
+        <div id="map_{planning_horizon}_{i + 1}" class="map-tabcontent" style="display: {'block' if i == 0 else 'none'};">
+            <h2>Map Plot - {planning_horizon}</h2>
+            <img src="data:image/png;base64,{encoded_image}" alt="Map Plot" width="1200" height="800">
+        </div>
+        """
+
+
+    # Add JavaScript for tab functionality
+    html_content += """
+    <script>
+    function openMapTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("map-tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("map-tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+    </script>
+    </body>
+    </html>
+    """
+
+    # Save the entire HTML content to a single file
+    
+    output_combined_html_path = f"results/{study}/htmls/raw_html/map_plots_{country}.html"
+    with open(output_combined_html_path, "w") as html_file:
+        html_file.write(html_content)
 def group_pipes(df, drop_direction=False):
     """
     Group pipes which connect same buses and return overall capacity.
@@ -1630,7 +1456,6 @@ def plot_h2_map(network):
     color_retrofit = "#499a9c"
 
     bus_colors = {"H2 Electrolysis": "#ff29d9", "H2 Fuel Cell": "#805394"}
-
     n.plot(
         geomap=True,
         bus_sizes=bus_sizes,
@@ -1740,7 +1565,7 @@ def plot_ch4_map(network):
     assign_location(n)
 
     bus_size_factor = 10e8
-    linewidth_factor = 1e4
+    linewidth_factor = 0.5e4
     # MW below which not drawn
     line_lower_threshold = 1e3
 
@@ -1819,7 +1644,7 @@ def plot_ch4_map(network):
     pipe_colors = {
         "gas pipeline": "#f08080",
         "gas pipeline new": "#c46868",
-        "gas pipeline (in 2020)": "lightgrey",
+        "gas pipeline retrofitted to H2": "#499a9c",
         "gas pipeline (available)": "#e8d1d1",
     }
 
@@ -1835,15 +1660,17 @@ def plot_ch4_map(network):
     }
 
     fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
-
+    eu_location = config["plotting"].get("eu_node_location", dict(x=-50, y=46))
+    n.buses.loc["EU gas", "x"] = eu_location["x"]
+    n.buses.loc["EU gas", "y"] = eu_location["y"]
     n.plot(
         bus_sizes=bus_sizes,
         bus_colors=bus_colors,
-        link_colors=pipe_colors["gas pipeline (in 2020)"],
+        link_colors=pipe_colors["gas pipeline retrofitted to H2"],
         link_widths=link_widths_orig,
         branch_components=["Link"],
         ax=ax,
-        **map_opts,
+        # **map_opts,
     )
 
     n.plot(
@@ -1853,7 +1680,7 @@ def plot_ch4_map(network):
         link_widths=link_widths_rem,
         branch_components=["Link"],
         color_geomap=False,
-        boundaries=map_opts["boundaries"],
+        # boundaries=map_opts["boundaries"],
     )
 
     n.plot(
@@ -1863,7 +1690,7 @@ def plot_ch4_map(network):
         link_widths=link_widths_used,
         branch_components=["Link"],
         color_geomap=False,
-        boundaries=map_opts["boundaries"],
+        # boundaries=map_opts["boundaries"],
     )
 
     sizes = [100, 10]
@@ -1942,103 +1769,7 @@ def plot_ch4_map(network):
     ax.add_artist(ab)
     return fig
 
-def create_map_plots(planning_horizons, country):
-    
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <style>
-    /* ... (existing styles) ... */
-    </style>
-    </head>
-    <body>
-    <div class="tab">
-    """
-    for i, planning_horizon in enumerate(planning_horizons):
-        # Load network for the current planning horizon
-         n = loaded_files[planning_horizon]
 
-        # Plot the map and get the figure
-         fig = plot_map(
-            n,country,
-            components=["generators", "links", "stores", "storage_units"],
-            bus_size_factor=90e9,
-            transmission=True,
-         )
-         plt.rcParams['legend.title_fontsize'] = '20'
-        # Save the map plot as an image
-         output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
-         fig.savefig(output_image_path, bbox_inches="tight")
-         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
-
-        # Encode the image as base64
-         with open(output_image_path, "rb") as image_file:
-            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-
-        # Add tab content for each planning horizon with embedded image data
-         html_content += f"""
-        <button class="map-tablinks{' active' if i == 0 else ''}" onclick="openMapTab(event, 'map_{planning_horizon}_{i + 1}')">{planning_horizon}</button>
-        """
-
-    html_content += """
-    </div>
-    """
-
-    for i, planning_horizon in enumerate(planning_horizons):
-        # Load network for the current planning horizon
-         n = loaded_files[planning_horizon]
-         fig = plot_map(
-            n,country,
-            components=["generators", "links", "stores", "storage_units"],
-            bus_size_factor=90e9,
-            transmission=True,
-         )
-         plt.rcParams['legend.title_fontsize'] = '20'
-        # Save the map plot as an image
-         output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
-         fig.savefig(output_image_path, bbox_inches="tight")
-         plt.close(fig)  # Close the figure to avoid displaying it in the notebook
-
-        # Encode the image as base64
-         with open(output_image_path, "rb") as image_file:
-            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-
-        # Add tab content for each planning horizon with embedded image data
-         html_content += f"""
-        <div id="map_{planning_horizon}_{i + 1}" class="map-tabcontent" style="display: {'block' if i == 0 else 'none'};">
-            <h2>Map Plot - {planning_horizon}</h2>
-            <img src="data:image/png;base64,{encoded_image}" alt="Map Plot" width="1200" height="800">
-        </div>
-        """
-
-
-    # Add JavaScript for tab functionality
-    html_content += """
-    <script>
-    function openMapTab(evt, tabName) {
-      var i, tabcontent, tablinks;
-      tabcontent = document.getElementsByClassName("map-tabcontent");
-      for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
-      }
-      tablinks = document.getElementsByClassName("map-tablinks");
-      for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
-      }
-      document.getElementById(tabName).style.display = "block";
-      evt.currentTarget.className += " active";
-    }
-    </script>
-    </body>
-    </html>
-    """
-
-    # Save the entire HTML content to a single file
-    
-    output_combined_html_path = f"results/{study}/htmls/raw_html/map_plots_{country}.html"
-    with open(output_combined_html_path, "w") as html_file:
-        html_file.write(html_content)
 
 def create_H2_map_plots(planning_horizons):
     
@@ -2387,6 +2118,31 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     # Create combined HTML
     combined_html = "<html><head><title>Combined Plots</title></head><body>"
     
+    #Load text descriptors
+    def load_html_texts(file_path):
+     html_texts = {}
+     with open(file_path, 'r') as file:
+        for line in file:
+            # Split by ": " to get the key and the HTML content
+            if ": " in line:
+                key, html_content = line.split(": ", 1)
+                html_texts[key.strip()] = html_content.strip()
+     return html_texts
+    # Load the HTML texts from file
+    html_texts = load_html_texts(file_path)
+    sectoral_demands_desc = html_texts.get('sectoral_demands_desc', '')
+    annual_costs_desc = html_texts.get('annual_costs_desc', '')
+    investment_costs_desc = html_texts.get('investment_costs_desc', '')
+    capacities_desc = html_texts.get('capacities_desc', '')
+    storage_capacities_desc = html_texts.get('storage_capacities_desc', '')
+    heat_dispatch_win_desc = html_texts.get('heat_dispatch_win_desc', '')
+    heat_dispatch_sum_desc = html_texts.get('heat_dispatch_sum_desc', '')
+    power_dispatch_win_desc = html_texts.get('power_dispatch_win_desc', '')
+    power_dispatch_sum_desc = html_texts.get('power_dispatch_sum_desc', '')
+    map_plots_desc = html_texts.get('map_plots_desc', '')
+    gas_map_plots_desc = html_texts.get('gas_map_plots_desc', '')
+    h2_map_plots_desc = html_texts.get('h2_map_plots_desc', '')
+    
     plot_demands_file_path = os.path.join(raw_html, f"{country}_sectoral_demands.html")
     with open(plot_demands_file_path, "r") as plot_demands_file:
         plot_demands_html = plot_demands_file.read()
@@ -2456,18 +2212,18 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     
     # Add more links for other plots
 
-    main_content = f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{plot_demands_html}</div>"
-    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
-    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{s_capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html}</div>"
-    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html_w}</div>"
-    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{plot_series_html}</div>"
-    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{plot_series_html_w}</div>"
-    main_content += f"<div id='Map Plots'><h2>Map Plots</h2>{plot_map_html}</div>"
-    main_content += f"<div id='H2 Map Plots'><h2>H2 Map Plots</h2>{plot_map_h2_html}</div>"
-    main_content += f"<div id='Gas Map Plots'><h2>Gas Map Plots</h2>{plot_map_ch4_html}</div>"
+    main_content = f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{sectoral_demands_desc}{plot_demands_html}</div>"
+    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
+    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{heat_dispatch_win_desc}{plot_series_heat_html}</div>"
+    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{heat_dispatch_sum_desc}{plot_series_heat_html_w}</div>"
+    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{power_dispatch_win_desc}{plot_series_html}</div>"
+    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{power_dispatch_sum_desc}{plot_series_html_w}</div>"
+    main_content += f"<div id='Map Plots'><h2>Map Plots</h2>{map_plots_desc}{plot_map_html}</div>"
+    main_content += f"<div id='H2 Map Plots'><h2>H2 Map Plots</h2>{gas_map_plots_desc}{plot_map_h2_html}</div>"
+    main_content += f"<div id='Gas Map Plots'><h2>Gas Map Plots</h2>{h2_map_plots_desc}{plot_map_ch4_html}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template
@@ -2510,6 +2266,7 @@ if __name__ == "__main__":
     config = snakemake.config
     study = snakemake.params.study
     logo = logo()
+    file_path = snakemake.input.file_path
     loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     results = calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_horizons)
     costs = costs(countries, results)

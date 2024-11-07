@@ -148,11 +148,11 @@ def plot_balances(country, study):
 
     balances_df.rename(columns=column_mapping, inplace=True)
 
-    elec_imp = pd.read_excel(file, sheet_name="Chart 21", index_col=0)
+    elec_imp = pd.read_excel(file, sheet_name="Chart 23", index_col=0)
     elec_imp.columns = elec_imp.iloc[1]
-    gas_val = pd.read_excel(file, sheet_name="Chart 23", index_col=0)
+    gas_val = pd.read_excel(file, sheet_name="Chart 25", index_col=0)
     gas_val.columns = gas_val.iloc[1]
-    h2_val = pd.read_excel(file, sheet_name="Chart 22", index_col=0)
+    h2_val = pd.read_excel(file, sheet_name="Chart 24", index_col=0)
     h2_val.columns = h2_val.iloc[1]
     lulucf_val = pd.read_excel(file, sheet_name="Chart 2", index_col=0)
     lulucf_val.columns = lulucf_val.iloc[1]
@@ -223,16 +223,16 @@ def plot_balances(country, study):
     balances = {key: value for key, value in balances.items() if key not in balances_to_drop}
     return balances_df, balances
 def plot_figures():
- balances_df_bau, balances = plot_balances(country, study_bau)
+ balances_df_ref, balances = plot_balances(country, study_ref)
  balances_df_ncdr, balances = plot_balances(country, study_ncdr)
 
- combined_df = balances_df_bau.merge(balances_df_ncdr, on=['energy', 'components', 'techs'], how='outer', suffixes=('_bau', '_ncdr'))
+ combined_df = balances_df_ref.merge(balances_df_ncdr, on=['energy', 'components', 'techs'], how='outer', suffixes=('_ref', '_ncdr'))
  combined_df = combined_df.fillna(0)
  fig, ax = plt.subplots(figsize=(12, 8))
  for k, v in balances.items():
     df = combined_df.loc[v]
     df = df.groupby(df["techs"]).sum()
-    columns_to_convert = ['2030_bau', '2040_bau', '2050_bau','2030_ncdr', '2040_ncdr', '2050_ncdr']
+    columns_to_convert = ['2030_ref', '2040_ref', '2050_ref','2030_ncdr', '2040_ncdr', '2050_ncdr']
     # convert MWh to TWh
     df[columns_to_convert] = df[columns_to_convert] / 1e6
     co2_carriers = ["co2", "co2 stored", "process emissions"]
@@ -303,12 +303,12 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     cluster = snakemake.params.scenario["clusters"][0]
-    studies = ['bau', 'ncdr']
+    studies = ['ref', 'ncdr']
     country = snakemake.config["country_summary"]
 
-    study_bau = 'bau'
+    study_ref = 'ref'
     study_ncdr = 'ncdr'
 
-    balances_df_bau, balances = plot_balances(country, study_bau)
+    balances_df_ref, balances = plot_balances(country, study_ref)
     balances_df_ncdr, balances = plot_balances(country, study_ncdr)
     plot_figures()

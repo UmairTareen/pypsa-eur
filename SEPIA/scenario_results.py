@@ -27,20 +27,20 @@ def logo():
     return logo
 
 def scenario_costs(country):
-    costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_costs.csv")
+    costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_costs.csv")
     costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_costs.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     # costs_reff = costs_bau[['tech', '2020']]
-    costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
+    costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
     # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
-    costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
-    costs_bau = costs_bau[['tech', 'Total']]
-    costs_bau['Total'] = costs_bau['Total'] / 3
-    costs_bau = costs_bau.rename(columns={'Total': 'BAU'})
+    costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
+    costs_ref = costs_ref[['tech', 'Total']]
+    costs_ref['Total'] = costs_ref['Total'] / 3
+    costs_ref = costs_ref.rename(columns={'Total': 'Ref'})
     
     costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
     costs_suff = costs_suff[['tech', 'Total']]
@@ -52,7 +52,7 @@ def scenario_costs(country):
     # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
     # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
     
-    combined_df = pd.merge(costs_suff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_Ref'))
     # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
     # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
@@ -81,20 +81,20 @@ def scenario_costs(country):
     return fig
 
 def scenario_investment_costs(country):
-    costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_investment costs.csv")
+    costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_investment costs.csv")
     costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_investment costs.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     # costs_reff = costs_bau[['tech', '2020']]
-    costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
+    costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
     # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
-    costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
-    costs_bau = costs_bau[['tech', 'Total']]
-    costs_bau['Total'] = costs_bau['Total'] / 3
-    costs_bau = costs_bau.rename(columns={'Total': 'BAU'})
+    costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
+    costs_ref = costs_ref[['tech', 'Total']]
+    costs_ref['Total'] = costs_ref['Total'] / 3
+    costs_ref = costs_ref.rename(columns={'Total': 'Ref'})
     
     costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
     costs_suff = costs_suff[['tech', 'Total']]
@@ -106,7 +106,7 @@ def scenario_investment_costs(country):
     # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
     # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
     
-    combined_df = pd.merge(costs_suff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
     # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
@@ -135,21 +135,21 @@ def scenario_investment_costs(country):
     return fig
     
 def scenario_cumulative_costs(country):
-    costs_bau = pd.read_csv(f"results/bau/country_csvs/{country}_investment costs.csv")
+    costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_investment costs.csv")
     costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_investment costs.csv")
     # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
     # costs_reff = costs_bau[['tech', '2020']]
-    costs_bau = costs_bau[['tech', '2030', '2040', '2050']]
+    costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
     
     # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
-    costs_bau['Total'] = costs_bau[['2030', '2040', '2050']].sum(axis=1)
-    costs_bau = costs_bau[['tech', 'Total']]
-    costs_bau['Total'] = costs_bau['Total'] / 3
-    costs_bau['Total'] = costs_bau['Total'] * 27
-    costs_bau = costs_bau.rename(columns={'Total': 'BAU'})
+    costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
+    costs_ref = costs_ref[['tech', 'Total']]
+    costs_ref['Total'] = costs_ref['Total'] / 3
+    costs_ref['Total'] = costs_ref['Total'] * 27
+    costs_ref = costs_ref.rename(columns={'Total': 'Ref'})
     
     costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
     costs_suff = costs_suff[['tech', 'Total']]
@@ -162,7 +162,7 @@ def scenario_cumulative_costs(country):
     # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
     # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
     
-    combined_df = pd.merge(costs_suff, costs_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
     # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
@@ -191,18 +191,18 @@ def scenario_cumulative_costs(country):
     return fig   
 #%%
 def scenario_capacities(country):
-    caps_bau = pd.read_csv(f"results/bau/country_csvs/{country}_capacities.csv")
+    caps_ref = pd.read_csv(f"results/ref/country_csvs/{country}_capacities.csv")
     caps_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_capacities.csv")
     # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
-    caps_reff = caps_bau[['tech', '2020']]
-    caps_bau = caps_bau[['tech', '2030', '2040', '2050']]
+    caps_baseline = caps_ref[['tech', '2020']]
+    caps_ref = caps_ref[['tech', '2030', '2040', '2050']]
     caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
     # caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
     
     # caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
     
-    caps_bau = caps_bau[['tech', '2050']]
-    caps_bau = caps_bau.rename(columns={'2050': 'BAU'})
+    caps_ref = caps_ref[['tech', '2050']]
+    caps_ref = caps_ref.rename(columns={'2050': 'Ref'})
     
     caps_suff = caps_suff[['tech', '2050']]
     caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
@@ -215,7 +215,7 @@ def scenario_capacities(country):
     # caps_ncdr = caps_ncdr[['tech', '2050']]
     # caps_ncdr = caps_ncdr.rename(columns={'2050': 'Ncdr'})
     
-    combined_df = pd.merge(caps_reff, caps_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    combined_df = pd.merge(caps_baseline, caps_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
     # combined_df = pd.merge(combined_df, caps_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
@@ -284,18 +284,18 @@ def scenario_capacities(country):
     return fig
 
 def storage_capacities(country):
-    caps_bau = pd.read_csv(f"results/bau/country_csvs/{country}_storage_capacities.csv")
+    caps_ref = pd.read_csv(f"results/ref/country_csvs/{country}_storage_capacities.csv")
     caps_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_storage_capacities.csv")
     # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
-    caps_reff = caps_bau[['tech', '2020']]
-    caps_bau = caps_bau[['tech', '2030', '2040', '2050']]
+    caps_baseline = caps_ref[['tech', '2020']]
+    caps_ref = caps_ref[['tech', '2030', '2040', '2050']]
     caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
     # caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
     
     # caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
     
-    caps_bau = caps_bau[['tech', '2050']]
-    caps_bau = caps_bau.rename(columns={'2050': 'BAU'})
+    caps_ref = caps_ref[['tech', '2050']]
+    caps_ref = caps_ref.rename(columns={'2050': 'Ref'})
     
     caps_suff = caps_suff[['tech', '2050']]
     caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
@@ -308,7 +308,7 @@ def storage_capacities(country):
     # caps_ncdr = caps_ncdr[['tech', '2050']]
     # caps_ncdr = caps_ncdr.rename(columns={'2050': 'Ncdr'})
     
-    combined_df = pd.merge(caps_reff, caps_bau, on='tech', how='outer', suffixes=('_reff', '_bau'))
+    combined_df = pd.merge(caps_baseline, caps_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
     # combined_df = pd.merge(combined_df, caps_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
@@ -367,29 +367,45 @@ def create_scenario_plots():
  transmission_ncdr = ac_transmission_ncdr + dc_transmission_ncdr
 
  investment_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_investment costs.csv", index_col=0)
- investment_ncdr_2050 = investment_ncdr[['2050']].sum().sum()/1e9
- demands_ncdr=pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8", index_col=0)
- demands_ncdr = demands_ncdr.drop('Unnamed: 6', axis=1)
+ investment_ncdr_2050 = investment_ncdr[['2030', '2040', '2050']].sum(axis=1)
+ investment_ncdr_2050 = investment_ncdr_2050.sum()/3
+ investment_ncdr_2050 = investment_ncdr_2050/1e9
+ demands_ncdr=pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8",  header=None)
+ new_header = demands_ncdr.iloc[2]
+ demands_ncdr= demands_ncdr[3:]
+ demands_ncdr.columns = new_header
+ demands_ncdr.set_index(new_header[0], inplace=True)
+ demands_ncdr = demands_ncdr.drop(['Non-energy', 'Aviation bunkers', 'Maritime bunkers'], axis=1)
  elec_demand_ncdr = demands_ncdr.loc[str(2050)].sum()
  total_costs_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_costs.csv", index_col=0)
- total_costs_ncdr_2050 = total_costs_ncdr[['2050']].sum().sum()/1e9
+ total_costs_ncdr_2050 = total_costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
+ total_costs_ncdr_2050 = total_costs_ncdr_2050.sum()/3
+ total_costs_ncdr_2050 = total_costs_ncdr_2050/1e9
 
- capacities_bau=pd.read_csv("results/bau/country_csvs/BE_capacities.csv", index_col=0)
- capacities_bau_2050 = capacities_bau[['2050']]/1e3
- ac_transmission_bau = capacities_bau_2050.loc['AC Transmission lines', '2050']
- dc_transmission_bau = capacities_bau_2050.loc['DC Transmission lines', '2050']
- transmission_bau = ac_transmission_bau + dc_transmission_bau
+ capacities_ref=pd.read_csv("results/ref/country_csvs/BE_capacities.csv", index_col=0)
+ capacities_ref_2050 = capacities_ref[['2050']]/1e3
+ ac_transmission_ref = capacities_ref_2050.loc['AC Transmission lines', '2050']
+ dc_transmission_ref = capacities_ref_2050.loc['DC Transmission lines', '2050']
+ transmission_ref = ac_transmission_ref + dc_transmission_ref
 
- investment_bau=pd.read_csv("results/bau/country_csvs/BE_investment costs.csv", index_col=0)
- investment_bau_2050 = investment_bau[['2050']].sum().sum()/1e9
- demands_bau=pd.read_excel("results/bau/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8", index_col=0)
- demands_bau = demands_bau.drop('Unnamed: 6', axis=1)
- elec_demand_bau = demands_bau.loc[str(2050)].sum()
- total_costs_bau=pd.read_csv("results/bau/country_csvs/BE_costs.csv", index_col=0)
- total_costs_bau_2050 = total_costs_bau[['2050']].sum().sum()/1e9
+ investment_ref=pd.read_csv("results/ref/country_csvs/BE_investment costs.csv", index_col=0)
+ investment_ref_2050 = investment_ref[['2030', '2040', '2050']].sum(axis=1)
+ investment_ref_2050 = investment_ref_2050.sum()/3
+ investment_ref_2050 = investment_ref_2050/1e9
+ demands_ref=pd.read_excel("results/ref/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8",  header=None)
+ new_header = demands_ref.iloc[2]  # third row (index 2 in 0-based index)
+ demands_ref = demands_ref[3:]  # drop all rows above the third row
+ demands_ref.columns = new_header  # set the third row as the header
+ demands_ref.set_index(new_header[0], inplace=True)
+ demands_ref = demands_ref.drop(['Non-energy', 'Aviation bunkers', 'Maritime bunkers'], axis=1)
+ elec_demand_ref = demands_ref.loc[str(2050)].sum()
+ total_costs_ref=pd.read_csv("results/ref/country_csvs/BE_costs.csv", index_col=0)
+ total_costs_ref_2050 = total_costs_ref[['2030', '2040', '2050']].sum(axis=1)
+ total_costs_ref_2050 = total_costs_ref_2050.sum()/3
+ total_costs_ref_2050 = total_costs_ref_2050/1e9
  
  jrc_historic=pd.read_csv("data/Historic_power_generation_jrc.csv", index_col=0)
- pypsa = pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx", sheet_name="Chart 21", skiprows=2)
+ pypsa = pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx", sheet_name="Chart 23", skiprows=2)
  pypsa.set_index(pypsa.columns[0], inplace=True)
  pypsa=pypsa.loc[2020]
  pypsa = pd.DataFrame(pypsa).T
@@ -415,31 +431,31 @@ def create_scenario_plots():
 
  scenarios['Pypsa-sufficiency'] = None
  scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-sufficiency'] = elec_demand_ncdr
- scenarios.loc['Investment Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = investment_ncdr_2050
- scenarios.loc['Annual Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = total_costs_ncdr_2050
- scenarios.loc['Emissions(%)', 'Pypsa-sufficiency'] = -100
+ scenarios.loc['Average Investment Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = investment_ncdr_2050
+ scenarios.loc['Average Annual Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = total_costs_ncdr_2050
+ # scenarios.loc['Emissions(%)', 'Pypsa-sufficiency'] = -95
 
- scenarios['Pypsa-BAU'] = None
- scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-BAU'] = elec_demand_bau
- scenarios.loc['Investment Costs(Billion Euros/year)', 'Pypsa-BAU'] = investment_bau_2050
- scenarios.loc['Annual Costs(Billion Euros/year)', 'Pypsa-BAU'] = total_costs_bau_2050
- scenarios.loc['Emissions(%)', 'Pypsa-BAU'] = -100
+ scenarios['Pypsa-Ref'] = None
+ scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-Ref'] = elec_demand_ref
+ scenarios.loc['Average Investment Costs(Billion Euros/year)', 'Pypsa-Ref'] = investment_ref_2050
+ scenarios.loc['Average Annual Costs(Billion Euros/year)', 'Pypsa-Ref'] = total_costs_ref_2050
+ # scenarios.loc['Emissions(%)', 'Pypsa-BAU'] = -95
 
  techs = ['solar', 'onshore wind','offshore wind', 'nuclear']
 
  for tech in techs:
     scenarios.loc[tech, 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc[tech, '2050']
-    scenarios.loc[tech, 'Pypsa-BAU'] = capacities_bau_2050.loc[tech, '2050']
+    scenarios.loc[tech, 'Pypsa-Ref'] = capacities_ref_2050.loc[tech, '2050']
 
  scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['H2 turbine', '2050']
  scenarios.loc['CCGT/OCGT', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['CCGT', '2050']
  scenarios.loc['Interconnections', 'Pypsa-sufficiency'] = transmission_ncdr
  scenarios.loc['Others', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['hydroelectricity', '2050']
 
- scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-BAU'] = capacities_bau_2050.loc['H2 turbine', '2050']
- scenarios.loc['CCGT/OCGT', 'Pypsa-BAU'] = capacities_bau_2050.loc['CCGT', '2050']
- scenarios.loc['Interconnections', 'Pypsa-BAU'] = transmission_bau
- scenarios.loc['Others', 'Pypsa-BAU'] = capacities_bau_2050.loc['hydroelectricity', '2050']
+ scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-Ref'] = capacities_ref_2050.loc['H2 turbine', '2050']
+ scenarios.loc['CCGT/OCGT', 'Pypsa-Ref'] = capacities_ref_2050.loc['CCGT', '2050']
+ scenarios.loc['Interconnections', 'Pypsa-Ref'] = transmission_ref
+ scenarios.loc['Others', 'Pypsa-Ref'] = capacities_ref_2050.loc['hydroelectricity', '2050']
 
  scenarios = scenarios.apply(pd.to_numeric, errors='coerce').fillna(0)
 
@@ -454,6 +470,7 @@ def create_scenario_plots():
         xaxis_title="Scenario",
         yaxis_title="Demand (TWh)"
     )
+ 
  figures['demand'] = fig_demand
 
  # Plot the bar chart for VRE capacities
@@ -495,10 +512,10 @@ def create_scenario_plots():
  figures['flexibility'] = fig_flex
 
  # Plot the bar chart for Costs
- columns_to_plot_costs = ['Annual Costs(Billion Euros/year)', 'Investment Costs(Billion Euros/year)']
+ columns_to_plot_costs = ['Average Annual Costs(Billion Euros/year)', 'Average Investment Costs(Billion Euros/year)']
  colors_costs = {
-        'Annual Costs(Billion Euros/year)': 'blue',
-        'Investment Costs(Billion Euros/year)': 'green'
+        'Average Annual Costs(Billion Euros/year)': 'blue',
+        'Average Investment Costs(Billion Euros/year)': 'green'
     }
  fig_costs = go.Figure()
  for column in columns_to_plot_costs:
@@ -507,19 +524,19 @@ def create_scenario_plots():
  fig_costs.update_layout(
         title="Costs comparison for scenarios",
         xaxis_title="Scenario",
-        yaxis_title="Costs (Billion Euros/year)"
+        yaxis_title="Average Annual Costs (Billion Euros/year)"
     )
  figures['costs'] = fig_costs
 
  # Plot the bar chart for Emissions
- fig_emissions = go.Figure()
- fig_emissions.add_trace(go.Bar(name='Emissions(%)', x=scenarios_transposed.index, y=scenarios_transposed['Emissions(%)'], marker_color='red'))
- fig_emissions.update_layout(
-        title="Emissions comparison for scenarios compared to 1990",
-        xaxis_title="Scenario",
-        yaxis_title="%"
-    )
- figures['emissions'] = fig_emissions
+ # fig_emissions = go.Figure()
+ # fig_emissions.add_trace(go.Bar(name='Emissions(%)', x=scenarios_transposed.index, y=scenarios_transposed['Emissions(%)'], marker_color='red'))
+ # fig_emissions.update_layout(
+ #        title="Emissions comparison for scenarios compared to 1990",
+ #        xaxis_title="Scenario",
+ #        yaxis_title="%"
+ #    )
+ # figures['emissions'] = fig_emissions
  
  fig_historic = go.Figure()
  fig_historic.add_trace(go.Bar(
@@ -548,7 +565,29 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
 
     # Create combined HTML
     combined_html = "<html><head><title>Combined Plots</title></head><body>"
-
+    
+    #Load text descriptors
+    def load_html_texts(file_path):
+     html_texts = {}
+     with open(file_path, 'r') as file:
+        for line in file:
+            # Split by ": " to get the key and the HTML content
+            if ": " in line:
+                key, html_content = line.split(": ", 1)
+                html_texts[key.strip()] = html_content.strip()
+     return html_texts
+    # Load the HTML texts from file
+    html_texts = load_html_texts(file_path)
+    annual_costs_desc = html_texts.get('annual_costs_sce', '')
+    investment_costs_desc = html_texts.get('investment_costs_sce', '')
+    cumu_investment_costs_desc = html_texts.get('cumu_investment_costs_sce', '')
+    capacities_desc = html_texts.get('capacities_sce', '')
+    storage_capacities_desc = html_texts.get('storage_capacities_sce', '')
+    scenario_dem_comp_desc = html_texts.get('scenario_dem_comp_sce', '')
+    scenario_vre_desc = html_texts.get('scenario_vre_sce', '')
+    scenario_flex_desc = html_texts.get('scenario_flex_sce', '')
+    scenario_cost_desc = html_texts.get('scenario_cost_sce', '')
+    hist_desc = html_texts.get('hist_sce', '')
     # Create bar chart
     bar_chart = scenario_costs(country)
     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
@@ -579,10 +618,10 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         combined_html += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
         costs_comparison = scenario_figures['costs']
         combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
-        emission_comparison = scenario_figures['emissions']
-        combined_html += f"<div><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
+        # emission_comparison = scenario_figures['emissions']
+        # combined_html += f"<div><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
         historic_comparison = scenario_figures['historic']
-        combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario</h2>{historic_comparison.to_html()}</div>"
+        combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html()}</div>"
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
@@ -592,29 +631,29 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
     table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2023-2050)'>Cummulative Investment Costs (2023-2050)</a><br>"
     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Capacities</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
     if country == 'BE':
         table_of_contents_content += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
         table_of_contents_content += f"<a href='#{country} - Scenarios VRE Capacities Comparison'>Scenarios VRE Capacities Comparison</a><br>"
         table_of_contents_content += f"<a href='#{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'>Scenario Flexibility Capacities in Electricity Grid Comparison</a><br>"
         table_of_contents_content += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
-        table_of_contents_content += f"<a href='#{country} - Scenarios Emissions Comparison'>Scenarios Emissions Comparison</a><br>"
-        table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Reff Scenario</a><br>"
+        # table_of_contents_content += f"<a href='#{country} - Scenarios Emissions Comparison'>Scenarios Emissions Comparison</a><br>"
+        table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Baseline Scenario</a><br>"
 
     # Add more links for other plots
-    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
-    main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
-    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
+    main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html()}</div>"
+    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html()}</div>"
     
     if country == 'BE':
-        main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Scenarios Emissions Comparison'><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Reff Scenario</h2>{historic_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{ scenario_vre_desc}{vre_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{scenario_flex_desc}{flexibility_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html()}</div>"
+        # main_content += f"<div id='{country} - Scenarios Emissions Comparison'><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
+        main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html()}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template
@@ -644,6 +683,7 @@ if __name__ == "__main__":
         
     total_country = 'EU'
     countries = snakemake.params.countries 
+    file_path = snakemake.input.file_path
     countries.append(total_country) 
     config = snakemake.config
     logo = logo()

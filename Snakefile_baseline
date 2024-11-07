@@ -16,7 +16,7 @@ from scripts._helpers import path_provider, copy_default_files, get_scenarios, g
 copy_default_files(workflow)
 
 
-configfile: "config/config_reff.yaml"
+configfile: "config/config_baseline.yaml"
 
 
 run = config["run"]
@@ -68,7 +68,7 @@ if config["foresight"] == "perfect":
     include: "rules/solve_perfect.smk"
 
 
-if config["run"]["name"] == "reff":
+if config["run"]["name"] == "baseline":
  rule all:
     input:
         RESULTS + "graphs/costs.pdf",

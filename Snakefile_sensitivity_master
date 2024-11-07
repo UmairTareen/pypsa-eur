@@ -1,6 +1,6 @@
 from snakemake.utils import min_version
 
-min_version("7.7")
+min_version("8.5")
 
 
 rule run_sensitivity_1:
@@ -50,7 +50,7 @@ rule prepare_sensitivity_scenarios:
         countries = config["countries"],
     input:
         sepia_config = "SEPIA/SEPIA_config.xlsx",
-        template = "SEPIA/Template/pypsa.html",      
+        template = "SEPIA/Template/pypsa.html",     
     output:
         htmlfile=expand("results/sensitivity_results/{country}_sensitivity_scenario_chart.html", country=local_countries),
     threads: 1

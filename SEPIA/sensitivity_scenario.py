@@ -61,16 +61,24 @@ def scenario_costs(country):
     print(f"Config run name: {config['run']['name']}")
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      sensitivity_analyses = [
-     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_costs.csv"),
-     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_costs.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_costs.csv"),
-     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_costs.csv")]
+     ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_costs.csv"),
+     ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_costs.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_costs.csv"),
+     ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_costs.csv")]
      
     elif "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
      ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_costs.csv"),
      ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_costs.csv")]
     # Dictionary to store the processed dataframes
+    elif "sensitivity_analysis_seq" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("No-seq", f"results/sensitivity_analysis_seq_0/country_csvs/{country}_costs.csv"),
+     ("2 Mtons/year", f"results/sensitivity_analysis_seq_2/country_csvs/{country}_costs.csv"),
+     ("5 Mtons/year", f"results/sensitivity_analysis_seq_5/country_csvs/{country}_costs.csv"),
+     ("10 Mtons/year", f"results/sensitivity_analysis_seq_10/country_csvs/{country}_costs.csv"),
+     ("No-limit", f"results/sensitivity_analysis_seq_nolim/country_csvs/{country}_costs.csv")]
+        
     print(f"Selected sensitivity analyses: {sensitivity_analyses}")
     costs_sensitivity = {}
 
@@ -117,7 +125,18 @@ def scenario_costs(country):
      names_values = [
      (f"PyPSA value = {pypsa_value}", pypsa_value),
      (f"Nortsea_value = {nothsea_value}", nothsea_value)]
-    
+    if "sensitivity_analysis_seq" in config["run"]["name"]:
+     a_value = "No-seq"
+     b_value = "2 Mtons/year"
+     c_value = "5 Mtons/year"
+     d_value = "10 Mtons/year"
+     e_value = "No-limit"
+     names_values = [
+     (f"No-seq = {a_value}", a_value),
+     (f"2 Mtons/year = {b_value}", b_value),
+     (f"5 Mtons/year = {c_value}", c_value),
+     (f"10 Mtons/year = {d_value}", d_value),
+     (f"No-limit = {e_value}", e_value)]
     fig = go.Figure()
     df_transposed = combined_df.T
 
@@ -141,15 +160,21 @@ def scenario_costs(country):
 def scenario_investment_costs(country):
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      sensitivity_analyses = [
-     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_investment costs.csv"),
-     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_investment costs.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_investment costs.csv"),
-     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_investment costs.csv")]
+     ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_investment costs.csv"),
+     ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_investment costs.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_investment costs.csv"),
+     ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_investment costs.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
      ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_investment costs.csv"),
      ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_investment costs.csv")]
-    
+    elif "sensitivity_analysis_seq" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("No-seq", f"results/sensitivity_analysis_seq_0/country_csvs/{country}_investment costs.csv"),
+     ("2 Mtons/year", f"results/sensitivity_analysis_seq_2/country_csvs/{country}_investment costs.csv"),
+     ("5 Mtons/year", f"results/sensitivity_analysis_seq_5/country_csvs/{country}_investment costs.csv"),
+     ("10 Mtons/year", f"results/sensitivity_analysis_seq_10/country_csvs/{country}_investment costs.csv"),
+     ("No-limit", f"results/sensitivity_analysis_seq_nolim/country_csvs/{country}_investment costs.csv")]
     # Dictionary to store the processed dataframes
     costs_sensitivity = {}
 
@@ -196,7 +221,18 @@ def scenario_investment_costs(country):
      names_values = [
      (f"PyPSA value = {pypsa_value}", pypsa_value),
      (f"Nortsea_value = {nothsea_value}", nothsea_value)]
-    
+    if "sensitivity_analysis_seq" in config["run"]["name"]:
+     a_value = "No-seq"
+     b_value = "2 Mtons/year"
+     c_value = "5 Mtons/year"
+     d_value = "10 Mtons/year"
+     e_value = "No-limit"
+     names_values = [
+     (f"No-seq = {a_value}", a_value),
+     (f"2 Mtons/year = {b_value}", b_value),
+     (f"5 Mtons/year = {c_value}", c_value),
+     (f"10 Mtons/year = {d_value}", d_value),
+     (f"No-limit = {e_value}", e_value)]
     fig = go.Figure()
     df_transposed = combined_df.T
 
@@ -219,16 +255,22 @@ def scenario_investment_costs(country):
 def scenario_cumulative_costs(country):
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      sensitivity_analyses = [
-     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_investment costs.csv"),
-     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_investment costs.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_investment costs.csv"),
-     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_investment costs.csv")]
+     ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_investment costs.csv"),
+     ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_investment costs.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_investment costs.csv"),
+     ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_investment costs.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
      ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_investment costs.csv"),
      ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_investment costs.csv")]
     
-    
+    elif "sensitivity_analysis_seq" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("No-seq", f"results/sensitivity_analysis_seq_0/country_csvs/{country}_investment costs.csv"),
+     ("2 Mtons/year", f"results/sensitivity_analysis_seq_2/country_csvs/{country}_investment costs.csv"),
+     ("5 Mtons/year", f"results/sensitivity_analysis_seq_5/country_csvs/{country}_investment costs.csv"),
+     ("10 Mtons/year", f"results/sensitivity_analysis_seq_10/country_csvs/{country}_investment costs.csv"),
+     ("No-limit", f"results/sensitivity_analysis_seq_nolim/country_csvs/{country}_investment costs.csv")]
     # Dictionary to store the processed dataframes
     costs_sensitivity = {}
 
@@ -276,6 +318,18 @@ def scenario_cumulative_costs(country):
      names_values = [
      (f"PyPSA value = {pypsa_value}", pypsa_value),
      (f"Nortsea_value = {nothsea_value}", nothsea_value)]
+    if "sensitivity_analysis_seq" in config["run"]["name"]:
+     a_value = "No-seq"
+     b_value = "2 Mtons/year"
+     c_value = "5 Mtons/year"
+     d_value = "10 Mtons/year"
+     e_value = "No-limit"
+     names_values = [
+     (f"No-seq = {a_value}", a_value),
+     (f"2 Mtons/year = {b_value}", b_value),
+     (f"5 Mtons/year = {c_value}", c_value),
+     (f"10 Mtons/year = {d_value}", d_value),
+     (f"No-limit = {e_value}", e_value)]
     fig = go.Figure()
     df_transposed = combined_df.T
 
@@ -298,15 +352,21 @@ def scenario_cumulative_costs(country):
 def scenario_capacities(country):
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      sensitivity_analyses = [
-     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_capacities.csv"),
-     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_capacities.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_capacities.csv"),
-     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_capacities.csv")]
+     ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_capacities.csv"),
+     ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_capacities.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_capacities.csv"),
+     ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_capacities.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
      ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_capacities.csv"),
      ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_capacities.csv")] 
-    
+    elif "sensitivity_analysis_seq" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("No-seq", f"results/sensitivity_analysis_seq_0/country_csvs/{country}_capacities.csv"),
+     ("2 Mtons/year", f"results/sensitivity_analysis_seq_2/country_csvs/{country}_capacities.csv"),
+     ("5 Mtons/year", f"results/sensitivity_analysis_seq_5/country_csvs/{country}_capacities.csv"),
+     ("10 Mtons/year", f"results/sensitivity_analysis_seq_10/country_csvs/{country}_capacities.csv"),
+     ("No-limit", f"results/sensitivity_analysis_seq_nolim/country_csvs/{country}_capacities.csv")]
     # Dictionary to store the processed dataframes
     capacity_sensitivity = {}
 
@@ -389,15 +449,21 @@ def scenario_capacities(country):
 def storage_capacities(country):
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      sensitivity_analyses = [
-     ("PyPSA", f"results/sensitivity_analysis_pypsa/country_csvs/{country}_storage_capacities.csv"),
-     ("FPS", f"results/sensitivity_analysis_fps/country_csvs/{country}_storage_capacities.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_mackinze/country_csvs/{country}_storage_capacities.csv"),
-     ("Energyville", f"results/sensitivity_analysis_energyville/country_csvs/{country}_storage_capacities.csv")]
+     ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_storage_capacities.csv"),
+     ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_storage_capacities.csv"),
+     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_storage_capacities.csv"),
+     ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_storage_capacities.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
      ("PyPSA_Suff", f"results/sensitivity_analysis_offshore_pypsa/country_csvs/{country}_storage_capacities.csv"),
      ("Northsea_Capacity", f"results/sensitivity_analysis_offshore_northsea/country_csvs/{country}_storage_capacities.csv")]
-    
+    elif "sensitivity_analysis_seq" in config["run"]["name"]:
+     sensitivity_analyses = [
+     ("No-seq", f"results/sensitivity_analysis_seq_0/country_csvs/{country}_storage_capacities.csv"),
+     ("2 Mtons/year", f"results/sensitivity_analysis_seq_2/country_csvs/{country}_storage_capacities.csv"),
+     ("5 Mtons/year", f"results/sensitivity_analysis_seq_5/country_csvs/{country}_storage_capacities.csv"),
+     ("10 Mtons/year", f"results/sensitivity_analysis_seq_10/country_csvs/{country}_storage_capacities.csv"),
+     ("No-limit", f"results/sensitivity_analysis_seq_nolim/country_csvs/{country}_storage_capacities.csv")]
     
     # Dictionary to store the processed dataframes
     storeage_capacity_sensitivity = {}

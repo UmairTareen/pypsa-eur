@@ -1,23 +1,23 @@
 from snakemake.utils import min_version
 
-min_version("7.7")
+min_version("8.5")
 
 
-rule run_snakefile_reff:
-    output: touch("run_snakefile_reff.done")
-    log: "logs/run_snakefile_reff.done",
+rule run_snakefile_baseline:
+    output: touch("run_snakefile_baseline.done")
+    log: "logs/run_snakefile_baseline.done",
     shell:
-        "snakemake --snakefile Snakefile_reff --cores 1 -call all"
+        "snakemake --snakefile Snakefile_baseline --cores 1 -call all"
 
-rule run_snakefile_bau:
-    input: "run_snakefile_reff.done"
-    output: touch("run_snakefile_bau.done")
-    log: "logs/run_snakefile_bau.done",
+rule run_snakefile_ref:
+    input: "run_snakefile_baseline.done"
+    output: touch("run_snakefile_ref.done")
+    log: "logs/run_snakefile_ref.done",
     shell:
-        "snakemake --snakefile Snakefile_bau_myopic --cores 1 -call all"
+        "snakemake --snakefile Snakefile_ref_myopic --cores 1 -call all"
 
 rule run_snakefile_nocdr:
-    input: "run_snakefile_bau.done"
+    input: "run_snakefile_ref.done"
     output: touch("run_snakefile_nocdr.done")
     log: "logs/run_snakefile_nocdr.done",
     shell:
@@ -66,13 +66,14 @@ rule prepare_scenarios:
     params:
         countries = config["countries"],
     input:
-        cap_files_bau=expand("results/bau/country_csvs/{country}_capacities.csv", country=local_countries),
-        cost_files_bau=expand("results/bau/country_csvs/{country}_costs.csv", country=local_countries),
-        dem_files_bau=expand("results/bau/country_csvs/{country}_sectordemands.csv", country=local_countries),
+        cap_files_bau=expand("results/ref/country_csvs/{country}_capacities.csv", country=local_countries),
+        cost_files_bau=expand("results/ref/country_csvs/{country}_costs.csv", country=local_countries),
+        dem_files_bau=expand("results/ref/country_csvs/{country}_sectordemands.csv", country=local_countries),
         cap_files_ncdr=expand("results/ncdr/country_csvs/{country}_capacities.csv", country=local_countries),
         cost_files_ncdr=expand("results/ncdr/country_csvs/{country}_costs.csv", country=local_countries),
         dem_files_ncdr=expand("results/ncdr/country_csvs/{country}_sectordemands.csv", country=local_countries),
         sepia_config = "SEPIA/SEPIA_config.xlsx",
+        file_path = "SEPIA/html_texts.txt", 
         template = "SEPIA/Template/pypsa.html",
         
     output:

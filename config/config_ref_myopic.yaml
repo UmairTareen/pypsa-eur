@@ -20,7 +20,7 @@ remote:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: "reff"
+  name: "ref"
   scenarios:
     enable: false
     file: config/scenarios.yaml
@@ -29,7 +29,7 @@ run:
   shared_cutouts: true
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#foresight
-foresight: overnight
+foresight: myopic
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#scenario
 # Wildcard docs in https://pypsa-eur.readthedocs.io/en/latest/wildcards.html
@@ -37,7 +37,7 @@ scenario:
   simpl:
   - ''
   ll:
-  - v1.0
+  - vopt
   clusters:
   - 6
   #- 128
@@ -47,16 +47,16 @@ scenario:
   opts:
   - ''
   sector_opts:
-  - Co2L0.8-1H-T-H-B-I-A-dist1
+  - 1H-T-H-B-I-A-dist1
   planning_horizons:
-  - 2020
-  #- 2030
-  #- 2040
-  #- 2050
+  # - 2020
+  - 2030
+  - 2040
+  - 2050
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 countries: ['BE', 'DE', 'FR', 'GB', 'NL']
-#countries: ['AT','BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
+#countries: ['AT', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'NL', 'NO', 'PL', 'PT', 'SE', 'SI', 'SK', 'RO']
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#snapshots
 snapshots:
@@ -84,44 +84,101 @@ enable:
 co2_budget:
   2020: 0.701
   2025: 0.524
-  2030: 0.45
+  2030: 0.60
   2035: 0.150
-  2040: 0.15
+  2040: 0.20
   2045: 0.032
-  2050: 0.000
-
+  2050: 0.00
+  
 co2_budget_national:
-  2020:
-    'AT': 0.8
-    'BG': 0.8
-    'CH': 0.8
-    'CZ': 0.8
-    'DK': 0.8
-    'EE': 0.8
-    'ES': 0.8
-    'FI': 0.8
-    'GR': 0.8
-    'HR': 0.8
-    'HU': 0.8
-    'IE': 0.8
-    'IT': 0.8
-    'LT': 0.8
-    'LU': 0.8
-    'LV': 0.8
-    'NO': 0.8
-    'PL': 0.8
-    'PT': 0.8
-    'SI': 0.8
-    'SE': 0.8
-    'SK': 0.8
-    'RO': 0.8
-    'BE': 0.8
-    'DE': 0.8
-    'FR': 0.8
-    'GB': 0.8
-    'NL': 0.8
-country_summary: 'BE'
-
+  2030:
+    'AT': 0.45
+    'BG': 0.45
+    'CH': 0.45
+    'CZ': 0.45
+    'DK': 0.45
+    'EE': 0.45
+    'ES': 0.45
+    'FI': 0.45
+    'GR': 0.45
+    'HR': 0.45
+    'HU': 0.45
+    'IE': 0.45
+    'IT': 0.45
+    'LT': 0.45
+    'LU': 0.45
+    'LV': 0.45
+    'NO': 0.45
+    'PL': 0.45
+    'PT': 0.45
+    'SI': 0.45
+    'SE': 0.45
+    'SK': 0.45
+    'RO': 0.45
+    'BE': 0.60
+    'DE': 0.60
+    'FR': 0.60
+    'GB': 0.60
+    'NL': 0.60
+  2040:
+    'AT': 0.15
+    'BG': 0.15
+    'CH': 0.15
+    'CZ': 0.15
+    'DK': 0.15
+    'EE': 0.15
+    'ES': 0.15
+    'FI': 0.15
+    'GR': 0.15
+    'HR': 0.15
+    'HU': 0.15
+    'IE': 0.15
+    'IT': 0.15
+    'LT': 0.15
+    'LU': 0.15
+    'LV': 0.15
+    'NO': 0.15
+    'PL': 0.15
+    'PT': 0.15
+    'SI': 0.15
+    'SE': 0.15
+    'SK': 0.15
+    'RO': 0.15
+    'BE': 0.20
+    'DE': 0.20
+    'FR': 0.20
+    'GB': 0.20
+    'NL': 0.20
+    
+  2050:
+    'AT': 0.05
+    'BG': 0.05
+    'CH': 0.05
+    'CZ': 0.05
+    'DK': 0.05
+    'EE': 0.05
+    'ES': 0.05
+    'FI': 0.05
+    'GR': 0.05
+    'HR': 0.05
+    'HU': 0.05
+    'IE': 0.05
+    'IT': 0.05
+    'LT': 0.05
+    'LU': 0.05
+    'LV': 0.05
+    'NO': 0.05
+    'PL': 0.05
+    'PT': 0.05
+    'SI': 0.05
+    'SE': 0.05
+    'SK': 0.05
+    'RO': 0.05
+    'BE': 0.05
+    'DE': 0.05
+    'FR': 0.05
+    'GB': 0.05
+    'NL': 0.05
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   voltages: [220., 300., 380., 500., 750.]
@@ -143,14 +200,14 @@ electricity:
     H2: 168
 
   extendable_carriers:
-    Generator: []
+    Generator: [solar, onwind, offwind-ac, offwind-dc, OCGT, CCGT, nuclear, biomass, geothermal]
     StorageUnit: [] # battery, H2
     Store: [battery, H2]
     Link: [] # H2 pipeline
 
   powerplants_filter: (DateOut >= 2023 or DateOut != DateOut) and not (Country == 'Germany' and Fueltype == 'Nuclear')
   custom_powerplants: false
-  everywhere_powerplants: []
+  everywhere_powerplants: [oil, CCGT,OCGT,nuclear, coal, lignite, geothermal, biomass]
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
   renewable_carriers: [solar, onwind, offwind-ac, offwind-dc, hydro]
@@ -159,7 +216,7 @@ electricity:
     enable: true
     from_opsd: true
     year: 2020
-    expansion_limit: 1.0
+    expansion_limit: false
     technology_mapping:
       Offshore: [offwind-ac, offwind-dc]
       Onshore: [onwind]
@@ -195,6 +252,66 @@ atlite:
       sarah_interpolate: false
       sarah_dir:
       features: [influx, temperature]
+
+imposed_values:
+  country: BE
+  nuclear: 2000
+  onwind: 6000
+  offshore_ac: 4000
+  offshore_dc: 2000
+  solar: 14000
+  solar_max: 104000
+  offshore_max: 8000
+  
+sequestration_potentia_BE: 
+  2030: 2
+  2040: 5
+  2050: 10
+  
+TYNDP_values:
+  at_ch: 1200
+  at_cz: 900
+  at_de: 5400
+  at_hu: 800
+  at_it: 800
+  at_si: 950
+  be_fr: 4300
+  be_lu: 680
+  be_nl: 3400
+  bg_hr: 0
+  bg_ro: 1500
+  ch_de: 4200
+  ch_fr: 3700
+  ch_it: 3750
+  cz_de: 2100
+  cz_pl: 1400
+  cz_sk: 1800
+  de_dk: 4100
+  de_fr: 3300
+  de_lu: 2300
+  de_pl: 3000
+  de_nl: 5000
+  dk_se: 750
+  ee_lv: 1100
+  es_fr: 5000
+  es_pt: 4200
+  fi_se: 2400
+  fr_it: 4100
+  gr_hr: 0
+  hr_hu: 1700
+  hr_ro: 0
+  hr_si: 2000
+  hu_ro: 1100
+  hu_sk: 2600
+  it_si: 660
+  lt_lv: 950
+  no_se: 3695
+  pl_sk: 1980
+  be_de: 0
+  expansion_limit: true
+  max_expansion: 1.35
+country_summary: 'BE'
+
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
@@ -257,9 +374,9 @@ renewable:
       orientation:
         slope: 35.
         azimuth: 180.
-    capacity_per_sqkm: 5.1
+    capacity_per_sqkm: 6.2
     # correction_factor: 0.854337
-    corine: [4, 5, 6, 7, 8, 9, 11]
+    corine: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 26, 31, 32]
     luisa: false # [1111, 1121, 1122, 1123, 1130, 1210, 1221, 1222, 1230, 1241, 1242, 1310, 1320, 1330, 1410, 1421, 1422, 2110, 2120, 2130, 2210, 2220, 2230, 2310, 2410, 2420, 3210, 3320, 3330]
     natura: true
     excluder_resolution: 100
@@ -276,47 +393,6 @@ renewable:
     eia_correct_by_capacity: false
     eia_approximate_missing: false
 
-
-TYNDP_values:
-  at_ch: 1200
-  at_cz: 900
-  at_de: 5400
-  at_hu: 800
-  at_it: 800
-  at_si: 950
-  be_fr: 4300
-  be_lu: 680
-  be_nl: 3400
-  bg_hr: 0
-  bg_ro: 1500
-  ch_de: 4200
-  ch_fr: 3700
-  ch_it: 3750
-  cz_de: 2100
-  cz_pl: 1400
-  cz_sk: 1800
-  de_dk: 4100
-  de_fr: 3300
-  de_lu: 2300
-  de_pl: 3000
-  de_nl: 5000
-  dk_se: 750
-  ee_lv: 1100
-  es_fr: 5000
-  es_pt: 4200
-  fi_se: 2400
-  fr_it: 4100
-  gr_hr: 0
-  hr_hu: 1700
-  hr_ro: 0
-  hr_si: 2000
-  hu_ro: 1100
-  hu_sk: 2600
-  it_si: 660
-  lt_lv: 950
-  no_se: 3695
-  pl_sk: 1980
-  be_de: 0
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#conventional
 conventional:
   unit_commitment: false
@@ -336,8 +412,8 @@ lines:
   s_nom_max: .inf
   max_extension: 20000 #MW
   length_factor: 1.25
-  reconnect_crimea: false
-  under_construction: 'zero' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+  reconnect_crimea: true
+  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
   dynamic_line_rating:
     activate: true
     cutout: europe-2013-era5
@@ -351,7 +427,7 @@ links:
   p_nom_max: .inf
   max_extension: 30000 #MW
   include_tyndp: true
-  under_construction: 'zero' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#transformers
 transformers:
@@ -385,11 +461,6 @@ pypsa_eur:
   - offwind-dc
   - solar
   - ror
-  - biomass
-  - CCGT
-  - OCGT
-  - nuclear
-  - lignite
   StorageUnit:
   - PHS
   - hydro
@@ -403,7 +474,7 @@ energy:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#biomass
 biomass:
-  year: 2020
+  year: 2030
   scenario: ENS_Med
   classes:
     solid biomass:
@@ -455,7 +526,7 @@ sector:
   industry: true
   agriculture: true
   district_heating:
-    potential: 0.0
+    potential: 0.25
     progress:
       2020: 0.0
       2025: 0.15
@@ -475,7 +546,7 @@ sector:
   ICE_upper_degree_factor: 1.6
   EV_lower_degree_factor: 0.98
   EV_upper_degree_factor: 0.63
-  bev_dsm: false
+  bev_dsm: true
   bev_availability: 0.5
   bev_energy: 0.05
   bev_charge_efficiency: 0.9
@@ -483,23 +554,23 @@ sector:
   bev_charge_rate: 0.011
   bev_avail_max: 0.95
   bev_avail_mean: 0.8
-  v2g: false
+  v2g: true
   land_transport_fuel_cell_share:
     2020: 0
     2025: 0
-    2030: 0
+    2030: 0.05
     2035: 0
-    2040: 0
+    2040: 0.1
     2045: 0
-    2050: 0
+    2050: 0.15
   land_transport_electric_share:
     2020: 0
     2025: 0.15
-    2030: 0.3
+    2030: 0.25
     2035: 0.45
-    2040: 0.7
+    2040: 0.6
     2045: 0.85
-    2050: 1
+    2050: 0.85
   land_transport_ice_share:
     2020: 1
     2025: 0.85
@@ -523,17 +594,17 @@ sector:
     2025: 0
     2030: 0
     2035: 0
-    2040: 0
+    2040: 0.3
     2045: 0
-    2050: 0
+    2050: 0.5
   shipping_methanol_share:
     2020: 0
     2025: 0.15
     2030: 0.3
     2035: 0.5
-    2040: 0.7
+    2040: 0.4
     2045: 0.85
-    2050: 1
+    2050: 0.5
   shipping_oil_share:
     2020: 1
     2025: 0.85
@@ -548,15 +619,15 @@ sector:
   HVC_demand_factor: 1.
   time_dep_hp_cop: true
   heat_pump_sink_T: 55.
-  reduce_space_heat_exogenously: false
+  reduce_space_heat_exogenously: true
   reduce_space_heat_exogenously_factor:
     2020: 0.10  # this results in a space heat demand reduction of 10%
     2025: 0.09  # first heat demand increases compared to 2020 because of larger floor area per capita
-    2030: 0.09
+    2030: 0.1
     2035: 0.11
-    2040: 0.16
+    2040: 0.2
     2045: 0.21
-    2050: 0.29
+    2050: 0.3
   retrofitting:
     retro_endogen: false
     cost_factor: 1.0
@@ -564,62 +635,66 @@ sector:
     annualise_cost: true
     tax_weighting: false
     construction_index: true
-  tes: false
+  tes: true
   tes_tau:
     decentral: 3
     central: 180
   boilers: true
   resistive_heaters: true
-  oil_boilers: true
+  oil_boilers: false
   biomass_boiler: true
   overdimension_individual_heating: 1.1  #to cover demand peaks bigger than data
   chp: true
   micro_chp: false
-  solar_thermal: false
+  solar_thermal: true
   solar_cf_correction: 0.788457  # =  >>> 1/1.2683
   marginal_cost_storage: 0. #1e-4
-  methanation: false
+  methanation: true
   coal_cc: false
-  dac: false
+  dac: true
   co2_vent: false
   central_heat_vent: false
   allam_cycle: false
-  hydrogen_fuel_cell: false
-  hydrogen_turbine: false
+  hydrogen_fuel_cell: true
+  hydrogen_turbine: true
   SMR: true
-  SMR_cc: false
-  co2_budget_national: false
+  SMR_cc: true
+  co2_budget_national: true
   regional_methanol_demand: true
   regional_oil_demand: true
   regional_coal_demand: true
   regional_co2_sequestration_potential:
     enable: false
     attribute: 'conservative estimate Mt'
-    include_onshore: false
+    include_onshore: true
     min_size: 3
     max_size: 25
     years_of_storage: 25
-  co2_sequestration_potential: 200
+  co2_sequestration_potential:
+    2020: 0
+    2030: 100
+    2040: 150
+    2050: 200
   co2_sequestration_cost: 10
   co2_sequestration_lifetime: 50
   co2_spatial: true
   co2network: false
   co2_network_cost_factor: 1
   cc_fraction: 0.9
-  hydrogen_underground_storage: false
+  hydrogen_underground_storage: true
   hydrogen_underground_storage_locations:
-    # - onshore  # more than 50 km from sea
+  - onshore  # more than 50 km from sea
   - nearshore    # within 50 km of sea
     # - offshore
-  ammonia: false
+  ammonia: true
   min_part_load_fischer_tropsch: 0.7
   min_part_load_methanolisation: 0.3
   min_part_load_methanation: 0.3
-  use_fischer_tropsch_waste_heat: false
+  use_fischer_tropsch_waste_heat: true
   use_haber_bosch_waste_heat: false
   use_methanolisation_waste_heat: false
   use_methanation_waste_heat: false
-  use_fuel_cell_waste_heat: false
+  use_fuel_cell_waste_heat: true
   use_electrolysis_waste_heat: false
   electricity_transmission_grid: true
   electricity_distribution_grid: true
@@ -635,21 +710,22 @@ sector:
     gas pipeline:
       efficiency_per_1000km: 1 #0.977
       compression_per_1000km: 0.01
-  H2_network: false
+  H2_network: true
   gas_network: true
-  H2_retrofit: false
+  H2_retrofit: true
   H2_retrofit_capacity_per_CH4: 0.6
   gas_network_connectivity_upgrade: 1
   gas_distribution_grid: true
   gas_distribution_grid_cost_factor: 1.0
   biomass_spatial: true
-  biomass_transport: false
-  biogas_upgrading_cc: false
+  biomass_transport: true
+  biogas_upgrading_cc: true
   conventional_generation:
     OCGT: gas
     CCGT: gas
-  biomass_to_liquid: false
-  biosng: false
+    nuclear: uranium
+  biomass_to_liquid: true
+  biosng: true
   limit_max_growth:
     enable: false
     # allowing 30% larger than max historic growth
@@ -708,35 +784,35 @@ industry:
   HVC_primary_fraction:
     2020: 1.0
     2025: 0.9
-    2030: 0.8
+    2030: 1.0
     2035: 0.7
-    2040: 0.6
+    2040: 1.0
     2045: 0.5
-    2050: 0.4
+    2050: 1.0
   HVC_mechanical_recycling_fraction:
     2020: 0.12
     2025: 0.15
-    2030: 0.18
+    2030: 0.12
     2035: 0.21
-    2040: 0.24
+    2040: 0.12
     2045: 0.27
-    2050: 0.30
+    2050: 0.12
   HVC_chemical_recycling_fraction:
     2020: 0.0
     2025: 0.0
-    2030: 0.04
+    2030: 0.0
     2035: 0.08
-    2040: 0.12
+    2040: 0.0
     2045: 0.16
-    2050: 0.20
+    2050: 0.0
   sector_ratios_fraction_future:
     2020: 0.0
     2025: 0.1
     2030: 0.3
     2035: 0.5
-    2040: 0.7
+    2040: 0.4
     2045: 0.9
-    2050: 1.0
+    2050: 0.5
   basic_chemicals_without_NH3_production_today: 69. #Mt/a, = 86 Mtethylene-equiv - 17 MtNH3
   HVC_production_today: 52.
   MWh_elec_per_tHVC_mechanical_recycling: 0.547
@@ -753,7 +829,7 @@ industry:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#costs
 costs:
-  year: 2020
+  year: 2030
   version: v0.8.1
   rooftop_share: 0.14  # based on the potentials, assuming  (0.1 kW/m2 and 10 m2/person)
   social_discountrate: 0.02
@@ -818,7 +894,7 @@ solving:
   #tmpdir: "path/to/tmp"
   options:
     clip_p_max_pu: 1.e-2
-    load_shedding: false
+    load_shedding: true
     noisy_costs: true
     skip_iterations: true
     rolling_horizon: false
@@ -1064,6 +1140,7 @@ plotting:
     home battery charger: '#5e8032'
     home battery discharger: '#3c5221'
     BEV charger: '#baf238'
+    EV charger: '#baf238'
     V2G: '#e5ffa8'
     land transport EV: '#baf238'
     Li ion: '#baf238'
@@ -1173,10 +1250,10 @@ plotting:
     # co2
     CC: '#f29dae'
     CCS: '#f29dae'
-    CO2 sequestration: '#f29dae'
+    CO2 sequestration: 'violet'
     DAC: '#ff5270'
     co2 stored: '#f2385a'
-    co2 sequestered: '#f2682f'
+    co2 sequestered: 'violet'
     co2: '#f29dae'
     co2 vent: '#ffd4dc'
     CO2 pipeline: '#f5627f'
@@ -1208,11 +1285,13 @@ plotting:
     DC: "#8a1caf"
     DC-DC: "#8a1caf"
     DC link: "#8a1caf"
+    LULUCF: "greenyellow"
     solar curtailment: "goldenrod"
     onshore wind curtailment: "navy"
     offshore wind curtailment: "lightskyblue"
     onshore curtailment: "navy"
     offshore curtailment: "lightskyblue"
+    load shedding: "black"
     load: "black"
     coal for industry: '#343434'
     Imports: 'darkgrey'

@@ -136,6 +136,7 @@ def create_sankey(flows, nodes, processes, main_params, interval_year=5, title="
         year_nodes['RowIndex'] = range(len(year_nodes))
         # Removing links with 0 flow
         year_links = links.loc[links[str(year)] > 0]
+        pad_value = 30 if year == 2020 else 5
         sk = go.Sankey(
             valueformat = ".0f",
             valuesuffix = " TWh",
@@ -146,7 +147,7 @@ def create_sankey(flows, nodes, processes, main_params, interval_year=5, title="
                 "color": year_nodes['Color'],
                 "x": year_nodes['PositionX'],
                 "y": year_nodes['PositionY'],
-                "pad": 5,
+                "pad": pad_value,
             },
             link={
                 "source": year_nodes.loc[year_links['Source'],'RowIndex'],
@@ -206,10 +207,10 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
     never_empty_nodes_sorted = nodes.loc[never_empty_nodes].sort_values(by='PositionX') # Sorting nodes by increasing X position, cf. https://stackoverflow.com/a/70855245/7496027
     for i, year in enumerate(years):
         if str(year) in nodes_with_links.columns:
-         new_not_empty_nodes = nodes_with_links.loc[nodes_with_links[str(year)] > 0].index.drop_duplicates()
+          new_not_empty_nodes = nodes_with_links.loc[nodes_with_links[str(year)] > 0].index.drop_duplicates()
         # Rest of your code for processing this year
         else:
-         print(f"Column '{year}' not found in nodes_with_links DataFrame")
+          print(f"Column '{year}' not found in nodes_with_links DataFrame")
         new_not_empty_nodes = new_not_empty_nodes[~new_not_empty_nodes.isin(never_empty_nodes)].to_list()
         year_nodes = pd.concat([never_empty_nodes_sorted, nodes.loc[new_not_empty_nodes]])
         year_nodes['RowIndex'] = range(len(year_nodes))
@@ -225,7 +226,7 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
                 "color": year_nodes['Color'],
                 "x": year_nodes['PositionX'],
                 "y": year_nodes['PositionY'],
-                "pad": 5,
+                "pad": 50,
             },
             link={
                 "source": year_nodes.loc[year_links['Source'],'RowIndex'],
@@ -256,6 +257,18 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
         hovermode = 'x',
         margin_t=100,
         sliders=[dict(active = visible_step, currentvalue = {"visible": False}, steps=steps)])
+    
+    # height=500,
+    # # margin=dict(l=50, r=50, t=50, b=10)
+    # )
+    # fig.update_layout(
+    #     title_text = title+" in " + str(years[visible_step]),
+    #     hovermode = 'x',
+    #     margin_t=100,
+    #     autosize=False,  # Disable autosizing to manually control width and height
+    #     width=600,      # Increase the width to zoom out
+    #     height=600,
+    #     sliders=[dict(active = visible_step, currentvalue = {"visible": False}, steps=steps)])
     # Adding labels for types of nodes
     add_sankey_label(fig, 0, 'Source')
     # add_sankey_label(fig, nodes.loc['fgs_ghg','PositionX'], 'Primary emmissions')
@@ -318,7 +331,8 @@ def combine_charts(combinations, main_params, description=pd.DataFrame(), title=
                 if chart_type == 'areachart': number_traces += 1 # For the "total" line
                 visibility_toggles += [j==i] * number_traces
         button_args[0] = {"visible": visibility_toggles}
-        buttons.append(dict(args = button_args,
+        if chart_type != 'ghgchart' and chart_type != 'linechart':
+         buttons.append(dict(args = button_args,
             label=button_label[0].upper() + button_label[1:],
             method="update"))
     update_menus = [fig.layout.updatemenus[0]] if len(fig.layout.updatemenus) > 0 else [] # We keep existing update menus (in the case of areacharts for ex)

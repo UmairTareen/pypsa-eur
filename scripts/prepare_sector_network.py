@@ -907,7 +907,7 @@ def add_generation(n, costs):
         carrier_nodes = vars(spatial)[carrier].nodes
 
         add_carrier_buses(n, carrier, carrier_nodes)
-        if config["run"]["name"] == "reff":
+        if config["run"]["name"] == "baseline":
             value = False
         else:
             value = True
@@ -1504,7 +1504,7 @@ def add_storage_and_grids(n, costs):
         )
 
     if options["SMR_cc"]:
-     if config["run"]["name"] == "reff" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+     if config["run"]["name"] == "baseline" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
             value = False
      else:
             value = True
@@ -1858,7 +1858,7 @@ def add_heat(n, costs):
                 .sum()
                 .T[nodes]
                 .multiply(
-                    factor * (1 + options["district_heating"]["district_heating_loss"])
+                    factor
                 )
             )
 
@@ -1882,7 +1882,7 @@ def add_heat(n, costs):
                 if options["time_dep_hp_cop"]
                 else costs.at[costs_name, "efficiency"]
             )
-            if config["run"]["name"] == "reff":
+            if config["run"]["name"] == "baseline":
              value = False
             else:
              value = True
@@ -1912,7 +1912,7 @@ def add_heat(n, costs):
                 carrier=name + " water tanks",
                 unit="MWh_th",
             )
-            if config["run"]["name"] == "reff":
+            if config["run"]["name"] == "baseline":
              value = False
             else:
              value = True
@@ -2022,7 +2022,7 @@ def add_heat(n, costs):
                 efficiency3=costs.at["gas", "CO2 intensity"],
                 lifetime=costs.at["central gas CHP", "lifetime"],
             )
-            if config["run"]["name"] == "reff" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+            if config["run"]["name"] == "baseline" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
                 value = False
             else:
                 value = True
@@ -2231,7 +2231,7 @@ def add_biomass(n, costs):
         carrier="solid biomass",
         unit="MWh_LHV",
     )
-    if config["run"]["name"] != "reff":
+    if config["run"]["name"] != "baseline":
      n.madd(
         "Store",
         spatial.gas.biogas,
@@ -2251,7 +2251,7 @@ def add_biomass(n, costs):
         marginal_cost=costs.at["solid biomass", "fuel"],
         e_initial=solid_biomass_potentials_spatial,
     )
-    if config["run"]["name"] == "reff":
+    if config["run"]["name"] == "baseline":
         value = False
     else:
         value = True
@@ -2376,7 +2376,7 @@ def add_biomass(n, costs):
             efficiency2=costs.at[key, "efficiency-heat"],
             lifetime=costs.at[key, "lifetime"],
         )
-        if config["run"]["name"] == "reff" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+        if config["run"]["name"] == "baseline" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
             value = False
         else:
             value = True
@@ -2456,7 +2456,7 @@ def add_biomass(n, costs):
             capital_cost=costs.at["BtL", "fixed"],
             marginal_cost=costs.at["BtL", "efficiency"] * costs.at["BtL", "VOM"],
         )
-        if config["run"]["name"] == "reff" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+        if config["run"]["name"] == "baseline" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
             value = False
         else:
             value = True
@@ -2500,7 +2500,7 @@ def add_biomass(n, costs):
             marginal_cost=costs.at["BioSNG", "efficiency"] * costs.at["BioSNG", "VOM"],
         )
 
-        if config["run"]["name"] == "reff" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+        if config["run"]["name"] == "baseline" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
             value = False
         else:
             value = True
@@ -2581,7 +2581,7 @@ def add_industry(n, costs):
         link_names = nodes + " " + spatial.biomass.industry_cc
     else:
         link_names = spatial.biomass.industry_cc
-    if config["run"]["name"] == "reff" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "baseline" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
         value = False
     else:
         value = True
@@ -2638,7 +2638,7 @@ def add_industry(n, costs):
         efficiency=1.0,
         efficiency2=costs.at["gas", "CO2 intensity"],
     )
-    if config["run"]["name"] == "reff" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "baseline" or config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
         value = False
     else:
         value = True
@@ -3685,7 +3685,7 @@ if __name__ == "__main__":
     pop_weighted_heat_totals = (
         pd.read_csv(snakemake.input.pop_weighted_heat_totals, index_col=0) * nyears
     )
-    pop_weighted_energy_totals.update(pop_weighted_heat_totals)
+    # pop_weighted_energy_totals.update(pop_weighted_heat_totals)
 
     patch_electricity_network(n)
 

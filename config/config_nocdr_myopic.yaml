@@ -45,7 +45,7 @@ scenario:
   #- 512
   #- 1024
   opts:
-  - EQ0.70c
+  - ''
   sector_opts:
   - 1H-T-H-B-I-A-dist1
   planning_horizons:
@@ -257,10 +257,16 @@ imposed_values:
   country: BE
   nuclear: 2000
   onwind: 6000
-  offshore_ac: 5000
-  offshore_dc: 3000
+  offshore_ac: 4000
+  offshore_dc: 2000
   solar: 14000
   solar_max: 104000
+  offshore_max: 8000
+
+sequestration_potentia_BE: 
+  2030: 2
+  2040: 5
+  2050: 10
   
 TYNDP_values:
   at_ch: 1200
@@ -664,7 +670,11 @@ sector:
     min_size: 3
     max_size: 25
     years_of_storage: 25
-  co2_sequestration_potential: 200
+  co2_sequestration_potential:
+    2020: 0
+    2030: 100
+    2040: 150
+    2050: 200
   co2_sequestration_cost: 10
   co2_sequestration_lifetime: 50
   co2_spatial: true

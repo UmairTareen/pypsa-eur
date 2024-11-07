@@ -52,7 +52,7 @@ def build_transport_demand(traffic_fn, airtemp_fn, nodes, nodal_transport_data):
     )
     transport_shape = transport_shape / transport_shape.sum()
 
-    if config["run"]["name"] == "bau" or config["run"]["name"] == "reff":
+    if config["run"]["name"] == "ref" or config["run"]["name"] == "baseline":
     # electric motors are more efficient, so alter transport demand
      plug_to_wheels_eta = options["bev_plug_to_wheel_efficiency"]
      battery_to_wheels_eta = plug_to_wheels_eta * options["bev_charge_efficiency"]

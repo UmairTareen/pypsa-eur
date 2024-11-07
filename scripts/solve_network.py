@@ -184,25 +184,21 @@ def _add_land_use_constraint_m(n, planning_horizons, config):
     n.generators.p_nom_max.clip(lower=0, inplace=True)
 
 
-def add_co2_sequestration_limit(n, limit=200):
+def add_co2_sequestration_limit(n, foresight, config):
     """
     Add a global constraint on the amount of Mt CO2 that can be sequestered.
     """
-
     if not n.investment_periods.empty:
         periods = n.investment_periods
         names = pd.Index([f"co2_sequestration_limit-{period}" for period in periods])
     else:
         periods = [np.nan]
         names = pd.Index(["co2_sequestration_limit"])
-    # if config["run"]["name"] == "ncdr":
-    #     limit = 0
-    #     n.carriers.loc["co2 stored", "co2 sequestered"] = 0
-    #     # n.carriers.co2 sequestered = n.carriers.co2 sequestered.fillna(0)
-    # else:
-    #     limit = limit
-    #     n.carriers.loc["co2 stored", "co2 sequestered"] = 1
-    #     # n.carriers.co2 sequestered = n.carriers.co2 sequestered.fillna(0)
+    if foresight == "overnight":
+      limit = config["sector"]["co2_sequestration_potential"]
+    else:
+      current_horizon = int(snakemake.wildcards.planning_horizons)
+      limit = config["sector"]["co2_sequestration_potential"][current_horizon]
     n.madd(
         "GlobalConstraint",
         names,
@@ -403,8 +399,8 @@ def prepare_network(
             n = add_max_growth(n)
 
     if n.stores.carrier.eq("co2 sequestered").any():
-        limit = co2_sequestration_potential
-        add_co2_sequestration_limit(n, limit=limit)
+        # limit = co2_sequestration_potential
+        add_co2_sequestration_limit(n, foresight, config)
 
     return n
 
@@ -460,25 +456,51 @@ def imposed_values_genertion(n, foresight, config):
       n.links.loc[f"{country}{suffix} nuclear-1975", "p_nom"] = nuclear_max
      
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
-      solar_max_pot = config["imposed_values"]["solar_max"]
-      if f"{country}{suffix} solar-2040" in n.generators.index:
+     solar_max_pot = config["imposed_values"]["solar_max"]
+     if f"{country}{suffix} solar-2040" in n.generators.index:
           n.generators.loc[f"{country}{suffix} solar-2040", "p_nom_max"] = solar_max_pot
-      if f"{country}{suffix} solar-2050" in n.generators.index:
+          offwind_max_val = config["imposed_values"]["offshore_max"]
+          offwind_val = n.generators[
+            n.generators.index.str.contains(country) & 
+            n.generators.index.str.contains('offwind')].p_nom_opt.sum()
+          offwind_max = offwind_max_val - offwind_val
+          n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] = offwind_max
+     if f"{country}{suffix} solar-2050" in n.generators.index:
           n.generators.loc[f"{country}{suffix} solar-2050", "p_nom_max"] = solar_max_pot
+          offwind_max_val = config["imposed_values"]["offshore_max"]
+          offwind_val = n.generators[
+            n.generators.index.str.contains(country) & 
+            n.generators.index.str.contains('offwind')].p_nom_opt.sum()
+          offwind_max = offwind_max_val - offwind_val
+          n.generators.loc[f"{country}{suffix} offwind-dc-2050", "p_nom_max"] = offwind_max
        
     return n       
 
 def imposed_values_sensitivity_offshore(n, foresight, config):
   ''' This funtion impse values for offshore technologies for Belgium considering additional
-    capacity in northses'''
+    capacity in northsea'''
   if "sensitivity_analysis_offshore_northsea" in config["run"]["name"]: 
     if foresight == "myopic":
      country = config["imposed_values"]["country"]
      suffix = "1 0"
      if f"{country}{suffix} offwind-dc-2040" in n.generators.index:
-         n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] = config["sensitivity_analysis"]["additional_capacity"][2040]
+         n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] += config["sensitivity_analysis"]["additional_capacity"][2040]
      if f"{country}{suffix} offwind-dc-2050" in n.generators.index:
-         n.generators.loc[f"{country}{suffix} offwind-dc-2050", "p_nom_max"] = config["sensitivity_analysis"]["additional_capacity"][2050]
+         n.generators.loc[f"{country}{suffix} offwind-dc-2050", "p_nom_max"] += config["sensitivity_analysis"]["additional_capacity"][2050]
+         
+  return n
+
+def imposed_values_sequestration(n, config):
+  ''' This funtion impse values for carbon sequestration for Belgium for ref scenario'''
+  if config["run"]["name"] == "ref":
+      country = config["imposed_values"]["country"]
+      suffix = "1 0"
+      if f"{country}{suffix} co2 sequestered-2030" in n.stores.index:
+          n.stores.loc[f"{country}{suffix} co2 sequestered-2030", "e_nom_max"] = config["sequestration_potentia_BE"][2030] * 1e6
+      if f"{country}{suffix} co2 sequestered-2040" in n.stores.index:
+          n.stores.loc[f"{country}{suffix} co2 sequestered-2040", "e_nom_max"] = config["sequestration_potentia_BE"][2040] * 1e6
+      if f"{country}{suffix} co2 sequestered-2050" in n.stores.index:
+          n.stores.loc[f"{country}{suffix} co2 sequestered-2050", "e_nom_max"] = config["sequestration_potentia_BE"][2050] * 1e6 
          
   return n
 
@@ -535,7 +557,8 @@ def imposed_TYNDP(n, foresight, config):
         n.lines.loc[index, "s_nom_min"] = config["TYNDP_values"][values["s_nom_min"]]
     
   
-      # n.links.loc["T12", "p_nom"] = config["TYNDP_values"]["T12"]
+       n.links.loc["T6", "p_nom"] = 1000
+       n.links.loc["14801", "p_nom"] = 1000
       # n.links.loc["T19", "p_nom"] = config["TYNDP_values"]["T19"] 
       # n.links.loc["T21", "p_nom"] =config["TYNDP_values"]["T21"] 
       # n.links.loc["T22", "p_nom"] = config["TYNDP_values"]["T22"] 
@@ -801,7 +824,7 @@ def add_EQ_constraints(n, level, by_country, config):
             (local_conv_gen_p * efficiencies)
             .groupby(group(n.links.loc[local_conv_gen_i], b="bus1"))
             .sum()
-            .rename({"bus1": "bus"})
+            .rename({"bus1": "Bus"})
         )
         local_conv_gen = (local_conv_gen_p * n.snapshot_weightings.generators).sum(
             "snapshot"
@@ -839,7 +862,7 @@ def add_EQ_constraints(n, level, by_country, config):
         e
         for e in [
             local_gen,
-            local_hydro,
+            # local_hydro,
             # local_bio,
             local_conv_gen,
             #local_heat_from_ambient,
@@ -857,19 +880,20 @@ def add_EQ_constraints(n, level, by_country, config):
     # Build linear expression representing net imports (i.e. imports -
     # exports) for each bus/country.
     lines_in_s = (
-        n.model["Line-s"]
-        .loc[:, lines_cross_region_i]
-        .groupby(group(n.lines.loc[lines_cross_region_i], b="bus1"))
-        .sum()
-        .rename({"bus1": "bus"})
-    ) - (
-        n.model["Line-s"]
-        .loc[:, lines_cross_region_i]
-        .groupby(group(n.lines.loc[lines_cross_region_i], b="bus0"))
-        .sum()
-        .rename({"bus0": "bus"})
-    )
+    n.model["Line-s"]
+    .loc[:, lines_cross_region_i]
+    .groupby(group(n.lines.loc[lines_cross_region_i], b="bus1"))
+    .sum()
+    .rename({"bus1": "Bus"})
+      ) - (
+    n.model["Line-s"]
+    .loc[:, lines_cross_region_i]
+    .groupby(group(n.lines.loc[lines_cross_region_i], b="bus0"))
+    .sum()
+    .rename({"bus0": "Bus"})
+      )
     line_imports = (lines_in_s * n.snapshot_weightings.generators).sum("snapshot")
+    
 
     # Link net imports, representing all net energy imports of various
     # carriers that are implemented as links. We list all possible
@@ -887,7 +911,7 @@ def add_EQ_constraints(n, level, by_country, config):
         # # Solid biomass
         # "solid biomass transport",
         # DC electricity
-        "DC",
+        "DC"
         # # Oil (imports / exports between spatial nodes and "EU" node)
         # "Fischer-Tropsch",
         # "biomass to liquid",
@@ -924,6 +948,7 @@ def add_EQ_constraints(n, level, by_country, config):
         .loc[n.links.carrier.isin(link_import_carriers)]
         .index
     )
+    # links_cross_region_i = links_cross_region_i[~links_cross_region_i.str.contains('-reversed', case=False)]
     # Build linear expression representing net imports (i.e. imports -
     # exports) for each bus/country.
     links_in_p = (
@@ -931,13 +956,13 @@ def add_EQ_constraints(n, level, by_country, config):
         .loc[:, links_cross_region_i]
         .groupby(group(n.links.loc[links_cross_region_i], b="bus1"))
         .sum()
-        .rename({"bus1": "bus"})
+        .rename({"bus1": "Bus"})
     ) - (
         n.model["Link-p"]
         .loc[:, links_cross_region_i]
         .groupby(group(n.links.loc[links_cross_region_i], b="bus0"))
         .sum()
-        .rename({"bus0": "bus"})
+        .rename({"bus0": "Bus"})
     )
     link_imports = (links_in_p * n.snapshot_weightings.generators).sum("snapshot")
 
@@ -959,10 +984,10 @@ def add_EQ_constraints(n, level, by_country, config):
         i for i in [line_imports, link_imports] if i is not None
     )
 
-    local_factor = level - 1/1
-
+    # local_factor = 1 - level
+    local_factor = level - 1
     n.model.add_constraints(
-        local_factor * local_energy + imported_energy <= 0, name="equity_min"
+            local_factor * local_energy + imported_energy <= 0, name="equity_min"
     )
 
 
@@ -1401,6 +1426,7 @@ def extra_functionality(n, snapshots):
             m = re.search(EQ_regex, o)
             if m is not None:
                 level = float(m.group(1))
+                level = level+0.1
                 by_country = True if m.group(2) == "c" else False
                 add_EQ_constraints(n, level, by_country, config)
             else:
@@ -1468,15 +1494,14 @@ def solve_network(n, config, solving, **kwargs):
         status, condition = n.optimize.optimize_transmission_expansion_iteratively(
             **kwargs
         )
-
     if status != "ok" and not rolling_horizon:
         logger.warning(
             f"Solving status '{status}' with termination condition '{condition}'"
         )
     if "infeasible" in condition:
-        labels = n.model.compute_infeasibilities()
-        logger.info(f"Labels:\n{labels}")
-        n.model.print_infeasibilities()
+        # labels = n.model.compute_infeasibilities()
+        # logger.info(f"Labels:\n{labels}")
+        # n.model.print_infeasibilities()
         raise RuntimeError("Solving status 'infeasible'")
 
     return n
@@ -1501,7 +1526,7 @@ if __name__ == "__main__":
     update_config_from_wildcards(snakemake.config, snakemake.wildcards)
     config = snakemake.config
     options = snakemake.params.sector
-    
+    foresight=snakemake.params.foresight
     opts = snakemake.wildcards.opts
     if "sector_opts" in snakemake.wildcards.keys():
         opts += "-" + snakemake.wildcards.sector_opts
@@ -1528,6 +1553,9 @@ if __name__ == "__main__":
         n,
         foresight=snakemake.params.foresight,
         config=snakemake.config,)
+    n = imposed_values_sequestration(
+        n,
+        config=snakemake.config,)
     n = imposed_TYNDP(
         n,
         config=snakemake.config,
@@ -1543,7 +1571,7 @@ if __name__ == "__main__":
             log_fn=snakemake.log.solver,
         )
 
-    logger.info(f"Maximum memory usage: {mem.mem_usage}")
+    logger.info(f"Maximum memory usage: {mem.mem_usage}")  
 
     n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.export_to_netcdf(snakemake.output.network)

@@ -151,7 +151,7 @@ def prepare_sepia(countries):
     fec_carrier = flows.loc[:, selected_columns]
     grouped_fec = fec_carrier.groupby(level='Source', axis=1).sum()
     fec = grouped_fec
-    for en_code in ['vap','elc','gaz']:
+    for en_code in ['vap','elc','gaz','hyd','bev']:
         flows[(en_code+'_se',en_code+'_fe','')] = fec[en_code+'_fe']
         
     selected_columns_pe = flows.columns.get_level_values('Source').isin(FE_NODES)
@@ -335,7 +335,11 @@ def prepare_sepia(countries):
     #     flows_co2[('oil_ghg',en_code + '_ghg', '')] = exp_emm_p
     
     
-    
+    for en_code in ['gaz']: 
+      value_smr = flows.loc['2020', (en_code + '_se', 'hyd_se', 'smr')].sum() 
+      flows.loc['2020', (en_code + '_se', 'hyd_fe', 'ddd')] = value_smr 
+      flows.loc['2020', (en_code + '_se', 'hyd_se', 'smr')] = 0
+      flows.loc['2020', ('hyd_se', 'hyd_fe', '')] = 0
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
     tot_ghg[country] = flows_ghg
@@ -556,7 +560,7 @@ def prepare_sepia(countries):
     html_items = {}
     
     id_section = -1
-    sections = [('ghg','GHG'),('sankey','Sankey diagram'),('carbon sankey','Carbon Sankey diagram'),('res','Renewable energy share'),('carrier','Energy carrier balance'),('cons','Energy consumption'),('eu','EU indicators & objectives')]
+    sections = [('ghg','CO2 emissions by sector'),('ghg','CO2 emissions by source'),('ghg','Cumulative CO2 emissions by sector'),('ghg','Cumulative CO2 emissions by source'),('sankey','Sankey diagram'),('carbon sankey','Carbon Sankey diagram'),('res','Renewable energy share'),('res','Final energy consumption by origin'),('carrier','Share of domestic production'),('cons','Final energy consumption by each sector '),('cons','Mix of secondary energies '),('cons','Final energy consumption by carrier for each sector')]
     if MAIN_PARAMS['HTML_TEMPLATE'] == "raw": sections += [('input','Input data')]
     html_items['MENU'] = '<ol>'
     for (anchor,title) in sections:
@@ -564,35 +568,64 @@ def prepare_sepia(countries):
     html_items['MENU'] += '</ol>'
 
     html_items['MAIN'] = ''
+    
+    #load HTML Texts
+    def load_html_texts(file_path):
+     html_texts = {}
+     with open(file_path, 'r') as file:
+        for line in file:
+            # Split by ": " to get the key and the HTML content
+            if ": " in line:
+                key, html_content = line.split(": ", 1)
+                html_texts[key.strip()] = html_content.strip()
+     return html_texts
 
+    # Load the HTML texts from file
+    html_texts = load_html_texts(file_path)
     # GHG
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += saf.combine_charts([('by sector',ghg_sector)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
-    html_items['MAIN'] += saf.combine_charts([('by source',ghg_source)], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart', results_xls_writer, 'MtCO<sub>2</sub>eq')
-    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by sector',saf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'CO2 emissions', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
-    html_items['MAIN'] += saf.combine_charts([('cumulated since 2020 by source',saf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, 'CO2 emissions','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
+    html_items['MAIN'] += html_texts.get('CO2_emissions_sector', '')
+    html_items['MAIN'] += saf.combine_charts([('',ghg_sector)], MAIN_PARAMS, NODES,'', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
+    id_section += 1
+    html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('CO2_emissions_source', '')
+    html_items['MAIN'] += saf.combine_charts([('',ghg_source)], MAIN_PARAMS, NODES,'', 'ghgchart', results_xls_writer, 'MtCO<sub>2</sub>eq')
+    id_section += 1
+    html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('Cumulative_CO2_emissions_sector', '')
+    html_items['MAIN'] += saf.combine_charts([('',saf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
+    id_section += 1
+    html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('Cumulative_CO2_emissions_source', '')
+    html_items['MAIN'] += saf.combine_charts([('',saf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, '','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
 
     # Sankeys
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('sankey_diagram', '')
     html_items['MAIN'] += saf.combine_charts([('Sankey diagram',flows)], MAIN_PARAMS, NODES, '', 'sankey', sk_proc=PROCESSES) #('upstream flows from final energies',flows_from_node_cum),('Sankey diagram without import mix',flows)
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('carbon_sankey_diagram', '')
     html_items['MAIN'] += saf.combine_charts([('Carbon Sankey diagram',flows_co2)], MAIN_PARAMS, NODES, '', 'carbon sankey', sk_proc=PROCESSES_2) #('upstream flows from final energies',flows_from_node_cum),('Sankey diagram without import mix',flows)
     # RES share
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
-    html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(ren_cov_ratios, NODES, MAIN_PARAMS, 'linechart', 'Renewable share per final energies', results_xls_writer, '%'))
+    html_items['MAIN'] += html_texts.get('RES_share', '')
+    html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(ren_cov_ratios, NODES, MAIN_PARAMS, 'linechart', '', results_xls_writer, '%'))
     # html_items['MAIN'] += '<p>Renewable shares per final energies are calculated by analysing all energy flows going through different transformation processes (electricity and heat production processes, power-to-gas etc.) as described by the Sankey diagram. An algorithm goes upstream through this complex energy system, from a given final energy to all relevant primary energies, and determines their respective shares. For example, a renewable share of 50% for final electricity means that 50% of the electricity consumed has been produced by renewable means, either directly from renewable power technologies such as wind of PV, or indirectly - for example if gas cogeneration has been used with a share of renewables in the gas mix.'
     # if MAIN_PARAMS['USE_IMPORT_MIX'] and not show_total: html_items['MAIN'] += ' NB: the mix of imported secondary energy carriers (power, gas...) is calculated from exports of other EU countries, and may thus contain some level of renewables, included in this calculation as well.'
-    html_items['MAIN'] += '<p>'
+    id_section += 1
+    html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('FEC_origin', '')
     if show_total: html_items['MAIN'] += sf.chart_to_output(sf.create_map(tot_results[('ren_cov_ratio','total')], country_list, 'RES share in final consumption', MAIN_PARAMS, unit='%', min_scale=0,max_scale=100))
-    html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(gfec_breakdown, NODES, MAIN_PARAMS, 'area', 'Final consumption by origin', results_xls_writer))
+    html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(gfec_breakdown, NODES, MAIN_PARAMS, 'area', '', results_xls_writer))
     
     # Energy carrier share balance
     id_section += 1
     html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('Domestic_production_share', '')
     html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(cov_ratios, NODES, MAIN_PARAMS, 'linechart', 'Local production coverage ratios', results_xls_writer, unit='%'))
     # html_items['MAIN'] += '<p>Local production coverage ratios are simply defined as the ratio between the local production of a given energy carrier, and its local consumption (including final and non final uses). A ratio above 100% thus means that the country is more than self-sufficient (net exporter), while a ratio below 100% means that the country is a net importer.</p>'
     if show_total:
@@ -604,12 +637,18 @@ def prepare_sepia(countries):
     grouped_flows = flows.T.groupby(['Source', 'Target', 'Type']).sum().T
     for energy in FE_NODES:
         combinations += [(NODES.loc[energy,'Label'], sf.node_consumption(grouped_flows, energy, direction='forward', splitby='target'))]
+    id_section += 1
+    html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('FEC_sector', '')
     html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
     combinations = []
     for energy in SE_NODES:
         df = sf.node_consumption(grouped_flows, energy, direction='backward', splitby='source')
         combinations += [(NODES.loc[energy,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'sec_mix.'+energy, False)
+    id_section += 1
+    html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
+    html_items['MAIN'] += html_texts.get('Grid_carrier_contribution', '')
     html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
     # html_items['MAIN'] += '<p>The above chart describes the contribution of misc. technologies (and possibly imports) to the production of a given secondary energy carrier.</p>'
     combinations = []
@@ -621,6 +660,7 @@ def prepare_sepia(countries):
         df = sf.node_consumption(grouped_flows, sector, direction='backwards', splitby='target')
         combinations += [(NODES.loc[sector,'Label'], df)]
         country_results = sf.add_indicator_to_results(country_results, df, 'fec.'+sector)
+    html_items['MAIN'] += html_texts.get('FEC_carrier', '')
     html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
     
 
@@ -687,6 +727,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     countries = snakemake.params.countries
     study = snakemake.params.study
+    file_path = snakemake.input.file_path
     df = biomass_potentials()
     prepare_sepia(countries)
 

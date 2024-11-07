@@ -46,8 +46,8 @@ def rename_techs_tyndp(tech):
          return "biomass"
     elif "Li ion" in tech:
         return "battery storage"
-    elif "EV charger" in tech:
-        return "V2G"
+    # elif "EV charger" in tech:
+    #     return "V2G"
     elif "load" in tech:
         return "load shedding"
     elif tech == "coal" or tech == "lignite":
@@ -87,6 +87,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
     colors["CHP"] = 'darkred'
     colors["load"] = 'black'
     colors["Imports_Exports"] = colors["oil"]
+    colors["EV charger"] = colors["V2G"]
     tabs = pn.Tabs()
 
     for country in countries:
@@ -194,7 +195,17 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
         if "offshore wind" in supplyn.index:
          supplyn.loc["offshore wind"] = supplyn.loc["offshore wind"] + c_offwindn
          supplyn.loc["offshore curtailment"] = -abs(c_offwindn)
+        if "H2 pipeline" in supplyn.index:
+           supplyn = supplyn.drop('H2 pipeline')
         supplyn = supplyn.T
+        if "V2G" in n.carriers.index:
+             v2g = n.links_t.p1.filter(like=country).filter(like="V2G").sum(axis=1)
+             v2g = v2g.to_frame()
+             v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
+             v2g = v2g/1e3
+             supplyn['electricity distribution grid'] = supplyn['electricity distribution grid'] + v2g['V2G']
+             supplyn['V2G'] = v2g['V2G'].abs()
+         
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
         positive_supplyn = positive_supplyn.applymap(lambda x: x if x >= 0.1 else 0)
