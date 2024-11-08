@@ -65,9 +65,9 @@ doc/_build
 *.geojson
 
 *.ipynb
-run_snakefile_ref.done
 run_snakefile_baseline.done
-run_snakefile_nocdr.done
+run_snakefile_suff.done
+run_snakefile_ref.done
 run_prepare_scenarios.done
 run_sensitivity_.done
 sensitivity_analysis
