@@ -14,20 +14,20 @@ rule run_snakefile_ref:
     output: touch("run_snakefile_ref.done")
     log: "logs/run_snakefile_ref.done",
     shell:
-        "snakemake --snakefile Snakefile_ref_myopic --cores 1 -call all"
+        "snakemake --snakefile Snakefile_ref --cores 1 -call all"
 
-rule run_snakefile_nocdr:
+rule run_snakefile_suff:
     input: "run_snakefile_ref.done"
-    output: touch("run_snakefile_nocdr.done")
-    log: "logs/run_snakefile_nocdr.done",
+    output: touch("run_snakefile_suff.done")
+    log: "logs/run_snakefile_suff.done",
     shell:
-        "snakemake --snakefile Snakefile_nocdr_myopic --cores 1 -call all"
+        "snakemake --snakefile Snakefile_suff --cores 1 -call all"
 
 
 rule run_all_snakefiles:
-    input: "run_snakefile_nocdr.done"
+    input: "run_snakefile_suff.done"
 
-configfile: 'config/config_nocdr_myopic.yaml'
+configfile: 'config/config_suff_myopic.yaml'
 
 rule plot_country_summary:
     params:
@@ -38,7 +38,7 @@ rule plot_country_summary:
         plotting=config["plotting"],
         scenario=config["scenario"],
     input:
-        "run_snakefile_nocdr.done"
+        "run_snakefile_suff.done"
     output:
         balances="results/scenario_results/country_graphs/balances-oil.pdf",
     threads: 2
@@ -66,12 +66,12 @@ rule prepare_scenarios:
     params:
         countries = config["countries"],
     input:
-        cap_files_bau=expand("results/ref/country_csvs/{country}_capacities.csv", country=local_countries),
-        cost_files_bau=expand("results/ref/country_csvs/{country}_costs.csv", country=local_countries),
-        dem_files_bau=expand("results/ref/country_csvs/{country}_sectordemands.csv", country=local_countries),
-        cap_files_ncdr=expand("results/ncdr/country_csvs/{country}_capacities.csv", country=local_countries),
-        cost_files_ncdr=expand("results/ncdr/country_csvs/{country}_costs.csv", country=local_countries),
-        dem_files_ncdr=expand("results/ncdr/country_csvs/{country}_sectordemands.csv", country=local_countries),
+        cap_files_ref=expand("results/ref/country_csvs/{country}_capacities.csv", country=local_countries),
+        cost_files_ref=expand("results/ref/country_csvs/{country}_costs.csv", country=local_countries),
+        dem_files_ref=expand("results/ref/country_csvs/{country}_sectordemands.csv", country=local_countries),
+        cap_files_suff=expand("results/suff/country_csvs/{country}_capacities.csv", country=local_countries),
+        cost_files_suff=expand("results/suff/country_csvs/{country}_costs.csv", country=local_countries),
+        dem_files_suff=expand("results/suff/country_csvs/{country}_sectordemands.csv", country=local_countries),
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         file_path = "SEPIA/html_texts.txt", 
         template = "SEPIA/Template/pypsa.html",

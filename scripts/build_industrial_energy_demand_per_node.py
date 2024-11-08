@@ -30,7 +30,7 @@ if __name__ == "__main__":
     nodal_production = pd.read_csv(fn, index_col=0) / 1e3
     countrries = snakemake.config['countries']
     config=snakemake.config 
-    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
       def clever_industry_data():
         fn = snakemake.input.clever_industry
         df= pd.read_csv(fn ,index_col=0)/1e3
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     nodal_df["current electricity"] = nodal_today["electricity"]
 
     nodal_df.index.name = "TWh/a (MtCO2/a)"
-    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
      def clever_industry_data():
         fn = snakemake.input.clever_industry
         df= pd.read_csv(fn ,index_col=0)

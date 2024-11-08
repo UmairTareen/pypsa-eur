@@ -28,14 +28,10 @@ def logo():
 
 def scenario_costs(country):
     costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_costs.csv")
-    costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_costs.csv")
-    # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
-    # costs_reff = costs_bau[['tech', '2020']]
+    costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_costs.csv")
+    
     costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
-    # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
-    
-    # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
     costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
     costs_ref = costs_ref[['tech', 'Total']]
@@ -47,14 +43,7 @@ def scenario_costs(country):
     costs_suff['Total'] = costs_suff['Total'] / 3
     costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
     
-    # costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
-    # costs_ncdr = costs_ncdr[['tech', 'Total']]
-    # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
-    # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
-    
-    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_Ref'))
-    # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
-    # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_Suff', '_Ref'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
@@ -82,14 +71,10 @@ def scenario_costs(country):
 
 def scenario_investment_costs(country):
     costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_investment costs.csv")
-    costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_investment costs.csv")
-    # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
-    # costs_reff = costs_bau[['tech', '2020']]
+    costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_investment costs.csv")
+    
     costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
-    # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
-    
-    # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
     costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
     costs_ref = costs_ref[['tech', 'Total']]
@@ -101,14 +86,7 @@ def scenario_investment_costs(country):
     costs_suff['Total'] = costs_suff['Total'] / 3
     costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
     
-    # costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
-    # costs_ncdr = costs_ncdr[['tech', 'Total']]
-    # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
-    # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
-    
-    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
-    # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
-    # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_Suff', '_ref'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
@@ -136,14 +114,10 @@ def scenario_investment_costs(country):
     
 def scenario_cumulative_costs(country):
     costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_investment costs.csv")
-    costs_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_investment costs.csv")
-    # costs_ncdr = pd.read_csv(f"csvs/{country}_costs_ncdr.csv")
-    # costs_reff = costs_bau[['tech', '2020']]
+    costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_investment costs.csv")
+    
     costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
-    # costs_ncdr = costs_ncdr[['tech', '2030', '2040', '2050']]
-    
-    # costs_reff = costs_reff.rename(columns={'2020': 'Reff'})
     
     costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
     costs_ref = costs_ref[['tech', 'Total']]
@@ -157,14 +131,7 @@ def scenario_cumulative_costs(country):
     costs_suff['Total'] = costs_suff['Total'] * 27
     costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
     
-    # costs_ncdr['Total'] = costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
-    # costs_ncdr = costs_ncdr[['tech', 'Total']]
-    # costs_ncdr['Total'] = costs_ncdr['Total'] / 3
-    # costs_ncdr = costs_ncdr.rename(columns={'Total': 'Ncdr'})
-    
-    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
-    # combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
-    # combined_df = pd.merge(combined_df, costs_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
+    combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_Suff', '_ref'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
@@ -192,14 +159,11 @@ def scenario_cumulative_costs(country):
 #%%
 def scenario_capacities(country):
     caps_ref = pd.read_csv(f"results/ref/country_csvs/{country}_capacities.csv")
-    caps_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_capacities.csv")
-    # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
+    caps_suff = pd.read_csv(f"results/suff/country_csvs/{country}_capacities.csv")
+    
     caps_baseline = caps_ref[['tech', '2020']]
     caps_ref = caps_ref[['tech', '2030', '2040', '2050']]
     caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
-    # caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
-    
-    # caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
     
     caps_ref = caps_ref[['tech', '2050']]
     caps_ref = caps_ref.rename(columns={'2050': 'Ref'})
@@ -207,17 +171,8 @@ def scenario_capacities(country):
     caps_suff = caps_suff[['tech', '2050']]
     caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
     
-    # caps_suff['Total'] = caps_suff[['2030', '2040', '2050']].sum(axis=1)
-    # caps_suff = caps_suff[['tech', 'Total']]
-    # caps_suff['Total'] = caps_suff['Total'] / 3
-    # caps_suff = caps_suff.rename(columns={'Total': 'Suff'})
-    
-    # caps_ncdr = caps_ncdr[['tech', '2050']]
-    # caps_ncdr = caps_ncdr.rename(columns={'2050': 'Ncdr'})
-    
     combined_df = pd.merge(caps_baseline, caps_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
-    # combined_df = pd.merge(combined_df, caps_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
@@ -285,14 +240,10 @@ def scenario_capacities(country):
 
 def storage_capacities(country):
     caps_ref = pd.read_csv(f"results/ref/country_csvs/{country}_storage_capacities.csv")
-    caps_suff = pd.read_csv(f"results/ncdr/country_csvs/{country}_storage_capacities.csv")
-    # caps_ncdr = pd.read_csv(f"csvs/{country}_capacities_ncdr.csv")
+    caps_suff = pd.read_csv(f"results/suff/country_csvs/{country}_storage_capacities.csv")
     caps_baseline = caps_ref[['tech', '2020']]
     caps_ref = caps_ref[['tech', '2030', '2040', '2050']]
     caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
-    # caps_ncdr = caps_ncdr[['tech', '2030', '2040', '2050']]
-    
-    # caps_reff = caps_reff.rename(columns={'2020': 'Reff'})
     
     caps_ref = caps_ref[['tech', '2050']]
     caps_ref = caps_ref.rename(columns={'2050': 'Ref'})
@@ -300,17 +251,8 @@ def storage_capacities(country):
     caps_suff = caps_suff[['tech', '2050']]
     caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
     
-    # caps_suff['Total'] = caps_suff[['2030', '2040', '2050']].sum(axis=1)
-    # caps_suff = caps_suff[['tech', 'Total']]
-    # caps_suff['Total'] = caps_suff['Total'] / 3
-    # caps_suff = caps_suff.rename(columns={'Total': 'Suff'})
-    
-    # caps_ncdr = caps_ncdr[['tech', '2050']]
-    # caps_ncdr = caps_ncdr.rename(columns={'2050': 'Ncdr'})
-    
     combined_df = pd.merge(caps_baseline, caps_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
-    # combined_df = pd.merge(combined_df, caps_ncdr, on='tech', how='outer', suffixes=('_suff', '_ncdr'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
@@ -360,27 +302,27 @@ def storage_capacities(country):
 def create_scenario_plots():
  scenarios=pd.read_csv("data/scenario_data.csv")
 
- capacities_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_capacities.csv", index_col=0)
- capacities_ncdr_2050 = capacities_ncdr[['2050']]/1e3
- ac_transmission_ncdr = capacities_ncdr_2050.loc['AC Transmission lines', '2050']
- dc_transmission_ncdr = capacities_ncdr_2050.loc['DC Transmission lines', '2050']
- transmission_ncdr = ac_transmission_ncdr + dc_transmission_ncdr
+ capacities_suff=pd.read_csv("results/suff/country_csvs/BE_capacities.csv", index_col=0)
+ capacities_suff_2050 = capacities_suff[['2050']]/1e3
+ ac_transmission_suff = capacities_suff_2050.loc['AC Transmission lines', '2050']
+ dc_transmission_suff = capacities_suff_2050.loc['DC Transmission lines', '2050']
+ transmission_suff = ac_transmission_suff + dc_transmission_suff
 
- investment_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_investment costs.csv", index_col=0)
- investment_ncdr_2050 = investment_ncdr[['2030', '2040', '2050']].sum(axis=1)
- investment_ncdr_2050 = investment_ncdr_2050.sum()/3
- investment_ncdr_2050 = investment_ncdr_2050/1e9
- demands_ncdr=pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8",  header=None)
- new_header = demands_ncdr.iloc[2]
- demands_ncdr= demands_ncdr[3:]
- demands_ncdr.columns = new_header
- demands_ncdr.set_index(new_header[0], inplace=True)
- demands_ncdr = demands_ncdr.drop(['Non-energy', 'Aviation bunkers', 'Maritime bunkers'], axis=1)
- elec_demand_ncdr = demands_ncdr.loc[str(2050)].sum()
- total_costs_ncdr=pd.read_csv("results/ncdr/country_csvs/BE_costs.csv", index_col=0)
- total_costs_ncdr_2050 = total_costs_ncdr[['2030', '2040', '2050']].sum(axis=1)
- total_costs_ncdr_2050 = total_costs_ncdr_2050.sum()/3
- total_costs_ncdr_2050 = total_costs_ncdr_2050/1e9
+ investment_suff=pd.read_csv("results/suff/country_csvs/BE_investment costs.csv", index_col=0)
+ investment_suff_2050 = investment_suff[['2030', '2040', '2050']].sum(axis=1)
+ investment_suff_2050 = investment_suff_2050.sum()/3
+ investment_suff_2050 = investment_suff_2050/1e9
+ demands_suff=pd.read_excel("results/suff/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8",  header=None)
+ new_header = demands_suff.iloc[2]
+ demands_suff= demands_suff[3:]
+ demands_suff.columns = new_header
+ demands_suff.set_index(new_header[0], inplace=True)
+ demands_suff = demands_suff.drop(['Non-energy', 'Aviation bunkers', 'Maritime bunkers'], axis=1)
+ elec_demand_suff = demands_suff.loc[str(2050)].sum()
+ total_costs_suff=pd.read_csv("results/suff/country_csvs/BE_costs.csv", index_col=0)
+ total_costs_suff_2050 = total_costs_suff[['2030', '2040', '2050']].sum(axis=1)
+ total_costs_suff_2050 = total_costs_suff_2050.sum()/3
+ total_costs_suff_2050 = total_costs_suff_2050/1e9
 
  capacities_ref=pd.read_csv("results/ref/country_csvs/BE_capacities.csv", index_col=0)
  capacities_ref_2050 = capacities_ref[['2050']]/1e3
@@ -405,7 +347,7 @@ def create_scenario_plots():
  total_costs_ref_2050 = total_costs_ref_2050/1e9
  
  jrc_historic=pd.read_csv("data/Historic_power_generation_jrc.csv", index_col=0)
- pypsa = pd.read_excel("results/ncdr/htmls/ChartData_BE.xlsx", sheet_name="Chart 23", skiprows=2)
+ pypsa = pd.read_excel("results/suff/htmls/ChartData_BE.xlsx", sheet_name="Chart 23", skiprows=2)
  pypsa.set_index(pypsa.columns[0], inplace=True)
  pypsa=pypsa.loc[2020]
  pypsa = pd.DataFrame(pypsa).T
@@ -430,9 +372,9 @@ def create_scenario_plots():
 
 
  scenarios['Pypsa-sufficiency'] = None
- scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-sufficiency'] = elec_demand_ncdr
- scenarios.loc['Average Investment Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = investment_ncdr_2050
- scenarios.loc['Average Annual Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = total_costs_ncdr_2050
+ scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-sufficiency'] = elec_demand_suff
+ scenarios.loc['Average Investment Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = investment_suff_2050
+ scenarios.loc['Average Annual Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = total_costs_suff_2050
  # scenarios.loc['Emissions(%)', 'Pypsa-sufficiency'] = -95
 
  scenarios['Pypsa-Ref'] = None
@@ -444,13 +386,13 @@ def create_scenario_plots():
  techs = ['solar', 'onshore wind','offshore wind', 'nuclear']
 
  for tech in techs:
-    scenarios.loc[tech, 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc[tech, '2050']
+    scenarios.loc[tech, 'Pypsa-sufficiency'] = capacities_suff_2050.loc[tech, '2050']
     scenarios.loc[tech, 'Pypsa-Ref'] = capacities_ref_2050.loc[tech, '2050']
 
- scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['H2 turbine', '2050']
- scenarios.loc['CCGT/OCGT', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['CCGT', '2050']
- scenarios.loc['Interconnections', 'Pypsa-sufficiency'] = transmission_ncdr
- scenarios.loc['Others', 'Pypsa-sufficiency'] = capacities_ncdr_2050.loc['hydroelectricity', '2050']
+ scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-sufficiency'] = capacities_suff_2050.loc['H2 turbine', '2050']
+ scenarios.loc['CCGT/OCGT', 'Pypsa-sufficiency'] = capacities_suff_2050.loc['CCGT', '2050']
+ scenarios.loc['Interconnections', 'Pypsa-sufficiency'] = transmission_suff
+ scenarios.loc['Others', 'Pypsa-sufficiency'] = capacities_suff_2050.loc['hydroelectricity', '2050']
 
  scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-Ref'] = capacities_ref_2050.loc['H2 turbine', '2050']
  scenarios.loc['CCGT/OCGT', 'Pypsa-Ref'] = capacities_ref_2050.loc['CCGT', '2050']

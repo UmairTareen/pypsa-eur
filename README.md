@@ -1,11 +1,14 @@
 # PyPSA-Eur: Use of pypsa-eur for sufficiency scenario studies
-This repository contains modified scripts to use PyPSA-Eur for sufficiency scenario studies. The demand data used in the scenarios are based on the CLEVER scenario (https://clever-energy-scenario.eu/). The data folder in the repository contains CSV files considered for demands in the scenarios, which can be freely used and utilized for reproduction purposes or further improvement of sufficiency scenarios. The scripts folder also includes a script to convert CLEVER sufficiency data for 28 countries into csv files which can also be freely utilized. The Config folder also contains config files used for 4 scenarios in the current study. For further information, please feel free to contact Sylvain Quoilin (squoilin@uliege.be) and Muhammad Umair Tareen (muhammadumair.tareen@uliege.be).
+This repository contains modified scripts to use PyPSA-Eur for sufficiency scenario studies. The demand data used in the scenarios are based on the CLEVER scenario (https://clever-energy-scenario.eu/). The data folder in the repository contains CSV files considered for demands in the scenarios, which can be freely used and utilized for reproduction purposes or further improvement of sufficiency scenarios. The scripts folder also includes a script to convert CLEVER sufficiency data for 28 countries into csv files which can also be freely utilized. The Config folder also contains config files used for scenarios in the current study. For further information, please feel free to contact Sylvain Quoilin (squoilin@uliege.be) and Muhammad Umair Tareen (muhammadumair.tareen@uliege.be).
 
 **Quick Usage**:
 - Download repository
 - Install the pypsa environment and activate pypsa-eur.
    conda env create -f envs/environment.yaml
    conda activate pypsa-eur
+   
+- A solver is also needed for optimisation, Gurobi is recommended but Cplex can also be used.
+  conda install -c gurobi gurobi
 
 **First run of the model**:
 During the first run, all data bundles must be downloaded. In the config file, set the retrieve options as such:
@@ -23,7 +26,7 @@ During the first run, all data bundles must be downloaded. In the config file, s
 Be aware that, depending on your connection speed, download time may be several hours!
 
 You can then run:
-> snakemake -call all
+> snakemake -s {Snakefile} -call all
 
 After running the whole snakemake, the options can be set back to:
 - retrieve: auto
@@ -49,7 +52,13 @@ After running the whole snakemake, the options can be set back to:
 - Tu run a different scenario/workflow, use the dedicated Snakefile, e.g:
 > snakemake -s Snakefile_suff -call all
 
-- The Sankey codes for all scenarios are included in the repository to analyze the results.
+- Currently there are 2 sensitivity analysis only for Belgium, one on nuclear reactors price and one on assuming additional offshore capacity
+  excess for Belgium in the Northsea. The config files of sensitivity analysis canbe found in config folder.
+  To run the sensitivity scenarios, use the dedicated Snakefile, e.g: 
+> snakemake -s Snakefile_sensitivity_nuclear -call run_all_sensitivity_scenarios 
+> snakemake -s Snakefile_sensitivity_offshore -call run_all_sensitivity_scenarios 
+
+- The Sankey codes and all post processing results are automatically generated for all scenarios are included in the repository.
 
 **myopic scenarios**:
 - The myopic scenarios perform the optimization for successive years defined in the config file. They can be run using the dedicated Snakefile.

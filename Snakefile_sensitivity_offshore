@@ -7,20 +7,20 @@ rule run_sensitivity_1:
     output: touch("run_sensitivity_1.done")
     log: "logs/run_sensitivity_1.done",
     shell:
-        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_nocdr_sensitivity_offshore_pypsa.yaml --cores 1 -call all"
+        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_suff_sensitivity_offshore_pypsa.yaml --cores 1 -call all"
 
 rule run_sensitivity_2:
     input: "run_sensitivity_1.done"
     output: touch("run_sensitivity_2.done")
     log: "logs/run_sensitivity_2.done",
     shell:
-        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_nocdr_sensitivity_offshore_northsea.yaml --cores 1 -call all"
+        "snakemake --snakefile Snakefile_sensitivity --configfile config/Sensitivity_configs/config_suff_sensitivity_offshore_northsea.yaml --cores 1 -call all"
 
 
 rule run_all_snakefiles:
     input: "run_sensitivity_2.done"
 
-configfile: "config/Sensitivity_configs/config_nocdr_sensitivity_offshore_northsea.yaml"
+configfile: "config/Sensitivity_configs/config_suff_sensitivity_offshore_northsea.yaml"
         
 rule run_prepare_sensitivity_scenarios:
     input: "run_sensitivity_2.done",

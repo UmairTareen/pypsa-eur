@@ -958,7 +958,7 @@ if __name__ == "__main__":
     set_scenario_config(snakemake)
     config=snakemake.config
     
-    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
      def clever_residential_data():
         fn = snakemake.input.clever_residential
         df= pd.read_csv(fn ,index_col=0)
@@ -1000,7 +1000,7 @@ if __name__ == "__main__":
 
     nuts3 = gpd.read_file(snakemake.input.nuts3_shapes).set_index("index")
     population = nuts3["pop"].groupby(nuts3.country).sum()
-    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
      for country in countries:
         population.loc[country] = clever_Macro.loc[country, 'Total population']
     else:
@@ -1023,7 +1023,7 @@ if __name__ == "__main__":
     # Data from IDEES only exists from 2000-2015.
     logger.info("Extrapolate IDEES data based on eurostat for years 2015-2021.")
     energy = rescale_idees_from_eurostat(idees_countries, energy, eurostat)
-    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
      for country in countries:
         energy.loc[(country, year), 'total road'] = clever_Transport.loc[country, 'Total_Road']
         energy.loc[(country, year), 'electricity road'] = clever_Transport.loc[country, 'Electricity_Road']
@@ -1081,7 +1081,7 @@ if __name__ == "__main__":
     eurostat_co2 = build_eurostat_co2(eurostat, base_year_emissions)
 
     co2 = build_co2_totals(countries, eea_co2, eurostat_co2)
-    # if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    # if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
     #  for country in countries:
     #     co2.loc[country, 'agriculture'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from agriculture'] + clever_Macro.loc[country, 'Total net GHG emissions from non-energy sources in agriculture']
     #     co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']

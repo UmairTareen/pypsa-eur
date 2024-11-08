@@ -224,15 +224,15 @@ def plot_balances(country, study):
     return balances_df, balances
 def plot_figures():
  balances_df_ref, balances = plot_balances(country, study_ref)
- balances_df_ncdr, balances = plot_balances(country, study_ncdr)
+ balances_df_suff, balances = plot_balances(country, study_suff)
 
- combined_df = balances_df_ref.merge(balances_df_ncdr, on=['energy', 'components', 'techs'], how='outer', suffixes=('_ref', '_ncdr'))
+ combined_df = balances_df_ref.merge(balances_df_suff, on=['energy', 'components', 'techs'], how='outer', suffixes=('_ref', '_suff'))
  combined_df = combined_df.fillna(0)
  fig, ax = plt.subplots(figsize=(12, 8))
  for k, v in balances.items():
     df = combined_df.loc[v]
     df = df.groupby(df["techs"]).sum()
-    columns_to_convert = ['2030_ref', '2040_ref', '2050_ref','2030_ncdr', '2040_ncdr', '2050_ncdr']
+    columns_to_convert = ['2030_ref', '2040_ref', '2050_ref','2030_suff', '2040_suff', '2050_suff']
     # convert MWh to TWh
     df[columns_to_convert] = df[columns_to_convert] / 1e6
     co2_carriers = ["co2", "co2 stored", "process emissions"]
@@ -303,12 +303,12 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     cluster = snakemake.params.scenario["clusters"][0]
-    studies = ['ref', 'ncdr']
+    studies = ['ref', 'suff']
     country = snakemake.config["country_summary"]
 
     study_ref = 'ref'
-    study_ncdr = 'ncdr'
+    study_suff = 'suff'
 
     balances_df_ref, balances = plot_balances(country, study_ref)
-    balances_df_ncdr, balances = plot_balances(country, study_ncdr)
+    balances_df_suff, balances = plot_balances(country, study_suff)
     plot_figures()

@@ -60,7 +60,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
 
         if planning_horizon == 2020 or study == 'bau':
             H2_nonenergyy = 0
-        if study == 'ncdr':
+        if study == 'suff':
             clever_industry = (
                 pd.read_csv("data/clever_Industry_" + str(planning_horizon) + ".csv", index_col=0)).T
 
@@ -213,7 +213,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
 
         load = load.loc[~load.label.str.contains("emissions")]
         load.target += " demand"
-        if study == 'ncdr':
+        if study == 'suff':
             load.loc[
                 load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
         value = load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
@@ -338,7 +338,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
                     'source': 'Electricity grid',
                     'target': 'Rail Network',
                     'value': Rail_demand}
-        if study == 'ncdr':
+        if study == 'suff':
             new_row2 = {'label': 'H2 for non-energy',
                         'source': 'hyd',
                         'target': 'Non-energy',

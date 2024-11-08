@@ -20,7 +20,7 @@ remote:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: "ncdr"
+  name: "suff"
   scenarios:
     enable: false
     file: config/scenarios.yaml

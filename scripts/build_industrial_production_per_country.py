@@ -280,7 +280,7 @@ if __name__ == "__main__":
 
     demand = industry_production(countries, year, eurostat_dir, jrc_dir)
     config=snakemake.config 
-    if config["run"]["name"] == "ncdr" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
       def clever_industry_data():
           fn = snakemake.input.clever_industry
           df= pd.read_csv(fn ,index_col=0)
