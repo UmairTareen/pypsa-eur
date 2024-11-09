@@ -86,7 +86,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
     colors["load shedding"] = 'black'
     colors["CHP"] = 'darkred'
     colors["load"] = 'black'
-    colors["Imports_Exports"] = colors["oil"]
+    colors["Imports_Exports"] = "dimgray"
     colors["EV charger"] = colors["V2G"]
     tabs = pn.Tabs()
 
@@ -289,6 +289,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,titl
     colors = tech_colors 
     colors["agriculture heat"] = "grey"
     colors["CHP"] = "orange"
+    colors["centralised electric boiler"] = "lavender"
     tabs = pn.Tabs()
 
     for country in countries:
@@ -331,7 +332,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,titl
                 ),
                 axis=1,
             )
-
+        supplyn = supplyn.rename(columns={"urban central resistive heater": "centralised electric boiler"})
         supplyn = supplyn.groupby(rename_techs_tyndp, axis=1).sum()
 
         bothn = supplyn.columns[(supplyn < 0.0).any() & (supplyn > 0.0).any()]

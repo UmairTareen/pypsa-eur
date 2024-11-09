@@ -918,3 +918,8 @@ waste CHP CC,investment,8582.5944,EUR/kW_e,"Danish Energy Agency, technology_dat
 waste CHP CC,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","08 WtE CHP, Large, 50 degree:  Technical lifetime",2015.0
 water tank charger,efficiency,0.8367,per unit,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",:  efficiency from sqr(Round trip efficiency),2015.0
 water tank discharger,efficiency,0.8367,per unit,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",:  efficiency from sqr(Round trip efficiency),2015.0
+H2 turbine,FOM,2.0,%/year,"https://etn.global/wp-content/uploads/2022/06/H2-deployment-in-centralised-power-generation-techno-economic-study-April2022.pdf",M-OCGT: increase in Fixed O&M,Page 58
+H2 turbine,VOM,6.762,EUR/MWh,"https://etn.global/wp-content/uploads/2022/06/H2-deployment-in-centralised-power-generation-techno-economic-study-April2022.pdf",M-OCGT: increase in VOM,Page 58
+H2 turbine,efficiency,0.397,per unit,"https://etn.global/wp-content/uploads/2022/06/H2-deployment-in-centralised-power-generation-techno-economic-study-April2022.pdf",M-OCGT: GT/cycle efficiency with increasing hydrogen content,Page 58
+H2 turbine,investment,750.0,EUR/kW,"https://etn.global/wp-content/uploads/2022/06/H2-deployment-in-centralised-power-generation-techno-economic-study-April2022.pdf",M-OCGT: increase in investment costs,Page 58
+H2 turbine,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",52 OCGT - Natural gas(considered same as OCGTs):  Technical lifetime,2015.0

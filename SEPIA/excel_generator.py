@@ -1551,8 +1551,16 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
 
         # fossil gas
         if country == 'EU':
-            value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas")).div(
+         if planning_horizon == 2020:
+            value_gas = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas")).div(
             1e6).sum() * options.loc[("gas", "CO2 intensity"), "value"]
+            value_ccgt = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="CCGT")
+                 ).div(1e6).sum() * options.loc[("gas", "CO2 intensity"), "value"]
+            value = value_gas +  value_ccgt
+         else:
+            value_gas = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas")).div(
+            1e6).sum() * options.loc[("gas", "CO2 intensity"), "value"]
+            value = value_gas
         else:
             value = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas").filter(like=country)).div(
                 1e6).sum() * options.loc[("gas", "CO2 intensity"), "value"]     

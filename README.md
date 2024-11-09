@@ -3,12 +3,14 @@ This repository contains modified scripts to use PyPSA-Eur for sufficiency scena
 
 **Quick Usage**:
 - Download repository
-- Install the pypsa environment and activate pypsa-eur.
-   conda env create -f envs/environment.yaml
-   conda activate pypsa-eur
+- Install the pypsa environment and activate pypsa-eur:
+> conda env create -f envs/environment.yaml
+
+> conda activate pypsa-eur
    
-- A solver is also needed for optimisation, Gurobi is recommended but Cplex can also be used.
-  conda install -c gurobi gurobi
+- A solver is also needed for optimisation, Gurobi is recommended but Cplex can also be used:
+
+> conda install -c gurobi gurobi
 
 **First run of the model**:
 During the first run, all data bundles must be downloaded. In the config file, set the retrieve options as such:
@@ -52,10 +54,11 @@ After running the whole snakemake, the options can be set back to:
 - Tu run a different scenario/workflow, use the dedicated Snakefile, e.g:
 > snakemake -s Snakefile_suff -call all
 
-- Currently there are 2 sensitivity analysis only for Belgium, one on nuclear reactors price and one on assuming additional offshore capacity
-  excess for Belgium in the Northsea. The config files of sensitivity analysis canbe found in config folder.
+- Currently there are 2 sensitivity analysis one on nuclear reactors price and one on assuming additional offshore capacity
+  excess only for Belgium in the Northsea. The config files of sensitivity analysis canbe found in config folder.
   To run the sensitivity scenarios, use the dedicated Snakefile, e.g: 
 > snakemake -s Snakefile_sensitivity_nuclear -call run_all_sensitivity_scenarios 
+
 > snakemake -s Snakefile_sensitivity_offshore -call run_all_sensitivity_scenarios 
 
 - The Sankey codes and all post processing results are automatically generated for all scenarios are included in the repository.

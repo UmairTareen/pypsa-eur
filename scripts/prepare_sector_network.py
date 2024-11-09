@@ -1208,11 +1208,11 @@ def add_storage_and_grids(n, costs):
             bus1=nodes,
             p_nom_extendable=True,
             carrier="H2 turbine",
-            efficiency=costs.at["OCGT", "efficiency"],
-            capital_cost=costs.at["OCGT", "fixed"]
-            * costs.at["OCGT", "efficiency"],  # NB: fixed cost is per MWel
-            marginal_cost=costs.at["OCGT", "VOM"],
-            lifetime=costs.at["OCGT", "lifetime"],
+            efficiency=costs.at["H2 turbine", "efficiency"],
+            capital_cost=costs.at["H2 turbine", "fixed"]
+            * costs.at["H2 turbine", "efficiency"],  # NB: fixed cost is per MWel
+            marginal_cost=costs.at["H2 turbine", "VOM"],
+            lifetime=costs.at["H2 turbine", "lifetime"],
         )
 
     cavern_types = snakemake.params.sector["hydrogen_underground_storage_locations"]
