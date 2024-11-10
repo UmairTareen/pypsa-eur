@@ -289,7 +289,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,titl
     colors = tech_colors 
     colors["agriculture heat"] = "grey"
     colors["CHP"] = "orange"
-    colors["centralised electric boiler"] = "lavender"
+    colors["centralised electric boiler"] = "#6488ea"
     tabs = pn.Tabs()
 
     for country in countries:

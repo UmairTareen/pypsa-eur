@@ -407,7 +407,8 @@ def prepare_network(
 def imposed_values_genertion(n, foresight, config):
     ''' This funtion impse values for generation technologies. For example the
     wind offshore, onshore, solar and nuclear capacities are constraint for 
-    Belgium for year 2030 considering the values from ELIA'''
+    Belgium for year 2030 considering the values from ELIA. Also it considers
+    that after 2030 the gas storage site at Loenhout will be a H2 hydrogen site.'''
     if foresight == "myopic":
      country = config["imposed_values"]["country"]
      suffix = "1 0"
@@ -454,6 +455,8 @@ def imposed_values_genertion(n, foresight, config):
      
       #nuclear is grouped by grouping years so imposing value in last grouping year
       n.links.loc[f"{country}{suffix} nuclear-1975", "p_nom"] = nuclear_max
+      #Imposing no underground H2 storage potential for Belgium in 2030
+      # n.stores.loc[f"{country}{suffix} H2 Store-2030", "e_nom_max"] = 0.0
      
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
      solar_max_pot = config["imposed_values"]["solar_max"]
@@ -465,6 +468,9 @@ def imposed_values_genertion(n, foresight, config):
             n.generators.index.str.contains('offwind')].p_nom_opt.sum()
           offwind_max = offwind_max_val - offwind_val
           n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] = offwind_max
+          #Imposing no underground gas storage potential for Belgium in 2040 considering it would be converted into H2
+          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
+          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
      if f"{country}{suffix} solar-2050" in n.generators.index:
           n.generators.loc[f"{country}{suffix} solar-2050", "p_nom_max"] = solar_max_pot
           offwind_max_val = config["imposed_values"]["offshore_max"]
@@ -473,6 +479,8 @@ def imposed_values_genertion(n, foresight, config):
             n.generators.index.str.contains('offwind')].p_nom_opt.sum()
           offwind_max = offwind_max_val - offwind_val
           n.generators.loc[f"{country}{suffix} offwind-dc-2050", "p_nom_max"] = offwind_max
+          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
+          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
        
     return n       
 
@@ -491,7 +499,7 @@ def imposed_values_sensitivity_offshore(n, foresight, config):
   return n
 
 def imposed_values_sequestration(n, config):
-  ''' This funtion impse values for carbon sequestration for Belgium for ref scenario'''
+  ''' This funtion impse values for carbon sequestration for Belgium for ref scenario.'''
   if config["run"]["name"] == "ref":
       country = config["imposed_values"]["country"]
       suffix = "1 0"
@@ -501,7 +509,7 @@ def imposed_values_sequestration(n, config):
           n.stores.loc[f"{country}{suffix} co2 sequestered-2040", "e_nom_max"] = config["sequestration_potentia_BE"][2040] * 1e6
       if f"{country}{suffix} co2 sequestered-2050" in n.stores.index:
           n.stores.loc[f"{country}{suffix} co2 sequestered-2050", "e_nom_max"] = config["sequestration_potentia_BE"][2050] * 1e6 
-         
+
   return n
 
 

@@ -818,7 +818,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
     colors = tech_colors 
     colors["agriculture heat"] = "grey"
     colors["CHP"] = "orange"
-    colors["centralised electric boiler"] = "lavender"
+    colors["centralised electric boiler"] = "#6488ea"
     tabs = pn.Tabs()
 
     for country in countries:
@@ -1049,9 +1049,7 @@ def plot_map(
             logger.warning(f"{item} not in config/plotting/tech_colors")
 
     costs = costs.stack()  # .sort_index()
-    eu_location = config["plotting"].get("eu_node_location", dict(x=-5.5, y=46))
-    n.buses.loc["EU gas", "x"] = eu_location["x"]
-    n.buses.loc["EU gas", "y"] = eu_location["y"]
+    
 
     n.links.drop(
         n.links.index[(n.links.carrier != "DC") & (n.links.carrier != "B2B")],
@@ -1106,6 +1104,9 @@ def plot_map(
     link_widths = link_widths.replace(line_lower_threshold, 0)
     
     fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
+    eu_location = config["plotting"].get("eu_node_location", dict(x=-50, y=46))
+    n.buses.loc["EU gas", "x"] = eu_location["x"]
+    n.buses.loc["EU gas", "y"] = eu_location["y"]
     
     n.plot(
         bus_sizes=costs / bus_size_factor,
