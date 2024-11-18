@@ -469,8 +469,8 @@ def imposed_values_genertion(n, foresight, config):
           offwind_max = offwind_max_val - offwind_val
           n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] = offwind_max
           #Imposing no underground gas storage potential for Belgium in 2040 considering it would be converted into H2
-          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
-          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
+          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
+          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
      if f"{country}{suffix} solar-2050" in n.generators.index:
           n.generators.loc[f"{country}{suffix} solar-2050", "p_nom_max"] = solar_max_pot
           offwind_max_val = config["imposed_values"]["offshore_max"]
@@ -479,8 +479,8 @@ def imposed_values_genertion(n, foresight, config):
             n.generators.index.str.contains('offwind')].p_nom_opt.sum()
           offwind_max = offwind_max_val - offwind_val
           n.generators.loc[f"{country}{suffix} offwind-dc-2050", "p_nom_max"] = offwind_max
-          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
-          n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
+          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
+          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
        
     return n       
 
@@ -1327,7 +1327,10 @@ def add_co2limit_country(n, limit_countries, nyears=1.0):
 
     # convert Mt to tCO2
     co2_totals = 1e6 * pd.read_csv(snakemake.input.co2_totals_name, index_col=0)
-
+    #Consider non-energy emissions from agriculture in the carbon budget on country level
+    ghg_emissions_agri= 1e6 * pd.read_csv(snakemake.input.ghg_emissions_agri, index_col=0)
+    non_energy_ghg_agri = ghg_emissions_agri.loc[countries, 'Total net GHG emissions from non-energy sources in agriculture']
+    non_energy_ghg_agri[non_energy_ghg_agri < 0] = 0
     co2_limit_countries = co2_totals.loc[countries, sectors].sum(axis=1)
     co2_limit_countries = co2_limit_countries.loc[
         co2_limit_countries.index.isin(limit_countries.keys())
@@ -1336,7 +1339,7 @@ def add_co2limit_country(n, limit_countries, nyears=1.0):
     lulucf[lulucf > 0] = 0
     lulucf = lulucf * -1
     co2_limit_countries *= co2_limit_countries.index.map(limit_countries) * nyears
-    co2_limit_countries = co2_limit_countries + lulucf
+    co2_limit_countries = (co2_limit_countries + lulucf) - non_energy_ghg_agri
 
     p = n.model["Link-p"]  # dimension: (time, component)
 
@@ -1395,7 +1398,7 @@ def add_co2limit_country(n, limit_countries, nyears=1.0):
             sense="<=",
             type="",
         )
-        
+
 def extra_functionality(n, snapshots):
     """
     Collects supplementary constraints which will be passed to
@@ -1422,6 +1425,7 @@ def extra_functionality(n, snapshots):
     add_battery_constraints(n)
     add_lossy_bidirectional_link_constraints(n)
     add_pipe_retrofit_constraint(n)
+    
     if n._multi_invest:
         add_carbon_constraint(n, snapshots)
         add_carbon_budget_constraint(n, snapshots)

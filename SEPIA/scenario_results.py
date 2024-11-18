@@ -9,6 +9,7 @@ import shutil
 from datetime import datetime
 import plotly.express as px
 from jinja2 import Template
+import yaml
 
 def logo():
     file = snakemake.input.sepia_config
@@ -269,7 +270,7 @@ def storage_capacities(country):
         ["Grid-scale battery", "home battery", "V2G"],
         ["H2"],
         ["Thermal Energy storage"],
-        ["biogas"],
+        ["gas"],
     ]
 
     fig = make_subplots(rows=1, cols=len(groups) // 1, subplot_titles=[
@@ -518,6 +519,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
                 key, html_content = line.split(": ", 1)
                 html_texts[key.strip()] = html_content.strip()
      return html_texts
+
     # Load the HTML texts from file
     html_texts = load_html_texts(file_path)
     annual_costs_desc = html_texts.get('annual_costs_sce', '')
@@ -530,72 +532,103 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     scenario_flex_desc = html_texts.get('scenario_flex_sce', '')
     scenario_cost_desc = html_texts.get('scenario_cost_sce', '')
     hist_desc = html_texts.get('hist_sce', '')
+    
+    #load the html plot flags
+    with open(snakemake.input.plots_html, 'r') as file:
+     plots = yaml.safe_load(file)
+    scenario_plots = plots.get("Scenario_plots", {})
     # Create bar chart
-    bar_chart = scenario_costs(country)
-    combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+    if scenario_plots["Annual Costs"] == True:
+     bar_chart = scenario_costs(country)
+     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
     
-    bar_chart_investment = scenario_investment_costs(country)
-    combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+    if scenario_plots["Annual Investment Costs"] == True:
+     bar_chart_investment = scenario_investment_costs(country)
+     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
     
-    bar_chart_cumulative = scenario_cumulative_costs(country)
-    combined_html += f"<div><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
+    if scenario_plots["Cummulative Investment Costs"] == True:
+     bar_chart_cumulative = scenario_cumulative_costs(country)
+     combined_html += f"<div><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
     
     # Create capacities chart
-    capacities_chart = scenario_capacities(country)
-    combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    if scenario_plots["Capacities"] == True:
+     capacities_chart = scenario_capacities(country)
+     combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
     
-    # Create capacities chart
-    storage_capacities_chart = storage_capacities(country)
-    combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
+    # Create storage capacities chart
+    if scenario_plots["Storage Capacities"] == True:
+     storage_capacities_chart = storage_capacities(country)
+     combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
     
     
     #Create scenario comparison plots
     if country == 'BE':
         scenario_figures = create_scenario_plots()
-        demand_comparison = scenario_figures['demand']
-        combined_html += f"<div><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html()}</div>"
-        vre_comparison = scenario_figures['vre']
-        combined_html += f"<div><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html()}</div>"
-        flexibility_comparison = scenario_figures['flexibility']
-        combined_html += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
-        costs_comparison = scenario_figures['costs']
-        combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
-        # emission_comparison = scenario_figures['emissions']
-        # combined_html += f"<div><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
-        historic_comparison = scenario_figures['historic']
-        combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html()}</div>"
+        if scenario_plots["Scenarios Demands Comparison"] == True:
+         demand_comparison = scenario_figures['demand']
+         combined_html += f"<div><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html()}</div>"
+        if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
+         vre_comparison = scenario_figures['vre']
+         combined_html += f"<div><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html()}</div>"
+        if scenario_plots["Scenario Flexibility Capacities"] == True:
+         flexibility_comparison = scenario_figures['flexibility']
+         combined_html += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
+        if scenario_plots["Scenarios Costs Comparison"] == True:
+         costs_comparison = scenario_figures['costs']
+         combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
+        if scenario_plots["Historic Generation Comparison"] == True:
+         historic_comparison = scenario_figures['historic']
+         combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html()}</div>"
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
     main_content = ""
     # Create the content for the "Table of Contents" and "Main" sections
-    table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2023-2050)'>Cummulative Investment Costs (2023-2050)</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
+    if scenario_plots["Annual Costs"] == True:
+     table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
+    if scenario_plots["Annual Investment Costs"] == True:
+     table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
+    if scenario_plots["Cummulative Investment Costs"] == True:
+     table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2023-2050)'>Cummulative Investment Costs (2023-2050)</a><br>"
+    if scenario_plots["Capacities"] == True:
+     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
+    if scenario_plots["Storage Capacities"] == True:
+     table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
     if country == 'BE':
-        table_of_contents_content += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
-        table_of_contents_content += f"<a href='#{country} - Scenarios VRE Capacities Comparison'>Scenarios VRE Capacities Comparison</a><br>"
-        table_of_contents_content += f"<a href='#{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'>Scenario Flexibility Capacities in Electricity Grid Comparison</a><br>"
-        table_of_contents_content += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
-        # table_of_contents_content += f"<a href='#{country} - Scenarios Emissions Comparison'>Scenarios Emissions Comparison</a><br>"
-        table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Baseline Scenario</a><br>"
+        if scenario_plots["Scenarios Demands Comparison"] == True:
+         table_of_contents_content += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
+        if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
+         table_of_contents_content += f"<a href='#{country} - Scenarios VRE Capacities Comparison'>Scenarios VRE Capacities Comparison</a><br>"
+        if scenario_plots["Scenario Flexibility Capacities"] == True:
+         table_of_contents_content += f"<a href='#{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'>Scenario Flexibility Capacities in Electricity Grid Comparison</a><br>"
+        if scenario_plots["Scenarios Costs Comparison"] == True:
+         table_of_contents_content += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
+        if scenario_plots["Historic Generation Comparison"] == True:
+         table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Baseline Scenario</a><br>"
 
     # Add more links for other plots
-    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
-    main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html()}</div>"
-    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html()}</div>"
+    if scenario_plots["Annual Costs"] == True:
+     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
+    if scenario_plots["Annual Investment Costs"] == True:
+     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
+    if scenario_plots["Cummulative Investment Costs"] == True:
+     main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html()}</div>"
+    if scenario_plots["Capacities"] == True:
+     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
+    if scenario_plots["Storage Capacities"] == True:
+     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html()}</div>"
     
     if country == 'BE':
-        main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{ scenario_vre_desc}{vre_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{scenario_flex_desc}{flexibility_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html()}</div>"
-        # main_content += f"<div id='{country} - Scenarios Emissions Comparison'><h2>{country} - Scenarios Emissions Comparison</h2>{emission_comparison.to_html()}</div>"
-        main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html()}</div>"
+        if scenario_plots["Scenarios Demands Comparison"] == True:
+         main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html()}</div>"
+        if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
+         main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{ scenario_vre_desc}{vre_comparison.to_html()}</div>"
+        if scenario_plots["Scenario Flexibility Capacities"] == True:
+         main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{scenario_flex_desc}{flexibility_comparison.to_html()}</div>"
+        if scenario_plots["Scenarios Costs Comparison"] == True:
+         main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html()}</div>"
+        if scenario_plots["Historic Generation Comparison"] == True:
+         main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html()}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template

@@ -488,7 +488,6 @@ entry_label_mapping = {
     'Haber-Bosch_3': {'label': 'Production of ammonia from H2)', 'source': 'TWh', 'target': 'prohydclamm'},
     'residential rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh',
                                            'target': 'lossbb'},
-    # 'methanolisation_3': {'label': 'electricity to metaholisation', 'source': 'TWh', 'target': 'pretareen'},
     'residential urban decentral biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)',
                                                      'source': 'TWh', 'target': 'lossbbb'},
     'services rural biomass boiler_2': {'label': 'Transformation losses (solid biomass boilers)', 'source': 'TWh',
@@ -1624,6 +1623,30 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         )
         cf = pd.concat([cf, row], axis=0)
         
+        # GHG gasse from agriculture
+        countriess = snakemake.config["countries"]
+        GHG_agri = (
+            pd.read_csv(f"data/clever_AFOLUB_" + str(planning_horizon) + ".csv",
+                        index_col=0))
+        GHG_agri = GHG_agri.loc[countriess, 'Total net GHG emissions from non-energy sources in agriculture']
+        GHG_agri = GHG_agri.T
+        GHG_agri[GHG_agri < 0] = 0
+        if country == 'EU':
+          V = GHG_agri.sum().sum()
+        else:
+          V = GHG_agri.filter(like=(country)).sum()
+        row = pd.DataFrame(
+            [
+                dict(
+                    label="Non-energy GHG Agriculture",
+                    source="GHG Agriculture",
+                    target="co2 atmosphere",
+                    value=V,
+                )
+            ]
+        )
+        cf = pd.concat([cf, row], axis=0)
+        
 
         # net co2 emissions
         value = (
@@ -1681,7 +1704,7 @@ entries_to_select_c = ['process emissions', 'process emissions CC', 'process emi
                        'solid biomass solid biomass to gas CC2',
                        'solid biomass solid biomass to gas CC3', 'solid biomass solid biomass to gas CC4', 'Sabatier',
                        'urban central gas CHP CC1','urban central gas CHP CC2','biogas to gas CC','biogas to gas CC2',
-                       'biogas to gas CC3','naphtha for industry','fossil gas']  # Add moe entries if needed
+                       'biogas to gas CC3','naphtha for industry','fossil gas','Non-energy GHG Agriculture']  # Add moe entries if needed
 
 entry_label_mapping_c = {
     'process emissions': {'label': 'process emissions', 'source': 'MtCO2', 'target': 'emmprocess'},
@@ -1773,6 +1796,7 @@ entry_label_mapping_c = {
     'biogas to gas CC': {'label': 'biogas to gas CC', 'source': 'MtCO2', 'target': 'emmbiogasatcc'},
     'biogas to gas CC2': {'label': 'biogas to gas CC2', 'source': 'MtCO2', 'target': 'emmbiogascc'},
     'biogas to gas CC3': {'label': 'biogas to gas CC', 'source': 'MtCO2', 'target': 'emmbiogasccc'},
+    'Non-energy GHG Agriculture': {'label': 'Non-energy GHG Agriculture', 'source': 'MtCO2', 'target': 'emmghgagri'},
 }
 def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countries, filename):
     '''

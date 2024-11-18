@@ -997,6 +997,7 @@ rule prepare_sector_network:
             if config_provider("sector", "solar_thermal")(w)
             else []
         ),
+        ghg_emissions_agri = "data/clever_AFOLUB_{planning_horizons}.csv",
     output:
         RESULTS
         + "prenetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",

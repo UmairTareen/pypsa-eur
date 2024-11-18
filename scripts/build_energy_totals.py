@@ -1081,9 +1081,9 @@ if __name__ == "__main__":
     eurostat_co2 = build_eurostat_co2(eurostat, base_year_emissions)
 
     co2 = build_co2_totals(countries, eea_co2, eurostat_co2)
-    # if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
-    #  for country in countries:
-    #     co2.loc[country, 'agriculture'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from agriculture'] + clever_Macro.loc[country, 'Total net GHG emissions from non-energy sources in agriculture']
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
+      for country in countries:
+        co2.loc[country, 'agriculture'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from agriculture']
     #     co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']
     #     co2.loc[country, 'industrial non-elec'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in industry (process emissions)']
     #     co2.loc[country, 'waste management'] = clever_Macro.loc[country, 'GHG emissions from non-energy sources in waste management']
@@ -1091,7 +1091,14 @@ if __name__ == "__main__":
     # else:
     for country in countries:
         co2.loc[country, 'LULUCF'] = clever_AFOLUB.loc[country, 'Total CO2 emissions from the LULUCF sector']
+        # co2.loc[country, 'agriculture'] += clever_AFOLUB.loc[country, 'Total net GHG emissions from non-energy sources in agriculture']
     co2.to_csv(snakemake.output.co2_name)
 
     transport = build_transport_data(countries, population, idees)
+    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
+     for country in countries:
+       year = 2015
+       person_per_vehicle =  clever_Transport.loc[country, 'Average number of people per vehicle']
+       stocks_car = transport.loc[(country, year), 'number cars'].sum()
+       transport.loc[(country, year), 'number cars'] = stocks_car / person_per_vehicle
     transport.to_csv(snakemake.output.transport_name)

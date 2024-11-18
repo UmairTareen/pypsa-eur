@@ -120,6 +120,10 @@ rule solve_sector_network_myopic:
         + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
         costs=("data/costs_{planning_horizons}.csv"),
         co2_totals_name=resources("co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv"),
+        ghg_emissions_agri = "data/clever_AFOLUB_{planning_horizons}.csv",
+        biomass_potentials=resources(
+            "biomass_potentials_s{simpl}_{clusters}_{planning_horizons}.csv"
+        ),
     output:
         network=RESULTS
         + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",

@@ -26,6 +26,7 @@ from plot_summary import rename_techs, preferred_order
 from plot_power_network import assign_location, load_projection
 from plot_power_network import add_legend_circles, add_legend_patches, add_legend_lines
 from make_summary import assign_carriers
+import yaml
 
 
 def rename_techs_tyndp(tech):
@@ -36,12 +37,12 @@ def rename_techs_tyndp(tech):
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
-    elif tech in ["H2 Store", "H2 storage"]:
-        return "hydrogen storage"
+    # elif tech in ["H2 Store", "H2 storage"]:
+    #     return "hydrogen storage"
     elif tech in [ "CHP", "H2 Fuel Cell"]:
         return "CHP"
-    # elif "solar rooftop" in tech:
-    #     return "solar rooftop"
+    elif tech in [ "battery charger", "battery discharger"]:
+        return "battery storage"
     elif "solar" in tech:
         return "solar"
     elif tech == "Fischer-Tropsch":
@@ -52,10 +53,6 @@ def rename_techs_tyndp(tech):
          return "CCS"
     elif tech in ["biomass", "biomass boiler", "solid biomass", "solid biomass for industry"]:
          return "biomass"
-    elif "Li ion" in tech:
-        return "battery storage"
-    # elif "EV charger" in tech:
-    #     return "V2G"
     elif "load" in tech:
         return "load shedding"
     elif tech == "coal" or tech == "lignite":
@@ -426,7 +423,7 @@ def storage_capacities(countries):
       cf = cf.groupby('tech').sum().reset_index()
       result_df = pd.merge(df, cf, on='tech', how='outer')
       result_df.fillna(0, inplace=True)
-      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'battery storage':'V2G'})
+      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'Li ion':'V2G'})
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -2076,7 +2073,7 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
         ["Grid-scale battery", "home battery", "V2G"],
         ["H2"],
         ["Thermal Energy storage"],
-        ["biogas"],
+        ["gas"],
     ]
 
     # Create a subplot for each technology
@@ -2142,90 +2139,129 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     power_dispatch_win_desc = html_texts.get('power_dispatch_win_desc', '')
     power_dispatch_sum_desc = html_texts.get('power_dispatch_sum_desc', '')
     map_plots_desc = html_texts.get('map_plots_desc', '')
-    gas_map_plots_desc = html_texts.get('gas_map_plots_desc', '')
     h2_map_plots_desc = html_texts.get('h2_map_plots_desc', '')
+    gas_map_plots_desc = html_texts.get('gas_map_plots_desc', '')
     
-    plot_demands_file_path = os.path.join(raw_html, f"{country}_sectoral_demands.html")
-    with open(plot_demands_file_path, "r") as plot_demands_file:
+    #load the html plot flags
+    with open(snakemake.input.plots_html, 'r') as file:
+     plots = yaml.safe_load(file)
+    pypsa_plots = plots.get("Pypsa_plots", {})
+    
+    if pypsa_plots["Sectoral Demands"] == True:
+     plot_demands_file_path = os.path.join(raw_html, f"{country}_sectoral_demands.html")
+     with open(plot_demands_file_path, "r") as plot_demands_file:
         plot_demands_html = plot_demands_file.read()
         combined_html += f"<div><h2>{country} - Sectoral Demands</h2>{plot_demands_html}</div>"
     # Create bar chart
-    bar_chart = create_bar_chart(costs, country)
-    combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+    if pypsa_plots["Annual Costs"] == True:
+     bar_chart = create_bar_chart(costs, country)
+     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
     
     # Create Investment Costs
-    bar_chart_investment = create_investment_costs(investment_costs, country)
-    combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+    if pypsa_plots["Annual Investment Costs"] == True:
+     bar_chart_investment = create_investment_costs(investment_costs, country)
+     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
 
     # Create capacities chart
-    capacities_chart = create_capacity_chart(capacities, country)
-    combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
+    if pypsa_plots["Capacities"] == True:
+     capacities_chart = create_capacity_chart(capacities, country)
+     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
     
     # Create storage capacities chart
-    s_capacities_chart = storage_capacity_chart(s_capacities, country)
-    combined_html += f"<div><h2>{country} - Storage Capacities </h2>{s_capacities_chart.to_html()}</div>"
+    if pypsa_plots["Storage Capacities"] == True:
+     s_capacities_chart = storage_capacity_chart(s_capacities, country)
+     combined_html += f"<div><h2>{country} - Storage Capacities </h2>{s_capacities_chart.to_html()}</div>"
 
     # Save the Panel object to HTML
-    plot_series_file_path = os.path.join(raw_html, f"Power Dispatch (Winter Week) - {country}.html")
-    plot_series_file_path_sum = os.path.join(raw_html, f"Power Dispatch (Summer Week) - {country}.html")
-    plot_series_heat_file_path = os.path.join(raw_html, f"Heat Dispatch (Winter Week) - {country}.html")
-    plot_series_heat_file_path_sum = os.path.join(raw_html, f"Heat Dispatch (Summer Week) - {country}.html")
-    plot_map_path = os.path.join(raw_html, f"map_plots_{country}.html")
-    plot_map_h2_path = os.path.join(raw_html, "map_h2_plots.html")
-    plot_map_ch4_path = os.path.join(raw_html, "map_ch4_plots.html")
-
-    # Include the saved HTML in the combined HTML
-    with open(plot_series_heat_file_path, "r") as plot_series_heat_file:
-        plot_series_heat_html = plot_series_heat_file.read()
-        combined_html += f"<div><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html}</div>"
-    with open(plot_series_heat_file_path_sum, "r") as plot_series_heat_file_sum:
-        plot_series_heat_html_w = plot_series_heat_file_sum.read()
-        combined_html += f"<div><h2>{country} - Heat Dispatch</h2>{plot_series_heat_html_w}</div>"
-        
-    with open(plot_series_file_path, "r") as plot_series_file:
-        plot_series_html = plot_series_file.read()
-        combined_html += f"<div><h2>{country} - Power Dispatch</h2>{plot_series_html}</div>"
-    with open(plot_series_file_path_sum, "r") as plot_series_file_sum:
-        plot_series_html_w = plot_series_file_sum.read()
-        combined_html += f"<div><h2>{country} - Power Dispatch</h2>{plot_series_html_w}</div>"
-    with open(plot_map_path, "r") as plot_map_path:
-        plot_map_html = plot_map_path.read()
-        combined_html += f"<div><h2>Map Plots</h2>{plot_map_html}</div>"
-    with open(plot_map_h2_path, "r") as plot_map_h2_path:
-        plot_map_h2_html = plot_map_h2_path.read()
-        combined_html += f"<div><h2>H2 Map Plots</h2>{plot_map_h2_html}</div>"
-    with open(plot_map_ch4_path, "r") as plot_map_ch4_path:
-        plot_map_ch4_html = plot_map_ch4_path.read()
-        combined_html += f"<div><h2>Gas Map Plots</h2>{plot_map_ch4_html}</div>"
+    if pypsa_plots["Power Dispatch Winter"] == True:
+     plot_series_file_path = os.path.join(raw_html, f"Power Dispatch (Winter Week) - {country}.html")
+     with open(plot_series_file_path, "r") as plot_series_file:
+         plot_series_html = plot_series_file.read()
+         combined_html += f"<div><h2>{country} - Power Dispatch Winter</h2>{plot_series_html}</div>"
+    if pypsa_plots["Power Dispatch Summer"] == True:
+     plot_series_file_path_sum = os.path.join(raw_html, f"Power Dispatch (Summer Week) - {country}.html")
+     with open(plot_series_file_path_sum, "r") as plot_series_file_sum:
+         plot_series_html_w = plot_series_file_sum.read()
+         combined_html += f"<div><h2>{country} - Power Dispatch Summer</h2>{plot_series_html_w}</div>"
+    if pypsa_plots["Heat Dispatch Winter"] == True:    
+     plot_series_heat_file_path = os.path.join(raw_html, f"Heat Dispatch (Winter Week) - {country}.html")
+     with open(plot_series_heat_file_path, "r") as plot_series_heat_file:
+         plot_series_heat_html = plot_series_heat_file.read()
+         combined_html += f"<div><h2>{country} - Heat Dispatch Winter</h2>{plot_series_heat_html}</div>"
+    if pypsa_plots["Heat Dispatch Summer"] == True:   
+     plot_series_heat_file_path_sum = os.path.join(raw_html, f"Heat Dispatch (Summer Week) - {country}.html")
+     with open(plot_series_heat_file_path_sum, "r") as plot_series_heat_file_sum:
+         plot_series_heat_html_w = plot_series_heat_file_sum.read()
+         combined_html += f"<div><h2>{country} - Heat Dispatch Summer</h2>{plot_series_heat_html_w}</div>"
+    if pypsa_plots["Map Plots"] == True:
+     plot_map_path = os.path.join(raw_html, f"map_plots_{country}.html")
+     with open(plot_map_path, "r") as plot_map_path:
+         plot_map_html = plot_map_path.read()
+         combined_html += f"<div><h2>Map Plots</h2>{plot_map_html}</div>"
+    if pypsa_plots["H2 Map Plots"] == True:
+     plot_map_h2_path = os.path.join(raw_html, "map_h2_plots.html")
+     with open(plot_map_h2_path, "r") as plot_map_h2_path:
+         plot_map_h2_html = plot_map_h2_path.read()
+         combined_html += f"<div><h2>H2 Map Plots</h2>{plot_map_h2_html}</div>"
+    if pypsa_plots["Gas Map Plots"] == True:
+     plot_map_ch4_path = os.path.join(raw_html, "map_ch4_plots.html")
+     with open(plot_map_ch4_path, "r") as plot_map_ch4_path:
+         plot_map_ch4_html = plot_map_ch4_path.read()
+         combined_html += f"<div><h2>Gas Map Plots</h2>{plot_map_ch4_html}</div>"
 
     # Create the content for the "Table of Contents" and "Main" sections
-    table_of_contents_content = f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Heat Dispatch'>Heat Dispatch Winter</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Heat Dispatch'>Heat Dispatch Summer</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Power Dispatch'>Power Dispatch Winter</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Power Dispatch'>Power Dispatch Summer</a><br>"
-    table_of_contents_content += "<a href='#Map Plots'>Map Plots</a><br>"
-    table_of_contents_content += "<a href='#H2 Map Plots'>H2 Map Plots</a><br>"
-    table_of_contents_content += "<a href='#Gas Map Plots'>Gas Map Plots</a><br>"
+    table_of_contents_content = ""
+    if pypsa_plots["Sectoral Demands"] == True:
+     table_of_contents_content += f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
+    if pypsa_plots["Annual Costs"] == True:
+     table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
+    if pypsa_plots["Annual Investment Costs"] == True:
+     table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
+    if pypsa_plots["Capacities"] == True:
+     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
+    if pypsa_plots["Storage Capacities"] == True:
+     table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
+    if pypsa_plots["Heat Dispatch Winter"] == True:
+     table_of_contents_content += f"<a href='#{country} - Heat Dispatch Winter'>Heat Dispatch Winter</a><br>"
+    if pypsa_plots["Heat Dispatch Summer"] == True:
+     table_of_contents_content += f"<a href='#{country} - Heat Dispatch Summer'>Heat Dispatch Summer</a><br>"
+    if pypsa_plots["Power Dispatch Winter"] == True:
+     table_of_contents_content += f"<a href='#{country} - Power Dispatch Winter'>Power Dispatch Winter</a><br>"
+    if pypsa_plots["Power Dispatch Summer"] == True:
+     table_of_contents_content += f"<a href='#{country} - Power Dispatch Summer'>Power Dispatch Summer</a><br>"
+    if pypsa_plots["Map Plots"] == True:
+     table_of_contents_content += "<a href='#Map Plots'>Map Plots</a><br>"
+    if pypsa_plots["H2 Map Plots"] == True:
+     table_of_contents_content += "<a href='#H2 Map Plots'>H2 Map Plots</a><br>"
+    if pypsa_plots["Gas Map Plots"] == True:
+     table_of_contents_content += "<a href='#Gas Map Plots'>Gas Map Plots</a><br>"
     
     # Add more links for other plots
-
-    main_content = f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{sectoral_demands_desc}{plot_demands_html}</div>"
-    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
-    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{heat_dispatch_win_desc}{plot_series_heat_html}</div>"
-    main_content += f"<div id='{country} - Heat Dispatch'><h2>{country} - Heat Dispatch</h2>{heat_dispatch_sum_desc}{plot_series_heat_html_w}</div>"
-    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{power_dispatch_win_desc}{plot_series_html}</div>"
-    main_content += f"<div id='{country} - Power Dispatch'><h2>{country} - Power Dispatch</h2>{power_dispatch_sum_desc}{plot_series_html_w}</div>"
-    main_content += f"<div id='Map Plots'><h2>Map Plots</h2>{map_plots_desc}{plot_map_html}</div>"
-    main_content += f"<div id='H2 Map Plots'><h2>H2 Map Plots</h2>{gas_map_plots_desc}{plot_map_h2_html}</div>"
-    main_content += f"<div id='Gas Map Plots'><h2>Gas Map Plots</h2>{h2_map_plots_desc}{plot_map_ch4_html}</div>"
+    main_content = ""
+    if pypsa_plots["Sectoral Demands"] == True:
+     main_content += f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{sectoral_demands_desc}{plot_demands_html}</div>"
+    if pypsa_plots["Annual Costs"] == True:
+     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
+    if pypsa_plots["Annual Investment Costs"] == True:
+     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
+    if pypsa_plots["Capacities"] == True:
+     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
+    if pypsa_plots["Storage Capacities"] == True:
+     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html()}</div>"
+    if pypsa_plots["Heat Dispatch Winter"] == True:
+     main_content += f"<div id='{country} - Heat Dispatch Winter'><h2>{country} - Heat Dispatch Winter</h2>{heat_dispatch_win_desc}{plot_series_heat_html}</div>"
+    if pypsa_plots["Heat Dispatch Summer"] == True:
+     main_content += f"<div id='{country} - Heat Dispatch Summer'><h2>{country} - Heat Dispatch Summer</h2>{heat_dispatch_sum_desc}{plot_series_heat_html_w}</div>"
+    if pypsa_plots["Power Dispatch Winter"] == True:
+     main_content += f"<div id='{country} - Power Dispatch Winter'><h2>{country} - Power Dispatch Winter</h2>{power_dispatch_win_desc}{plot_series_html}</div>"
+    if pypsa_plots["Power Dispatch Summer"] == True:
+     main_content += f"<div id='{country} - Power Dispatch Summer'><h2>{country} - Power Dispatch Summer</h2>{power_dispatch_sum_desc}{plot_series_html_w}</div>"
+    if pypsa_plots["Map Plots"] == True:
+     main_content += f"<div id='Map Plots'><h2>Map Plots</h2>{map_plots_desc}{plot_map_html}</div>"
+    if pypsa_plots["H2 Map Plots"] == True:
+     main_content += f"<div id='H2 Map Plots'><h2>H2 Map Plots</h2>{h2_map_plots_desc}{plot_map_h2_html}</div>"
+    if pypsa_plots["Gas Map Plots"] == True:
+     main_content += f"<div id='Gas Map Plots'><h2>Gas Map Plots</h2>{gas_map_plots_desc}{plot_map_ch4_html}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template

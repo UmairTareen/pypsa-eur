@@ -97,7 +97,7 @@ def define_spatial(nodes, options):
         spatial.gas.industry = nodes + " gas for industry"
         spatial.gas.industry_cc = nodes + " gas for industry CC"
         spatial.gas.biogas_to_gas = nodes + " biogas to gas"
-        spatial.gas.biogas_to_gas_cc = nodes + "biogas to gas CC"
+        spatial.gas.biogas_to_gas_cc = nodes + " biogas to gas CC"
     else:
         spatial.gas.nodes = ["EU gas"]
         spatial.gas.locations = ["EU"]
@@ -808,6 +808,12 @@ def add_co2limit(n, options, nyears=1.0, limit=0.0):
     co2_totals = 1e6 * pd.read_csv(snakemake.input.co2_totals_name, index_col=0)
 
     co2_limit = co2_totals.loc[countries, sectors].sum().sum()
+    
+    #Consider non-energy emissions from agriculture in the carbon budget on EU level
+    ghg_emissions_agri= 1e6 * pd.read_csv(snakemake.input.ghg_emissions_agri, index_col=0)
+    non_energy_ghg_agri = ghg_emissions_agri.loc[countries, 'Total net GHG emissions from non-energy sources in agriculture']
+    non_energy_ghg_agri[non_energy_ghg_agri < 0] = 0
+    non_energy_ghg_agri = non_energy_ghg_agri.sum().sum()
 
     lulucf = co2_totals.loc[countries, 'LULUCF']
     lulucf[lulucf > 0] = 0
@@ -815,7 +821,7 @@ def add_co2limit(n, options, nyears=1.0, limit=0.0):
     lulucf = lulucf.sum().sum()
 
     co2_limit *= limit * nyears
-    co2_limit = co2_limit + lulucf
+    co2_limit = (co2_limit + lulucf) - non_energy_ghg_agri
 
     n.add(
         "GlobalConstraint",
@@ -2239,8 +2245,7 @@ def add_biomass(n, costs):
         carrier="biogas",
         e_nom=biogas_potentials_spatial,
         marginal_cost=costs.at["biogas", "fuel"],
-        e_initial=biogas_potentials_spatial,
-    )
+        e_initial=biogas_potentials_spatial,)
 
     n.madd(
         "Store",

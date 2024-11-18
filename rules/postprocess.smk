@@ -330,6 +330,7 @@ rule generate_sepia:
         template = "SEPIA/Template/CLEVER.html",
         biomass_potentials = expand(resources("biomass_potentials_s_{clusters}_{planning_horizons}.csv"),**config["scenario"]),
         excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
+        plots_html = "config/plots.yaml",
         
     output:
         excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
@@ -420,7 +421,8 @@ rule prepare_results:
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         file_path = "SEPIA/html_texts.txt", 
         template = "SEPIA/Template/pypsa.html",
-        logo = "SEPIA/Template/logo.png",         
+        logo = "SEPIA/Template/logo.png",
+        plots_html = "config/plots.yaml",         
     output:
         htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=local_countries),
     threads: 1

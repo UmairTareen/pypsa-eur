@@ -67,8 +67,8 @@ def salt_cavern_potential_by_region(caverns, regions):
         "capacity_per_area * share * area_caverns / 1000"
     )  # TWh
     # Adding 2.4 TWh storage capacity for Belgium (Reff: https://www.fluxys.com/en/press-releases/fluxys-belgium/2023/231023_press_loenhout-hydrogen-test-be-hystore)
-    new_row = pd.DataFrame({'name': ['BE1 0'], 'storage_type': ['onshore'], 'e_nom': [2.4]})
-    overlay = pd.concat([overlay, new_row], ignore_index=True)
+    # new_row = pd.DataFrame({'name': ['BE1 0'], 'storage_type': ['onshore'], 'e_nom': [2.4]})
+    # overlay = pd.concat([overlay, new_row], ignore_index=True)
     return overlay.groupby(["name", "storage_type"]).e_nom.sum().unstack("storage_type")
 
 

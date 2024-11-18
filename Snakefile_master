@@ -75,6 +75,7 @@ rule prepare_scenarios:
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         file_path = "SEPIA/html_texts.txt", 
         template = "SEPIA/Template/pypsa.html",
+        plots_html = "config/plots.yaml", 
         
     output:
         htmlfile=expand("results/scenario_results/{country}_combined_scenario_chart.html", country=local_countries),
