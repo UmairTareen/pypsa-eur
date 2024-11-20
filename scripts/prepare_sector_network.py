@@ -811,9 +811,10 @@ def add_co2limit(n, options, nyears=1.0, limit=0.0):
     
     #Consider non-energy emissions from agriculture in the carbon budget on EU level
     ghg_emissions_agri= 1e6 * pd.read_csv(snakemake.input.ghg_emissions_agri, index_col=0)
-    non_energy_ghg_agri = ghg_emissions_agri.loc[countries, 'Total net GHG emissions from non-energy sources in agriculture']
-    non_energy_ghg_agri[non_energy_ghg_agri < 0] = 0
-    non_energy_ghg_agri = non_energy_ghg_agri.sum().sum()
+    non_energy_ghg_agri_ch4 = ghg_emissions_agri.loc[countries, 'Total CH4 emissions from agriculture']
+    non_energy_ghg_agri_n2o = ghg_emissions_agri.loc[countries, 'Total N2O emissions from agriculture']
+    ghg_emissions_agri_total = non_energy_ghg_agri_ch4 + non_energy_ghg_agri_n2o
+    ghg_emissions_agri_total = ghg_emissions_agri_total.sum().sum()
 
     lulucf = co2_totals.loc[countries, 'LULUCF']
     lulucf[lulucf > 0] = 0
@@ -821,7 +822,7 @@ def add_co2limit(n, options, nyears=1.0, limit=0.0):
     lulucf = lulucf.sum().sum()
 
     co2_limit *= limit * nyears
-    co2_limit = (co2_limit + lulucf) - non_energy_ghg_agri
+    co2_limit = (co2_limit + lulucf) - ghg_emissions_agri_total
 
     n.add(
         "GlobalConstraint",

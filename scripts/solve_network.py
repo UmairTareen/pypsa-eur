@@ -1329,8 +1329,9 @@ def add_co2limit_country(n, limit_countries, nyears=1.0):
     co2_totals = 1e6 * pd.read_csv(snakemake.input.co2_totals_name, index_col=0)
     #Consider non-energy emissions from agriculture in the carbon budget on country level
     ghg_emissions_agri= 1e6 * pd.read_csv(snakemake.input.ghg_emissions_agri, index_col=0)
-    non_energy_ghg_agri = ghg_emissions_agri.loc[countries, 'Total net GHG emissions from non-energy sources in agriculture']
-    non_energy_ghg_agri[non_energy_ghg_agri < 0] = 0
+    non_energy_ghg_agri_ch4 = ghg_emissions_agri.loc[countries, 'Total CH4 emissions from agriculture']
+    non_energy_ghg_agri_n2o = ghg_emissions_agri.loc[countries, 'Total N2O emissions from agriculture']
+    ghg_emissions_agri_total = non_energy_ghg_agri_ch4 + non_energy_ghg_agri_n2o
     co2_limit_countries = co2_totals.loc[countries, sectors].sum(axis=1)
     co2_limit_countries = co2_limit_countries.loc[
         co2_limit_countries.index.isin(limit_countries.keys())
@@ -1339,7 +1340,7 @@ def add_co2limit_country(n, limit_countries, nyears=1.0):
     lulucf[lulucf > 0] = 0
     lulucf = lulucf * -1
     co2_limit_countries *= co2_limit_countries.index.map(limit_countries) * nyears
-    co2_limit_countries = (co2_limit_countries + lulucf) - non_energy_ghg_agri
+    co2_limit_countries = (co2_limit_countries + lulucf) - ghg_emissions_agri_total
 
     p = n.model["Link-p"]  # dimension: (time, component)
 

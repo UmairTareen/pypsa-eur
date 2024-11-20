@@ -1628,13 +1628,14 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         GHG_agri = (
             pd.read_csv(f"data/clever_AFOLUB_" + str(planning_horizon) + ".csv",
                         index_col=0))
-        GHG_agri = GHG_agri.loc[countriess, 'Total net GHG emissions from non-energy sources in agriculture']
-        GHG_agri = GHG_agri.T
-        GHG_agri[GHG_agri < 0] = 0
+        non_energy_ghg_agri_ch4 = GHG_agri.loc[countriess, 'Total CH4 emissions from agriculture']
+        non_energy_ghg_agri_n2o = GHG_agri.loc[countriess, 'Total N2O emissions from agriculture']
+        GHG_agri_total = non_energy_ghg_agri_ch4 + non_energy_ghg_agri_n2o 
+        GHG_agri_total = GHG_agri_total.T
         if country == 'EU':
-          V = GHG_agri.sum().sum()
+          V = GHG_agri_total.sum().sum()
         else:
-          V = GHG_agri.filter(like=(country)).sum()
+          V = GHG_agri_total.filter(like=(country)).sum()
         row = pd.DataFrame(
             [
                 dict(
