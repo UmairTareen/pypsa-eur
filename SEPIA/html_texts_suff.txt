@@ -1,43 +1,20 @@
 # Texts for SEPIA html file
 
-CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
-
-It shows thats:
-
-- The gross of the emission decrease happens in the early years of the transition, which is obtained, among others, by a rapid transformation and electrification of the transportation and space heating sectors.
-- By 2050, the largest part of the emissions comes from the industry, due to the combustion of fossil fuels (e.g. for xxx) and to the process-related emissions (e.g. in the cement clinker calcination process)
-- Negative emissions mainly happen through biomass capture of CO2. This capture however decreases from 2040 to 2050 because of xxx. The captured CO2 by biomass is re-emitted when this biomass is exploited, e.g. in industry of for space heating in the residential and tertiary sectors xxxcheck).
-- The emissions from industrial processes are almost completely removed by 2030 which is due to xxxxxx
-- No negative emissions from carbon capture are present. This is because sequestration is not allowed in the sufficiency scenario, contrary to carbon capture and utilization (CCU), which is assumed to reduce or cancel the process emissions, but not to generated negative emissions. xxxcheck
-
-<p>
-  It shows that:
-</p>
-<ul>
-  <li>The majority of emission reductions occur in the early years of the transition, primarily driven by the rapid electrification of transportation and space heating.</li>
-  <li>By 2050, most remaining emissions come from the industrial sector due to the combustion of fossil fuels (e.g., for high-temperature processes xxxcheck) and process-related emissions, such as those from cement clinker calcination.</li>
-  <li>Negative emissions mainly result from biomass-based CO₂ capture. However, this capture declines between 2040 and 2050 due to limitations in biomass availability and sustainability concerns. The CO₂ absorbed by biomass is eventually re-released when the biomass is utilized, for example, in industrial applications or space heating in the residential and tertiary sectors. xxxcheck</li>
-  <li>Industrial process emissions are almost entirely eliminated by 2030, largely due to technological advancements and fuel switching. xxxxcheck</li>
-  <li>No negative emissions from carbon sequestration are present, as sequestration is not permitted in the sufficiency scenario. However, carbon capture and utilization (CCU) is assumed to mitigate or neutralize process emissions without generating net negative emissions. xxxxxx</li>
-</ul>
+CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p> <p> It shows that: </p> <ul> <li>The majority of emission reductions occur in the early years of the transition, primarily driven by the rapid electrification of transportation and space heating.</li> <li>By 2050, most remaining emissions come from the industrial sector due to the combustion of fossil fuels (e.g., for high-temperature processes xxxcheck) and process-related emissions, such as those from cement clinker calcination.</li> <li>Negative emissions mainly result from biomass-based CO₂ capture. However, this capture declines between 2040 and 2050 due to limitations in biomass availability and sustainability concerns. The CO₂ absorbed by biomass is eventually re-released when the biomass is utilized, for example, in industrial applications or space heating in the residential and tertiary sectors. xxxcheck</li> <li>Industrial process emissions are almost entirely eliminated by 2030, largely due to technological advancements and fuel switching. xxxxcheck</li> <li>No negative emissions from carbon sequestration are present, as sequestration is not permitted in the sufficiency scenario. However, carbon capture and utilization (CCU) is assumed to mitigate or neutralize process emissions without generating net negative emissions. xxxxxx</li> </ul>
 
 
-CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
-
-<p>
-  It clearly indicates that the reduction in emissions is closely linked to the decline in petroleum and natural gas imports. In contrast, other sources of emissions, such as those from agriculture, have a lower potential for reduction.
-</p>
+CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p><p>  It clearly indicates that the reduction in emissions is closely linked to the decline in petroleum and natural gas imports. In contrast, other sources of emissions, such as those from agriculture, have a lower potential for reduction.</p>
 
 Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
 
 Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
 
-sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
+sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> <p>Some key insights from the Sankey diagrams include:</p><ul><li>Belgium increases its energy independence to 60%, up from about 20% today.</li><li>Renewable electricity is primarily produced locally.</li><li>Biomass consumption slightly increases and is fully utilized up to its maximum potential.</li><li>Biomass is the primary source of methane for the gas grid, produced via biogas from wet biomass and methanation from dry biomass. </li><li>  The gas grid remains but is almost exclusively used for industry. Residential and tertiary distribution gas grids become obsolete and are gradually decommissioned.</li><li>Imports and energy dependency mainly involve green hydrogen, supplied via a pan-European hydrogen backbone.</li><li>This hydrogen is used for non-energy demands and international shipping, amounting to 86 TWh in the sufficiency scenario.</li><li>Electricity becomes the dominant energy vector, carrying 165 TWh in 2050 compared to 80 TWh in 2020.</li><li>Battery electric vehicles dominate, except for long-distance freight. Their electricity consumption reaches 17 TWh in 2050.</li><li>Low-temperature heat is primarily supplied by heat pumps, with a small contribution from biomass. About 25% is district heating, incorporating thermal energy storage to enable load shifting.</li></ul>
+
+carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p><p>Although the simulated region (Belgium, France, Germany, Netherlands, UK) achieves full carbon neutrality by 2050, Belgium is allowed a residual net emission of 5% compared to 1990 levels. Due to the limited carbon sink potential of the Belgian territory (LULUCF), it is more practical to allocate these residual emissions to neighboring countries with greater capacity.</p> <p>The carbon Sankey also reveals that:</p><ul><li>All process emissions are captured and utilized to produce e-fuels (synthetic oil and methanol), which are later re-emitted.</li><li>A significant and challenging source of carbon emissions comes from the agriculture sector, which is expected to reduce its emissions from 10 Mton in 2020 to 5 Mton in 2050.</li><li>Some emissions are embedded in the import and export of synthetic fuels: imported methanol contributes to positive emissions, while exported bio-sourced natural gas accounts for negative emissions.</li></ul>
 
 
 
-
-carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the flow of C02 emissions from each source and sector and full picture of reduction of emissions in atmosphere can be fully analysed.</p>
 
 RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
 
@@ -45,11 +22,11 @@ FEC_origin: <p> This plot shows the the share of renewable energy technologies, 
 
 Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
 
-FEC_sector: <p> This plot shows the final energy consumption by each sector and how the demands evolve in each planning horizon.</p>
+FEC_sector: <p> This plot shows the evolution of the final energy consumption (by sector) for each energy carrier. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy carrier and see which sectors it supplies</p>
 
 Grid_carrier_contribution: <p> This plot shows the contribution of each carrier in important grid infrastructure like electricity grid, gas grid etc and also in storage systems.</p> 
 
-FEC_carrier: <p> This plot shows the final energy consumption by carrier for each sector.</p>
+FEC_carrier: <p> This plot shows the evolution of the final energy consumption (by carrier) in each sector. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy sector and see how it is supplied</p>
 
 
 
