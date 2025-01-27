@@ -32,11 +32,12 @@ FEC_carrier: <p> This plot shows the evolution of the final energy consumption (
 
 # Texts for PyPSA html file
 
-sectoral_demands_desc: <p>This chart displays the sectoral demands for each country, indicating the energy demands across different sectors for each energy carrier.</p>
+sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> <p>Due to efficiency improvements in final energy conversion technologies and the sufficiency assumptions, it is evident that many of these demands decrease over time:</p><ul><li>Fossil fuel-based feedstocks for industry are reduced and gradually replaced by hydrogen starting in 2040.</li><li> Low temperature space heating declines due to deep renovations and improved building energy efficiency. By 2050, district heating covers 25% of the demand.</li><li>Final electricity demand rises, driven by the electrification of transportation and industrial processes.</li><li>Oil demand sharply decreases, with a residual 4 TWh for aviation in 2050.</li><li>Gas use in industry also decreases, with a portion replaced by electricity.</li><li>Hydrogen is consumed for xxxxxx. Its share in final energy demand remains relatively low, confirming its main role as an intermediate (secondary) energy carrier.</li><li>Solid biomass remains relatively stable and is used for high-temperature heat in industry.</li></ul>
 
-annual_costs_desc: <p>This bar chart represents the total annual costs. This costs include investment and operational costs.</p>
+annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses. While CAPEX remains relatively stable in time, OPEX is significantly reduced, mainly because of the decreased importations of fossil fuels.</p> 
 
-investment_costs_desc: <p>Annual investment costs are shown here, representing capital investments in energy infrastructure.</p>
+investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period. This appears clearly for the nuclear techology: annualized invesment cost are displayed for 2020 and 2030 while no investment in new nuclear units is foreseen in the scenario. </p><p>The following technologies also deserve specific attention:</p><ul><li>Biogas is deployed as early as 2030, while BioSNG (methanation of dry biomass) gains significance by 2040.</li><li>Substantial investments in heat pumps are required throughout the entire energy transition.</li><li>Investment in power-to-gas technologies steadily increases from 2030 to 2050.</li><li>The investment in grids and interconnections (both AC and DC) amounts to xxxxx, remaining lower than the annual investment needed for distribution grids (xxxxcheck).</li><li>Major investments are necessary for solar and wind power generation technologies, reaching about 37% of the total required investment cost by 2050.</li></ul>
+
 
 capacities_desc: <p>The capacities chart shows the maximum production capacity for each energy source within the country.</p>
 
