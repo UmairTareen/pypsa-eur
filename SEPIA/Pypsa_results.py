@@ -202,11 +202,10 @@ def costs(countries, results):
       mask = ~(result_df['tech'].isin(['load shedding']))
       result_df = result_df[mask]
       #calculationg gas costs for each country as in pypsa they are treated on EU level
-      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 25", index_col=0)
-      gas_val.columns = gas_val.iloc[1]
+      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 25", index_col=0,skiprows=2)
       if country != 'EU':
         for year in planning_horizons:
-         result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[str(year), "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
+         result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[year, "Network gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
       else:
          result_df = result_df
       if not result_df.empty:
@@ -2282,13 +2281,18 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
+        #from _helpers import mock_snakemake
+        #snakemake = mock_snakemake("prepare_results")
 
-        snakemake = mock_snakemake(
-            "prepare_results")
-        
+        import pickle
+        with open("snakemake_dump.pkl", "rb") as f:
+            snakemake = pickle.load(f)
 
         # Updating the configuration from the standard config file to run in standalone:
+    #import pickle
+    #with open("snakemake_dump.pkl", "wb") as f:
+    #    pickle.dump(snakemake, f)
+
     simpl = snakemake.params.scenario["simpl"][0]
     cluster = snakemake.params.scenario["clusters"][0]
     opt = snakemake.params.scenario["opts"][0]
@@ -2311,15 +2315,25 @@ if __name__ == "__main__":
     investment_costs = Investment_costs(countries, results)
     capacities = capacities(countries, results)
     s_capacities = storage_capacities(countries)
-    plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Power Dispatch (Winter Week)")
-    plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Power Dispatch (Summer Week)")
-    plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Heat Dispatch (Winter Week)")
-    plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Heat Dispatch (Summer Week)")
+
+    with open(snakemake.input.plots_html, 'r') as file:
+     plots = yaml.safe_load(file).get('Pypsa_plots')
+    if plots['Power Dispatch Winter']:
+        plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Power Dispatch (Winter Week)")
+    if plots['Power Dispatch Summer']:
+        plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Power Dispatch (Summer Week)")
+    if plots['Heat Dispatch Winter']:
+        plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Heat Dispatch (Winter Week)")
+    if plots['Heat Dispatch Summer']:
+        plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Heat Dispatch (Summer Week)")
     plot_demands(countries)
-    for country in countries:
-        create_map_plots(planning_horizons, country)
-    create_H2_map_plots(planning_horizons)
-    create_gas_map_plots(planning_horizons)
+    if plots['Map Plots']:
+        for country in countries:
+            create_map_plots(planning_horizons, country)
+    if plots['H2 Map Plots']:
+        create_H2_map_plots(planning_horizons)
+    if plots['Gas Map Plots']:
+        create_gas_map_plots(planning_horizons)
     
     for country in countries:
         create_combined_chart_country(costs,investment_costs, capacities,s_capacities, country)
