@@ -56,8 +56,6 @@ gas_map_plots_desc: <p>Map plots provide a geographical overview of the investme
 
 # Texts for Scenario html file
 
-cumulative_emissions_sce: <p>This plot represents the total cummumative emissions comparison from 2020-2050 between the optimised scenarios.</p>
-
 annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
 
 investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
