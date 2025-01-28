@@ -426,8 +426,7 @@ rule prepare_results:
         file_path=lambda wildcards: (
             "SEPIA/html_texts_suff.txt" 
             if config["run"]["name"] == "suff" 
-            else "SEPIA/html_texts.txt"
-                "SEPIA/html_texts_ref.txt" 
+            else "SEPIA/html_texts_ref.txt" 
                 if config["run"]["name"] == "ref" 
                 else "SEPIA/html_texts.txt"
         ),

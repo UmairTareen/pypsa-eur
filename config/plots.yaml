@@ -31,6 +31,7 @@ Scenario_plots:
  Annual Costs: true
  Annual Investment Costs: true
  Cummulative Investment Costs: true
+ Cummulative Emissions: true
  Capacities: true
  Storage Capacities: true
  Scenarios Demands Comparison: true

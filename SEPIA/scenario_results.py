@@ -832,10 +832,13 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
+        #from _helpers import mock_snakemake
 
-        snakemake = mock_snakemake(
-            "prepare_scenarios")
+        #snakemake = mock_snakemake("prepare_scenarios")
+        import pickle
+        with open("snakemake_dump.pkl", "rb") as f:
+            snakemake = pickle.load(f)
+
         
     total_country = 'EU'
     countries = snakemake.params.countries 
