@@ -27,6 +27,173 @@ def logo():
         layer="below")
     return logo
 
+def Cumulative_emissions_sector(country):
+ # Load configuration data
+ config = pd.read_excel("SEPIA_config.xlsx", sheet_name="NODES", index_col=0)
+ config = config[config['Type'] == 'GHG_SECTORS']
+ code_to_label = config['Label'].to_dict()
+
+ # Load and preprocess data
+ ref = pd.read_csv(f"results/ref/country_csvs/ghg_sector_cum_{country}.csv", index_col=0)
+ suff = pd.read_csv(f"results/suff/country_csvs/ghg_sector_cum_{country}.csv", index_col=0)
+
+ # Rename and preprocess
+ ref.rename(columns=code_to_label, inplace=True)
+ ref['Industry'] = ref[['Other energy industry', 'Industrial processes', 'Fuel combustion - industry']].sum(axis=1)
+ ref = ref.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel combustion - industry'])
+ ref = ref.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion - maritime bunkers":"Maritime bunkers","biogas to gas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
+ ref = ref.loc[:, (ref != 0).any(axis=0)]
+ ref['Total'] = ref.sum(axis=1)
+ ref_cumulative = ref.drop(columns='Total').cumsum()
+ ref_cumulative_positive = ref_cumulative.where(ref_cumulative > 0, 0)
+ ref_cumulative_negative = ref_cumulative.where(ref_cumulative < 0, 0)
+ ref_cumulative_positive = ref_cumulative_positive.loc[:, (ref_cumulative_positive != 0).any()]
+ ref_cumulative_negative = ref_cumulative_negative.loc[:, (ref_cumulative_negative != 0).any()]
+ ref_total = ref['Total'].cumsum()
+
+ # Rename columns and preprocess ncdr
+ suff.rename(columns=code_to_label, inplace=True)
+ suff['Industry'] =suff[['Other energy industry', 'Industrial processes', 'Fuel combustion - industry']].sum(axis=1)
+ suff = suff.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel combustion - industry'])
+ suff = suff.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion - maritime bunkers":"Maritime bunkers","biogas to gas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
+ suff = suff.loc[:, (suff != 0).any(axis=0)]
+ suff['Total'] = suff.sum(axis=1)
+ suff_cumulative = suff.drop(columns='Total').cumsum()
+ suff_cumulative_positive = suff_cumulative.where(suff_cumulative > 0, 0)
+ suff_cumulative_negative = suff_cumulative.where(suff_cumulative < 0, 0)
+ suff_cumulative_positive = suff_cumulative_positive.loc[:, (suff_cumulative_positive != 0).any()]
+ suff_cumulative_negative = suff_cumulative_negative.loc[:, (suff_cumulative_negative != 0).any()]
+ suff_total = suff['Total'].cumsum() 
+ 
+
+ colors = {
+        "Agriculture": "#008556",
+        "Industry": "#feda47",
+        "Transport": "#a26643",
+        "Residential and tertiary sectors": "#d60a51",
+        "Maritime bunkers": "#f18959",
+        "Aviation bunkers": "#ff4d00",
+        "BECCS": "#889717",
+        "Biogas": "#dfeac2",
+        "Biomass": "green",
+        "DACCS": "#b1d1fc",
+        "Heat and power production ": "#75519c",
+        "Land use and forestry": "#befdb7",
+    }
+
+    # Create subplots
+ fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=[
+            "Reference Scenario",
+            "Sufficiency Scenario"
+        ]
+    )
+
+    # Add Reference scenario area plot
+ for col in ref_cumulative_positive.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=ref_cumulative_positive.index,
+                y=ref_cumulative_positive[col],  # Positive values
+                mode='lines',
+                fill='tonexty',
+                name=col,
+                line=dict(color=colors.get(col, "#000000")),
+                stackgroup='positive_ref',  # Unique stackgroup for positive values
+                legendgroup=col,
+                showlegend=True  # Show legend for the first instance
+            ),
+            row=1, col=1
+        )
+ for col in ref_cumulative_negative.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=ref_cumulative_negative.index,
+                y=ref_cumulative_negative[col],  # Negative values
+                mode='lines',
+                fill='tonexty',
+                name=col,
+                line=dict(color=colors.get(col, "#000000")),
+                stackgroup='negative_ref',  # Unique stackgroup for negative values
+                legendgroup=col,
+                showlegend=True  # Avoid duplicate legends
+            ),
+            row=1, col=1
+        )
+ fig.add_trace(
+        go.Scatter(
+            x=ref_total.index,
+            y=ref_total,
+            mode='lines',
+            name="Total",
+            line=dict(color='black', width=2),
+            legendgroup="Total",
+            showlegend=True
+        ),
+        row=1, col=1
+    )
+    # Add Sufficiency scenario area plot
+ for col in suff_cumulative_positive.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=suff_cumulative_positive.index,
+                y=suff_cumulative_positive[col],  # Positive values
+                mode='lines',
+                fill='tonexty',
+                name=col,
+                line=dict(color=colors.get(col, "#000000")),
+                stackgroup='positive_suff',  # Unique stackgroup for positive values
+                legendgroup=col,
+                showlegend=False  # Avoid duplicate legends
+            ),
+            row=1, col=2
+        )
+ for col in suff_cumulative_negative.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=suff_cumulative_negative.index,
+                y=suff_cumulative_negative[col],  # Negative values
+                mode='lines',
+                fill='tonexty',
+                name=col,
+                line=dict(color=colors.get(col, "#000000")),
+                stackgroup='negative_suff',  # Unique stackgroup for negative values
+                legendgroup=col,
+                showlegend=False  # Avoid duplicate legends
+            ),
+            row=1, col=2
+        )
+ fig.add_trace(
+        go.Scatter(
+            x=suff_total.index,
+            y=suff_total,
+            mode='lines',
+            name="Total",
+            line=dict(color='black', width=2),
+            legendgroup="Total",
+            showlegend=False
+        ),
+        row=1, col=2
+    )
+    # Update layout
+ fig.update_layout(
+        title="Cumulative Emissions by Sector",
+        xaxis=dict(
+        title="Year",
+        tickvals=[2020, 2030, 2040, 2050],),
+        xaxis2=dict(
+        title="Year",
+        tickvals=[2020, 2030, 2040, 2050],),
+        yaxis_title="Cumulative Emissions (GtCO2 eq)",
+        height=700,
+        width=1400,
+        legend=dict(orientation="h", y=-0.2),  # Position legend below
+        template="plotly_white"  # Optional: Clean aesthetic
+    )
+ return fig
+
+
 def scenario_costs(country):
     costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_costs.csv")
     costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_costs.csv")
@@ -522,6 +689,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
 
     # Load the HTML texts from file
     html_texts = load_html_texts(file_path)
+    cummulative_emm_desc = html_texts.get('cumulative_emissions_sce', '')
     annual_costs_desc = html_texts.get('annual_costs_sce', '')
     investment_costs_desc = html_texts.get('investment_costs_sce', '')
     cumu_investment_costs_desc = html_texts.get('cumu_investment_costs_sce', '')
@@ -537,6 +705,10 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     with open(snakemake.input.plots_html, 'r') as file:
      plots = yaml.safe_load(file)
     scenario_plots = plots.get("Scenario_plots", {})
+    
+    if scenario_plots["Cummulative Emissions"] == True:
+     emm_chart = Cumulative_emissions_sector(country)
+     combined_html += f"<div><h2>{country} - Cummulative Emissions</h2>{emm_chart.to_html()}</div>"
     # Create bar chart
     if scenario_plots["Annual Costs"] == True:
      bar_chart = scenario_costs(country)
@@ -584,6 +756,8 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     table_of_contents_content = ""
     main_content = ""
     # Create the content for the "Table of Contents" and "Main" sections
+    if scenario_plots["Cummulative Emissions"] == True:
+     table_of_contents_content += f"<a href='#{country} - Cummulative Emissions'>Cummulative Emissions</a><br>"
     if scenario_plots["Annual Costs"] == True:
      table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
     if scenario_plots["Annual Investment Costs"] == True:
@@ -607,6 +781,8 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
          table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Baseline Scenario</a><br>"
 
     # Add more links for other plots
+    if scenario_plots["Cummulative Emissions"] == True:
+     main_content += f"<div id='{country} - Cummulative Emissions'><h2>{country} - Cummulative Emissions</h2>{cummulative_emm_desc}{emm_chart.to_html()}</div>" 
     if scenario_plots["Annual Costs"] == True:
      main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
     if scenario_plots["Annual Investment Costs"] == True:

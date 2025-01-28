@@ -202,10 +202,19 @@ def costs(countries, results):
       mask = ~(result_df['tech'].isin(['load shedding']))
       result_df = result_df[mask]
       #calculationg gas costs for each country as in pypsa they are treated on EU level
-      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 25", index_col=0,skiprows=2)
+      gas_val = pd.read_csv(f"results/{study}/country_csvs/natural_gas_imports_{country}.csv")
+      gas_val = gas_val.set_index(gas_val.columns[0])
+      gas_val = gas_val.iloc[2:]
+      gas_val = gas_val.apply(pd.to_numeric, errors='coerce')
+      gas_val.index = gas_val.index.astype(int)
+      desired_years = [2020, 2030, 2040, 2050]
+      if len(gas_val) >= len(desired_years):
+        gas_val = gas_val.reset_index(drop=True).iloc[:len(desired_years)]
+        gas_val.index = desired_years
       if country != 'EU':
         for year in planning_horizons:
-         result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[year, "Network gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
+         if year in gas_val.index:
+          result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[year] * options.loc[("gas", "fuel"), "value"] * 1e6
       else:
          result_df = result_df
       if not result_df.empty:
