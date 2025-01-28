@@ -78,13 +78,15 @@ if __name__ == "__main__":
     nodal_df["current electricity"] = nodal_today["electricity"]
 
     nodal_df.index.name = "TWh/a (MtCO2/a)"
-    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
-     def clever_industry_data():
+    
+    def clever_industry_data():
         fn = snakemake.input.clever_industry
         df= pd.read_csv(fn ,index_col=0)
         return df
-     clever_Industry = clever_industry_data()     
-     for country in countrries:
+    clever_Industry = clever_industry_data() 
+       
+    for country in countrries:
+     if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]: 
         country_energy = nodal_df[nodal_df.index.str.startswith(country)]
         country_energy = country_energy[~country_energy.index.isin([f'{country}2 0'])]
         #country_energy = country_energy[~country_energy.index.isin(['DK2 0','ES4 0', 'GB5 0', 'IT3 0'])] (for 28 countries)
@@ -97,8 +99,8 @@ if __name__ == "__main__":
         nodal_df.loc[country_energy.index, 'hydrogen'] = clever_Industry.loc[country, 'Total Final hydrogen consumption in industry'] + clever_Industry.loc[country, 'Non-energy consumption of hydrogen for the feedstock production'].sum()
         nodal_df.loc[country_energy.index, 'naphtha'] = clever_Industry.loc[country, 'Non-energy consumption of oil for the feedstock production']
     
-    else:
-     nodal_df = nodal_df
+     else:
+      nodal_df = nodal_df
      
     if config["run"]["name"] == "baseline":
       nodal_df.loc['BE1 0', 'naphtha']  =  84.4

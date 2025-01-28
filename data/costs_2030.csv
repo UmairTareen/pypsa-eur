@@ -579,7 +579,7 @@ central solid biomass CHP powerboost CC,efficiency-heat,0.8245,per unit,"Danish 
 central solid biomass CHP powerboost CC,investment,3544.5017,EUR/kW_e,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","09a Wood Chips, Large 50 degree:  Nominal investment ",2015.0
 central solid biomass CHP powerboost CC,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","09a Wood Chips, Large 50 degree:  Technical lifetime",2015.0
 central water tank storage,FOM,0.551,%/year,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",140 PTES seasonal:  Fixed O&M,2015.0
-central water tank storage,investment,0.5761,EUR/kWhCapacity,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",140 PTES seasonal:  Specific investment,2015.0
+central water tank storage,investment,560.0,EUR/MWh,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",140 PTES seasonal:  Specific investment,2015.0
 central water tank storage,lifetime,25.0,years,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",140 PTES seasonal:  Technical lifetime,2015.0
 clean water tank storage,FOM,2.0,%/year,"Caldera et al 2016: Local cost of seawater RO desalination based on solar PV and windenergy: A global estimate. (https://doi.org/10.1016/j.desal.2016.02.004), Table 1.",,
 clean water tank storage,investment,69.1286,EUR/m^3-H2O,"Caldera et al 2016: Local cost of seawater RO desalination based on solar PV and windenergy: A global estimate. (https://doi.org/10.1016/j.desal.2016.02.004), Table 1.",,2013.0
@@ -636,7 +636,7 @@ decentral solar thermal,investment,285719.8393,EUR/1000m2,HP, from old pypsa cos
 decentral solar thermal,lifetime,20.0,years,HP, from old pypsa cost assumptions,2015.0
 decentral water tank storage,FOM,1.0,%/year,HP, from old pypsa cost assumptions,2015.0
 decentral water tank storage,discount rate,0.04,per unit,Palzer thesis, from old pypsa cost assumptions,2015.0
-decentral water tank storage,investment,19.446,EUR/kWh,IWES Interaktion, from old pypsa cost assumptions,2015.0
+decentral water tank storage,investment,420.0,EUR/kWh,IWES Interaktion, from old pypsa cost assumptions,2015.0
 decentral water tank storage,lifetime,20.0,years,HP, from old pypsa cost assumptions,2015.0
 digestible biomass,fuel,17.0611,EUR/MWh_th,"JRC ENSPRESO ca avg for MINBIOAGRW1, ENS_Ref for 2040",,2010.0
 digestible biomass to hydrogen,FOM,4.25,%/year,"Zech et.al. DBFZ Report Nr. 19. Hy-NOW - Evaluierung der Verfahren und Technologien für die Bereitstellung von Wasserstoff auf Basis von Biomasse, DBFZ, 2014",,

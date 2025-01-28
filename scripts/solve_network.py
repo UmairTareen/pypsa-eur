@@ -421,7 +421,6 @@ def imposed_values_genertion(n, foresight, config):
       offwind_dc_max = config["imposed_values"]["offshore_dc"]
       solar_max = config["imposed_values"]["solar"]
       nuclear_max = config["imposed_values"]["nuclear"]
-    
       # preparing data for technoligies considering already installed capacities excluding 2030
       onwind = n.generators[
         n.generators.index.str.contains(country) & 
@@ -452,7 +451,6 @@ def imposed_values_genertion(n, foresight, config):
       n.generators.loc[f"{country}{suffix} onwind-2030", "p_nom_max"] = onwind_max - onwind
       n.generators.loc[f"{country}{suffix} offwind-ac-2030", "p_nom_max"] = offwind_ac_max - offwind_ac
       n.generators.loc[f"{country}{suffix} offwind-dc-2030", "p_nom_max"] = offwind_dc_max - offwind_dc
-     
       #nuclear is grouped by grouping years so imposing value in last grouping year
       n.links.loc[f"{country}{suffix} nuclear-1975", "p_nom"] = nuclear_max
       #Imposing no underground H2 storage potential for Belgium in 2030
