@@ -29,7 +29,8 @@ def logo():
 
 def Cumulative_emissions_sector(country):
  # Load configuration data
- config = pd.read_excel("SEPIA_config.xlsx", sheet_name="NODES", index_col=0)
+ file = snakemake.input.sepia_config
+ config = pd.read_excel(file, sheet_name="NODES", index_col=0)
  config = config[config['Type'] == 'GHG_SECTORS']
  code_to_label = config['Label'].to_dict()
 
@@ -39,8 +40,8 @@ def Cumulative_emissions_sector(country):
 
  # Rename and preprocess
  ref.rename(columns=code_to_label, inplace=True)
- ref['Industry'] = ref[['Other energy industry', 'Industrial processes', 'Fuel combustion - industry']].sum(axis=1)
- ref = ref.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel combustion - industry'])
+ ref['Industry'] = ref[['Other energy industry', 'Industrial processes', 'Fuel usage - industry']].sum(axis=1)
+ ref = ref.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel usage - industry'])
  ref = ref.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion - maritime bunkers":"Maritime bunkers","biogas to gas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
  ref = ref.loc[:, (ref != 0).any(axis=0)]
  ref['Total'] = ref.sum(axis=1)
@@ -53,8 +54,8 @@ def Cumulative_emissions_sector(country):
 
  # Rename columns and preprocess ncdr
  suff.rename(columns=code_to_label, inplace=True)
- suff['Industry'] =suff[['Other energy industry', 'Industrial processes', 'Fuel combustion - industry']].sum(axis=1)
- suff = suff.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel combustion - industry'])
+ suff['Industry'] =suff[['Other energy industry', 'Industrial processes', 'Fuel usage - industry']].sum(axis=1)
+ suff = suff.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel usage - industry'])
  suff = suff.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion - maritime bunkers":"Maritime bunkers","biogas to gas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
  suff = suff.loc[:, (suff != 0).any(axis=0)]
  suff['Total'] = suff.sum(axis=1)
@@ -185,7 +186,11 @@ def Cumulative_emissions_sector(country):
         xaxis2=dict(
         title="Year",
         tickvals=[2020, 2030, 2040, 2050],),
-        yaxis_title="Cumulative Emissions (GtCO2 eq)",
+        yaxis=dict(
+        title="Cumulative Emissions (GtCO2 eq)"),
+        yaxis2=dict(
+        matches='y',  # Synchronize y-axis2 with y-axis
+        title="Cumulative Emissions (GtCO2 eq)"), # Optional: Add this if needed),
         height=700,
         width=1400,
         legend=dict(orientation="h", y=-0.2),  # Position legend below
@@ -480,7 +485,7 @@ def create_scenario_plots():
  investment_suff_2050 = investment_suff[['2030', '2040', '2050']].sum(axis=1)
  investment_suff_2050 = investment_suff_2050.sum()/3
  investment_suff_2050 = investment_suff_2050/1e9
- demands_suff=pd.read_excel("results/suff/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8",  header=None)
+ demands_suff=pd.read_excel("results/suff/htmls/ChartData_BE.xlsx",  sheet_name="Chart 7",  header=None)
  new_header = demands_suff.iloc[2]
  demands_suff= demands_suff[3:]
  demands_suff.columns = new_header
@@ -502,7 +507,7 @@ def create_scenario_plots():
  investment_ref_2050 = investment_ref[['2030', '2040', '2050']].sum(axis=1)
  investment_ref_2050 = investment_ref_2050.sum()/3
  investment_ref_2050 = investment_ref_2050/1e9
- demands_ref=pd.read_excel("results/ref/htmls/ChartData_BE.xlsx",  sheet_name="Chart 8",  header=None)
+ demands_ref=pd.read_excel("results/ref/htmls/ChartData_BE.xlsx",  sheet_name="Chart 7",  header=None)
  new_header = demands_ref.iloc[2]  # third row (index 2 in 0-based index)
  demands_ref = demands_ref[3:]  # drop all rows above the third row
  demands_ref.columns = new_header  # set the third row as the header
@@ -515,25 +520,25 @@ def create_scenario_plots():
  total_costs_ref_2050 = total_costs_ref_2050/1e9
  
  jrc_historic=pd.read_csv("data/Historic_power_generation_jrc.csv", index_col=0)
- pypsa = pd.read_excel("results/suff/htmls/ChartData_BE.xlsx", sheet_name="Chart 23", skiprows=2)
+ pypsa = pd.read_excel("results/suff/htmls/ChartData_BE.xlsx", sheet_name="Chart 22", skiprows=2)
  pypsa.set_index(pypsa.columns[0], inplace=True)
  pypsa=pypsa.loc[2020]
  pypsa = pd.DataFrame(pypsa).T
- # Drop columns where all values are zero, except for 'Imports'
+  # Drop columns where all values are zero, except for 'Imports'
  pypsa_tot = pypsa.loc[:, (pypsa != 0).any(axis=0)]
  if 'Imports' in pypsa.columns:
-     if 'Imports' not in pypsa_tot.columns:
-         pypsa_tot['Imports'] = pypsa['Imports']       
+      if 'Imports' not in pypsa_tot.columns:
+          pypsa_tot['Imports'] = pypsa['Imports']       
  pypsa_tot['Wind'] = pypsa_tot['Onshore wind'] + pypsa_tot['Offshore wind']
  pypsa_tot = pypsa_tot.drop(columns=['Onshore wind', 'Offshore wind'])
  pypsa_tot = pypsa_tot.T
  common_index = jrc_historic.index.intersection(pypsa_tot.index)
  jrc_historic = jrc_historic.loc[common_index]
  pypsa_tot = pypsa_tot.loc[common_index]
- # Rename columns
+  # Rename columns
  jrc_historic.columns = ['JRC-Historic-2020']
  pypsa_tot.columns = ['PyPSA-2020']
- # Concatenate the dataframes
+  # Concatenate the dataframes
  combined_df = pd.concat([jrc_historic, pypsa_tot], axis=1)
  rename_dict = {'Uranium': 'Nuclear', 'Gas grid': 'Natural gas'}
  combined_df.rename(index=rename_dict, inplace=True)
@@ -638,33 +643,33 @@ def create_scenario_plots():
     )
  figures['costs'] = fig_costs
 
- # Plot the bar chart for Emissions
- # fig_emissions = go.Figure()
- # fig_emissions.add_trace(go.Bar(name='Emissions(%)', x=scenarios_transposed.index, y=scenarios_transposed['Emissions(%)'], marker_color='red'))
- # fig_emissions.update_layout(
- #        title="Emissions comparison for scenarios compared to 1990",
- #        xaxis_title="Scenario",
- #        yaxis_title="%"
- #    )
- # figures['emissions'] = fig_emissions
+  #Plot the bar chart for Emissions
+ fig_emissions = go.Figure()
+ fig_emissions.add_trace(go.Bar(name='Emissions(%)', x=scenarios_transposed.index, y=scenarios_transposed['Emissions(%)'], marker_color='red'))
+ fig_emissions.update_layout(
+         title="Emissions comparison for scenarios compared to 1990",
+         xaxis_title="Scenario",
+         yaxis_title="%"
+     )
+ figures['emissions'] = fig_emissions
  
  fig_historic = go.Figure()
  fig_historic.add_trace(go.Bar(
-     x=combined_df.index,
-     y=combined_df['JRC-Historic-2020'],
-     name='JRC-Historic-2020',
-     marker_color='blue'))
+      x=combined_df.index,
+      y=combined_df['JRC-Historic-2020'],
+      name='JRC-Historic-2020',
+      marker_color='blue'))
  fig_historic.add_trace(go.Bar(
-     x=combined_df.index,
-     y=combined_df['PyPSA-2020'],
-     name='PyPSA-2020',
-     marker_color='red'))
+      x=combined_df.index,
+      y=combined_df['PyPSA-2020'],
+      name='PyPSA-2020',
+      marker_color='red'))
  fig_historic.update_layout(
-     title="2020 scenario comparison with JRC historic data",
-     yaxis_title='Energy Production (TWh)',
-     # barmode='group',
-     # font=dict(size=15),
- )
+      title="2020 scenario comparison with JRC historic data",
+      yaxis_title='Energy Production (TWh)',
+      # barmode='group',
+      # font=dict(size=15),
+  )
  figures['historic'] = fig_historic
  
  return figures

@@ -602,22 +602,29 @@ def prepare_sepia(countries):
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('CO2_emissions_sector', '')
      html_items['MAIN'] += saf.combine_charts([('',ghg_sector)], MAIN_PARAMS, NODES,'', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq') #('by sect. - power & heat dispatched',ghg_sector_2),
+    else:
+     saf.combine_charts([('',ghg_sector)], MAIN_PARAMS, NODES,'', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
     if sepia_plots["CO2 emissions by source"] == True:
      id_section += 1
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('CO2_emissions_source', '')
      html_items['MAIN'] += saf.combine_charts([('',ghg_source)], MAIN_PARAMS, NODES,'', 'ghgchart', results_xls_writer, 'MtCO<sub>2</sub>eq')
+    else:
+     saf.combine_charts([('',ghg_source)], MAIN_PARAMS, NODES,'', 'ghgchart', results_xls_writer, 'MtCO<sub>2</sub>eq')
     if sepia_plots["Cumulative CO2 emissions by sector"] == True:
      id_section += 1
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('Cumulative_CO2_emissions_sector', '')
      html_items['MAIN'] += saf.combine_charts([('',saf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
+    else:
+     saf.combine_charts([('',saf.cumul(ghg_sector_cum, 2020))], MAIN_PARAMS, NODES,'', 'ghgchart',  results_xls_writer, 'MtCO<sub>2</sub>eq')
     if sepia_plots["Cumulative CO2 emissions by source"] == True:
      id_section += 1
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('Cumulative_CO2_emissions_source', '')
      html_items['MAIN'] += saf.combine_charts([('',saf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, '','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
-
+    else:
+     saf.combine_charts([('',saf.cumul(ghg_source_cum,2020))], MAIN_PARAMS, NODES, '','ghgchart', results_xls_writer, 'MtCO<sub>2</sub>')
     # Sankeys
     if sepia_plots["Sankey diagram"] == True:
      id_section += 1
@@ -635,6 +642,8 @@ def prepare_sepia(countries):
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('RES_share', '')
      html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(ren_cov_ratios, NODES, MAIN_PARAMS, 'linechart', '', results_xls_writer, '%'))
+    else:
+     sf.chart_to_output(sf.create_node_chart(ren_cov_ratios, NODES, MAIN_PARAMS, 'linechart', '', results_xls_writer, '%'))
     # html_items['MAIN'] += '<p>Renewable shares per final energies are calculated by analysing all energy flows going through different transformation processes (electricity and heat production processes, power-to-gas etc.) as described by the Sankey diagram. An algorithm goes upstream through this complex energy system, from a given final energy to all relevant primary energies, and determines their respective shares. For example, a renewable share of 50% for final electricity means that 50% of the electricity consumed has been produced by renewable means, either directly from renewable power technologies such as wind of PV, or indirectly - for example if gas cogeneration has been used with a share of renewables in the gas mix.'
     # if MAIN_PARAMS['USE_IMPORT_MIX'] and not show_total: html_items['MAIN'] += ' NB: the mix of imported secondary energy carriers (power, gas...) is calculated from exports of other EU countries, and may thus contain some level of renewables, included in this calculation as well.'
     if sepia_plots["Final energy consumption by origin"] == True:
@@ -643,7 +652,8 @@ def prepare_sepia(countries):
      html_items['MAIN'] += html_texts.get('FEC_origin', '')
      if show_total: html_items['MAIN'] += sf.chart_to_output(sf.create_map(tot_results[('ren_cov_ratio','total')], country_list, 'RES share in final consumption', MAIN_PARAMS, unit='%', min_scale=0,max_scale=100))
      html_items['MAIN'] += sf.chart_to_output(sf.create_node_chart(gfec_breakdown, NODES, MAIN_PARAMS, 'area', '', results_xls_writer))
-    
+    else:
+     sf.chart_to_output(sf.create_node_chart(gfec_breakdown, NODES, MAIN_PARAMS, 'area', '', results_xls_writer))
     # Energy carrier share balance
     if sepia_plots["Share of domestic production"] == True:
      id_section += 1
@@ -666,7 +676,8 @@ def prepare_sepia(countries):
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('FEC_sector', '')
      html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
-    
+    else:
+     saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by sector -', 'areachart', results_xls_writer)
     combinations = []
     for energy in SE_NODES:
         df = sf.node_consumption(grouped_flows, energy, direction='backward', splitby='source')
@@ -677,6 +688,8 @@ def prepare_sepia(countries):
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('Grid_carrier_contribution', '')
      html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
+    else:
+     saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Mix of secondary energies -', 'areachart', results_xls_writer)
     # html_items['MAIN'] += '<p>The above chart describes the contribution of misc. technologies (and possibly imports) to the production of a given secondary energy carrier.</p>'
     combinations = []
     combinations = [('All sectors',fec_carrier)]
@@ -690,7 +703,8 @@ def prepare_sepia(countries):
      html_items['MAIN'] += sf.title_to_output(sections[id_section][1], sections[id_section][0], MAIN_PARAMS['HTML_TEMPLATE'])
      html_items['MAIN'] += html_texts.get('FEC_carrier', '')
      html_items['MAIN'] += saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
-    
+    else:
+     saf.combine_charts(combinations, MAIN_PARAMS, NODES, 'Final consumption by carrier -', 'areachart', results_xls_writer)
 
     # Indicator calculation for inter-territorial analysis
     # Multidimensionnal indicators not already defined above (some indicators have several nomenclatures: by energy / sector / origin etc.)

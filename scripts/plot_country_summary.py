@@ -148,11 +148,11 @@ def plot_balances(country, study):
 
     balances_df.rename(columns=column_mapping, inplace=True)
 
-    elec_imp = pd.read_excel(file, sheet_name="Chart 23", index_col=0)
+    elec_imp = pd.read_excel(file, sheet_name="Chart 22", index_col=0)
     elec_imp.columns = elec_imp.iloc[1]
-    gas_val = pd.read_excel(file, sheet_name="Chart 25", index_col=0)
+    gas_val = pd.read_excel(file, sheet_name="Chart 24", index_col=0)
     gas_val.columns = gas_val.iloc[1]
-    h2_val = pd.read_excel(file, sheet_name="Chart 24", index_col=0)
+    h2_val = pd.read_excel(file, sheet_name="Chart 23", index_col=0)
     h2_val.columns = h2_val.iloc[1]
     lulucf_val = pd.read_excel(file, sheet_name="Chart 2", index_col=0)
     lulucf_val.columns = lulucf_val.iloc[1]

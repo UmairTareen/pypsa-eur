@@ -27,6 +27,7 @@ Pypsa_plots:
  Gas Map Plots: true
  
 Scenario_plots:
+ Cummulative Emissions: true
  Annual Costs: true
  Annual Investment Costs: true
  Cummulative Investment Costs: true

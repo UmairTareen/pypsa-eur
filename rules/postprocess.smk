@@ -326,7 +326,11 @@ rule generate_sepia:
         countries = "SEPIA/COUNTRIES.xlsx",
         costs = "data/costs_2050.csv",
         sepia_config = "SEPIA/SEPIA_config.xlsx",
-        file_path = "SEPIA/html_texts.txt",
+        file_path=lambda wildcards: (
+            "SEPIA/html_texts_suff.txt" 
+            if config["run"]["name"] == "suff" 
+            else "SEPIA/html_texts.txt"
+        ),
         template = "SEPIA/Template/CLEVER.html",
         biomass_potentials = expand(resources("biomass_potentials_s_{clusters}_{planning_horizons}.csv"),**config["scenario"]),
         excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
