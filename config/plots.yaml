@@ -18,13 +18,13 @@ Pypsa_plots:
  Annual Investment Costs: true
  Capacities: true
  Storage Capacities: true
- Heat Dispatch Winter: false
- Heat Dispatch Summer: false
- Power Dispatch Winter: false
- Power Dispatch Summer: false
- Map Plots: false
- H2 Map Plots: false
- Gas Map Plots: false
+ Heat Dispatch Winter: true
+ Heat Dispatch Summer: true
+ Power Dispatch Winter: true
+ Power Dispatch Summer: true
+ Map Plots: true    
+ H2 Map Plots: true
+ Gas Map Plots: true
  
 Scenario_plots:
  Annual Costs: true
