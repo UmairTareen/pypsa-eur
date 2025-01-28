@@ -346,7 +346,7 @@ def prepare_sepia(countries):
       
     for en_code in ['gaz']:
      filtered_flows = flows[('gaz_pe', 'gaz_se', '')]
-     filtered_flows.to_csv(f"/home/umair/pypsa-eur_repository/results/{study}/country_csvs/natural_gas_imports_{country}.csv", index=True)
+     filtered_flows.to_csv(f"results/{study}/country_csvs/natural_gas_imports_{country}.csv", index=True)
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
     tot_ghg[country] = flows_ghg
