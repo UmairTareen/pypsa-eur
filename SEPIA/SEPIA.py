@@ -15,6 +15,7 @@ import datetime # For current time
 import logging
 import numpy as np
 import yaml
+import os
 
 def biomass_potentials():
     # Create an empty DataFrame
@@ -346,7 +347,9 @@ def prepare_sepia(countries):
       
     for en_code in ['gaz']:
      filtered_flows = flows[('gaz_pe', 'gaz_se', '')]
-     filtered_flows.to_csv(f"results/{study}/country_csvs/natural_gas_imports_{country}.csv", index=True)
+     output_dir = f"results/{study}/country_csvs"
+     os.makedirs(output_dir, exist_ok=True)
+     filtered_flows.to_csv(f"{output_dir}/natural_gas_imports_{country}.csv", index=True)
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
     tot_ghg[country] = flows_ghg

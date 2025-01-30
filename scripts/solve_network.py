@@ -421,6 +421,7 @@ def imposed_values_genertion(n, foresight, config):
       offwind_dc_max = config["imposed_values"]["offshore_dc"]
       solar_max = config["imposed_values"]["solar"]
       nuclear_max = config["imposed_values"]["nuclear"]
+      battery = config["imposed_values"]["battery"]
       # preparing data for technoligies considering already installed capacities excluding 2030
       onwind = n.generators[
         n.generators.index.str.contains(country) & 
@@ -453,8 +454,8 @@ def imposed_values_genertion(n, foresight, config):
       n.generators.loc[f"{country}{suffix} offwind-dc-2030", "p_nom_max"] = offwind_dc_max - offwind_dc
       #nuclear is grouped by grouping years so imposing value in last grouping year
       n.links.loc[f"{country}{suffix} nuclear-1975", "p_nom"] = nuclear_max
-      #Imposing no underground H2 storage potential for Belgium in 2030
-      # n.stores.loc[f"{country}{suffix} H2 Store-2030", "e_nom_max"] = 0.0
+      #Imposing battery storage potential for Belgium in 2030 with recent approved plans
+      n.stores.loc[f"{country}{suffix} battery-2030", "e_nom_min"] = battery
      
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
      solar_max_pot = config["imposed_values"]["solar_max"]

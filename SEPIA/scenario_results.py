@@ -362,8 +362,8 @@ def scenario_capacities(country):
     groups = [
         ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["AC Transmission lines"],
         ["DC Transmission lines"],
         ["CCGT"],
@@ -372,8 +372,8 @@ def scenario_capacities(country):
     groupss = [
         ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["transmission lines"],
         ["gas pipeline","gas pipeline new"],
         ["CCGT"],
@@ -440,7 +440,6 @@ def storage_capacities(country):
     fig = go.Figure()
     groups = [
         ["Grid-scale battery", "home battery", "V2G"],
-        ["H2"],
         ["Thermal Energy storage"],
         ["gas"],
     ]

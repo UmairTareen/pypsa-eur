@@ -262,6 +262,7 @@ imposed_values:
   solar: 14000
   solar_max: 104000
   offshore_max: 8000
+  battery: 4000  # The planned power capacity is around 1GW, assuming Energy to power ratio of 4
 
 sequestration_potentia_BE: 
   2030: 2
@@ -592,15 +593,15 @@ sector:
   shipping_hydrogen_share:
     2020: 0
     2025: 0
-    2030: 0
+    2030: 0.1
     2035: 0
-    2040: 0.3
+    2040: 0.2
     2045: 0
     2050: 0.5
   shipping_methanol_share:
     2020: 0
     2025: 0.15
-    2030: 0.3
+    2030: 0.2
     2035: 0.5
     2040: 0.4
     2045: 0.85
@@ -610,7 +611,7 @@ sector:
     2025: 0.85
     2030: 0.7
     2035: 0.5
-    2040: 0.3
+    2040: 0.4
     2045: 0.15
     2050: 0
   shipping_methanol_efficiency: 0.46

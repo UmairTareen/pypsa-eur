@@ -1036,7 +1036,7 @@ def insert_electricity_distribution_grid(n, costs):
     loads = n.loads.index[n.loads.carrier.str.contains("electric")]
     n.loads.loc[loads, "bus"] += " low voltage"
 
-    bevs = n.links.index[n.links.carrier == "BEV charger"]
+    bevs = n.links.index[n.links.carrier == "EV charger"]
     n.links.loc[bevs, "bus0"] += " low voltage"
 
     v2gs = n.links.index[n.links.carrier == "V2G"]
@@ -2666,14 +2666,17 @@ def add_industry(n, costs):
         * costs.at["cement capture", "capture_rate"],
         lifetime=costs.at["cement capture", "lifetime"],
     )
-
+    if config["run"]["name"] == "baseline":
+        value_pset = industrial_demand.loc[nodes, "hydrogen"] / nhours / 2
+    else:
+        value_pset = industrial_demand.loc[nodes, "hydrogen"] / nhours
     n.madd(
         "Load",
         nodes,
         suffix=" H2 for industry",
         bus=nodes + " H2",
         carrier="H2 for industry",
-        p_set=industrial_demand.loc[nodes, "hydrogen"] / nhours,
+        p_set=value_pset,
     )
 
     shipping_hydrogen_share = get(options["shipping_hydrogen_share"], investment_year)

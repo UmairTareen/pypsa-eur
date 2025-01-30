@@ -31,14 +31,14 @@ import yaml
 
 def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
-    # if "heat pump" in tech or "resistive heater" in tech:
-    #     return "power-to-heat"
+    if "heat pump" in tech or "resistive heater" in tech:
+        return "power-to-heat"
     if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
-    # elif tech in ["H2 Store", "H2 storage"]:
-    #     return "hydrogen storage"
+    elif tech in ["electricity distribution grid"]:
+        return "Domestic electricity grid"
     elif tech in [ "CHP", "H2 Fuel Cell"]:
         return "CHP"
     elif tech in [ "battery charger", "battery discharger"]:
@@ -211,6 +211,7 @@ def costs(countries, results):
       if len(gas_val) >= len(desired_years):
         gas_val = gas_val.reset_index(drop=True).iloc[:len(desired_years)]
         gas_val.index = desired_years
+        gas_val = gas_val.clip(lower=0)
       if country != 'EU':
         for year in planning_horizons:
          if year in gas_val.index:
@@ -581,6 +582,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
     colors["load"] = 'black'
     colors["Imports_Exports"] = "dimgray"
     colors["EV charger"] = colors["V2G"]
+    colors["Domestic electricity grid"] = colors["electricity distribution grid"]
     tabs = pn.Tabs()
 
     for country in countries:
@@ -735,14 +737,14 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
              v2g = v2g.to_frame()
              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
              v2g = v2g/1e3
-             supplyn['electricity distribution grid'] = supplyn['electricity distribution grid'] + v2g['V2G']
+             supplyn['Domestic electricity grid'] = supplyn['Domestic electricity grid'] + v2g['V2G']
              supplyn['V2G'] = v2g['V2G'].abs()
          else:
              v2g = n.links_t.p1.filter(like="V2G").sum(axis=1)
              v2g = v2g.to_frame()
              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
              v2g = v2g/1e3
-             supplyn['electricity distribution grid'] = supplyn['electricity distribution grid'] + v2g['V2G']
+             supplyn['Domestic electricity grid'] = supplyn['Domestic electricity grid'] + v2g['V2G']
              supplyn['V2G'] = v2g['V2G'].abs()
         
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
@@ -1012,6 +1014,7 @@ def plot_map(
     with_legend=True,
 ):
     tech_colors = snakemake.params.plotting["tech_colors"]
+    tech_colors["Domestic electricity grid"] = tech_colors["electricity distribution grid"]
     n = network.copy()
     assign_location(n)
     # Drop non-electric buses so they don't clutter the plot
@@ -1054,7 +1057,11 @@ def plot_map(
             logger.warning(f"{item} not in config/plotting/tech_colors")
 
     costs = costs.stack()  # .sort_index()
-    
+    eu_location = config["plotting"].get(
+        "eu_node_location", dict(x=-5.5, y=46)
+    )
+    n.buses.loc["EU gas", "x"] = eu_location["x"]
+    n.buses.loc["EU gas", "y"] = eu_location["y"]
 
     n.links.drop(
         n.links.index[(n.links.carrier != "DC") & (n.links.carrier != "B2B")],
@@ -1108,10 +1115,9 @@ def plot_map(
     line_widths = line_widths.replace(line_lower_threshold, 0)
     link_widths = link_widths.replace(line_lower_threshold, 0)
     
-    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
-    eu_location = config["plotting"].get("eu_node_location", dict(x=-50, y=46))
-    n.buses.loc["EU gas", "x"] = eu_location["x"]
-    n.buses.loc["EU gas", "y"] = eu_location["y"]
+    proj = ccrs.EqualEarth()
+    fig, ax = plt.subplots(subplot_kw={"projection": proj})
+    fig.set_size_inches(15, 15)
     
     n.plot(
         bus_sizes=costs / bus_size_factor,
@@ -1185,52 +1191,6 @@ def plot_map(
             labels,
             legend_kw=legend_kw,
         )
-        
-    if country != 'EU':
-     lines = pd.DataFrame(n.lines)
-     links = pd.DataFrame(n.links)
-
-     # Filter rows for lines and links
-     links=n.links[n.links['carrier'] == 'DC']
-     lines = n.lines[(n.lines['bus0'].str.contains(country)) | (n.lines['bus1'].str.contains(country))]
-     links = links[(links['bus0'].str.contains(country)) | (links['bus1'].str.contains(country))]
-     links = links[~links.index.str.contains("reversed")]
-
-     # Create 'BusCombination' column
-     lines['BusCombination'] = (lines['bus0'].str.extract(r'([A-Z]+)').fillna('') +
-                             ' - ' +
-                             lines['bus1'].str.extract(r'([A-Z]+)').fillna(''))
-     links['BusCombination'] = (links['bus0'].str.extract(r'([A-Z]+)').fillna('') +
-                             ' - ' +
-                             links['bus1'].str.extract(r'([A-Z]+)').fillna(''))
-
-     # Collect data for the combined table
-     table_data = pd.concat([
-     pd.DataFrame({
-         'Lines': lines['BusCombination'],
-         'Capacity [GW]': lines['s_nom_opt'] / 1000,
-         'Type': 'AC'
-     }),
-     pd.DataFrame({
-         'Lines': links['BusCombination'],
-         'Capacity [GW]': links['p_nom_opt'] / 1000,
-         'Type': 'DC'
-     })
-     ], ignore_index=True)
-     table_data['Capacity [GW]'] = table_data['Capacity [GW]'].round(1)
-     table_data = table_data[table_data['Capacity [GW]'] != 0]
-
-     # Plot the table on the same subplot as the map
-     left, bottom, width, height = 0.05, 0.05, 0.4, 0.12
-     tab = table(ax, table_data, bbox=[left, bottom, width, height],fontsize=20)
-     type_col_index = table_data.columns.get_loc('Type')
-
-     # Set text color based on 'Type' value
-     for key, cell in tab.get_celld().items():
-        if key[0] != 0:
-            type_value = table_data.iloc[key[0] - 1, type_col_index]
-            for idx, cell_text in enumerate(table_data.iloc[key[0] - 1]):
-                cell.set_text_props(color='rosybrown' if type_value == 'AC' else 'darkseagreen', weight='bold' if idx == type_col_index else 'normal')
 
     # fig.tight_layout()
     logo = snakemake.input.logo
@@ -1383,7 +1343,7 @@ def plot_h2_map(network):
     # Drop non-electric buses so they don't clutter the plot
     n.buses.drop(n.buses.index[n.buses.carrier != "AC"], inplace=True)
 
-    carriers = ["H2 Electrolysis", "H2 Fuel Cell"]
+    carriers = ["H2 Electrolysis"]
 
     elec = n.links[n.links.carrier.isin(carriers)].index
 
@@ -1462,7 +1422,7 @@ def plot_h2_map(network):
     color_h2_pipe = "#b3f3f4"
     color_retrofit = "#499a9c"
 
-    bus_colors = {"H2 Electrolysis": "#ff29d9", "H2 Fuel Cell": "#805394"}
+    bus_colors = {"H2 Electrolysis": "#ff29d9"}
     n.plot(
         geomap=True,
         bus_sizes=bus_sizes,
@@ -1588,6 +1548,31 @@ def plot_ch4_map(network):
         .sum()
         / bus_size_factor
     )
+    gas_data = {}
+    first_index = n.generators.index[0]
+    if "-" in first_index and first_index.split("-")[-1].isdigit():
+        planning_horizon = int(first_index.split("-")[-1])  # Extract year
+    else:
+        planning_horizon = 2020
+    for country in countries:
+     gas_val = pd.read_csv(f"results/{study}/country_csvs/natural_gas_imports_{country}.csv")
+     gas_val = gas_val.set_index(gas_val.columns[0])
+     gas_val = gas_val.iloc[2:]
+     gas_val = gas_val.apply(pd.to_numeric, errors='coerce')
+     gas_val.index = gas_val.index.astype(int)
+     desired_years = [2020, 2030, 2040, 2050]
+     if len(gas_val) >= len(desired_years):
+      gas_val = gas_val.reset_index(drop=True).iloc[:len(desired_years)]
+      gas_val.index = desired_years
+      gas_val = gas_val.clip(lower=0)
+      if planning_horizon in gas_val.index:
+            gas_data[country] = gas_val.loc[planning_horizon, "gaz_pe"]
+
+    gas_supply = pd.Series(gas_data)
+    country_codes = fossil_gas.index.str[:2]
+    fossil_gas[:] = country_codes.map(gas_supply)
+    fossil_gas.loc["GB2 0 gas"] = 0
+    fossil_gas = fossil_gas * 1e6 / bus_size_factor
     fossil_gas.rename(index=lambda x: x.replace(" gas", ""), inplace=True)
     fossil_gas = fossil_gas.reindex(n.buses.index).fillna(0)
     # make a fake MultiIndex so that area is correct for legend
@@ -1711,7 +1696,7 @@ def plot_ch4_map(network):
         frameon=False,
         handletextpad=1,
         fontsize=15,
-        title="gas sources",
+        title="gas sources supply",
     )
 
     add_legend_circles(
@@ -2015,8 +2000,8 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     groups = [
         ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["AC Transmission lines"],
         ["DC Transmission lines"],
         ["CCGT"],
@@ -2026,8 +2011,8 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     groupss = [
         ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["transmission lines"],
         ["gas pipeline","gas pipeline new"],
         ["CCGT"],
@@ -2079,7 +2064,6 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
     colors["home battery"] = 'blue'
     groups = [
         ["Grid-scale battery", "home battery", "V2G"],
-        ["H2"],
         ["Thermal Energy storage"],
         ["gas"],
     ]
@@ -2109,7 +2093,7 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
     
     # Update layout
     fig.update_layout(height=600, width=1400, showlegend=True, title=f" Storage Capacities for {country}", yaxis_title=unit)
-    logo['y']=1.03
+    logo['y']=1.05
     fig.add_layout_image(logo)
     
 
