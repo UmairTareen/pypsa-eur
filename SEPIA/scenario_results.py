@@ -187,10 +187,10 @@ def Cumulative_emissions_sector(country):
         title="Year",
         tickvals=[2020, 2030, 2040, 2050],),
         yaxis=dict(
-        title="Cumulative Emissions (GtCO2 eq)"),
+        title="Cumulative Emissions (MtCO2 eq)"),
         yaxis2=dict(
         matches='y',  # Synchronize y-axis2 with y-axis
-        title="Cumulative Emissions (GtCO2 eq)"), # Optional: Add this if needed),
+        title="Cumulative Emissions (MtCO2 eq)"), # Optional: Add this if needed),
         height=700,
         width=1400,
         legend=dict(orientation="h", y=-0.2),  # Position legend below
@@ -228,6 +228,7 @@ def scenario_costs(country):
     colors["DC Transmission"] = "#104E8B"
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
+    colors["Domestic electricity network"] = colors["electricity distribution grid"]
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -271,6 +272,7 @@ def scenario_investment_costs(country):
     colors["DC Transmission"] = "#104E8B"
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
+    colors["Domestic electricity network"] = colors["electricity distribution grid"]
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -316,6 +318,7 @@ def scenario_cumulative_costs(country):
     colors["DC Transmission"] = "#104E8B"
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
+    colors["Domestic electricity network"] = colors["electricity distribution grid"]
     
     fig = go.Figure()
     df_transposed = combined_df.T

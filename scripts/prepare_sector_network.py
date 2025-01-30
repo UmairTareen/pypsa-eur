@@ -1065,17 +1065,17 @@ def insert_electricity_distribution_grid(n, costs):
     # add max solar rooftop potential assuming 0.1 kW/m2 and 10 m2/person,
     # i.e. 1 kW/person (population data is in thousands of people) so we get MW
     potential = 0.1 * 10 * pop_solar
-    # if config["run"]["name"] == "reff":
-    #     value = False
-    # else:
-    #     value = True
+    if config["run"]["name"] == "baseline":
+        value = False
+    else:
+        value = True
     n.madd(
         "Generator",
         solar,
         suffix=" rooftop",
         bus=n.generators.loc[solar, "bus"] + " low voltage",
         carrier="solar rooftop",
-        p_nom_extendable=False,
+        p_nom_extendable=value,
         p_nom_max=potential,
         marginal_cost=n.generators.loc[solar, "marginal_cost"],
         capital_cost=costs.at["solar-rooftop", "fixed"],

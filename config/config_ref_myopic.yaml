@@ -84,7 +84,7 @@ enable:
 co2_budget:
   2020: 0.701
   2025: 0.524
-  2030: 0.60
+  2030: 0.65
   2035: 0.150
   2040: 0.20
   2045: 0.032
@@ -115,11 +115,11 @@ co2_budget_national:
     'SE': 0.45
     'SK': 0.45
     'RO': 0.45
-    'BE': 0.60
-    'DE': 0.60
-    'FR': 0.60
-    'GB': 0.60
-    'NL': 0.60
+    'BE': 0.65
+    'DE': 0.65
+    'FR': 0.65
+    'GB': 0.65
+    'NL': 0.65
   2040:
     'AT': 0.15
     'BG': 0.15
@@ -259,8 +259,9 @@ imposed_values:
   onwind: 6000
   offshore_ac: 4000
   offshore_dc: 2000
-  solar: 14000
-  solar_max: 104000
+  solar: 12000
+  solar_rooftop: 2000
+  solar_rooftop_max: 80000
   offshore_max: 8000
   battery: 4000  # The planned power capacity is around 1GW, assuming Energy to power ratio of 4
   

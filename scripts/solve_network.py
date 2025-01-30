@@ -420,6 +420,7 @@ def imposed_values_genertion(n, foresight, config):
       offwind_ac_max = config["imposed_values"]["offshore_ac"]
       offwind_dc_max = config["imposed_values"]["offshore_dc"]
       solar_max = config["imposed_values"]["solar"]
+      solar_rooftop_max = config["imposed_values"]["solar_rooftop"]
       nuclear_max = config["imposed_values"]["nuclear"]
       battery = config["imposed_values"]["battery"]
       # preparing data for technoligies considering already installed capacities excluding 2030
@@ -449,6 +450,7 @@ def imposed_values_genertion(n, foresight, config):
       
       #imposing values in the model for year 2030
       n.generators.loc[f"{country}{suffix} solar-2030", "p_nom_max"] = solar_max - solar
+      n.generators.loc[f"{country}{suffix} solar rooftop-2030", "p_nom_max"] = solar_rooftop_max
       n.generators.loc[f"{country}{suffix} onwind-2030", "p_nom_max"] = onwind_max - onwind
       n.generators.loc[f"{country}{suffix} offwind-ac-2030", "p_nom_max"] = offwind_ac_max - offwind_ac
       n.generators.loc[f"{country}{suffix} offwind-dc-2030", "p_nom_max"] = offwind_dc_max - offwind_dc
@@ -458,9 +460,9 @@ def imposed_values_genertion(n, foresight, config):
       n.stores.loc[f"{country}{suffix} battery-2030", "e_nom_min"] = battery
      
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
-     solar_max_pot = config["imposed_values"]["solar_max"]
+     solar_max_pot = config["imposed_values"]["solar_rooftop_max"]
      if f"{country}{suffix} solar-2040" in n.generators.index:
-          n.generators.loc[f"{country}{suffix} solar-2040", "p_nom_max"] = solar_max_pot
+          n.generators.loc[f"{country}{suffix} solar rooftop-2040", "p_nom_max"] = solar_max_pot
           offwind_max_val = config["imposed_values"]["offshore_max"]
           offwind_val = n.generators[
             n.generators.index.str.contains(country) & 
@@ -471,7 +473,7 @@ def imposed_values_genertion(n, foresight, config):
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
      if f"{country}{suffix} solar-2050" in n.generators.index:
-          n.generators.loc[f"{country}{suffix} solar-2050", "p_nom_max"] = solar_max_pot
+          n.generators.loc[f"{country}{suffix} solar rooftop-2050", "p_nom_max"] = solar_max_pot
           offwind_max_val = config["imposed_values"]["offshore_max"]
           offwind_val = n.generators[
             n.generators.index.str.contains(country) & 

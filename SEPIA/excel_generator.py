@@ -84,7 +84,7 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
         if planning_horizon == 2020:
             if country != 'EU':
               ammonia = 0
-              H2_industry = industry_demand.loc["hydrogen"].filter(like=country).sum()
+              H2_industry = n.loads_t.p.filter(like="H2 for industry").filter(like=country).sum().sum()/1e6
             else:
               ammonia = 0
               H2_industry = industry_demand.loc["hydrogen"].sum().sum()

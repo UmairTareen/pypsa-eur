@@ -38,7 +38,7 @@ def rename_techs_tyndp(tech):
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
     elif tech in ["electricity distribution grid"]:
-        return "Domestic electricity grid"
+        return "Domestic electricity network"
     elif tech in [ "CHP", "H2 Fuel Cell"]:
         return "CHP"
     elif tech in [ "battery charger", "battery discharger"]:
@@ -582,7 +582,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
     colors["load"] = 'black'
     colors["Imports_Exports"] = "dimgray"
     colors["EV charger"] = colors["V2G"]
-    colors["Domestic electricity grid"] = colors["electricity distribution grid"]
+    colors["Domestic electricity network"] = colors["electricity distribution grid"]
     tabs = pn.Tabs()
 
     for country in countries:
@@ -737,14 +737,14 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
              v2g = v2g.to_frame()
              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
              v2g = v2g/1e3
-             supplyn['Domestic electricity grid'] = supplyn['Domestic electricity grid'] + v2g['V2G']
+             supplyn['Domestic electricity network'] = supplyn['Domestic electricity network'] + v2g['V2G']
              supplyn['V2G'] = v2g['V2G'].abs()
          else:
              v2g = n.links_t.p1.filter(like="V2G").sum(axis=1)
              v2g = v2g.to_frame()
              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
              v2g = v2g/1e3
-             supplyn['Domestic electricity grid'] = supplyn['Domestic electricity grid'] + v2g['V2G']
+             supplyn['Domestic electricity network'] = supplyn['Domestic electricity network'] + v2g['V2G']
              supplyn['V2G'] = v2g['V2G'].abs()
         
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
@@ -1009,12 +1009,12 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 def plot_map(
     network,country,
     components=["links", "stores", "storage_units", "generators"],
-    bus_size_factor=1.7e10,
+    bus_size_factor=8e8,
     transmission=True,
     with_legend=True,
 ):
     tech_colors = snakemake.params.plotting["tech_colors"]
-    tech_colors["Domestic electricity grid"] = tech_colors["electricity distribution grid"]
+    tech_colors["Domestic electricity network"] = tech_colors["electricity distribution grid"]
     n = network.copy()
     assign_location(n)
     # Drop non-electric buses so they don't clutter the plot
@@ -1057,11 +1057,6 @@ def plot_map(
             logger.warning(f"{item} not in config/plotting/tech_colors")
 
     costs = costs.stack()  # .sort_index()
-    eu_location = config["plotting"].get(
-        "eu_node_location", dict(x=-5.5, y=46)
-    )
-    n.buses.loc["EU gas", "x"] = eu_location["x"]
-    n.buses.loc["EU gas", "y"] = eu_location["y"]
 
     n.links.drop(
         n.links.index[(n.links.carrier != "DC") & (n.links.carrier != "B2B")],
@@ -1115,9 +1110,10 @@ def plot_map(
     line_widths = line_widths.replace(line_lower_threshold, 0)
     link_widths = link_widths.replace(line_lower_threshold, 0)
     
-    proj = ccrs.EqualEarth()
-    fig, ax = plt.subplots(subplot_kw={"projection": proj})
-    fig.set_size_inches(15, 15)
+    fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
+    eu_location = config["plotting"].get("eu_node_location", dict(x=-50, y=46))
+    n.buses.loc["EU gas", "x"] = eu_location["x"]
+    n.buses.loc["EU gas", "y"] = eu_location["y"]
     
     n.plot(
         bus_sizes=costs / bus_size_factor,
@@ -1178,7 +1174,7 @@ def plot_map(
     legend_kw = dict(
         bbox_to_anchor=(1.35, 1),
         frameon=False,
-        fontsize=15
+        fontsize=12
     )
 
     if with_legend:
@@ -1221,7 +1217,7 @@ def create_map_plots(planning_horizons, country):
          fig = plot_map(
              n,country,
              components=["generators", "links", "stores", "storage_units"],
-             bus_size_factor=90e9,
+             bus_size_factor=160e9,
              transmission=True,
          )
          plt.rcParams['legend.title_fontsize'] = '20'
@@ -1249,13 +1245,13 @@ def create_map_plots(planning_horizons, country):
          fig = plot_map(
              n,country,
              components=["generators", "links", "stores", "storage_units"],
-             bus_size_factor=90e9,
+             bus_size_factor=160e9,
              transmission=True,
          )
          plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
          output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
-         fig.savefig(output_image_path)
+         fig.savefig(output_image_path, bbox_inches="tight")
          plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
         # Encode the image as base64
