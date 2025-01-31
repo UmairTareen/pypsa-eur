@@ -579,10 +579,10 @@ def prepare_sepia(countries):
     sections = [('ghg','CO2 emissions by sector'),('ghg','CO2 emissions by source'),('ghg','Cumulative CO2 emissions by sector'),('ghg','Cumulative CO2 emissions by source'),('sankey','Sankey diagram'),('carbon sankey','Carbon Sankey diagram'),('res','Renewable energy share'),('res','Final energy consumption by origin'),('carrier','Share of domestic production'),('cons','Final energy consumption by each sector'),('cons','Mix of secondary energies'),('cons','Final energy consumption by carrier for each sector')]
     sections = [(category, label) for category, label in sections if sepia_plots.get(label, False)]
     if MAIN_PARAMS['HTML_TEMPLATE'] == "raw": sections += [('input','Input data')]
-    html_items['MENU'] = '<ol>'
+    html_items['TABLE_OF_CONTENTS'] = '<ol>'
     for (anchor,title) in sections:
-        html_items['MENU'] += '<li><a href="#'+anchor+'">'+title+'</a></li>'
-    html_items['MENU'] += '</ol>'
+        html_items['TABLE_OF_CONTENTS'] += '<li><a href="#'+anchor+'">'+title+'</a></li>'
+    html_items['TABLE_OF_CONTENTS'] += '</ol>'
 
     html_items['MAIN'] = ''
     

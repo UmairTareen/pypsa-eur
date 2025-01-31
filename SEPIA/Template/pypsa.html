@@ -22,8 +22,6 @@
 
     <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
 
-    <!-- GA Google Analytics @ https://m0n.co/ga -->
-    <script type="text/plain" data-service="google-analytics" data-category="statistics" async data-cmplz-src="https://www.googletagmanager.com/gtag/js?id=G-VP0W0EPDS9"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
@@ -31,44 +29,19 @@
         gtag('config', 'G-VP0W0EPDS9');
     </script>
     <script>
-        var selectedFileType = "combined_chart"; // Initialize with the default file type
+        var selectedFileType = "combined_scenario_chart"; // Initialize with the default file type
+        var selectedCountry = "BE"; // Initialize empty
 
         function updateDropdown() {
             var dropdown = document.getElementById("country-select");
 
             // Clear existing options
-            dropdown.innerHTML = '<option value="">Other results</option>';
+            dropdown.innerHTML = '<option value="">Select Region</option>';
 
             // Define a mapping between short codes and full names
             var countryMapping = {
                 BE: "Belgium",
-                DE: "Germany",
-                FR: "France",
-                NL: "Netherlands",
-                GB: "United Kingdom",
-				AT: "Austria",
-				BG: "Bulgaria",
-				CH: "Switzerland",
-				DK: "Denmark",
-				EE: "Estonia",
-				GR: "Greece",
-				ES: "Spain",
-				FI: "Finland",
-				HR: "Crotia",
-				HU: "Hungary",
-				IE: "Ireland",
-				IT: "Italy",
-				LT: "Lithuania",
-				LU: "Luxembourg",
-				LV: "Latvia",
-				NO: "Norway",
-				PL: "Poland",
-				PT: "Portugal",
-				RO: "Romania",
-				SE: "Sweden",
-				SI: "Slovenia",
-				SK: "Slovakia",
-				EU: "Total"
+				EU: "5 countries"
                 // Add more entries for other countries as needed
             };
 
@@ -86,16 +59,28 @@
             // Restore the selected file type
             var fileTypeSelect = document.getElementById("file-type-select");
             fileTypeSelect.value = selectedFileType;
+
+            // Try to get country from URL if it exists
+            var urlPath = window.location.pathname;
+            var match = urlPath.match(/^([A-Z]+)_/);
+            if (match) {
+                selectedCountry = match[1];
+                dropdown.value = selectedCountry;
+            }
         }
 
         function changeCountry() {
-            var selectedCode = document.getElementById("country-select").value;
-            updateUrl(selectedCode);
+            selectedCountry = document.getElementById("country-select").value;
+            if (selectedCountry) { // Only update if a country is selected
+                updateUrl();
+            }
         }
 
         function changeFileType() {
-            selectedFileType = getSelectedFileType();
-            console.log("Selected File Type:", selectedFileType);
+            selectedFileType = document.getElementById("file-type-select").value;
+            if (selectedCountry) { // Only update if a country is selected
+                updateUrl();
+            }
         }
 
         function getSelectedFileType() {
@@ -103,8 +88,8 @@
             return fileTypeSelect.value;
         }
 
-        function updateUrl(countryCode) {
-            var url = countryCode + "_" + selectedFileType + ".html";
+        function updateUrl() {
+            var url = selectedCountry + "_" + selectedFileType + ".html";
             console.log("Updating URL:", url);
             window.location.href = url;
         }
@@ -115,10 +100,11 @@
 
             // Example: Check if at least one file exists for the specified code and file type
             var predefinedFiles = [
-                code + "_combined_chart.html",
                 code + "_combined_scenario_chart.html",
                 code + "_combined_chart_suff.html",
                 code + "_combined_chart_bau.html",
+                code + "_Results_suff.html",
+                code + "_Results_ref.html",
                 // Add more files as needed
             ];
 
@@ -174,15 +160,16 @@
              <form>
     <select id="country-select">
         <!-- Options will be dynamically added here -->
-        <option value="">Other results</option>
+        <option value="">Select region</option>
     </select>
 
     <!-- Add this HTML element for the file type dropdown in your document -->
     <select id="file-type-select">
-        <option value="combined_chart">Country results</option>
-        <option value="combined_scenario_chart">Country scenario results</option>
-        <option value="combined_chart_suff">Country results Suff</option>
-        <option value="combined_chart_bau">Country results BAU</option>
+        <option value="combined_scenario_chart">Scenario overview</option>
+        <option value="combined_chart_suff">Sufficiency Scenario</option>
+        <option value="combined_chart_bau">Reference Scenario</option>
+        <option value="results_suff">Sufficiency Scenario 2</option>
+        <option value="results_ref">Reference Scenario 2</option>
     </select>
 </form>
 

@@ -333,7 +333,7 @@ rule generate_sepia:
                 if config["run"]["name"] == "ref" 
                 else "SEPIA/html_texts.txt"
         ),
-        template = "SEPIA/Template/CLEVER.html",
+        template = "SEPIA/Template/pypsa.html",
         biomass_potentials = expand(resources("biomass_potentials_s_{clusters}_{planning_horizons}.csv"),**config["scenario"]),
         excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
         plots_html = "config/plots.yaml",
