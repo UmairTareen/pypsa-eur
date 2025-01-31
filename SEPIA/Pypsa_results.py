@@ -567,7 +567,7 @@ def plot_demands(countries):
         output_folder = f'results/{study}/htmls/raw_html' # Set your desired output folder
         os.makedirs(output_folder, exist_ok=True)
         html_filepath = os.path.join(output_folder, html_filename)
-        fig.write_html(html_filepath)
+        fig.write_html(html_filepath,full_html=False, include_plotlyjs=False)
         file_path = f"results/{study}/country_csvs/{country}_sectordemands.csv"
         data.to_csv(file_path, index=True)
         
@@ -2143,22 +2143,22 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     # Create bar chart
     if pypsa_plots["Annual Costs"] == True:
      bar_chart = create_bar_chart(costs, country)
-     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     # Create Investment Costs
     if pypsa_plots["Annual Investment Costs"] == True:
      bar_chart_investment = create_investment_costs(investment_costs, country)
-     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
 
     # Create capacities chart
     if pypsa_plots["Capacities"] == True:
      capacities_chart = create_capacity_chart(capacities, country)
-     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Capacities </h2>{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     # Create storage capacities chart
     if pypsa_plots["Storage Capacities"] == True:
      s_capacities_chart = storage_capacity_chart(s_capacities, country)
-     combined_html += f"<div><h2>{country} - Storage Capacities </h2>{s_capacities_chart.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Storage Capacities </h2>{s_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
 
     # Save the Panel object to HTML
     if pypsa_plots["Power Dispatch Winter"] == True:
@@ -2229,13 +2229,13 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     if pypsa_plots["Sectoral Demands"] == True:
      main_content += f"<div id='{country} - Sectoral Demands'><h2>{country} - Sectoral Demands</h2>{sectoral_demands_desc}{plot_demands_html}</div>"
     if pypsa_plots["Annual Costs"] == True:
-     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
+     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if pypsa_plots["Annual Investment Costs"] == True:
-     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
+     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if pypsa_plots["Capacities"] == True:
-     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
+     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if pypsa_plots["Storage Capacities"] == True:
-     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html()}</div>"
+     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if pypsa_plots["Heat Dispatch Winter"] == True:
      main_content += f"<div id='{country} - Heat Dispatch Winter'><h2>{country} - Heat Dispatch Winter</h2>{heat_dispatch_win_desc}{plot_series_heat_html}</div>"
     if pypsa_plots["Heat Dispatch Summer"] == True:

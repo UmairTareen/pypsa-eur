@@ -681,7 +681,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     os.makedirs(output_folder, exist_ok=True)
 
     # Create combined HTML
-    combined_html = "<html><head><title>Combined Plots</title></head><body>"
+    combined_html = "<html><head><title>The Negawatt Belgium sufficiency scenario</title></head><body>"
     
     #Load text descriptors
     def load_html_texts(file_path):
@@ -694,8 +694,14 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
                 html_texts[key.strip()] = html_content.strip()
      return html_texts
 
+    def load_html_file(file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        return html_content
+
     # Load the HTML texts from file
     html_texts = load_html_texts(file_path)
+    header = html_texts.get('header', '')
     cummulative_emm_desc = html_texts.get('cumulative_emissions_sce', '')
     annual_costs_desc = html_texts.get('annual_costs_sce', '')
     investment_costs_desc = html_texts.get('investment_costs_sce', '')
@@ -715,29 +721,29 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     
     if scenario_plots["Cummulative Emissions"] == True:
      emm_chart = Cumulative_emissions_sector(country)
-     combined_html += f"<div><h2>{country} - Cummulative Emissions</h2>{emm_chart.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Cumulative Emissions</h2>{emm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     # Create bar chart
     if scenario_plots["Annual Costs"] == True:
      bar_chart = scenario_costs(country)
-     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     if scenario_plots["Annual Investment Costs"] == True:
      bar_chart_investment = scenario_investment_costs(country)
-     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     if scenario_plots["Cummulative Investment Costs"] == True:
      bar_chart_cumulative = scenario_cumulative_costs(country)
-     combined_html += f"<div><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Cumulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     # Create capacities chart
     if scenario_plots["Capacities"] == True:
      capacities_chart = scenario_capacities(country)
-     combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+     combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     # Create storage capacities chart
     if scenario_plots["Storage Capacities"] == True:
      storage_capacities_chart = storage_capacities(country)
-     combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
+     combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     
     #Create scenario comparison plots
@@ -745,32 +751,33 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         scenario_figures = create_scenario_plots()
         if scenario_plots["Scenarios Demands Comparison"] == True:
          demand_comparison = scenario_figures['demand']
-         combined_html += f"<div><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html()}</div>"
+         combined_html += f"<div><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
          vre_comparison = scenario_figures['vre']
-         combined_html += f"<div><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html()}</div>"
+         combined_html += f"<div><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenario Flexibility Capacities"] == True:
          flexibility_comparison = scenario_figures['flexibility']
-         combined_html += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html()}</div>"
+         combined_html += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios Costs Comparison"] == True:
          costs_comparison = scenario_figures['costs']
-         combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html()}</div>"
+         combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Historic Generation Comparison"] == True:
          historic_comparison = scenario_figures['historic']
-         combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html()}</div>"
+         combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
-    main_content = ""
+    main_content = load_html_file('SEPIA/html_scenarios.html')
+    #main_content += header
     # Create the content for the "Table of Contents" and "Main" sections
     if scenario_plots["Cummulative Emissions"] == True:
-     table_of_contents_content += f"<a href='#{country} - Cummulative Emissions'>Cummulative Emissions</a><br>"
+     table_of_contents_content += f"<a href='#{country} - Cumulative Emissions'>Cumulative Emissions</a><br>"
     if scenario_plots["Annual Costs"] == True:
      table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
     if scenario_plots["Annual Investment Costs"] == True:
      table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
     if scenario_plots["Cummulative Investment Costs"] == True:
-     table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2023-2050)'>Cummulative Investment Costs (2023-2050)</a><br>"
+     table_of_contents_content += f"<a href='#{country} - Cumulative Investment Costs (2023-2050)'>Cumulative Investment Costs (2023-2050)</a><br>"
     if scenario_plots["Capacities"] == True:
      table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
     if scenario_plots["Storage Capacities"] == True:
@@ -789,29 +796,29 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
 
     # Add more links for other plots
     if scenario_plots["Cummulative Emissions"] == True:
-     main_content += f"<div id='{country} - Cummulative Emissions'><h2>{country} - Cummulative Emissions</h2>{cummulative_emm_desc}{emm_chart.to_html()}</div>" 
+     main_content += f"<div id='{country} - Cumulative Emissions'><h2>{country} - Cumulative Emissions</h2>{cummulative_emm_desc}{emm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Annual Costs"] == True:
-     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
+     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Annual Investment Costs"] == True:
-     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>"
+     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Cummulative Investment Costs"] == True:
-     main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html()}</div>"
+     main_content += f"<div id='{country} - Cumulative Investment Costs (2023-2050)'><h2>{country} - Cumulative Investment Costs (2023-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Capacities"] == True:
-     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
+     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Storage Capacities"] == True:
-     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html()}</div>"
+     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     if country == 'BE':
         if scenario_plots["Scenarios Demands Comparison"] == True:
-         main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html()}</div>"
+         main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
-         main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{ scenario_vre_desc}{vre_comparison.to_html()}</div>"
+         main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{ scenario_vre_desc}{vre_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenario Flexibility Capacities"] == True:
-         main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{scenario_flex_desc}{flexibility_comparison.to_html()}</div>"
+         main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{scenario_flex_desc}{flexibility_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios Costs Comparison"] == True:
-         main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html()}</div>"
+         main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Historic Generation Comparison"] == True:
-         main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html()}</div>"
+         main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template
