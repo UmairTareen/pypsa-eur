@@ -36,7 +36,7 @@
             var dropdown = document.getElementById("country-select");
 
             // Clear existing options
-            dropdown.innerHTML = '<option value="">Select Region</option>';
+            //dropdown.innerHTML = '<option value=""></option>';
 
             // Define a mapping between short codes and full names
             var countryMapping = {
@@ -45,28 +45,41 @@
                 // Add more entries for other countries as needed
             };
 
-            // Loop through short codes and add options
-            Object.keys(countryMapping).forEach(function (code) {
-                // Check if any file exists for the given code
-                var fileExists = checkFileExistence(code);
+            // Get the current filename from the URL, safely
+            var currentUrl = window.location.href;
+            var urlPath = currentUrl.substring(currentUrl.lastIndexOf('/') + 1);
 
-                // If at least one file exists, add the option
-                if (fileExists) {
-                    dropdown.innerHTML += `<option value="${code}">${countryMapping[code]}</option>`;
+            // Check each country code in the mapping
+            for (let countryCode in countryMapping) {
+                if (urlPath.includes(countryCode + '_')) {
+                    dropdown.value = countryCode;
+                    selectedCountry = countryCode;
+                    break;
                 }
-            });
-
-            // Restore the selected file type
-            var fileTypeSelect = document.getElementById("file-type-select");
-            fileTypeSelect.value = selectedFileType;
-
-            // Try to get country from URL if it exists
-            var urlPath = window.location.pathname;
-            var match = urlPath.match(/^([A-Z]+)_/);
-            if (match) {
-                selectedCountry = match[1];
-                dropdown.value = selectedCountry;
             }
+
+
+            // Get the file type select dropdown
+            var fileTypeSelect = document.getElementById("file-type-select");
+
+            // Define possible file types to check
+            var fileTypes = [
+                "combined_scenario_chart",
+                "combined_chart_suff",
+                "combined_chart_ref_",
+                "results_suff",
+                "results_ref"
+            ];
+
+            // Check if URL contains any of the file types
+            for (let fileType of fileTypes) {
+                if (urlPath.includes(fileType)) {
+                    selectedFileType = fileType;
+                    fileTypeSelect.value = fileType;
+                    break;
+                }
+            }
+
         }
 
         function changeCountry() {
@@ -90,27 +103,56 @@
 
         function updateUrl() {
             var url = selectedCountry + "_" + selectedFileType + ".html";
-            console.log("Updating URL:", url);
-            window.location.href = url;
+            
+            // Mapping for more readable country and scenario names
+            var countryNames = {
+                BE: "Belgium",
+                EU: "5 countries"
+            };
+
+            var scenarioNames = {
+                "combined_scenario_chart": "Scenario Overview",
+                "combined_chart_suff": "Sufficiency Scenario",
+                "combined_chart_ref": "Reference Scenario",
+                "results_ref": "Reference Scenario 2",
+                "results_suff": "Sufficiency Scenario 2"
+            };
+
+            // Use the existing checkFileExistence function to verify file availability
+            if (checkFileExistence(url)) {
+                console.log("Updating URL:", url);
+                window.location.href = url;
+            } else {
+                // Provide a detailed alert with readable names
+                var countryName = countryNames[selectedCountry] || selectedCountry;
+                var scenarioName = scenarioNames[selectedFileType] || selectedFileType;
+
+                // Show an alert with specific details
+                alert(`Sorry, the selected combination is not available.\n\nRegion: ${countryName}\nScenario: ${scenarioName}`);
+                
+                // Reset the dropdowns to their previous values
+                document.getElementById("country-select").value = selectedCountry;
+                document.getElementById("file-type-select").value = selectedFileType;
+            }
         }
 
-        function checkFileExistence(code) {
-            // Implement your logic to check if at least one file exists for the given code
-            // You can customize this function based on your file naming conventions
-
-            // Example: Check if at least one file exists for the specified code and file type
+        function checkFileExistence(filename) {
+            // List of predefined files
             var predefinedFiles = [
-                code + "_combined_scenario_chart.html",
-                code + "_combined_chart_suff.html",
-                code + "_combined_chart_bau.html",
-                code + "_Results_suff.html",
-                code + "_Results_ref.html",
-                // Add more files as needed
+                "BE_combined_scenario_chart.html",
+                "BE_combined_chart_suff.html",
+                "BE_combined_chart_ref.html",
+                "BE_Results_suff.html",
+                "BE_Results_ref.html",
+                "EU_combined_chart_suff.html",
+                "EU_combined_chart_ref.html",
+                "EU_Results_suff.html",
+                "EU_Results_ref.html",
+                // Add more valid file combinations as needed
             ];
 
-            return predefinedFiles.some(function (filename) {
-                return checkFileExistenceHelper(filename);
-            });
+            // Check if the filename exists in the predefined list
+            return predefinedFiles.includes(filename);
         }
 
         function checkFileExistenceHelper(filename) {
@@ -160,14 +202,15 @@
              <form>
     <select id="country-select">
         <!-- Options will be dynamically added here -->
-        <option value="">Select region</option>
+        <option  value="BE">Belgium</option>
+        <option  value="EU">5 countries</option>
     </select>
 
     <!-- Add this HTML element for the file type dropdown in your document -->
     <select id="file-type-select">
         <option value="combined_scenario_chart">Scenario overview</option>
         <option value="combined_chart_suff">Sufficiency Scenario</option>
-        <option value="combined_chart_bau">Reference Scenario</option>
+        <option value="combined_chart_ref">Reference Scenario</option>
         <option value="results_suff">Sufficiency Scenario 2</option>
         <option value="results_ref">Reference Scenario 2</option>
     </select>

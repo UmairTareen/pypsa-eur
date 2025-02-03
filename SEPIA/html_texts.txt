@@ -56,7 +56,7 @@ gas_map_plots_desc: <p>Map plots provide a geographical overview of the investme
 
 # Texts for Scenario html file
 
-cumulative_emissions_sce: <p>This plot represents the total cummumative emissions comparison from 2020-2050 between the optimised scenarios.</p>
+cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios. Although both scenarios follow the same trajectory, the gross residual emissions are significantly higher in the reference scenario, which imposes the use of negative emissions technologies such as DACCS or BECCS.</p>
 
 annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
 

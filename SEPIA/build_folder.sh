@@ -10,6 +10,11 @@ cp ../results/ref/htmls/BE_combined_chart.html ../results/html_folder/BE_combine
 cp ../results/suff/htmls/Results_BE.html ../results/html_folder/BE_results_suff.html
 cp ../results/ref/htmls/Results_BE.html ../results/html_folder/BE_results_ref.html
 
+cp ../results/suff/htmls/EU_combined_chart.html ../results/html_folder/EU_combined_chart_suff.html
+cp ../results/ref/htmls/EU_combined_chart.html ../results/html_folder/EU_combined_chart_ref.html
+cp ../results/suff/htmls/Results_EU.html ../results/html_folder/EU_results_suff.html
+cp ../results/ref/htmls/Results_EU.html ../results/html_folder/EU_results_ref.html
+
 cp ../results/suff/htmls/FR_combined_chart.html ../results/html_folder/other_countries/FR_combined_chart_suff.html
 cp ../results/ref/htmls/FR_combined_chart.html ../results/html_folder/other_countries/FR_combined_chart_ref.html
 cp ../results/suff/htmls/Results_FR.html ../results/html_folder/other_countries/FR_results_suff.html
@@ -34,6 +39,7 @@ cp ../results/suff/htmls/Results_EU.html ../results/html_folder/other_countries/
 cp ../results/ref/htmls/Results_EU.html ../results/html_folder/other_countries/EU_results_ref.html
 
 cp ../results/scenario_results/BE_combined_scenario_chart.html ../results/html_folder/BE_combined_scenario_chart.html
+cp ../results/scenario_results/EU_combined_scenario_chart.html ../results/html_folder/EU_combined_scenario_chart.html
 
 cp ../results/scenario_results/DE_combined_scenario_chart.html ../results/html_folder/other_countries/DE_combined_scenario_chart.html
 cp ../results/scenario_results/NL_combined_scenario_chart.html ../results/html_folder/other_countries/NL_combined_scenario_chart.html

@@ -767,8 +767,11 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
-    main_content = load_html_file('SEPIA/html_scenarios.html')
-    #main_content += header
+    html_filnemae = 'SEPIA/html_scenarios_' + country + '.html'
+    if os.path.exists(html_filnemae):
+        main_content = load_html_file(html_filnemae)
+    else:
+        main_content = ''
     # Create the content for the "Table of Contents" and "Main" sections
     if scenario_plots["Cummulative Emissions"] == True:
      table_of_contents_content += f"<a href='#{country} - Cumulative Emissions'>Cumulative Emissions</a><br>"
