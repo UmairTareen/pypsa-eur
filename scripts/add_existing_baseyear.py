@@ -128,8 +128,9 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
     )
 
     df_agg = pd.read_csv(snakemake.input.powerplants, index_col=0)
-    df_agg.loc[df_agg['Name'] == 'Doel', 'Capacity'] = 2000
-    df_agg.loc[df_agg['Name'] == 'Doel', 'DateOut'] = 2033
+    if config["run"]["name"] != "baseline":
+     df_agg.loc[df_agg['Name'] == 'Doel', 'Capacity'] = 2000
+     df_agg.loc[df_agg['Name'] == 'Doel', 'DateOut'] = 2033
 
     rename_fuel = {
         "Hard Coal": "coal",
@@ -196,11 +197,14 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
     # drop assets which are already phased out / decommissioned
     phased_out = df_agg[df_agg["DateOut"] < baseyear].index
     df_agg.drop(phased_out, inplace=True)
-
-    df_agg["grouping_year"] = np.take(
+    if config["run"]["name"] == "baseline":
+     indices = np.digitize(df_agg.DateIn, grouping_years, right=True)
+     indices = np.clip(indices, 0, len(grouping_years) - 1)  # Ensures index is within bounds
+     df_agg["grouping_year"] = np.take(grouping_years, indices)
+    else:
+     df_agg["grouping_year"] = np.take(
         grouping_years, np.digitize(df_agg.DateIn, grouping_years, right=True)
     )
-
     # calculate (adjusted) remaining lifetime before phase-out (+1 because assuming
     # phase out date at the end of the year)
     df_agg["lifetime"] = df_agg.DateOut - df_agg["grouping_year"] + 1
@@ -362,7 +366,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         * costs.at[generator, "VOM"],  # NB: VOM is per MWel
                         capital_cost=costs.at[generator, "efficiency"]
                         * costs.at[generator, "fixed"],  # NB: fixed cost is per MWel
-                        p_nom=new_capacity / costs.at[generator, "efficiency"],
+                        p_nom=new_capacity,
                         efficiency=costs.at[generator, "efficiency"],
                         efficiency2=costs.at[carrier[generator], "CO2 intensity"],
                         build_year=grouping_year,
@@ -378,7 +382,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         bus1=new_capacity.index,
                         bus2=new_capacity.index + " urban central heat",
                         carrier=generator,
-                        p_nom=new_capacity / costs.at[key, "efficiency"],
+                        p_nom=new_capacity,
                         capital_cost=costs.at[key, "fixed"]
                         * costs.at[key, "efficiency"],
                         marginal_cost=costs.at[key, "VOM"],
@@ -584,11 +588,11 @@ if __name__ == "__main__":
     set_scenario_config(snakemake)
 
     update_config_from_wildcards(snakemake.config, snakemake.wildcards)
-
+    config = snakemake.config
     options = snakemake.params.sector
-
+    
     baseyear = snakemake.params.baseyear
-
+  
     n = pypsa.Network(snakemake.input.network)
 
     # define spatial resolution of carriers

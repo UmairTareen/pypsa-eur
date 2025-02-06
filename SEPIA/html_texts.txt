@@ -66,7 +66,7 @@ cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are sho
 
 capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
 
-storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>
+storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p><p>Some key insights from the results include:</p><ul><li> District heating will rely heavily on seasonal storage, utilizing Thermal Energy Storage (TES) to efficiently manage heat supply across different seasons.</li><li> The TES is modeled as large water tanks, with each unit featuring a storage volume of 70,000 cubic meters and an energy storage capacity of 4,500 MWh. An example of this technology is the TES facility in Høje Taastrup, Denmark.</li><li> The optimised TES energy storage capacity is high in sufficiency scenario, as no carbon capture is allowed due to which it highly relies on green technologies. 
 
 scenario_dem_comp_sce: <p>This chart displays the comparison of final energy demands for different scenarios available for Belgium.</p>
 

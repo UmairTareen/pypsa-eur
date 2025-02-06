@@ -175,7 +175,19 @@ def prepare_sepia(countries):
     fec_se = grouped_fec_se
     for en_code in ['gaz']:
         flows[(en_code+'_pe',en_code+'_se','')] = fec_se[en_code+'_se']-biogas_p-biosng_p-meth_p-biogas_cc
-        
+    
+    ''' Adding missing values for nuclear losses'''
+    nuc_eff = options.loc[("nuclear", "efficiency"), "value"]
+    nuc_los = (1 - nuc_eff)/nuc_eff
+    for en_code in ['ura']:
+      value_loss_nuc_2020 = flows.loc['2020', (en_code + '_pe', 'elc_se', 'thm')].sum() * nuc_los
+      value_loss_nuc_2030 = flows.loc['2030', (en_code + '_pe', 'elc_se', 'thm')].sum() * nuc_los
+      value_loss_nuc_2040 = flows.loc['2040', (en_code + '_pe', 'elc_se', 'thm')].sum() * nuc_los
+      value_loss_nuc_2050 = flows.loc['2050', (en_code + '_pe', 'elc_se', 'thm')].sum() * nuc_los
+      flows.loc['2020', (en_code + '_pe', 'per', 'thm')] = value_loss_nuc_2020
+      flows.loc['2030', (en_code + '_pe', 'per', 'thm')] = value_loss_nuc_2030
+      flows.loc['2040', (en_code + '_pe', 'per', 'thm')] = value_loss_nuc_2040
+      flows.loc['2050', (en_code + '_pe', 'per', 'thm')] = value_loss_nuc_2050
     
     '''Attaching local production and imports'''
     selected_columns_p = flows.columns.get_level_values('Source').isin(PE_NODES)
@@ -278,12 +290,12 @@ def prepare_sepia(countries):
     tot_emm = flows_co2.loc[:, tot_emm]
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
     for en_code in ['net']:
-        bm_cap = flows_co2[('atm', 'bec' + '_ghg', '')].squeeze().rename_axis(None)
+        # bm_cap = flows_co2[('atm', 'bec' + '_ghg', '')].squeeze().rename_axis(None)
         blg_cap = flows_co2[('atm', 'blg' + '_ghg', '')].squeeze().rename_axis(None)
         blg_cap_cc = flows_co2[('atm', 'blg' + '_ghg', 'cc')].squeeze().rename_axis(None)
         dac_cap = flows_co2[('atm', 'stm', '')].squeeze().rename_axis(None)
-        bm_cap = bm_cap.sum(axis=1)
-        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['luf_ghg'] - bm_cap - dac_cap - blg_cap - blg_cap_cc
+        # bm_cap = bm_cap.sum(axis=1)
+        values_atm = tot_emm['atm'] - tot_emm['bm_ghg'] - tot_emm['luf_ghg'] - dac_cap - blg_cap - blg_cap_cc
         flows_co2[('atm',en_code + '_ghg',  'net')] = values_atm
         
     if country != 'EU':
@@ -350,6 +362,7 @@ def prepare_sepia(countries):
      output_dir = f"results/{study}/country_csvs"
      os.makedirs(output_dir, exist_ok=True)
      filtered_flows.to_csv(f"{output_dir}/natural_gas_imports_{country}.csv", index=True)
+      
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
     tot_ghg[country] = flows_ghg
@@ -545,14 +558,12 @@ def prepare_sepia(countries):
     ghg_sector['lufnes_ghg'] = -ghg_sector['lufnes_ghg']
     ghg_sector['blg_ghg'] = -ghg_sector['blg_ghg']
     ghg_sector['dac_ghg'] = -ghg_sector['dac_ghg']
-    ghg_sector['bec_ghg'] = -ghg_sector['bec_ghg']
     ghg_sector['blq_ghg'] = -ghg_sector['blq_ghg']
     ghg_sector['bmc_ghg'] = -ghg_sector['bmc_ghg']
     ghg_source = tot_ghg[country].groupby(level='Target', axis=1).sum()
     ghg_source['lufnes_ghg'] = -ghg_source['lufnes_ghg']
     ghg_source['blg_ghg'] = -ghg_source['blg_ghg']
     ghg_source['dac_ghg'] = -ghg_source['dac_ghg']
-    ghg_source['bec_ghg'] = -ghg_source['bec_ghg']
     ghg_source['blq_ghg'] = -ghg_source['blq_ghg']
     ghg_source['bmc_ghg'] = -ghg_source['bmc_ghg']
     

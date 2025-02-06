@@ -178,8 +178,6 @@ if __name__ == "__main__":
         .assign(Technology=replace_natural_gas_technology)
         .assign(Fueltype=replace_natural_gas_fueltype)
     )
-    ppl.loc[ppl['Name'] == 'Doel', 'Capacity'] = 2000
-    ppl.loc[ppl['Name'] == 'Doel', 'DateOut'] = 2033
     # Correct bioenergy for countries where possible
     opsd = pm.data.OPSD_VRE().powerplant.convert_country_to_alpha2()
     opsd = opsd.query('Country in @countries and Fueltype == "Bioenergy"')

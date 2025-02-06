@@ -438,11 +438,10 @@ def storage_capacities(country):
     colors = config["plotting"]["tech_colors"]
     colors["Thermal Energy storage"] = colors["urban central water tanks"]
     colors["Grid-scale"] = 'green'
-    colors["home battery"] = 'blue'
     
     fig = go.Figure()
     groups = [
-        ["Grid-scale battery", "home battery", "V2G"],
+        ["Grid-scale battery", "V2G"],
         ["Thermal Energy storage"],
         ["gas"],
     ]
@@ -470,7 +469,7 @@ def storage_capacities(country):
 
     # Update layout
     fig.update_layout(height=600, width=1400, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit)
-    logo['y']=1.021
+    logo['y']=1.05
     fig.add_layout_image(logo)
     return fig
 

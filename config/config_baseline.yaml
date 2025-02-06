@@ -29,7 +29,7 @@ run:
   shared_cutouts: true
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#foresight
-foresight: overnight
+foresight: myopic
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#scenario
 # Wildcard docs in https://pypsa-eur.readthedocs.io/en/latest/wildcards.html
@@ -47,7 +47,7 @@ scenario:
   opts:
   - ''
   sector_opts:
-  - Co2L0.8-1H-T-H-B-I-A-dist1
+  - 1H-T-H-B-I-A-dist1
   planning_horizons:
   - 2020
   #- 2030
@@ -82,7 +82,7 @@ enable:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#co2-budget
 co2_budget:
-  2020: 0.701
+  2020: 0.801
   2025: 0.524
   2030: 0.45
   2035: 0.150
@@ -196,6 +196,8 @@ atlite:
       sarah_dir:
       features: [influx, temperature]
 
+imposed_values:
+  country: BE
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
   onwind:
@@ -317,6 +319,8 @@ TYNDP_values:
   no_se: 3695
   pl_sk: 1980
   be_de: 0
+  expansion_limit: true
+  max_expansion: 1.0
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#conventional
 conventional:
   unit_commitment: false
@@ -385,11 +389,6 @@ pypsa_eur:
   - offwind-dc
   - solar
   - ror
-  - biomass
-  - CCGT
-  - OCGT
-  - nuclear
-  - lignite
   StorageUnit:
   - PHS
   - hydro
@@ -437,7 +436,7 @@ solar_thermal:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#existing-capacities
 existing_capacities:
-  grouping_years_power: [1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]
+  grouping_years_power: [1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020]
   grouping_years_heat: [1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019] # these should not extend 2020
   threshold_capacity: 10
   default_heating_lifetime: 20
@@ -599,7 +598,7 @@ sector:
     min_size: 3
     max_size: 25
     years_of_storage: 25
-  co2_sequestration_potential: 200
+  co2_sequestration_potential: 0
   co2_sequestration_cost: 10
   co2_sequestration_lifetime: 50
   co2_spatial: true
@@ -818,7 +817,7 @@ solving:
   #tmpdir: "path/to/tmp"
   options:
     clip_p_max_pu: 1.e-2
-    load_shedding: false
+    load_shedding: true
     noisy_costs: true
     skip_iterations: true
     rolling_horizon: false

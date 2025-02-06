@@ -194,7 +194,7 @@ def add_co2_sequestration_limit(n, foresight, config):
     else:
         periods = [np.nan]
         names = pd.Index(["co2_sequestration_limit"])
-    if foresight == "overnight":
+    if config["run"]["name"] == "baseline":
       limit = config["sector"]["co2_sequestration_potential"]
     else:
       current_horizon = int(snakemake.wildcards.planning_horizons)
@@ -405,14 +405,27 @@ def prepare_network(
     return n
 
 def imposed_values_genertion(n, foresight, config):
-    ''' This funtion impse values for generation technologies. For example the
+   ''' This funtion impse values for generation technologies. For example the
     wind offshore, onshore, solar and nuclear capacities are constraint for 
     Belgium for year 2030 considering the values from ELIA. Also it considers
     that after 2030 the gas storage site at Loenhout will be a H2 hydrogen site.'''
+   country = config["imposed_values"]["country"]
+   suffix = "1 0"
+   if config["run"]["name"] == "baseline":
+    # Correcting pre-installed capacities of solar, CCGT and wind for Belgium in 2020
+    n.generators.loc[f"{country}{suffix} solar-2020", "p_nom"] = 0
+    n.generators.loc[f"{country}{suffix} solar-2020", "p_nom_min"] = 0
+    n.generators.loc[f"{country}{suffix} offwind-ac-2020", "p_nom"] = 0
+    n.generators.loc[f"{country}{suffix} offwind-ac-2020", "p_nom_min"] = 0
+    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom_min"] = 0
+    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom"] = 0
+    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom"] = 900
+    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom_min"] = 900
+    n.links.loc[f"{country}{suffix} CCGT-2015", "p_nom"] = 2000
+   else:  
     if foresight == "myopic":
-     country = config["imposed_values"]["country"]
-     suffix = "1 0"
-     if f"{country}{suffix} nuclear-1975" in n.links.index:
+     
+     if f"{country}{suffix} solar-2030" in n.generators.index:
         
       #getting values from config file
       
@@ -458,22 +471,55 @@ def imposed_values_genertion(n, foresight, config):
       n.links.loc[f"{country}{suffix} nuclear-1975", "p_nom"] = nuclear_max
       #Imposing battery storage potential for Belgium in 2030 with recent approved plans
       n.stores.loc[f"{country}{suffix} battery-2030", "e_nom_min"] = battery
-     
+      # Correcting pre-insatlled CCGT capacity https://transparency.entsoe.eu/generation/r2/installedGenerationCapacityAggregation/show?name=&defaultValue=false&viewType=TABLE&areaType=BZN&atch=false&dateTime.dateTime=01.01.2020+00:00|UTC|YEAR&dateTime.endDateTime=01.01.2025+00:00|UTC|YEAR&area.values=CTY|10YBE----------2!BZN|10YBE----------2&productionType.values=B01&productionType.values=B25&productionType.values=B02&productionType.values=B03&productionType.values=B04&productionType.values=B05&productionType.values=B06&productionType.values=B07&productionType.values=B08&productionType.values=B09&productionType.values=B10&productionType.values=B11&productionType.values=B12&productionType.values=B13&productionType.values=B14&productionType.values=B20&productionType.values=B15&productionType.values=B16&productionType.values=B17&productionType.values=B18&productionType.values=B19
+      n.links.loc[f"{country}{suffix} CCGT-2015", "p_nom"] = 2000
+      #Considering min 150 MW pf electrolysers in 2030, https://observatory.clean-hydrogen.europa.eu/hydrogen-landscape/policies-and-standards/national-strategies/belgium?utm_source=chatgpt.com
+      n.links.loc[f"{country}{suffix} H2 Electrolysis-2030", "p_nom_min"] = 150
+      #Assuming limited Hydrogen pipelines for Belgium in 2030 
+      mask = (
+          n.links["carrier"].isin(["H2 pipeline", "H2 pipeline retrofitted"]) & 
+          (n.links["bus0"].str.contains("BE") | n.links["bus1"].str.contains("BE"))
+        )
+      n.links.loc[mask, "p_nom_max"] /= 10
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
      solar_max_pot = config["imposed_values"]["solar_rooftop_max"]
+     max_DAC = 600 #tons/h assuming only 5% of emissions comapred to 1990 values will be removed by DAC
      if f"{country}{suffix} solar-2040" in n.generators.index:
-          n.generators.loc[f"{country}{suffix} solar rooftop-2040", "p_nom_max"] = solar_max_pot
+          solar = n.generators[
+            n.generators.index.str.contains(country) & 
+            n.generators.index.str.contains('solar') & 
+            ~n.generators.index.str.contains('-2040')
+          ].p_nom.sum()
+          if config["run"]["name"] == "ref":
+           dac = n.links[
+            n.links.index.str.contains(country) & 
+            n.links.index.str.contains('DAC') & 
+            ~n.links.index.str.contains('-2040')].p_nom.sum()
+           n.links.loc[f"{country}{suffix} urban central DAC-2040", "p_nom_max"] = (max_DAC - dac) * 0.5
+          n.generators.loc[f"{country}{suffix} solar rooftop-2040", "p_nom_max"] = (solar_max_pot - solar) * 0.35
           offwind_max_val = config["imposed_values"]["offshore_max"]
           offwind_val = n.generators[
             n.generators.index.str.contains(country) & 
             n.generators.index.str.contains('offwind')].p_nom_opt.sum()
           offwind_max = offwind_max_val - offwind_val
           n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] = offwind_max
+          
           #Imposing no underground gas storage potential for Belgium in 2040 considering it would be converted into H2
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
      if f"{country}{suffix} solar-2050" in n.generators.index:
-          n.generators.loc[f"{country}{suffix} solar rooftop-2050", "p_nom_max"] = solar_max_pot
+          solar = n.generators[
+            n.generators.index.str.contains(country) & 
+            n.generators.index.str.contains('solar') & 
+            ~n.generators.index.str.contains('-2050')
+          ].p_nom.sum()
+          if config["run"]["name"] == "ref":
+           dac = n.links[
+            n.links.index.str.contains(country) & 
+            n.links.index.str.contains('DAC') & 
+            ~n.links.index.str.contains('-2050')].p_nom.sum()
+           n.links.loc[f"{country}{suffix} urban central DAC-2050", "p_nom_max"] = max_DAC - dac
+          n.generators.loc[f"{country}{suffix} solar rooftop-2050", "p_nom_max"] = (solar_max_pot - solar) * 0.7
           offwind_max_val = config["imposed_values"]["offshore_max"]
           offwind_val = n.generators[
             n.generators.index.str.contains(country) & 
@@ -483,8 +529,24 @@ def imposed_values_genertion(n, foresight, config):
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
        
-    return n       
+   return n       
 
+def correct_nuclear_genertion(n, foresight, countries):
+    ''' This function corrects the nuclear modeling as in myopic pathways its modeled as links. And 
+    with links the efficiency between nodes completely underestimate the nuclear generation. The correction
+    modifies the efficiencies and capacity factors to get correct generation patterns from pre installed nuclear'''
+    if foresight == "myopic":
+        mask = (n.links["carrier"] == "nuclear") & (n.links["build_year"] < 2030)
+        n.links.loc[mask, "efficiency"] = 1
+        for country in countries:
+         capacity_factors = pd.read_csv(snakemake.input.capacity_factors, index_col=0)
+         mask = (n.links["carrier"] == "nuclear") & (n.links["build_year"] < 2030) & (n.links["bus1"].str.contains(country))
+         n.links.loc[mask, country] = n.links.loc[mask, "bus1"].str[:2] 
+         n.links.loc[mask, "p_max_pu"] = n.links.loc[mask, country].map(capacity_factors["factor"])
+         n.links.drop(columns=country, inplace=True)
+         
+    return n
+       
 def imposed_values_sensitivity_offshore(n, foresight, config):
   ''' This funtion impse values for offshore technologies for Belgium considering additional
     capacity in northsea'''
@@ -556,7 +618,9 @@ def imposed_TYNDP(n, foresight, config):
       ("NO2 0", "SE2 0"): {"s_nom": "no_se", "s_nom_min": "no_se"},
       ("BE1 0", "DE1 0"): {"s_nom": "be_de", "s_nom_min": "be_de"},
       ("PL1 0", "SK1 0"): {"s_nom": "pl_sk", "s_nom_min": "pl_sk"},}
-   if foresight == "overnight":
+   country = config["imposed_values"]["country"]
+   suffix = "1 0"
+   if config["run"]["name"] == "baseline":
       
       for index, row in n.lines.iterrows():
        key = (row["bus0"], row["bus1"])
@@ -576,7 +640,7 @@ def imposed_TYNDP(n, foresight, config):
    else:        
       country = config["imposed_values"]["country"]
       suffix = "1 0"
-      if f"{country}{suffix} nuclear-1975" in n.links.index:
+      if f"{country}{suffix} solar-2030" in n.generators.index:
       
        for index, row in n.lines.iterrows():
         key = (row["bus0"], row["bus1"])
@@ -1563,6 +1627,12 @@ if __name__ == "__main__":
         n,
         config=snakemake.config,
         foresight=snakemake.params.foresight,)
+    
+    n = correct_nuclear_genertion(
+        n,
+        countries=snakemake.params.countries,
+        foresight=snakemake.params.foresight,)
+    
     n = imposed_values_sensitivity_offshore(
         n,
         foresight=snakemake.params.foresight,

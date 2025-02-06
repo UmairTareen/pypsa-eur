@@ -630,7 +630,7 @@ def add_co2_tracking(n, costs, options):
         carrier="co2 stored",
         unit="t_co2",
     )
-    if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
+    if config["run"]["name"] in ["baseline", "suff"] or "sensitivity_analysis" in config["run"]["name"]:
         value = False
     else:
         value = True
@@ -1084,51 +1084,6 @@ def insert_electricity_distribution_grid(n, costs):
         lifetime=costs.at["solar-rooftop", "lifetime"],
     )
 
-    n.add("Carrier", "home battery")
-
-    n.madd(
-        "Bus",
-        nodes + " home battery",
-        location=nodes,
-        carrier="home battery",
-        unit="MWh_el",
-    )
-
-    n.madd(
-        "Store",
-        nodes + " home battery",
-        bus=nodes + " home battery",
-        location=nodes,
-        e_cyclic=True,
-        e_nom_extendable=True,
-        carrier="home battery",
-        capital_cost=costs.at["home battery storage", "fixed"],
-        lifetime=costs.at["battery storage", "lifetime"],
-    )
-
-    n.madd(
-        "Link",
-        nodes + " home battery charger",
-        bus0=nodes + " low voltage",
-        bus1=nodes + " home battery",
-        carrier="home battery charger",
-        efficiency=costs.at["battery inverter", "efficiency"] ** 0.5,
-        capital_cost=costs.at["home battery inverter", "fixed"],
-        p_nom_extendable=True,
-        lifetime=costs.at["battery inverter", "lifetime"],
-    )
-
-    n.madd(
-        "Link",
-        nodes + " home battery discharger",
-        bus0=nodes + " home battery",
-        bus1=nodes + " low voltage",
-        carrier="home battery discharger",
-        efficiency=costs.at["battery inverter", "efficiency"] ** 0.5,
-        marginal_cost=options["marginal_cost_storage"],
-        p_nom_extendable=True,
-        lifetime=costs.at["battery inverter", "lifetime"],
-    )
 
 
 def insert_gas_distribution_costs(n, costs):
@@ -1172,13 +1127,16 @@ def add_storage_and_grids(n, costs):
     n.add("Carrier", "H2")
 
     n.madd("Bus", nodes + " H2", location=nodes, carrier="H2", unit="MWh_LHV")
-
+    if config["run"]["name"] == "baseline":
+        value = False
+    else:
+        value = True
     n.madd(
         "Link",
         nodes + " H2 Electrolysis",
         bus1=nodes + " H2",
         bus0=nodes,
-        p_nom_extendable=True,
+        p_nom_extendable=value,
         carrier="H2 Electrolysis",
         efficiency=costs.at["electrolysis", "efficiency"],
         capital_cost=costs.at["electrolysis", "fixed"],
@@ -1263,12 +1221,15 @@ def add_storage_and_grids(n, costs):
         "hydrogen storage tank type 1 including compressor", "fixed"
     ]
     nodes_overground = h2_caverns.index.symmetric_difference(nodes)
-
+    if config["run"]["name"] == "baseline":
+        value = False
+    else:
+        value = True
     n.madd(
         "Store",
         nodes_overground + " H2 Store",
         bus=nodes_overground + " H2",
-        e_nom_extendable=True,
+        e_nom_extendable=value,
         e_cyclic=True,
         carrier="H2 Store",
         capital_cost=h2_capital_cost,
@@ -1432,13 +1393,16 @@ def add_storage_and_grids(n, costs):
     n.add("Carrier", "battery")
 
     n.madd("Bus", nodes + " battery", location=nodes, carrier="battery", unit="MWh_el")
-
+    if config["run"]["name"] == "baseline":
+        value = False
+    else:
+        value = True
     n.madd(
         "Store",
         nodes + " battery",
         bus=nodes + " battery",
         e_cyclic=True,
-        e_nom_extendable=True,
+        e_nom_extendable=value,
         carrier="battery",
         capital_cost=costs.at["battery storage", "fixed"],
         lifetime=costs.at["battery storage", "lifetime"],
@@ -1452,7 +1416,7 @@ def add_storage_and_grids(n, costs):
         carrier="battery charger",
         efficiency=costs.at["battery inverter", "efficiency"] ** 0.5,
         capital_cost=costs.at["battery inverter", "fixed"],
-        p_nom_extendable=True,
+        p_nom_extendable=value,
         lifetime=costs.at["battery inverter", "lifetime"],
     )
 
@@ -1464,7 +1428,7 @@ def add_storage_and_grids(n, costs):
         carrier="battery discharger",
         efficiency=costs.at["battery inverter", "efficiency"] ** 0.5,
         marginal_cost=options["marginal_cost_storage"],
-        p_nom_extendable=True,
+        p_nom_extendable=value,
         lifetime=costs.at["battery inverter", "lifetime"],
     )
 
@@ -1957,7 +1921,10 @@ def add_heat(n, costs):
                 capital_cost=costs.at[name_type + " water tank storage", "fixed"],
                 lifetime=costs.at[name_type + " water tank storage", "lifetime"],
             )
-
+        if config["run"]["name"] == "baseline":
+         value = False
+        else:
+         value = True
         if options["resistive_heaters"]:
             key = f"{name_type} resistive heater"
 
@@ -1971,7 +1938,7 @@ def add_heat(n, costs):
                 capital_cost=costs.at[key, "efficiency"]
                 * costs.at[key, "fixed"]
                 * overdim_factor,
-                p_nom_extendable=True,
+                p_nom_extendable=value,
                 lifetime=costs.at[key, "lifetime"],
             )
 
@@ -2009,7 +1976,10 @@ def add_heat(n, costs):
                 p_max_pu=solar_thermal[nodes],
                 lifetime=costs.at[name_type + " solar thermal", "lifetime"],
             )
-
+        if config["run"]["name"] == "baseline":
+         value = False
+        else:
+         value = True
         if options["chp"] and name == "urban central":
             # add gas CHP; biomass CHP is added in biomass section
             n.madd(
@@ -2020,7 +1990,7 @@ def add_heat(n, costs):
                 bus2=nodes + " urban central heat",
                 bus3="co2 atmosphere",
                 carrier="urban central gas CHP",
-                p_nom_extendable=True,
+                p_nom_extendable=value,
                 capital_cost=costs.at["central gas CHP", "fixed"]
                 * costs.at["central gas CHP", "efficiency"],
                 marginal_cost=costs.at["central gas CHP", "VOM"],
@@ -2343,13 +2313,16 @@ def add_biomass(n, costs):
             lambda x: transport_costs[x[:2]]
         )
         average_distance = 200  # km #TODO: validate this assumption
-
+        if config["run"]["name"] == "baseline":
+            value = 0
+        else:
+            value = 10000
         n.madd(
             "Generator",
             spatial.biomass.nodes,
             bus=spatial.biomass.nodes,
             carrier="solid biomass",
-            p_nom=10000,
+            p_nom=value,
             marginal_cost=costs.at["solid biomass", "fuel"]
             + bus_transport_costs * average_distance,
         )
@@ -2367,7 +2340,10 @@ def add_biomass(n, costs):
         urban_central = urban_central.str[: -len(" urban central heat")]
 
         key = "central solid biomass CHP"
-
+        if config["run"]["name"] == "baseline":
+            value = False
+        else:
+            value = True
         n.madd(
             "Link",
             urban_central + " urban central solid biomass CHP",
@@ -2375,7 +2351,7 @@ def add_biomass(n, costs):
             bus1=urban_central,
             bus2=urban_central + " urban central heat",
             carrier="urban central solid biomass CHP",
-            p_nom_extendable=True,
+            p_nom_extendable=value,
             capital_cost=costs.at[key, "fixed"] * costs.at[key, "efficiency"],
             marginal_cost=costs.at[key, "VOM"],
             efficiency=costs.at[key, "efficiency"],
@@ -2422,6 +2398,10 @@ def add_biomass(n, costs):
 
     if options["biomass_boiler"]:
         # TODO: Add surcharge for pellets
+        if config["run"]["name"] == "baseline":
+            value = False
+        else:
+            value = True
         nodes = pop_layout.index
         for name in [
             "residential rural",
@@ -2432,7 +2412,7 @@ def add_biomass(n, costs):
             n.madd(
                 "Link",
                 nodes + f" {name} biomass boiler",
-                p_nom_extendable=True,
+                p_nom_extendable=value,
                 bus0=spatial.biomass.df.loc[nodes, "nodes"].values,
                 bus1=nodes + f" {name} heat",
                 carrier=name + " biomass boiler",
@@ -3119,7 +3099,10 @@ def add_industry(n, costs):
         p_nom_extendable=True,
         efficiency=1.0,
     )
-
+    if config["run"]["name"] == "baseline":
+        value = False
+    else:
+        value = True
     # assume enough local waste heat for CC
     n.madd(
         "Link",
@@ -3129,7 +3112,7 @@ def add_industry(n, costs):
         bus1="co2 atmosphere",
         bus2=spatial.co2.nodes,
         carrier="process emissions CC",
-        p_nom_extendable=True,
+        p_nom_extendable=value,
         capital_cost=costs.at["cement capture", "fixed"],
         efficiency=1 - costs.at["cement capture", "capture_rate"],
         efficiency2=costs.at["cement capture", "capture_rate"],

@@ -111,6 +111,7 @@ rule solve_sector_network_myopic:
         foresight=config_provider("foresight"),
         planning_horizons=config_provider("scenario", "planning_horizons"),
         sector=config_provider("sector"),
+        countries=config_provider("countries"),
         co2_sequestration_potential=config_provider(
             "sector", "co2_sequestration_potential", default=200
         ),
@@ -121,6 +122,7 @@ rule solve_sector_network_myopic:
         costs=("data/costs_{planning_horizons}.csv"),
         co2_totals_name=resources("co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv"),
         ghg_emissions_agri = "data/clever_AFOLUB_{planning_horizons}.csv",
+        capacity_factors = "data/nuclear_p_max_pu.csv",
         biomass_potentials=resources(
             "biomass_potentials_s{simpl}_{clusters}_{planning_horizons}.csv"
         ),

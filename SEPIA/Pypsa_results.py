@@ -33,7 +33,7 @@ def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
     if "heat pump" in tech or "resistive heater" in tech:
         return "power-to-heat"
-    if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
+    if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction","shipping methanol"]:
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
@@ -41,7 +41,7 @@ def rename_techs_tyndp(tech):
         return "Domestic electricity network"
     elif tech in [ "CHP", "H2 Fuel Cell"]:
         return "CHP"
-    elif tech in [ "battery charger", "battery discharger"]:
+    elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G"]:
         return "battery storage"
     elif "solar" in tech:
         return "solar"
@@ -51,8 +51,16 @@ def rename_techs_tyndp(tech):
         return "offshore wind"
     elif tech in ["CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
          return "CCS"
-    elif tech in ["biomass", "biomass boiler", "solid biomass", "solid biomass for industry"]:
+    elif tech in ["biomass", "solid biomass", "solid biomass for industry"]:
          return "biomass"
+    elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil"]:
+         return "oil"
+    elif "gas for industry" in tech:
+        return "gas"
+    elif "H2" in tech:
+        return "H2 storage"
+    elif "hot water storage" in tech:
+        return "thermal energy storage"
     elif "load" in tech:
         return "load shedding"
     elif tech == "coal" or tech == "lignite":
@@ -202,22 +210,13 @@ def costs(countries, results):
       mask = ~(result_df['tech'].isin(['load shedding']))
       result_df = result_df[mask]
       #calculationg gas costs for each country as in pypsa they are treated on EU level
-      gas_val = pd.read_csv(f"results/{study}/country_csvs/natural_gas_imports_{country}.csv")
-      gas_val = gas_val.set_index(gas_val.columns[0])
-      gas_val = gas_val.iloc[2:]
-      gas_val = gas_val.apply(pd.to_numeric, errors='coerce')
-      gas_val.index = gas_val.index.astype(int)
-      desired_years = [2020, 2030, 2040, 2050]
-      if len(gas_val) >= len(desired_years):
-        gas_val = gas_val.reset_index(drop=True).iloc[:len(desired_years)]
-        gas_val.index = desired_years
-        gas_val = gas_val.clip(lower=0)
+      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 24", index_col=0,skiprows=2)
       if country != 'EU':
         for year in planning_horizons:
-         if year in gas_val.index:
-          result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[year] * options.loc[("gas", "fuel"), "value"] * 1e6
+         result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[year, "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
       else:
          result_df = result_df
+      result_df.iloc[:, 1:] = result_df.iloc[:, 1:].clip(lower=0) 
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -1015,6 +1014,8 @@ def plot_map(
 ):
     tech_colors = snakemake.params.plotting["tech_colors"]
     tech_colors["Domestic electricity network"] = tech_colors["electricity distribution grid"]
+    tech_colors["thermal energy storage"] = tech_colors["hot water storage"]
+    tech_colors["H2 storage"] = tech_colors["H2"]
     n = network.copy()
     assign_location(n)
     # Drop non-electric buses so they don't clutter the plot
@@ -1548,8 +1549,6 @@ def plot_ch4_map(network):
     first_index = n.generators.index[0]
     if "-" in first_index and first_index.split("-")[-1].isdigit():
         planning_horizon = int(first_index.split("-")[-1])  # Extract year
-    else:
-        planning_horizon = 2020
     for country in countries:
      gas_val = pd.read_csv(f"results/{study}/country_csvs/natural_gas_imports_{country}.csv")
      gas_val = gas_val.set_index(gas_val.columns[0])
@@ -2057,9 +2056,8 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
     colors = config["plotting"]["tech_colors"]
     colors["Thermal Energy storage"] = colors["urban central water tanks"]
     colors["Grid-scale"] = 'green'
-    colors["home battery"] = 'blue'
     groups = [
-        ["Grid-scale battery", "home battery", "V2G"],
+        ["Grid-scale battery", "V2G"],
         ["Thermal Energy storage"],
         ["gas"],
     ]

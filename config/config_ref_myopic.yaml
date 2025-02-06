@@ -261,7 +261,7 @@ imposed_values:
   offshore_dc: 2000
   solar: 12000
   solar_rooftop: 2000
-  solar_rooftop_max: 80000
+  solar_rooftop_max: 90000
   offshore_max: 8000
   battery: 4000  # The planned power capacity is around 1GW, assuming Energy to power ratio of 4
   

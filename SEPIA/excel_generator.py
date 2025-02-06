@@ -8,7 +8,7 @@ from pypsa.descriptors import get_switchable_as_dense as as_dense
 def prepare_files(simpl, cluster, opt, sector_opt, ll):
     """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
 
-    file_name = f'elec_s_{cluster}_lv1.0__Co2L0.8-{sector_opt}_2020.nc'
+    file_name = f'elec_s_{cluster}_lv1.0__{sector_opt}_2020.nc'
     new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
     source_directory = 'results/baseline/postnetworks/'
     destination_directory = f'results/{study}/postnetworks/'
@@ -1162,11 +1162,11 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
         # solid biomass to gas
         if country == 'EU':
             value = -(
-                n.snapshot_weightings.generators @ n.links_t.p1.filter(like="solid biomass solid biomass to gas")
+                n.snapshot_weightings.generators @ n.links_t.p1.filter(regex=r"solid biomass solid biomass to gas(-\d{4})?$")
                 ).sum()
         else:
             value = -(
-                    n.snapshot_weightings.generators @ n.links_t.p1.filter(like="solid biomass solid biomass to gas")
+                    n.snapshot_weightings.generators @ n.links_t.p1.filter(regex=r"solid biomass solid biomass to gas(-\d{4})?$")
                     .filter(like=country)).sum()
         collection.append(
             pd.Series(
