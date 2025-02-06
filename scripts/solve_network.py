@@ -411,7 +411,10 @@ def imposed_values_genertion(n, foresight, config):
     that after 2030 the gas storage site at Loenhout will be a H2 hydrogen site.'''
    country = config["imposed_values"]["country"]
    suffix = "1 0"
-   if config["run"]["name"] == "baseline":
+   first_index = n.generators.index[0]
+   if "-" in first_index and first_index.split("-")[-1].isdigit():
+       planning_horizon = int(first_index.split("-")[-1])  # Extract year
+   if planning_horizon == 2020:
     # Correcting pre-installed capacities of solar, CCGT and wind for Belgium in 2020
     n.generators.loc[f"{country}{suffix} solar-2020", "p_nom"] = 0
     n.generators.loc[f"{country}{suffix} solar-2020", "p_nom_min"] = 0
@@ -424,8 +427,7 @@ def imposed_values_genertion(n, foresight, config):
     n.links.loc[f"{country}{suffix} CCGT-2015", "p_nom"] = 2000
    else:  
     if foresight == "myopic":
-     
-     if f"{country}{suffix} solar-2030" in n.generators.index:
+     if planning_horizon == 2030:
         
       #getting values from config file
       
@@ -484,7 +486,7 @@ def imposed_values_genertion(n, foresight, config):
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
      solar_max_pot = config["imposed_values"]["solar_rooftop_max"]
      max_DAC = 600 #tons/h assuming only 5% of emissions comapred to 1990 values will be removed by DAC
-     if f"{country}{suffix} solar-2040" in n.generators.index:
+     if planning_horizon == 2040:
           solar = n.generators[
             n.generators.index.str.contains(country) & 
             n.generators.index.str.contains('solar') & 
@@ -507,7 +509,7 @@ def imposed_values_genertion(n, foresight, config):
           #Imposing no underground gas storage potential for Belgium in 2040 considering it would be converted into H2
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
           # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
-     if f"{country}{suffix} solar-2050" in n.generators.index:
+     if planning_horizon == 2050:
           solar = n.generators[
             n.generators.index.str.contains(country) & 
             n.generators.index.str.contains('solar') & 
@@ -618,9 +620,11 @@ def imposed_TYNDP(n, foresight, config):
       ("NO2 0", "SE2 0"): {"s_nom": "no_se", "s_nom_min": "no_se"},
       ("BE1 0", "DE1 0"): {"s_nom": "be_de", "s_nom_min": "be_de"},
       ("PL1 0", "SK1 0"): {"s_nom": "pl_sk", "s_nom_min": "pl_sk"},}
-   country = config["imposed_values"]["country"]
-   suffix = "1 0"
-   if config["run"]["name"] == "baseline":
+   
+   first_index = n.generators.index[0]
+   if "-" in first_index and first_index.split("-")[-1].isdigit():
+       planning_horizon = int(first_index.split("-")[-1])  # Extract year
+   if planning_horizon == 2020:
       
       for index, row in n.lines.iterrows():
        key = (row["bus0"], row["bus1"])
@@ -638,9 +642,7 @@ def imposed_TYNDP(n, foresight, config):
       # n.links.loc["T33", "p_nom"] = config["TYNDP_values"]["T33"]
       # n.links.loc["T34", "p_nom"] = config["TYNDP_values"]["T34"] 
    else:        
-      country = config["imposed_values"]["country"]
-      suffix = "1 0"
-      if f"{country}{suffix} solar-2030" in n.generators.index:
+      if planning_horizon == 2030:
       
        for index, row in n.lines.iterrows():
         key = (row["bus0"], row["bus1"])
