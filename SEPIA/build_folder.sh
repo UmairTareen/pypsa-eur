@@ -5,38 +5,108 @@ mkdir -p ../results/html_folder/other_countries/dispatch_plots/
 
 cp -R ../results/ref/country_csvs ../results/html_folder/csvs_ref
 cp -R ../results/suff/country_csvs ../results/html_folder/csvs_suff
-cp ../results/suff/htmls/BE_combined_chart.html ../results/html_folder/BE_combined_chart_suff.html
-cp ../results/ref/htmls/BE_combined_chart.html ../results/html_folder/BE_combined_chart_ref.html
-cp ../results/suff/htmls/Results_BE.html ../results/html_folder/BE_results_suff.html
-cp ../results/ref/htmls/Results_BE.html ../results/html_folder/BE_results_ref.html
+cp ../results/suff/htmls/BE_emissions_suff.html ../results/html_folder/BE_emissions_suff.html
+cp ../results/ref/htmls/BE_emissions_ref.html ../results/html_folder/BE_emissions_ref.html
+cp ../results/suff/htmls/BE_fec_suff.html ../results/html_folder/BE_fec_suff.html
+cp ../results/ref/htmls/BE_fec_ref.html ../results/html_folder/BE_fec_ref.html
+cp ../results/suff/htmls/BE_sankeys_suff.html ../results/html_folder/BE_sankeys_suff.html
+cp ../results/ref/htmls/BE_sankeys_ref.html ../results/html_folder/BE_sankeys_ref.html
+cp ../results/suff/htmls/BE_suff_capacities.html ../results/html_folder/BE_suff_capacities.html
+cp ../results/ref/htmls/BE_ref_capacities.html ../results/html_folder/BE_ref_capacities.html
+cp ../results/suff/htmls/BE_suff_costs.html ../results/html_folder/BE_suff_costs.html
+cp ../results/ref/htmls/BE_ref_costs.html ../results/html_folder/BE_ref_costs.html
+cp ../results/suff/htmls/BE_suff_demands.html ../results/html_folder/BE_suff_demands.html
+cp ../results/ref/htmls/BE_ref_demands.html ../results/html_folder/BE_ref_demands.html
+cp ../results/suff/htmls/BE_suff_dispatch_plots.html ../results/html_folder/BE_suff_dispatch_plots.html
+cp ../results/ref/htmls/BE_ref_dispatch_plots.html ../results/html_folder/BE_ref_dispatch_plots.html
+cp ../results/suff/htmls/BE_suff_maps.html ../results/html_folder/BE_suff_maps.html
+cp ../results/ref/htmls/BE_ref_maps.html ../results/html_folder/BE_ref_maps.html
 
-cp ../results/suff/htmls/EU_combined_chart.html ../results/html_folder/EU_combined_chart_suff.html
-cp ../results/ref/htmls/EU_combined_chart.html ../results/html_folder/EU_combined_chart_ref.html
-cp ../results/suff/htmls/Results_EU.html ../results/html_folder/EU_results_suff.html
-cp ../results/ref/htmls/Results_EU.html ../results/html_folder/EU_results_ref.html
+cp ../results/suff/htmls/EU_emissions_suff.html ../results/html_folder/EU_emissions_suff.html
+cp ../results/ref/htmls/EU_emissions_ref.html ../results/html_folder/EU_emissions_ref.html
+cp ../results/suff/htmls/EU_fec_suff.html ../results/html_folder/EU_fec_suff.html
+cp ../results/ref/htmls/EU_fec_ref.html ../results/html_folder/EU_fec_ref.html
+cp ../results/suff/htmls/EU_sankeys_suff.html ../results/html_folder/EU_sankeys_suff.html
+cp ../results/ref/htmls/EU_sankeys_ref.html ../results/html_folder/EU_sankeys_ref.html
+cp ../results/suff/htmls/EU_suff_capacities.html ../results/html_folder/EU_suff_capacities.html
+cp ../results/ref/htmls/EU_ref_capacities.html ../results/html_folder/EU_ref_capacities.html
+cp ../results/suff/htmls/EU_suff_costs.html ../results/html_folder/EU_suff_costs.html
+cp ../results/ref/htmls/EU_ref_costs.html ../results/html_folder/EU_ref_costs.html
+cp ../results/suff/htmls/EU_suff_demands.html ../results/html_folder/EU_suff_demands.html
+cp ../results/ref/htmls/EU_ref_demands.html ../results/html_folder/EU_ref_demands.html
+cp ../results/suff/htmls/EU_suff_dispatch_plots.html ../results/html_folder/EU_suff_dispatch_plots.html
+cp ../results/ref/htmls/EU_ref_dispatch_plots.html ../results/html_folder/EU_ref_dispatch_plots.html
+cp ../results/suff/htmls/EU_suff_maps.html ../results/html_folder/EU_suff_maps.html
+cp ../results/ref/htmls/EU_ref_maps.html ../results/html_folder/EU_ref_maps.html
 
-cp ../results/suff/htmls/FR_combined_chart.html ../results/html_folder/other_countries/FR_combined_chart_suff.html
-cp ../results/ref/htmls/FR_combined_chart.html ../results/html_folder/other_countries/FR_combined_chart_ref.html
-cp ../results/suff/htmls/Results_FR.html ../results/html_folder/other_countries/FR_results_suff.html
-cp ../results/ref/htmls/Results_FR.html ../results/html_folder/other_countries/FR_results_ref.html
+cp ../results/suff/htmls/FR_emissions_suff.html ../results/html_folder/other_countries/FR_emissions_suff.html
+cp ../results/ref/htmls/FR_emissions_ref.html ../results/html_folder/other_countries/FR_emissions_ref.html
+cp ../results/suff/htmls/FR_fec_suff.html ../results/html_folder/other_countries/FR_fec_suff.html
+cp ../results/ref/htmls/FR_fec_ref.html ../results/html_folder/other_countries/FR_fec_ref.html
+cp ../results/suff/htmls/FR_sankeys_suff.html ../results/html_folder/other_countries/FR_sankeys_suff.html
+cp ../results/ref/htmls/FR_sankeys_ref.html ../results/html_folder/other_countries/FR_sankeys_ref.html
+cp ../results/suff/htmls/FR_suff_capacities.html ../results/html_folder/other_countries/FR_suff_capacities.html
+cp ../results/ref/htmls/FR_ref_capacities.html ../results/html_folder/other_countries/FR_ref_capacities.html
+cp ../results/suff/htmls/FR_suff_costs.html ../results/html_folder/other_countries/FR_suff_costs.html
+cp ../results/ref/htmls/FR_ref_costs.html ../results/html_folder/other_countries/FR_ref_costs.html
+cp ../results/suff/htmls/FR_suff_demands.html ../results/html_folder/other_countries/FR_suff_demands.html
+cp ../results/ref/htmls/FR_ref_demands.html ../results/html_folder/other_countries/FR_ref_demands.html
+cp ../results/suff/htmls/FR_suff_dispatch_plots.html ../results/html_folder/other_countries/FR_suff_dispatch_plots.html
+cp ../results/ref/htmls/FR_ref_dispatch_plots.html ../results/html_folder/other_countries/FR_ref_dispatch_plots.html
+cp ../results/suff/htmls/FR_suff_maps.html ../results/html_folder/other_countries/FR_suff_maps.html
+cp ../results/ref/htmls/FR_ref_maps.html ../results/html_folder/other_countries/FR_ref_maps.html
 
-cp ../results/suff/htmls/DE_combined_chart.html ../results/html_folder/other_countries/DE_combined_chart_suff.html
-cp ../results/ref/htmls/DE_combined_chart.html ../results/html_folder/other_countries/DE_combined_chart_ref.html
-cp ../results/suff/htmls/Results_DE.html ../results/html_folder/other_countries/DE_results_suff.html
-cp ../results/ref/htmls/Results_DE.html ../results/html_folder/other_countries/DE_results_ref.html
+cp ../results/suff/htmls/DE_emissions_suff.html ../results/html_folder/other_countries/DE_emissions_suff.html
+cp ../results/ref/htmls/DE_emissions_ref.html ../results/html_folder/other_countries/DE_emissions_ref.html
+cp ../results/suff/htmls/DE_fec_suff.html ../results/html_folder/other_countries/DE_fec_suff.html
+cp ../results/ref/htmls/DE_fec_ref.html ../results/html_folder/other_countries/DE_fec_ref.html
+cp ../results/suff/htmls/DE_sankeys_suff.html ../results/html_folder/other_countries/DE_sankeys_suff.html
+cp ../results/ref/htmls/DE_sankeys_ref.html ../results/html_folder/other_countries/DE_sankeys_ref.html
+cp ../results/suff/htmls/DE_suff_capacities.html ../results/html_folder/other_countries/DE_suff_capacities.html
+cp ../results/ref/htmls/DE_ref_capacities.html ../results/html_folder/other_countries/DE_ref_capacities.html
+cp ../results/suff/htmls/DE_suff_costs.html ../results/html_folder/other_countries/DE_suff_costs.html
+cp ../results/ref/htmls/DE_ref_costs.html ../results/html_folder/other_countries/DE_ref_costs.html
+cp ../results/suff/htmls/DE_suff_demands.html ../results/html_folder/other_countries/DE_suff_demands.html
+cp ../results/ref/htmls/DE_ref_demands.html ../results/html_folder/other_countries/DE_ref_demands.html
+cp ../results/suff/htmls/DE_suff_dispatch_plots.html ../results/html_folder/other_countries/DE_suff_dispatch_plots.html
+cp ../results/ref/htmls/DE_ref_dispatch_plots.html ../results/html_folder/other_countries/DE_ref_dispatch_plots.html
+cp ../results/suff/htmls/DE_suff_maps.html ../results/html_folder/other_countries/DE_suff_maps.html
+cp ../results/ref/htmls/DE_ref_maps.html ../results/html_folder/other_countries/DE_ref_maps.html
 
-cp ../results/suff/htmls/GB_combined_chart.html ../results/html_folder/other_countries/GB_combined_chart_suff.html
-cp ../results/ref/htmls/GB_combined_chart.html ../results/html_folder/other_countries/GB_combined_chart_ref.html
-cp ../results/suff/htmls/Results_GB.html ../results/html_folder/other_countries/GB_results_suff.html
-cp ../results/ref/htmls/Results_GB.html ../results/html_folder/other_countries/GB_results_ref.html
+cp ../results/suff/htmls/GB_emissions_suff.html ../results/html_folder/other_countries/GB_emissions_suff.html
+cp ../results/ref/htmls/GB_emissions_ref.html ../results/html_folder/other_countries/GB_emissions_ref.html
+cp ../results/suff/htmls/GB_fec_suff.html ../results/html_folder/other_countries/GB_fec_suff.html
+cp ../results/ref/htmls/GB_fec_ref.html ../results/html_folder/other_countries/GB_fec_ref.html
+cp ../results/suff/htmls/GB_sankeys_suff.html ../results/html_folder/other_countries/GB_sankeys_suff.html
+cp ../results/ref/htmls/GB_sankeys_ref.html ../results/html_folder/other_countries/GB_sankeys_ref.html
+cp ../results/suff/htmls/GB_suff_capacities.html ../results/html_folder/other_countries/GB_suff_capacities.html
+cp ../results/ref/htmls/GB_ref_capacities.html ../results/html_folder/other_countries/GB_ref_capacities.html
+cp ../results/suff/htmls/GB_suff_costs.html ../results/html_folder/other_countries/GB_suff_costs.html
+cp ../results/ref/htmls/GB_ref_costs.html ../results/html_folder/other_countries/GB_ref_costs.html
+cp ../results/suff/htmls/GB_suff_demands.html ../results/html_folder/other_countries/GB_suff_demands.html
+cp ../results/ref/htmls/GB_ref_demands.html ../results/html_folder/other_countries/GB_ref_demands.html
+cp ../results/suff/htmls/GB_suff_dispatch_plots.html ../results/html_folder/other_countries/GB_suff_dispatch_plots.html
+cp ../results/ref/htmls/GB_ref_dispatch_plots.html ../results/html_folder/other_countries/GB_ref_dispatch_plots.html
+cp ../results/suff/htmls/GB_suff_maps.html ../results/html_folder/other_countries/GB_suff_maps.html
+cp ../results/ref/htmls/GB_ref_maps.html ../results/html_folder/other_countries/GB_ref_maps.html
 
-cp ../results/suff/htmls/NL_combined_chart.html ../results/html_folder/other_countries/NL_combined_chart_suff.html
-cp ../results/ref/htmls/NL_combined_chart.html ../results/html_folder/other_countries/NL_combined_chart_ref.html
-cp ../results/suff/htmls/Results_NL.html ../results/html_folder/other_countries/NL_results_suff.html
-cp ../results/ref/htmls/Results_NL.html ../results/html_folder/other_countries/NL_results_ref.html
+cp ../results/suff/htmls/NL_emissions_suff.html ../results/html_folder/other_countries/NL_emissions_suff.html
+cp ../results/ref/htmls/NL_emissions_ref.html ../results/html_folder/other_countries/NL_emissions_ref.html
+cp ../results/suff/htmls/NL_fec_suff.html ../results/html_folder/other_countries/NL_fec_suff.html
+cp ../results/ref/htmls/NL_fec_ref.html ../results/html_folder/other_countries/NL_fec_ref.html
+cp ../results/suff/htmls/NL_sankeys_suff.html ../results/html_folder/other_countries/NL_sankeys_suff.html
+cp ../results/ref/htmls/NL_sankeys_ref.html ../results/html_folder/other_countries/NL_sankeys_ref.html
+cp ../results/suff/htmls/NL_suff_capacities.html ../results/html_folder/other_countries/NL_suff_capacities.html
+cp ../results/ref/htmls/NL_ref_capacities.html ../results/html_folder/other_countries/NL_ref_capacities.html
+cp ../results/suff/htmls/NL_suff_costs.html ../results/html_folder/other_countries/NL_suff_costs.html
+cp ../results/ref/htmls/NL_ref_costs.html ../results/html_folder/other_countries/NL_ref_costs.html
+cp ../results/suff/htmls/NL_suff_demands.html ../results/html_folder/other_countries/NL_suff_demands.html
+cp ../results/ref/htmls/NL_ref_demands.html ../results/html_folder/other_countries/NL_ref_demands.html
+cp ../results/suff/htmls/NL_suff_dispatch_plots.html ../results/html_folder/other_countries/NL_suff_dispatch_plots.html
+cp ../results/ref/htmls/NL_ref_dispatch_plots.html ../results/html_folder/other_countries/NL_ref_dispatch_plots.html
+cp ../results/suff/htmls/NL_suff_maps.html ../results/html_folder/other_countries/NL_suff_maps.html
+cp ../results/ref/htmls/NL_ref_maps.html ../results/html_folder/other_countries/NL_ref_maps.html
 
-cp ../results/suff/htmls/Results_EU.html ../results/html_folder/other_countries/EU_results_suff.html
-cp ../results/ref/htmls/Results_EU.html ../results/html_folder/other_countries/EU_results_ref.html
 
 cp ../results/scenario_results/BE_combined_scenario_chart.html ../results/html_folder/BE_combined_scenario_chart.html
 cp ../results/scenario_results/EU_combined_scenario_chart.html ../results/html_folder/EU_combined_scenario_chart.html
@@ -60,7 +130,7 @@ FTP_HOST="boucan.domainepublic.net"
 FTP_USER="negawattbe_syl"
 FTP_PORT=21
 LOCAL_FOLDER="../results/html_folder"
-REMOTE_BASE="/www/prod.negawatt.be/scenario"
+REMOTE_BASE="/www/prod.negawatt.be/scenario/"
 
 # Get current date in YYMMDD format
 DATE_FOLDER=$(date '+%y%m%d')
