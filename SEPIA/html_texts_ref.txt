@@ -1,78 +1,115 @@
-# Texts for SEPIA html file
+# Texts for SEPIA html file for Belgium
+
+BE_CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
+
+BE_CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
+
+BE_Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
+
+BE_Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
+
+BE_sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> 
+
+BE_carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
+
+BE_RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
+
+BE_FEC_origin: <p> This plot shows the the share of renewable energy technologies, fossil fuels and nuclear in total energy consumption.</p>
+
+BE_Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
+
+BE_FEC_sector: <p> This plot shows the evolution of the final energy consumption (by sector) for each energy carrier. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy carrier and see which sectors it supplies</p>
+
+BE_Grid_carrier_contribution: <p> This plot shows the contribution of each carrier in important grid infrastructure like electricity grid, gas grid etc and also in storage systems.</p> 
+
+BE_FEC_carrier: <p> This plot shows the evolution of the final energy consumption (by carrier) in each sector. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy sector and see how it is supplied</p>
+
+# Texts for SEPIA html file for 5 countries combined
+
+EU_CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
+EU_CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
+EU_Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
+EU_Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
+EU_sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> 
+EU_carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
+EU_RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
+EU_FEC_origin: <p> This plot shows the the share of renewable energy technologies, fossil fuels and nuclear in total energy consumption.</p>
+EU_Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
+EU_FEC_sector: <p> This plot shows the evolution of the final energy consumption (by sector) for each energy carrier. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy carrier and see which sectors it supplies</p>
+EU_Grid_carrier_contribution: <p> This plot shows the contribution of each carrier in important grid infrastructure like electricity grid, gas grid etc and also in storage systems.</p> 
+EU_FEC_carrier: <p> This plot shows the evolution of the final energy consumption (by carrier) in each sector. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy sector and see how it is supplied</p>
+
+# Texts for SEPIA html file for other countries
 
 CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
-
 CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
-
 Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
-
 Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
-
 sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> 
-
 carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
-
 RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
-
 FEC_origin: <p> This plot shows the the share of renewable energy technologies, fossil fuels and nuclear in total energy consumption.</p>
-
 Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
-
 FEC_sector: <p> This plot shows the evolution of the final energy consumption (by sector) for each energy carrier. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy carrier and see which sectors it supplies</p>
-
 Grid_carrier_contribution: <p> This plot shows the contribution of each carrier in important grid infrastructure like electricity grid, gas grid etc and also in storage systems.</p> 
-
 FEC_carrier: <p> This plot shows the evolution of the final energy consumption (by carrier) in each sector. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy sector and see how it is supplied</p>
 
 
+# Texts for PyPSA html file for Belgium
 
-# Texts for PyPSA html file
+BE_sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
+
+BE_annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
+
+BE_investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
+
+BE_capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
+
+BE_storage_capacities_desc: <p>The storage capacitiy strongly varies depending on the energy carrier.</p> 
+
+
+BE_heat_dispatch_win_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical winter week. </p>
+
+BE_heat_dispatch_sum_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical summer week.</p>
+
+BE_power_dispatch_win_desc: <p>The power dispatch charts show electricity production and distribution during a typical winter week.</p>
+
+BE_power_dispatch_sum_desc: <p>The power dispatch charts show electricity production and distribution during a typical summer week.</p>
+
+BE_map_plots_desc: <p>Map plots provide a geographical overview of the investments in energy infrastructure and associated electricity grid expansion.</p>
+
+BE_h2_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the hydrogen grid and associated expansion in hydrogen pipelines.</p>
+
+BE_gas_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the gas grid and associated expansion in gas pipelines.</p>
+
+# Texts for PyPSA html file for 5 countries combined
+
+EU_sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
+EU_annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
+EU_investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
+EU_capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
+EU_storage_capacities_desc: <p>The storage capacitiy strongly varies depending on the energy carrier.</p> 
+EU_heat_dispatch_win_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical winter week. </p>
+EU_heat_dispatch_sum_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical summer week.</p>
+EU_power_dispatch_win_desc: <p>The power dispatch charts show electricity production and distribution during a typical winter week.</p>
+EU_power_dispatch_sum_desc: <p>The power dispatch charts show electricity production and distribution during a typical summer week.</p>
+EU_map_plots_desc: <p>Map plots provide a geographical overview of the investments in energy infrastructure and associated electricity grid expansion.</p>
+EU_h2_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the hydrogen grid and associated expansion in hydrogen pipelines.</p>
+EU_gas_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the gas grid and associated expansion in gas pipelines.</p>
+
+# Texts for PyPSA html file for other countries
 
 sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
-
 annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
-
 investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
-
 capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
-
 storage_capacities_desc: <p>The storage capacitiy strongly varies depending on the energy carrier.</p> 
-
-
 heat_dispatch_win_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical winter week. </p>
-
 heat_dispatch_sum_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical summer week.</p>
-
 power_dispatch_win_desc: <p>The power dispatch charts show electricity production and distribution during a typical winter week.</p>
-
 power_dispatch_sum_desc: <p>The power dispatch charts show electricity production and distribution during a typical summer week.</p>
-
 map_plots_desc: <p>Map plots provide a geographical overview of the investments in energy infrastructure and associated electricity grid expansion.</p>
-
 h2_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the hydrogen grid and associated expansion in hydrogen pipelines.</p>
-
 gas_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the gas grid and associated expansion in gas pipelines.</p>
 
-
-# Texts for Scenario html file
-
-annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
-
-investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
-
-cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2023-2050.</p>
-
-capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
-
-storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>
-
-scenario_dem_comp_sce: <p>This chart displays the comparison of final energy demands for different scenarios available for Belgium.</p>
-
-scenario_vre_sce: <p>This chart displays the comparison of variable renewable energy technologies for different scenarios available for Belgium.</p>
-
-scenario_flex_sce: <p>This chart displays the comparison of flexibility and generation technologies for different scenarios available for Belgium.</p>
-
-scenario_cost_sce: <p>This chart displays the comparison of capital and total system costs for different scenarios available for Belgium.</p>
-
-hist_sce: <p>This chart displays the comparison of generation capacities from Eurostat data and Reference scenario used in this study for year 2020.</p>
 

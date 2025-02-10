@@ -34,9 +34,10 @@ Scenario_plots:
  Cummulative Emissions: true
  Capacities: true
  Storage Capacities: true
- Scenarios Demands Comparison: false
- Scenarios VRE Capacities Comparison: false
- Scenario Flexibility Capacities: false
- Scenarios Costs Comparison: false  
- Historic Generation Comparison: false
+ Scenarios Demands Comparison: true
+ Scenarios VRE Capacities Comparison: true
+ Scenario Flexibility Capacities: true
+ Scenarios Costs Comparison: true  
+ Historic Generation Comparison: true
+ Scenarios Sectors Comparison: true
  

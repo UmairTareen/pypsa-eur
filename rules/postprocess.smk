@@ -340,7 +340,9 @@ rule generate_sepia:
         
     output:
         excelfile=expand(RESULTS + "htmls/ChartData_{country}.xlsx", country=local_countries),
-        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=local_countries),
+        htmlfile_emissions=expand(RESULTS + "htmls/{country}_emissions_{study}.html", country=local_countries, study=config["run"]["name"]),
+        htmlfile_sankeys=expand(RESULTS + "htmls/{country}_sankeys_{study}.html", country=local_countries, study=config["run"]["name"]),
+        htmlfile_fec=expand(RESULTS + "htmls/{country}_fec_{study}.html", country=local_countries, study=config["run"]["name"]),
     threads: 1
     resources:
         mem_mb=10000,
@@ -382,7 +384,7 @@ rule make_country_summary:
             + "maps/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}-costs-all_{planning_horizons}.pdf",
             **config["scenario"]
         ),
-        htmlfile=expand(RESULTS + "htmls/Results_{country}.html", country=local_countries),
+        htmlfile_fec=expand(RESULTS + "htmls/{country}_fec_{study}.html", country=local_countries, study=config["run"]["name"]),
     output:
         cfs=RESULTS + "country_csvs/cfs.csv",
         costs=RESULTS + "country_csvs/costs.csv",
@@ -436,7 +438,7 @@ rule prepare_results:
         logo = "SEPIA/Template/logo.png",
         plots_html = "config/plots.yaml",         
     output:
-        htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=local_countries),
+        htmlfile=expand(RESULTS + "htmls/{country}_{study}_{section}.html",study = config["run"]["name"], country=local_countries,section=["demands", "costs", "capacities", "dispatch_plots", "maps"]),
     threads: 1
     resources:
         mem_mb=10000,
@@ -463,7 +465,7 @@ rule prepare_dispatch_plots:
             + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
             **config["scenario"]
         ),
-        htmlfile=expand(RESULTS + "htmls/{country}_combined_chart.html",study = config["run"]["name"], country=config["countries"]),      
+        htmlfile=expand(RESULTS + "htmls/{country}_{study}_maps.html",study = config["run"]["name"], country=config["countries"]),      
     output:
         powerfile=expand(RESULTS + "htmls/raw_html/Power_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
         heatfile=expand(RESULTS + "htmls/raw_html/Heat_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),

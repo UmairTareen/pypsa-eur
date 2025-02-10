@@ -477,12 +477,20 @@ def imposed_values_genertion(n, foresight, config):
       n.links.loc[f"{country}{suffix} CCGT-2015", "p_nom"] = 2000
       #Considering min 150 MW pf electrolysers in 2030, https://observatory.clean-hydrogen.europa.eu/hydrogen-landscape/policies-and-standards/national-strategies/belgium?utm_source=chatgpt.com
       n.links.loc[f"{country}{suffix} H2 Electrolysis-2030", "p_nom_min"] = 150
-      #Assuming limited Hydrogen pipelines for Belgium in 2030 
+      n.links.loc[f"{country}{suffix} H2 Electrolysis-2030", "p_nom_max"] = 150
+     #Assuming limited Hydrogen pipelines for Belgium in 2030 
       mask = (
-          n.links["carrier"].isin(["H2 pipeline", "H2 pipeline retrofitted"]) & 
-          (n.links["bus0"].str.contains("BE") | n.links["bus1"].str.contains("BE"))
-        )
-      n.links.loc[mask, "p_nom_max"] /= 10
+         n.links["carrier"].isin(["H2 pipeline retrofitted"]) & 
+         (n.links["bus0"].str.contains("BE") | n.links["bus1"].str.contains("BE"))
+       )
+      n.links.loc[mask, "p_nom_max"] /= 40
+      mask = (
+         n.links["carrier"].isin(["H2 pipeline"]) & 
+         (n.links["bus0"].str.contains("BE") | n.links["bus1"].str.contains("BE"))
+       )
+      n.links.loc[mask, "p_nom_extendable"] = False
+      logger.info(f"Constraining hydrogen pipelines retrofit for Belgium by 90% in 2030")
+      
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
      solar_max_pot = config["imposed_values"]["solar_rooftop_max"]
      max_DAC = 600 #tons/h assuming only 5% of emissions comapred to 1990 values will be removed by DAC
@@ -1532,6 +1540,7 @@ def extra_functionality(n, snapshots):
 
 
 def solve_network(n, config, solving, **kwargs):
+    
     set_of_options = solving["solver"]["options"]
     cf_solving = solving["options"]
 
@@ -1559,7 +1568,7 @@ def solve_network(n, config, solving, **kwargs):
 
     # add to network for extra_functionality
     n.config = config
-
+    
     if rolling_horizon:
         kwargs["horizon"] = cf_solving.get("horizon", 365)
         kwargs["overlap"] = cf_solving.get("overlap", 0)

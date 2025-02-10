@@ -220,7 +220,7 @@ def scenario_costs(country):
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
-    unit='Billion Euros/year'
+    unit='Euros/year'
     title=f'Total Costs Comparison for {country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
@@ -264,7 +264,7 @@ def scenario_investment_costs(country):
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
-    unit='Billion Euros/year'
+    unit='Euros/year'
     title=f'Total Investment Costs Comparison for {country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
@@ -310,7 +310,7 @@ def scenario_cumulative_costs(country):
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
-    unit='Billion Euros'
+    unit='Euros'
     title=f'Total Comulative Costs (2023-2050) for {country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
@@ -574,7 +574,39 @@ def create_scenario_plots():
  scenarios.loc['Others', 'Pypsa-Ref'] = capacities_ref_2050.loc['hydroelectricity', '2050']
 
  scenarios = scenarios.apply(pd.to_numeric, errors='coerce').fillna(0)
+ 
+ scenarios_data=pd.read_csv("data/scenario_data.csv").T
+ scenarios_data.drop(columns=scenarios_data.columns, inplace=True)
+ scenarios_data["Power"] = None
+ scenarios_data["Industry"] = None 
+ scenarios_data["Domestic Transport"] = None 
+ scenarios_data["Maritime Transport (Domestic)"] = None 
+ scenarios_data["Maritime Transport (International)"] = None 
+ scenarios_data["Aviation Transport"] = None 
+ scenarios_data["Agriculture"] = None 
+ scenarios_data["Residential & Tertiary"] = None 
+ scenarios_data["LULUCF"] = None 
 
+ new_rows = pd.DataFrame(columns=scenarios_data.columns, index=["Climact PAC2.0", "PyPSA-Sufficiency", "PyPSA-Ref"])
+ scenarios_data = pd.concat([scenarios_data, new_rows])
+ scenarios_data.loc["McKinsey", ["Power", "Industry", "Domestic Transport", 
+                            "Agriculture", "LULUCF", "Residential & Tertiary"]] = "✔"
+ scenarios_data.loc["McKinsey", ["Maritime Transport (Domestic)", "Maritime Transport (International)","Aviation Transport"]] = "X"
+ scenarios_data.loc["PyPSA-Sufficiency", :] = "✔"
+ scenarios_data.loc["PyPSA-Ref", :] = "✔"
+ scenarios_data.loc["CLEVER", :] = "✔"
+ scenarios_data.loc["Climact PAC2.0", :] = "✔"
+ scenarios_data.loc["Climact PAC2.0", ["Maritime Transport (International)"]] = "X"
+ scenarios_data.loc["Elia(Electrification)", ["Power", "Industry", "Domestic Transport", 
+                            "Residential & Tertiary"]] = "✔"
+ scenarios_data.loc["Elia(Electrification)", ["Maritime Transport (Domestic)", "Maritime Transport (International)", "Aviation Transport", 
+                            "Agriculture", "LULUCF"]] = "X"
+ scenarios_data.loc["Energyville(Shift)", ["Power", "Industry", "Domestic Transport", 
+                            "Residential & Tertiary", "Agriculture", "Maritime Transport (Domestic)"]] = "✔"
+ scenarios_data.loc["Energyville(Shift)", ["Maritime Transport (International)", "LULUCF", "Aviation Transport"]] = "X"
+ scenarios_data.loc["Energyville(Central)", ["Power", "Industry", "Domestic Transport", 
+                            "Residential & Tertiary", "Agriculture", "Maritime Transport (Domestic)"]] = "✔"
+ scenarios_data.loc["Energyville(Central)", ["Maritime Transport (International)", "LULUCF", "Aviation Transport"]] = "X"
 
  scenarios_transposed = scenarios.transpose()
  figures = {}
@@ -673,6 +705,21 @@ def create_scenario_plots():
   )
  figures['historic'] = fig_historic
  
+ fig_scenarios_data = go.Figure(data=[go.Table(
+     header=dict(
+         values=["Scenario"] + list(scenarios_data.columns),  # Add the 'Scenario' column header at the start
+         fill_color='paleturquoise',
+         align='center'
+     ),
+     cells=dict(
+         values=[scenarios_data.index] + [scenarios_data[col] for col in scenarios_data.columns],  # Include the index as a column
+         fill_color='lavender',
+         align='center'
+     )
+ )])
+ 
+ figures['scenarios_data'] = fig_scenarios_data
+ 
  return figures
     
 def create_combined_scenario_chart_country(country, output_folder='results/scenario_results/'):
@@ -697,21 +744,34 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         with open(file_path, 'r', encoding='utf-8') as file:
             html_content = file.read()
         return html_content
+    def get_country_specific_desc(country, html_texts):
+    # Extract descriptions specific to the selected country
+     country_desc = {}
+     if country == 'EU':
+        country_desc = {key: content for key, content in html_texts.items() if key.startswith("EU_")}
+     elif country == 'BE':
+        country_desc = {key: content for key, content in html_texts.items() if key.startswith("BE_")}
+     else:
+        # For all other countries, load the generic descriptors
+        country_desc = {key: content for key, content in html_texts.items() if not key.startswith(("EU_", "BE_"))}
 
+     return country_desc
     # Load the HTML texts from file
     html_texts = load_html_texts(file_path)
-    header = html_texts.get('header', '')
-    cummulative_emm_desc = html_texts.get('cumulative_emissions_sce', '')
-    annual_costs_desc = html_texts.get('annual_costs_sce', '')
-    investment_costs_desc = html_texts.get('investment_costs_sce', '')
-    cumu_investment_costs_desc = html_texts.get('cumu_investment_costs_sce', '')
-    capacities_desc = html_texts.get('capacities_sce', '')
-    storage_capacities_desc = html_texts.get('storage_capacities_sce', '')
-    scenario_dem_comp_desc = html_texts.get('scenario_dem_comp_sce', '')
-    scenario_vre_desc = html_texts.get('scenario_vre_sce', '')
-    scenario_flex_desc = html_texts.get('scenario_flex_sce', '')
-    scenario_cost_desc = html_texts.get('scenario_cost_sce', '')
-    hist_desc = html_texts.get('hist_sce', '')
+    country_desc = get_country_specific_desc(country, html_texts)
+
+    cummulative_emm_desc = country_desc.get(f"{country}_cumulative_emissions_sce", '')
+    annual_costs_desc = country_desc.get(f"{country}_annual_costs_sce", '')
+    investment_costs_desc = country_desc.get(f"{country}_investment_costs_sce", '')
+    cumu_investment_costs_desc = country_desc.get(f"{country}_cumu_investment_costs_sce", '')
+    capacities_desc = country_desc.get(f"{country}_capacities_sce", '')
+    storage_capacities_desc = country_desc.get(f"{country}_storage_capacities_sce", '')
+    scenario_dem_comp_desc = country_desc.get(f"{country}_cenario_dem_comp_sce", '')
+    scenario_vre_desc = country_desc.get(f"{country}_scenario_vre_sce", '')
+    scenario_flex_desc = country_desc.get(f"{country}_scenario_flex_sce", '')
+    scenario_cost_desc = country_desc.get(f"{country}_scenario_cost_sce", '')
+    hist_desc = country_desc.get(f"{country}_hist_sce", '')
+    sectoral_desc = country_desc.get(f"{country}_sectoral_sce", '')
     
     #load the html plot flags
     with open(snakemake.input.plots_html, 'r') as file:
@@ -763,6 +823,9 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         if scenario_plots["Historic Generation Comparison"] == True:
          historic_comparison = scenario_figures['historic']
          combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+        if scenario_plots["Scenarios Sectors Comparison"] == True:
+         scenarios_data = scenario_figures['scenarios_data']
+         combined_html += f"<div><h2>{country} - Comparison of modelled sectors considered in different recent Scenarios</h2>{scenarios_data.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
@@ -795,6 +858,8 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
          table_of_contents_content += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
         if scenario_plots["Historic Generation Comparison"] == True:
          table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Baseline Scenario</a><br>"
+        if scenario_plots["Scenarios Sectors Comparison"] == True:
+         table_of_contents_content += f"<a href='#{country} - Comparison of Sectors in Belgium's Energy Scenarios'>Comparison of different sectors considered for Belgium scenarios</a><br>"
 
     # Add more links for other plots
     if scenario_plots["Cummulative Emissions"] == True:
@@ -821,6 +886,8 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
          main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Historic Generation Comparison"] == True:
          main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+        if scenario_plots["Scenarios Sectors Comparison"] == True:
+         main_content += f"<div id='{country} - Comparison of Sectors in Belgium's Energy Scenarios'><h2>{country} - Comparison of Sectors in Belgium's Energy Scenarios</h2>{sectoral_desc}{scenarios_data.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template

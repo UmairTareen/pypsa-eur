@@ -1,6 +1,6 @@
 <!-- <!DOCTYPE html> -->
 <html class="no-js" lang="en">
-
+        <meta charset="utf-8">
         <link rel='stylesheet' id='twentytwenty-css' href='https://clever-energy-scenario.eu/wp-content/themes/twentytwenty/style.css?ver=6.1.1' media='all' />
         <link rel='stylesheet' id='twentytwenty-style-css' href='https://clever-energy-scenario.eu/wp-content/themes/clever/style.css?ver=1.' media='all' />
         <style>
@@ -65,10 +65,12 @@
             // Define possible file types to check
             var fileTypes = [
                 "combined_scenario_chart",
-                "combined_chart_suff",
-                "combined_chart_ref_",
-                "results_suff",
-                "results_ref"
+                "emissions_suff",
+                "emissions_ref",
+                "sankeys_suff",
+                "sankeys_ref",
+				"fec_suff",
+				"fec_ref",
             ];
 
             // Check if URL contains any of the file types
@@ -112,10 +114,12 @@
 
             var scenarioNames = {
                 "combined_scenario_chart": "Scenario Overview",
-                "combined_chart_suff": "Sufficiency Scenario",
-                "combined_chart_ref": "Reference Scenario",
-                "results_ref": "Reference Scenario 2",
-                "results_suff": "Sufficiency Scenario 2"
+                "emissions_suff": "Emissions",
+                "emissions_ref": "Emissions",
+                "sankeys_ref": "Sankeys",
+                "sankeys_suff": "Sankeys",
+				"fec_suff": "FEC",
+				"fec_suff": "FEC",
             };
 
             // Use the existing checkFileExistence function to verify file availability
@@ -140,14 +144,19 @@
             // List of predefined files
             var predefinedFiles = [
                 "BE_combined_scenario_chart.html",
-                "BE_combined_chart_suff.html",
-                "BE_combined_chart_ref.html",
-                "BE_Results_suff.html",
-                "BE_Results_ref.html",
-                "EU_combined_chart_suff.html",
-                "EU_combined_chart_ref.html",
-                "EU_Results_suff.html",
-                "EU_Results_ref.html",
+                "BE_emissions_suff.html",
+                "BE_sankeys_suff.html",
+                "BE_fec_suff.html",
+                "BE_emissions_ref.html",
+				"BE_sankeys_ref.html",
+				"BE_fec_ref.html",
+                "EU_combined_scenario_chart.html",
+                "EU_emissions_ref.html",
+                "EU_emissions_suff.html",
+                "EU_sankeys_ref.html",
+				"EU_sankeys_suff.html",
+				"EU_fec_ref.html",
+				"EU_fec_ref.html",
                 // Add more valid file combinations as needed
             ];
 
@@ -199,21 +208,99 @@
         <li id="menu-item-59" class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-59"></li>
         <li id="menu-dropdown" >
             <div id="menu-dropdown">
-             <form>
-    <select id="country-select">
-        <!-- Options will be dynamically added here -->
-        <option  value="BE">Belgium</option>
-        <option  value="EU">5 countries</option>
+<form>
+    <select id="country-select" onchange="saveSelection(); updateFileOptions();">
+        <option value="BE">Belgium</option>
+        <option value="EU">5 countries</option>
     </select>
 
-    <!-- Add this HTML element for the file type dropdown in your document -->
     <select id="file-type-select">
-        <option value="combined_scenario_chart">Scenario overview</option>
-        <option value="combined_chart_suff">Sufficiency Scenario</option>
-        <option value="combined_chart_ref">Reference Scenario</option>
-        <option value="results_suff">Sufficiency Scenario 2</option>
-        <option value="results_ref">Reference Scenario 2</option>
+        <!-- Options will be updated dynamically -->
     </select>
+</form>
+
+<script>
+    function saveSelection() {
+        const selectedCountry = document.getElementById("country-select").value;
+        localStorage.setItem("selectedCountry", selectedCountry);
+    }
+
+    function loadSelection() {
+        return localStorage.getItem("selectedCountry") || "BE"; // Default to BE if nothing is stored
+    }
+
+    function updateFileOptions() {
+        const country = document.getElementById("country-select").value; // Get selected country
+        const fileSelect = document.getElementById("file-type-select");
+
+        // Define file options based on the selected country
+        const fileOptions = {
+            "BE": [
+                { value: "combined_scenario_chart", text: "Scenarios Overview" },
+				{ value: "suff_demands", text: "Demands (Sufficiency)" },
+				{ value: "ref_demands", text: "Demands (Reference)" },
+                { value: "emissions_suff", text: "Emissions (Sufficiency)" },
+                { value: "emissions_ref", text: "Emissions (Reference)" },
+				{ value: "suff_costs", text: "Costs (Sufficiency)" },
+				{ value: "ref_costs", text: "Costs (Reference)" },
+				{ value: "suff_capacities", text: "Capacities (Sufficiency)" },
+				{ value: "ref_capacities", text: "Capacities (Reference)" },
+                { value: "fec_suff", text: "Energy Consumption (Sufficiency)" },
+                { value: "fec_ref", text: "Energy Consumption (Reference)" },
+                { value: "sankeys_suff", text: "Sankeys (Sufficiency)" },
+                { value: "sankeys_ref", text: "Sankeys (Reference)" },
+				{ value: "suff_maps", text: "Maps (Sufficiency)" },
+				{ value: "ref_maps", text: "maps (Reference)" },
+				{ value: "suff_dispatch_plots", text: "Dispatch (Sufficiency)" },
+				{ value: "ref_dispatch_plots", text: "Dispatch (Reference)" }
+            ],
+            "EU": [
+                { value: "combined_scenario_chart", text: "Scenarios Overview" },
+				{ value: "suff_demands", text: "Demands (Sufficiency)" },
+				{ value: "ref_demands", text: "Demands (Reference)" },
+                { value: "emissions_suff", text: "Emissions (Sufficiency)" },
+                { value: "emissions_ref", text: "Emissions (Reference )" },
+				{ value: "suff_costs", text: "Costs (Sufficiency)" },
+				{ value: "ref_costs", text: "Costs (Reference)" },
+				{ value: "suff_capacities", text: "Capacities (Sufficiency)" },
+				{ value: "ref_capacities", text: "Capacities (Reference)" },
+                { value: "fec_suff", text: "Energy Consumption (Sufficiency)" },
+                { value: "fec_ref", text: "Energy Consumption (Reference)" },
+                { value: "sankeys_suff", text: "Sankeys (Sufficiency)" },
+                { value: "sankeys_ref", text: "Sankeys (Reference)" },
+				{ value: "suff_maps", text: "Maps (Sufficiency)" },
+				{ value: "ref_maps", text: "Maps (Reference)" },
+				{ value: "suff_dispatch_plots", text: "Dispatch (Sufficiency)" },
+				{ value: "ref_dispatch_plots", text: "Dispatch (Reference)" }
+            ]
+        };
+
+        // Clear existing options
+        fileSelect.innerHTML = "";
+
+        // Add new options based on selected country
+        if (fileOptions[country]) {
+            fileOptions[country].forEach(option => {
+                const opt = document.createElement("option");
+                opt.value = option.value;
+                opt.textContent = option.text;
+                fileSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function initializeDropdown() {
+        const storedCountry = loadSelection(); // Load stored selection
+        document.getElementById("country-select").value = storedCountry; // Set dropdown value
+        updateFileOptions(); // Update files based on stored country
+    }
+
+    // Initialize options on page load
+    document.addEventListener("DOMContentLoaded", function () {
+        initializeDropdown();
+    });
+
+</script>
 </form>
 
 

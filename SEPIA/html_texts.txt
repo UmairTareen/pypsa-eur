@@ -1,80 +1,45 @@
-# Texts for SEPIA html file
 
-CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
+# Texts for Scenario html file for Belgium
 
-CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
+BE_cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios. Although both scenarios follow the same trajectory, the gross residual emissions are significantly higher in the reference scenario, which imposes the use of negative emissions technologies such as DACCS or BECCS.</p>
 
-Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
+BE_annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
 
-Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
+BE_investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
 
-sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> 
+BE_cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2023-2050.</p>
 
-carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
+BE_capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
 
-RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
+BE_storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p><p>Some key insights from the results include:</p><ul><li> District heating will rely heavily on seasonal storage, utilizing Thermal Energy Storage (TES) to efficiently manage heat supply across different seasons.</li><li> The TES is modeled as large water tanks, with each unit featuring a storage volume of 70,000 cubic meters and an energy storage capacity of 4,500 MWh. An example of this technology is the TES facility in <a href="https://api.euroheat.org/uploads/PTES_in_Hoje_Taastrup_4ddf2bc6a3.pdf" target="_blank">Høje Taastrup, Denmark</a></li><li> The optimised TES energy storage capacity is high in sufficiency scenario, as no carbon capture is allowed due to which it highly relies on green technologies. 
 
-FEC_origin: <p> This plot shows the the share of renewable energy technologies, fossil fuels and nuclear in total energy consumption.</p>
+BE_scenario_dem_comp_sce: <p>This chart displays the comparison of final energy demands for different scenarios available for Belgium.</p>
 
-Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
+BE_scenario_vre_sce: <p>This chart displays the comparison of variable renewable energy technologies for different scenarios available for Belgium.</p>
 
-FEC_sector: <p> This plot shows the evolution of the final energy consumption (by sector) for each energy carrier. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy carrier and see which sectors it supplies</p>
+BE_scenario_flex_sce: <p>This chart displays the comparison of flexibility and generation technologies for different scenarios available for Belgium.</p>
 
-Grid_carrier_contribution: <p> This plot shows the contribution of each carrier in important grid infrastructure like electricity grid, gas grid etc and also in storage systems.</p> 
+BE_scenario_cost_sce: <p>This chart displays the comparison of capital and total system costs for different scenarios available for Belgium.</p>
 
-FEC_carrier: <p> This plot shows the evolution of the final energy consumption (by carrier) in each sector. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy sector and see how it is supplied</p>
+BE_hist_sce: <p>This chart displays the comparison of generation capacities from Eurostat data and Reference scenario used in this study for year 2020.</p>
 
-
-
-# Texts for PyPSA html file
-
-sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
-
-annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
-
-investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
-
-capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
-
-storage_capacities_desc: <p>The storage capacitiy strongly varies depending on the energy carrier.</p> 
+BE_sectoral_sce: <p>The table provides a comparison of the sectors analyzed in different studies on Belgium.</p>
 
 
-heat_dispatch_win_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical winter week. </p>
+# Texts for Scenario html file for 5 countries combined
 
-heat_dispatch_sum_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical summer week.</p>
+EU_cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios.</p>
+EU_annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
+EU_investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
+EU_cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2023-2050.</p>
+EU_capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
+EU_storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>
 
-power_dispatch_win_desc: <p>The power dispatch charts show electricity production and distribution during a typical winter week.</p>
+# Texts for Scenario html file for other countries
 
-power_dispatch_sum_desc: <p>The power dispatch charts show electricity production and distribution during a typical summer week.</p>
-
-map_plots_desc: <p>Map plots provide a geographical overview of the investments in energy infrastructure and associated electricity grid expansion.</p>
-
-h2_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the hydrogen grid and associated expansion in hydrogen pipelines.</p>
-
-gas_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the gas grid and associated expansion in gas pipelines.</p>
-
-
-# Texts for Scenario html file
-
-cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios. Although both scenarios follow the same trajectory, the gross residual emissions are significantly higher in the reference scenario, which imposes the use of negative emissions technologies such as DACCS or BECCS.</p>
-
+cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios.</p>
 annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
-
 investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
-
 cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2023-2050.</p>
-
 capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
-
-storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p><p>Some key insights from the results include:</p><ul><li> District heating will rely heavily on seasonal storage, utilizing Thermal Energy Storage (TES) to efficiently manage heat supply across different seasons.</li><li> The TES is modeled as large water tanks, with each unit featuring a storage volume of 70,000 cubic meters and an energy storage capacity of 4,500 MWh. An example of this technology is the TES facility in Høje Taastrup, Denmark.</li><li> The optimised TES energy storage capacity is high in sufficiency scenario, as no carbon capture is allowed due to which it highly relies on green technologies. 
-
-scenario_dem_comp_sce: <p>This chart displays the comparison of final energy demands for different scenarios available for Belgium.</p>
-
-scenario_vre_sce: <p>This chart displays the comparison of variable renewable energy technologies for different scenarios available for Belgium.</p>
-
-scenario_flex_sce: <p>This chart displays the comparison of flexibility and generation technologies for different scenarios available for Belgium.</p>
-
-scenario_cost_sce: <p>This chart displays the comparison of capital and total system costs for different scenarios available for Belgium.</p>
-
-hist_sce: <p>This chart displays the comparison of generation capacities from Eurostat data and Reference scenario used in this study for year 2020.</p>
-
+storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>
