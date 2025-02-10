@@ -130,7 +130,7 @@ FTP_HOST="boucan.domainepublic.net"
 FTP_USER="negawattbe_syl"
 FTP_PORT=21
 LOCAL_FOLDER="../results/html_folder"
-REMOTE_BASE="/www/prod.negawatt.be/scenario/"
+REMOTE_BASE="/www/prod.negawatt.be/scenario"
 
 # Get current date in YYMMDD format
 DATE_FOLDER=$(date '+%y%m%d')
