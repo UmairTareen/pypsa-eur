@@ -109,25 +109,23 @@ def load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll):
 
 def calculate_ac_transmission(lines, line_numbers):
     transmission_ac = lines.s_nom_opt[line_numbers].sum()
-
-    # Add condition to check if transmission_ac is less than or equal to 0 for 2020
-    if transmission_ac <= 0:
-        transmission_ac = lines.s_nom[line_numbers].sum()
-        transmission = 0
-    else:
-        transmission = (lines.s_nom_opt[line_numbers].sum() - lines.s_nom[line_numbers].sum()) * (lines.capital_cost[line_numbers].sum()) * 0.5
+    
+    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
+    ac_life = options.loc[("HVAC overhead", "lifetime"), "value"]
+    ann_factor_ac = (1 - ((1 + discount_rate) ** -ac_life))
+    
+    transmission = ((lines.s_nom_opt[line_numbers].sum()) * (lines.capital_cost[line_numbers].sum()) * discount_rate) / ann_factor_ac
 
     return transmission_ac, transmission
 
 def calculate_dc_transmission(links, link_numbers):
     transmission_dc = links.p_nom_opt[link_numbers].sum()
 
-    # Add condition to check if transmission_ac is less than or equal to 0
-    if transmission_dc <= 0:
-        transmission_dc = links.p_nom[link_numbers].sum()
-        transmissionc = 0
-    else:
-        transmissionc = (links.p_nom_opt[link_numbers].sum() - links.p_nom[link_numbers].sum()) * (links.capital_cost[link_numbers].sum()) * 0.5
+    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
+    dc_life = options.loc[("HVDC overhead", "lifetime"), "value"]
+    ann_factor_dc = (1 - ((1 + discount_rate) ** -dc_life))
+    
+    transmissionc = ((links.p_nom_opt[link_numbers].sum()) * (links.capital_cost[link_numbers].sum())  * discount_rate ) / ann_factor_dc
 
     return transmission_dc, transmissionc
 
@@ -2227,10 +2225,10 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     
     html_sections = {
     "demands.html": f"<div id='sectoral_demands'><h2>{country} - Sectoral Demands</h2>{sectoral_demands_desc}{plot_demands_html}</div>",
-    "costs.html": f"<div id='annual_costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html()}</div>"
-                  f"<div id='investment_costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html()}</div>",
-    "capacities.html": f"<div id='capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html()}</div>"
-                       f"<div id='storage capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html()}</div>",
+    "costs.html": f"<div id='annual_costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+                  f"<div id='investment_costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>",
+    "capacities.html": f"<div id='capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+                       f"<div id='storage capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>",
     "dispatch_plots.html": f"<div id='heat_dispatch_winter'><h2>{country} - Heat Dispatch (Winter)</h2>{heat_dispatch_win_desc}{plot_series_heat_html}</div>"
                            f"<div id='heat_dispatch_summer'><h2>{country} - Heat Dispatch (Summer)</h2>{heat_dispatch_sum_desc}{plot_series_heat_html_w}</div>"
                            f"<div id='power_dispatch_winter'><h2>{country} - Power Dispatch (Winter)</h2>{power_dispatch_win_desc}{plot_series_html}</div>"
@@ -2329,8 +2327,10 @@ if __name__ == "__main__":
     sector_opt = snakemake.params.scenario["sector_opts"][0]
     ll = snakemake.params.scenario["ll"][0]
     planning_horizons = [2020, 2030, 2040, 2050]
+    discount_rate = 0.07
     total_country = 'EU'
     countries = snakemake.params.countries 
+    fn = snakemake.input.costs
     proj = load_projection(snakemake.params.plotting)
     map_opts = snakemake.params.plotting["map"]
     countries.append(total_country)
