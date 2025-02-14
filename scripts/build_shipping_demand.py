@@ -28,7 +28,7 @@ if __name__ == "__main__":
     scope = gpd.read_file(snakemake.input.scope).geometry[0]
     regions = gpd.read_file(snakemake.input.regions).set_index("name")
     demand = pd.read_csv(snakemake.input.demand, index_col=[0, 1])[
-        "total international navigation"
+        "total domestic navigation"
     ]
     demand = demand.xs(snakemake.params.energy_totals_year, level=1)
 

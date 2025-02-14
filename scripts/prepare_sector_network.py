@@ -221,7 +221,7 @@ def determine_emission_sectors(options):
             "domestic aviation",
             "international aviation",
             "domestic navigation",
-            "international navigation",
+            # "international navigation",
         ]
     if options["agriculture"]:
         sectors += ["agriculture"]

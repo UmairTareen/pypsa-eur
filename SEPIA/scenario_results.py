@@ -594,6 +594,8 @@ def create_scenario_plots():
  scenarios_data.loc["McKinsey", ["Maritime Transport (Domestic)", "Maritime Transport (International)","Aviation Transport"]] = "X"
  scenarios_data.loc["PyPSA-Sufficiency", :] = "✔"
  scenarios_data.loc["PyPSA-Ref", :] = "✔"
+ scenarios_data.loc["PyPSA-Ref", ["Maritime Transport (International)"]] = "X"
+ scenarios_data.loc["PyPSA-Sufficiency", ["Maritime Transport (International)"]] = "X"
  scenarios_data.loc["CLEVER", :] = "✔"
  scenarios_data.loc["Climact PAC2.0", :] = "✔"
  scenarios_data.loc["Climact PAC2.0", ["Maritime Transport (International)"]] = "X"

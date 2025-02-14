@@ -82,7 +82,7 @@ enable:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#co2-budget
 co2_budget:
-  2020: 0.801
+  2020: 0.7
   2025: 0.524
   2030: 0.45
   2035: 0.150
@@ -115,11 +115,11 @@ co2_budget_national:
     'SE': 0.8
     'SK': 0.8
     'RO': 0.8
-    'BE': 0.8
-    'DE': 0.8
-    'FR': 0.8
-    'GB': 0.8
-    'NL': 0.8
+    'BE': 0.7
+    'DE': 0.7
+    'FR': 0.7
+    'GB': 0.7
+    'NL': 0.7
 country_summary: 'BE'
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity

@@ -478,18 +478,19 @@ def imposed_values_genertion(n, foresight, config):
       #Considering min 150 MW pf electrolysers in 2030, https://observatory.clean-hydrogen.europa.eu/hydrogen-landscape/policies-and-standards/national-strategies/belgium?utm_source=chatgpt.com
       n.links.loc[f"{country}{suffix} H2 Electrolysis-2030", "p_nom_min"] = 150
       n.links.loc[f"{country}{suffix} H2 Electrolysis-2030", "p_nom_max"] = 150
+      
      #Assuming limited Hydrogen pipelines for Belgium in 2030 
       mask = (
          n.links["carrier"].isin(["H2 pipeline retrofitted"]) & 
          (n.links["bus0"].str.contains("BE") | n.links["bus1"].str.contains("BE"))
        )
-      n.links.loc[mask, "p_nom_max"] /= 40
+      n.links.loc[mask, "p_nom_max"] /= 10
       mask = (
          n.links["carrier"].isin(["H2 pipeline"]) & 
          (n.links["bus0"].str.contains("BE") | n.links["bus1"].str.contains("BE"))
        )
       n.links.loc[mask, "p_nom_extendable"] = False
-      logger.info(f"Constraining hydrogen pipelines retrofit for Belgium by 90% in 2030")
+      logger.info(f"Constraining hydrogen pipelines retrofit for Belgium in 2030")
       
       # Imposing rooftop potential values gor Belgium based on Energyville BREGILAB project for 
      solar_max_pot = config["imposed_values"]["solar_rooftop_max"]
@@ -514,9 +515,6 @@ def imposed_values_genertion(n, foresight, config):
           offwind_max = offwind_max_val - offwind_val
           n.generators.loc[f"{country}{suffix} offwind-dc-2040", "p_nom_max"] = offwind_max
           
-          #Imposing no underground gas storage potential for Belgium in 2040 considering it would be converted into H2
-          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
-          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
      if planning_horizon == 2050:
           solar = n.generators[
             n.generators.index.str.contains(country) & 
@@ -536,8 +534,7 @@ def imposed_values_genertion(n, foresight, config):
             n.generators.index.str.contains('offwind')].p_nom_opt.sum()
           offwind_max = offwind_max_val - offwind_val
           n.generators.loc[f"{country}{suffix} offwind-dc-2050", "p_nom_max"] = offwind_max
-          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_min"] = 0.0
-          # n.stores.loc[f"{country}{suffix} gas Store", "e_nom_max"] = 0.0
+          
        
    return n       
 
