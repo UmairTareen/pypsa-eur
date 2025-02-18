@@ -297,13 +297,13 @@ def scenario_cumulative_costs(country):
     costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
     costs_ref = costs_ref[['tech', 'Total']]
     costs_ref['Total'] = costs_ref['Total'] / 3
-    costs_ref['Total'] = costs_ref['Total'] * 27
+    costs_ref['Total'] = costs_ref['Total'] * 30
     costs_ref = costs_ref.rename(columns={'Total': 'Ref'})
     
     costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
     costs_suff = costs_suff[['tech', 'Total']]
     costs_suff['Total'] = costs_suff['Total'] / 3
-    costs_suff['Total'] = costs_suff['Total'] * 27
+    costs_suff['Total'] = costs_suff['Total'] * 30
     costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
     
     combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_Suff', '_ref'))
@@ -311,7 +311,7 @@ def scenario_cumulative_costs(country):
     combined_df = combined_df.set_index('tech')
     
     unit='Euros'
-    title=f'Total Comulative Costs (2023-2050) for {country}'
+    title=f'Total Comulative Costs (2020-2050) for {country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
     colors["AC Transmission"] = "#FF3030"
@@ -599,10 +599,12 @@ def create_scenario_plots():
  scenarios_data.loc["CLEVER", :] = "✔"
  scenarios_data.loc["Climact PAC2.0", :] = "✔"
  scenarios_data.loc["Climact PAC2.0", ["Maritime Transport (International)"]] = "X"
- scenarios_data.loc["Elia(Electrification)", ["Power", "Industry", "Domestic Transport", 
-                            "Residential & Tertiary"]] = "✔"
- scenarios_data.loc["Elia(Electrification)", ["Maritime Transport (Domestic)", "Maritime Transport (International)", "Aviation Transport", 
-                            "Agriculture", "LULUCF"]] = "X"
+ scenarios_data.loc["Elia Blue Print(Elec)", :] = "✔"
+ scenarios_data.loc["Elia Blue Print(GA)", :] = "✔"
+ scenarios_data.loc["Elia Blue Print(DE)", :] = "✔"
+ scenarios_data.loc["Elia Blue Print(Elec)", ["Maritime Transport (International)"]] = "50%"
+ scenarios_data.loc["Elia Blue Print(GA)", ["Maritime Transport (International)"]] = "50%"
+ scenarios_data.loc["Elia Blue Print(DE)", ["Maritime Transport (International)"]] = "50%"
  scenarios_data.loc["Energyville(Shift)", ["Power", "Industry", "Domestic Transport", 
                             "Residential & Tertiary", "Agriculture", "Maritime Transport (Domestic)"]] = "✔"
  scenarios_data.loc["Energyville(Shift)", ["Maritime Transport (International)", "LULUCF", "Aviation Transport"]] = "X"
@@ -844,7 +846,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     if scenario_plots["Annual Investment Costs"] == True:
      table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
     if scenario_plots["Cummulative Investment Costs"] == True:
-     table_of_contents_content += f"<a href='#{country} - Cumulative Investment Costs (2023-2050)'>Cumulative Investment Costs (2023-2050)</a><br>"
+     table_of_contents_content += f"<a href='#{country} - Cumulative Investment Costs (2020-2050)'>Cumulative Investment Costs (2020-2050)</a><br>"
     if scenario_plots["Capacities"] == True:
      table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
     if scenario_plots["Storage Capacities"] == True:
@@ -871,7 +873,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     if scenario_plots["Annual Investment Costs"] == True:
      main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Cummulative Investment Costs"] == True:
-     main_content += f"<div id='{country} - Cumulative Investment Costs (2023-2050)'><h2>{country} - Cumulative Investment Costs (2023-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{country} - Cumulative Investment Costs (2020-2050)'><h2>{country} - Cumulative Investment Costs (2020-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Capacities"] == True:
      main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Storage Capacities"] == True:

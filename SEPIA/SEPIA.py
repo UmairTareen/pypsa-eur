@@ -201,19 +201,35 @@ def prepare_sepia(countries):
      for en_code in ['hdr','eon','eof','spv','cms','pac','ura','bgl']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
     for en_code in ['gaz']:
-     values = fec_p[en_code + '_pe']
-     local_val = LOCAL_GAS.loc[country]
-     local_val.index = local_val.index.map(str)
-     mask = values >= local_val
-     flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
-     flows[('imp', en_code+'_pe','')] =  np.where(mask, values - local_val, 0)
+     if country != 'EU':
+      values = fec_p[en_code + '_pe']
+      local_val = LOCAL_GAS.loc[country]
+      local_val.index = local_val.index.map(str)
+      mask = values >= local_val
+      flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
+      flows[('imp', en_code+'_pe','')] =  np.where(mask, values - local_val, 0)
+     else:
+      values = fec_p[en_code + '_pe']
+      local_val = LOCAL_GAS.loc[LOCAL_GAS.index.intersection(countries)].sum()
+      local_val.index = local_val.index.map(str)
+      mask = values >= local_val
+      flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
+      flows[('imp', en_code+'_pe','')] =  np.where(mask, values - local_val, 0)
     for en_code in ['pet']:
-     values = fec_p[en_code + '_pe']
-     local_val = LOCAL_OIL.loc[country]
-     local_val.index = local_val.index.map(str)
-     mask = values >= local_val
-     flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
-     flows[('imp', en_code+'_pe', '')] = np.where(mask, values - local_val, 0)
+     if country != 'EU':
+      values = fec_p[en_code + '_pe']
+      local_val = LOCAL_OIL.loc[country]
+      local_val.index = local_val.index.map(str)
+      mask = values >= local_val
+      flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
+      flows[('imp', en_code+'_pe', '')] = np.where(mask, values - local_val, 0)
+     else:
+      values = fec_p[en_code + '_pe']
+      local_val = LOCAL_OIL.loc[LOCAL_OIL.index.intersection(countries)].sum()
+      local_val.index = local_val.index.map(str)
+      mask = values >= local_val
+      flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
+      flows[('imp', en_code+'_pe', '')] = np.where(mask, values - local_val, 0)
      
     ''' Compute biomass imports and local production from model data'''
     if country != 'EU':

@@ -7,7 +7,7 @@ BE_annual_costs_sce: <p>This bar chart represents the total annual costs compari
 
 BE_investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
 
-BE_cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2023-2050.</p>
+BE_cumu_investment_costs_sce: <p>Comaprison of cumulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2020-2050.</p>
 
 BE_capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
 
@@ -31,7 +31,7 @@ BE_sectoral_sce: <p>The table provides a comparison of the sectors analyzed in d
 EU_cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios.</p>
 EU_annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
 EU_investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
-EU_cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2023-2050.</p>
+EU_cumu_investment_costs_sce: <p>Comaprison of cumulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2020-2050.</p>
 EU_capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
 EU_storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>
 
@@ -40,6 +40,6 @@ EU_storage_capacities_sce: <p>This chart displays the comparison of storage capa
 cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios.</p>
 annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
 investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
-cumu_investment_costs_sce: <p>Comaprison of cummulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2023-2050.</p>
+cumu_investment_costs_sce: <p>Comaprison of cumulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2020-2050.</p>
 capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
 storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>

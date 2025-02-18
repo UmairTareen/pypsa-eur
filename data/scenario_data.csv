@@ -1,13 +1,14 @@
-McKinsey,Energyville(Central),Energyville(Shift),Elia(Electrification),CLEVER
-solar,80,97,49,50,50
-offshore wind,6,8,17,8,8.4
-onshore wind,20,20,12,9,12.4
-Nuclear,0,0,0,0,0
-Hydrogen Turbines or CHPs,0,8,4,0,0.9
-CCGT/OCGT,0,0.15,0.19,4,0.9
-Interconnections,Not mentioned,13,13,20.5,No info
-Others,0.5,2,3,1.3,1
-Final Energy Demand (Twh),250,244,221,305,198
-Emissions(%),-97,-98,-98,-100,-95
-Average Annual Costs(Billion Euros/year),no info,7.9,6.8,No Info,No info
-Average Investment Costs(Billion Euros/year),13.38,5,4,No Info,No info
+McKinsey,Energyville(Central),Energyville(Shift),Elia Blue Print(Elec),Elia Blue Print(GA),Elia Blue Print(DE),CLEVER
+solar,80,97,49,98,98,98,50
+offshore wind,6,8,17,8,8,8,8.4
+onshore wind,20,20,12,14,14,14,12.4
+offshore wind (Non-domestic),0,0,0,16,16,16,0
+nuclear,0,0,0,8.2,8.2,8.2,0
+Hydrogen Turbines or CHPs,0,8,4,0,0,0,0.9
+CCGT/OCGT,0,0.15,0.19,7,7,7,0.9
+Interconnections,Not mentioned,13,13,20.5,20.5,20.5,No info
+Others,0.5,2,3,2,2,2,1
+Final Energy Demand (Twh),250,244,221,300,250,240,198
+Emissions(%),-97,-98,-98,-93,-93,-93,-95
+Average Annual Costs(Billion Euros/year),no info,7.9,6.8,23,22,20,No info
+Average Investment Costs(Billion Euros/year),13.38,5,4,No info,No info,10,No info
