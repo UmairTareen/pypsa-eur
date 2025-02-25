@@ -2234,8 +2234,8 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
                            f"<div id='power_dispatch_winter'><h2>{country} - Power Dispatch (Winter)</h2>{power_dispatch_win_desc}{plot_series_html}</div>"
                            f"<div id='power_dispatch_summer'><h2>{country} - Power Dispatch (Summer)</h2>{power_dispatch_sum_desc}{plot_series_html_w}</div>",
     "maps.html": f"<div id='map_plots'><h2>Map Plots</h2>{map_plots_desc}{plot_map_html}</div>"
-                 f"<div id='h2_map_plots'><h2>H2 Map Plots</h2>{gas_map_plots_desc}{plot_map_h2_html}</div>"
-                 f"<div id='gas_map_plots'><h2>Gas Map Plots</h2>{h2_map_plots_desc}{plot_map_ch4_html}</div>",}
+                 f"<div id='h2_map_plots'><h2>H2 Map Plots</h2>{h2_map_plots_desc}{plot_map_h2_html}</div>"
+                 f"<div id='gas_map_plots'><h2>Gas Map Plots</h2>{gas_map_plots_desc}{plot_map_ch4_html}</div>",}
     # table_of_contents_content = ""
     # if pypsa_plots["Sectoral Demands"] == True:
     #  table_of_contents_content += f"<a href='#{country} - Sectoral Demands'>Sectoral Demands</a><br>"
