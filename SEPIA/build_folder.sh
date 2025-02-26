@@ -109,6 +109,7 @@ cp ../results/ref/htmls/NL_ref_maps.html ../results/html_folder/other_countries/
 
 
 cp ../results/scenario_results/BE_combined_scenario_chart.html ../results/html_folder/BE_combined_scenario_chart.html
+cp ../results/scenario_results/BE_scenario_comparison.html ../results/html_folder/BE_scenario_comparison.html
 cp ../results/scenario_results/EU_combined_scenario_chart.html ../results/html_folder/EU_combined_scenario_chart.html
 
 cp ../results/scenario_results/DE_combined_scenario_chart.html ../results/html_folder/other_countries/DE_combined_scenario_chart.html

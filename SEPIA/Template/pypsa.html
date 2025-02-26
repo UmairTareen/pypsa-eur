@@ -65,6 +65,7 @@
             // Define possible file types to check
             var fileTypes = [
                 "combined_scenario_chart",
+				"scenario_comparison",
                 "emissions_suff",
                 "emissions_ref",
                 "sankeys_suff",
@@ -124,6 +125,7 @@
 
             var scenarioNames = {
                 "combined_scenario_chart": "Scenario Overview",
+				"scenario_comparison": "Scenario Comaprisons",
                 "emissions_suff": "Emissions",
                 "emissions_ref": "Emissions",
                 "sankeys_ref": "Sankeys",
@@ -154,6 +156,7 @@
             // List of predefined files
             var predefinedFiles = [
                 "BE_combined_scenario_chart.html",
+				"BE_scenario_comparison.html",
                 "BE_emissions_suff.html",
                 "BE_sankeys_suff.html",
                 "BE_fec_suff.html",
@@ -247,6 +250,7 @@
         const fileOptions = {
             "BE": [
                 { value: "combined_scenario_chart", text: "Scenarios Overview" },
+				{ value: "scenario_comparison", text: "Scenarios Comparison" },
 				{ value: "suff_demands", text: "Demands (Sufficiency)" },
 				{ value: "ref_demands", text: "Demands (Reference)" },
                 { value: "emissions_suff", text: "Emissions (Sufficiency)" },

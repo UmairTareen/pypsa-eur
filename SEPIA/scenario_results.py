@@ -732,7 +732,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
 
     # Create combined HTML
     combined_html = "<html><head><title>The Negawatt Belgium sufficiency scenario</title></head><body>"
-    
+    combined_html_be = "<html><head><title>Scenario Comparison</title></head><body>"
     #Load text descriptors
     def load_html_texts(file_path):
      html_texts = {}
@@ -814,25 +814,28 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         scenario_figures = create_scenario_plots()
         if scenario_plots["Scenarios Demands Comparison"] == True:
          demand_comparison = scenario_figures['demand']
-         combined_html += f"<div><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         combined_html_be += f"<div><h2>{country} - Scenarios Demands Comparison</h2>{demand_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
          vre_comparison = scenario_figures['vre']
-         combined_html += f"<div><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         combined_html_be += f"<div><h2>{country} - Scenarios VRE Capacities Comparison</h2>{vre_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenario Flexibility Capacities"] == True:
          flexibility_comparison = scenario_figures['flexibility']
-         combined_html += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         combined_html_be += f"<div><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{flexibility_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios Costs Comparison"] == True:
          costs_comparison = scenario_figures['costs']
-         combined_html += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         combined_html_be += f"<div><h2>{country} - Scenarios Costs Comparison</h2>{costs_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Historic Generation Comparison"] == True:
          historic_comparison = scenario_figures['historic']
-         combined_html += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         combined_html_be += f"<div><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios Sectors Comparison"] == True:
          scenarios_data = scenario_figures['scenarios_data']
-         combined_html += f"<div><h2>{country} - Comparison of modelled sectors considered in different recent Scenarios</h2>{scenarios_data.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         combined_html_be += f"<div><h2>{country} - Comparison of modelled sectors considered in different recent Scenarios</h2>{scenarios_data.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
 
     combined_html += "</body></html>"
+    combined_html_be += "</body></html>"
     table_of_contents_content = ""
+    table_of_contents_content_be = ""
+    main_content_be = ''
     html_filnemae = 'SEPIA/html_scenarios_' + country + '.html'
     if os.path.exists(html_filnemae):
         main_content = load_html_file(html_filnemae)
@@ -853,17 +856,17 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
      table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
     if country == 'BE':
         if scenario_plots["Scenarios Demands Comparison"] == True:
-         table_of_contents_content += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
+         table_of_contents_content_be += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
         if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
-         table_of_contents_content += f"<a href='#{country} - Scenarios VRE Capacities Comparison'>Scenarios VRE Capacities Comparison</a><br>"
+         table_of_contents_content_be += f"<a href='#{country} - Scenarios VRE Capacities Comparison'>Scenarios VRE Capacities Comparison</a><br>"
         if scenario_plots["Scenario Flexibility Capacities"] == True:
-         table_of_contents_content += f"<a href='#{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'>Scenario Flexibility Capacities in Electricity Grid Comparison</a><br>"
+         table_of_contents_content_be += f"<a href='#{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'>Scenario Flexibility Capacities in Electricity Grid Comparison</a><br>"
         if scenario_plots["Scenarios Costs Comparison"] == True:
-         table_of_contents_content += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
+         table_of_contents_content_be += f"<a href='#{country} - Scenarios Costs Comparison'>Scenarios Costs Comparison</a><br>"
         if scenario_plots["Historic Generation Comparison"] == True:
-         table_of_contents_content += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Baseline Scenario</a><br>"
+         table_of_contents_content_be += f"<a href='#{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'>Historic Generation Coparison from JRC data with Pypsa 2020 Baseline Scenario</a><br>"
         if scenario_plots["Scenarios Sectors Comparison"] == True:
-         table_of_contents_content += f"<a href='#{country} - Comparison of Sectors in Belgium's Energy Scenarios'>Comparison of different sectors considered for Belgium scenarios</a><br>"
+         table_of_contents_content_be += f"<a href='#{country} - Comparison of Sectors in Belgium's Energy Scenarios'>Comparison of different sectors considered for Belgium scenarios</a><br>"
 
     # Add more links for other plots
     if scenario_plots["Cummulative Emissions"] == True:
@@ -881,17 +884,17 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     
     if country == 'BE':
         if scenario_plots["Scenarios Demands Comparison"] == True:
-         main_content += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         main_content_be += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios VRE Capacities Comparison"] == True:
-         main_content += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{ scenario_vre_desc}{vre_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         main_content_be += f"<div id='{country} - Scenarios VRE Capacities Comparison'><h2>{country} - Scenarios VRE Capacities Comparison</h2>{ scenario_vre_desc}{vre_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenario Flexibility Capacities"] == True:
-         main_content += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{scenario_flex_desc}{flexibility_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         main_content_be += f"<div id='{country} - Scenario Flexibility Capacities in Electricity Grid Comparison'><h2>{country} - Scenario Flexibility Capacities in Electricity Grid Comparison</h2>{scenario_flex_desc}{flexibility_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios Costs Comparison"] == True:
-         main_content += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         main_content_be += f"<div id='{country} - Scenarios Costs Comparison'><h2>{country} - Scenarios Costs Comparison</h2>{scenario_cost_desc}{costs_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Historic Generation Comparison"] == True:
-         main_content += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         main_content_be += f"<div id='{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario'><h2>{country} - Historic Generation Comparison from JRC data with Pypsa 2020 Baseline Scenario</h2>{hist_desc}{historic_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
         if scenario_plots["Scenarios Sectors Comparison"] == True:
-         main_content += f"<div id='{country} - Comparison of Sectors in Belgium's Energy Scenarios'><h2>{country} - Comparison of Sectors in Belgium's Energy Scenarios</h2>{sectoral_desc}{scenarios_data.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+         main_content_be += f"<div id='{country} - Comparison of Sectors in Belgium's Energy Scenarios'><h2>{country} - Comparison of Sectors in Belgium's Energy Scenarios</h2>{sectoral_desc}{scenarios_data.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template
@@ -908,6 +911,20 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     combined_file_path = os.path.join(output_folder, f"{country}_combined_scenario_chart.html")
     with open(combined_file_path, "w") as combined_file:
      combined_file.write(rendered_html)
+     
+    # Render the second HTML file (Belgium-Specific Comparisons)
+    rendered_html_be = ""
+    if country == 'BE':
+     rendered_html_be = template.render(
+        title=f"{country} - Scenario Comparisons",
+        country=country,
+        TABLE_OF_CONTENTS=table_of_contents_content_be,
+        MAIN=main_content_be
+    )
+    be_file_path = os.path.join(output_folder, f"{country}_scenario_comparison.html")
+    if rendered_html_be:
+     with open(be_file_path, "w") as be_file:
+        be_file.write(rendered_html_be)
 
 
 

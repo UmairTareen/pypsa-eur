@@ -22,11 +22,11 @@ BE_FEC_origin: <p> This plot shows the the share of renewable energy technologie
 
 BE_Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
 
-BE_FEC_sector: <p> This plot shows the evolution of the final energy consumption (by sector) for each energy carrier. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy carrier and see which sectors it supplies</p>
+BE_FEC_sector: <p> This plot shows the evolution of the final energy consumption (by sector) for each energy carrier. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy carrier and see which sectors it supplies.</p>
 
 BE_Grid_carrier_contribution: <p> This plot shows the contribution of each carrier in important grid infrastructure like electricity grid, gas grid etc and also in storage systems.</p> 
 
-BE_FEC_carrier: <p> This plot shows the evolution of the final energy consumption (by carrier) in each sector. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy sector and see how it is supplied</p>
+BE_FEC_carrier: <p> This plot shows the evolution of the final energy consumption (by carrier) in each sector. For a more detailed exploration of the scenario results, use the drop-down menu to select a particular energy sector and see how it is supplied.</p>
 
 # Texts for SEPIA html file for 5 countries combined
 
