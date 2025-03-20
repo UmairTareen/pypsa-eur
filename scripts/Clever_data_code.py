@@ -17,7 +17,7 @@ path = os.path.join(os.path.dirname(__file__), '../data/')
 PATH = os.path.join(os.path.dirname(__file__), '../')
 skip_cols = [0,1, 2, 3]
 keep_cols = [i for i in range(34) if i not in skip_cols]
-year= 2050
+years = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
 
 countriess = [
     "FR",
@@ -50,7 +50,7 @@ countriess = [
     "NO",
 ]
 
-def build_CLEVER_Residential_data_per_country(countriess):
+def build_CLEVER_Residential_data_per_country(countriess, year):
     
     '''
     This function computes CLEVER data of residential sector for all eu28 countries
@@ -106,7 +106,7 @@ def build_Clever_Residential(countriess, year):
 
     '''
 
-    func = partial(build_CLEVER_Residential_data_per_country)
+    func = partial(build_CLEVER_Residential_data_per_country,year=year)
     tqdm_kwargs = dict(
         ascii=False,
         unit=" country",
@@ -121,11 +121,12 @@ def build_Clever_Residential(countriess, year):
     
 
     return totals.T
-clever_residential = build_Clever_Residential(countriess, year) 
-clever_residential = clever_residential.loc[:, clever_residential.columns.notna()]
-clever_residential.to_csv(f"../data/clever_residential_{year}.csv")
+for year in years:
+ clever_residential = build_Clever_Residential(countriess, year) 
+ clever_residential = clever_residential.loc[:, clever_residential.columns.notna()]
+ clever_residential.to_csv(f"../data/clever_residential_{year}.csv")
 
-def build_CLEVER_tertiary_data_per_country(countriess):
+def build_CLEVER_tertiary_data_per_country(countriess, year):
     
     '''
     This function computes CLEVER data of tertiary sector for all eu28 countries
@@ -178,7 +179,7 @@ def build_Clever_Tertiary(countriess, year):
 
     '''
 
-    func = partial(build_CLEVER_tertiary_data_per_country)
+    func = partial(build_CLEVER_tertiary_data_per_country,year=year)
     tqdm_kwargs = dict(
         ascii=False,
         unit=" country",
@@ -193,13 +194,14 @@ def build_Clever_Tertiary(countriess, year):
     
 
     return totals.T
-clever_Tertairy = build_Clever_Tertiary(countriess, year) 
+for year in years:
+ clever_Tertairy = build_Clever_Tertiary(countriess, year) 
 
-'''
-Missing data for space heating, hot water and cooking in the tertiary sector.
-assuming the percentage of residential sector to fill out the data.
-'''
-for country_code in ['BE', 'DE', 'FR', 'GB', 'NL']:
+ '''
+ Missing data for space heating, hot water and cooking in the tertiary sector.
+ assuming the percentage of residential sector to fill out the data.
+ '''
+ for country_code in ['BE', 'DE', 'FR', 'GB', 'NL']:
     # Perform the calculations for each country
     perc_total_space = (clever_residential.loc[country_code, 'Final electricity consumption for space heating in the residential sector'] / clever_residential.loc[country_code, 'Total final energy consumption for space heating in the residential sector'])
     perc_total_water = (clever_residential.loc[country_code, 'Final electricity consumption for domestic hot water'] / clever_residential.loc[country_code, 'Total final energy consumption for domestic hot water'])
@@ -214,10 +216,10 @@ for country_code in ['BE', 'DE', 'FR', 'GB', 'NL']:
     clever_Tertairy.loc[country_code, "Thermal_uses_tertiary"] = clever_Tertairy.loc[country_code, "Total final energy consumption for space heating in the tertiary sector (with climatic corrections) "] + clever_Tertairy.loc[country_code, "Total final energy consumption for hot water in the tertiary sector"].sum()
     
 
-clever_Tertairy = clever_Tertairy.loc[:, clever_Tertairy.columns.notna()]
-clever_Tertairy.to_csv(f"../data/clever_Tertairy_{year}.csv")
+ clever_Tertairy = clever_Tertairy.loc[:, clever_Tertairy.columns.notna()]
+ clever_Tertairy.to_csv(f"../data/clever_Tertairy_{year}.csv")
 
-def build_CLEVER_transport_data_per_country(countriess):
+def build_CLEVER_transport_data_per_country(countriess, year):
     
     '''
     This function computes CLEVER data of transport sector for all eu28 countries
@@ -284,7 +286,7 @@ def build_Clever_Transport(countriess, year):
 
     '''
 
-    func = partial(build_CLEVER_transport_data_per_country)
+    func = partial(build_CLEVER_transport_data_per_country,year=year)
     tqdm_kwargs = dict(
         ascii=False,
         unit=" country",
@@ -299,11 +301,12 @@ def build_Clever_Transport(countriess, year):
     
 
     return totals.T  
-clever_Transport = build_Clever_Transport(countriess, year)
-clever_Transport = clever_Transport.loc[:, clever_Transport.columns.notna()]
-clever_Transport.to_csv(f"../data/clever_Transport_{year}.csv") 
+for year in years:
+ clever_Transport = build_Clever_Transport(countriess, year)
+ clever_Transport = clever_Transport.loc[:, clever_Transport.columns.notna()]
+ clever_Transport.to_csv(f"../data/clever_Transport_{year}.csv") 
 
-def build_CLEVER_agriculture_data_per_country(countriess):
+def build_CLEVER_agriculture_data_per_country(countriess, year):
     '''
     This function computes CLEVER data of agriculture sector for all eu28 countries
 
@@ -350,7 +353,7 @@ def build_Clever_Agriculture(countriess, year):
 
     '''
 
-    func = partial(build_CLEVER_agriculture_data_per_country)
+    func = partial(build_CLEVER_agriculture_data_per_country,year=year)
     tqdm_kwargs = dict(
         ascii=False,
         unit=" country",
@@ -364,11 +367,12 @@ def build_Clever_Agriculture(countriess, year):
     totals = pd.concat(totals_list, axis=1, keys=countriess)
 
     return totals.T 
-clever_Agriculture = build_Clever_Agriculture(countriess, year) 
-clever_Agriculture = clever_Agriculture.loc[:, clever_Agriculture.columns.notna()]
-clever_Agriculture.to_csv(f"../data/clever_Agriculture_{year}.csv") 
+for year in years:
+ clever_Agriculture = build_Clever_Agriculture(countriess, year) 
+ clever_Agriculture = clever_Agriculture.loc[:, clever_Agriculture.columns.notna()]
+ clever_Agriculture.to_csv(f"../data/clever_Agriculture_{year}.csv") 
 
-def build_CLEVER_AFOLUB_data_per_country(countriess):
+def build_CLEVER_AFOLUB_data_per_country(countriess, year):
     
     '''
     This function computes CLEVER data of carbon emissions from agriculture sector for all eu28 countries
@@ -408,7 +412,7 @@ def build_Clever_AFOLUB(countriess, year):
 
     '''
 
-    func = partial(build_CLEVER_AFOLUB_data_per_country)
+    func = partial(build_CLEVER_AFOLUB_data_per_country,year=year)
     tqdm_kwargs = dict(
         ascii=False,
         unit=" country",
@@ -422,11 +426,12 @@ def build_Clever_AFOLUB(countriess, year):
     totals = pd.concat(totals_list, axis=1, keys=countriess)
 
     return totals.T
-clever_AFOLUB = build_Clever_AFOLUB(countriess, year) 
-clever_AFOLUB = clever_AFOLUB.loc[:, clever_AFOLUB.columns.notna()]
-clever_AFOLUB.to_csv(f"../data/clever_AFOLUB_{year}.csv") 
+for year in years:
+ clever_AFOLUB = build_Clever_AFOLUB(countriess, year) 
+ clever_AFOLUB = clever_AFOLUB.loc[:, clever_AFOLUB.columns.notna()]
+ clever_AFOLUB.to_csv(f"../data/clever_AFOLUB_{year}.csv") 
 
-def build_CLEVER_macro_data_per_country(countriess):
+def build_CLEVER_macro_data_per_country(countriess, year):
     
     ''''
     This function computes CLEVER data of carbon emissions from multiple sector for all eu28 countries
@@ -469,7 +474,7 @@ def build_Clever_Macro(countriess, year):
 
     '''
 
-    func = partial(build_CLEVER_macro_data_per_country)
+    func = partial(build_CLEVER_macro_data_per_country,year=year)
     tqdm_kwargs = dict(
         ascii=False,
         unit=" country",
@@ -482,13 +487,14 @@ def build_Clever_Macro(countriess, year):
 
     totals = pd.concat(totals_list, axis=1, keys=countriess)
 
-    return totals.T 
-clever_Macro = build_Clever_Macro(countriess, year)
-clever_Macro = clever_Macro.loc[:, clever_Macro.columns.notna()]
-clever_Macro.to_csv(f"../data/clever_Macro_{year}.csv")  
+    return totals.T
+for year in years: 
+ clever_Macro = build_Clever_Macro(countriess, year)
+ clever_Macro = clever_Macro.loc[:, clever_Macro.columns.notna()]
+ clever_Macro.to_csv(f"../data/clever_Macro_{year}.csv")  
 
 
-def build_CLEVER_industry_data_per_country(countriess):
+def build_CLEVER_industry_data_per_country(countriess, year):
     
     ''''
     This function computes CLEVER data of industrial sector for all eu28 countries
@@ -543,7 +549,7 @@ def build_Clever_Industry(countriess, year):
 
     '''
 
-    func = partial(build_CLEVER_industry_data_per_country)
+    func = partial(build_CLEVER_industry_data_per_country,year=year)
     tqdm_kwargs = dict(
         ascii=False,
         unit=" country",
@@ -556,9 +562,10 @@ def build_Clever_Industry(countriess, year):
 
     totals = pd.concat(totals_list, axis=1, keys=countriess)
 
-    return totals.T  
-clever_Industry = build_Clever_Industry(countriess, year) 
-clever_Industry = clever_Industry.loc[:, clever_Industry.columns.notna()]
-clever_Industry.to_csv(f"../data/clever_Industry_{year}.csv")  
+    return totals.T 
+for year in years: 
+ clever_Industry = build_Clever_Industry(countriess, year) 
+ clever_Industry = clever_Industry.loc[:, clever_Industry.columns.notna()]
+ clever_Industry.to_csv(f"../data/clever_Industry_{year}.csv")  
     
 

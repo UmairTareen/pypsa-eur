@@ -620,6 +620,7 @@ def create_scenario_plots():
  fig_demand.update_layout(
         title="Final energy demand comparison for scenarios in 2050",
         xaxis_title="Scenario",
+        height=700, width=1200,
         yaxis_title="Demand (TWh)"
     )
  
@@ -639,6 +640,7 @@ def create_scenario_plots():
  fig_vre.update_layout(
         title="VRE capacities for scenarios in 2050",
         xaxis_title="Scenario",
+        height=700, width=1200,
         yaxis_title="Capacities (GW)"
     )
  figures['vre'] = fig_vre
@@ -659,6 +661,7 @@ def create_scenario_plots():
  fig_flex.update_layout(
         title="Flexibility options in electricity grid for scenarios in 2050",
         xaxis_title="Scenario",
+        height=700, width=1400,
         yaxis_title="Capacities (GW)"
     )
  figures['flexibility'] = fig_flex
@@ -676,6 +679,7 @@ def create_scenario_plots():
  fig_costs.update_layout(
         title="Costs comparison for scenarios",
         xaxis_title="Scenario",
+        height=700, width=1400,
         yaxis_title="Average Annual Costs (Billion Euros/year)"
     )
  figures['costs'] = fig_costs
@@ -686,6 +690,7 @@ def create_scenario_plots():
  fig_emissions.update_layout(
          title="Emissions comparison for scenarios compared to 1990",
          xaxis_title="Scenario",
+         height=700, width=1200,
          yaxis_title="%"
      )
  figures['emissions'] = fig_emissions
@@ -704,6 +709,7 @@ def create_scenario_plots():
  fig_historic.update_layout(
       title="2020 scenario comparison with JRC historic data",
       yaxis_title='Energy Production (TWh)',
+      height=700, width=1200,
       # barmode='group',
       # font=dict(size=15),
   )

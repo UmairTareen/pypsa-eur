@@ -557,6 +557,7 @@ def plot_demands(countries):
         facet_col='Demand',
         labels={'year': '', 'value': 'Final energy and non-energy demand [TWh/a]'}
         )
+        fig.update_layout(height=800, width=1400)
         logo['y']=1.021
         fig.add_layout_image(logo)
         # Show the plot
@@ -1950,7 +1951,7 @@ def create_bar_chart(costs, country,  unit='Euros/year'):
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=900, width=1200,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
     fig.add_layout_image(logo)
     # Save the HTML file for each country
@@ -1980,7 +1981,7 @@ def create_investment_costs(investment_costs, country,  unit='Euros/year'):
     
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=900, width=1200,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
     fig.add_layout_image(logo)
     return fig
@@ -2085,7 +2086,7 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
                 fig.update_yaxes(title_text=unit, row=2, col=1)
     
     # Update layout
-    fig.update_layout(height=600, width=1400, showlegend=True, title=f" Storage Capacities for {country}", yaxis_title=unit)
+    fig.update_layout(height=500, width=1200, showlegend=True, title=f" Storage Capacities for {country}", yaxis_title=unit)
     logo['y']=1.05
     fig.add_layout_image(logo)
     
@@ -2302,7 +2303,8 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
         TABLE_OF_CONTENTS=table_of_contents.get(file_name, ""),  # Add TOC per section
         MAIN=main_content,
       )
-      combined_file_path = os.path.join(output_folder, f"{country}_{study}_{file_name}")
+      file_name = file_name.replace(".html", "")
+      combined_file_path = os.path.join(output_folder, f"{country}_{file_name}_{study}.html")
       with open(combined_file_path, "w", encoding='utf-8') as html_file:
         html_file.write(rendered_html)
 

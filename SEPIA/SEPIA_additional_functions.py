@@ -91,7 +91,7 @@ def create_ghg_chart(results, NODES, main_params, type="area", title='', xls_wri
     #     tickfont=dict(
     #         size=18),
     # ))
-    fig.update_layout(hovermode='x', legend_title_text='', yaxis_title='MtCO2/year', title=title, font=dict(
+    fig.update_layout(hovermode='x',height=700, width=1400, legend_title_text='', yaxis_title='MtCO2/year', title=title, font=dict(
                 size=18))
     if len(targets) > 0:
         fig.add_scatter(y=targets['y'], x=targets['x'], mode=targets['mode'], name=targets['title'], marker_size=15,
@@ -177,6 +177,7 @@ def create_sankey(flows, nodes, processes, main_params, interval_year=5, title="
         title_text = title+" in " + str(years[visible_step]),
         hovermode = 'x',
         margin_t=100,
+        height=700, width=1400,
         sliders=[dict(active = visible_step, currentvalue = {"visible": False}, steps=steps)])
     # Adding labels for types of nodes
     add_sankey_label(fig, 0, 'Source')
@@ -256,6 +257,7 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
         title_text = title+" in " + str(years[visible_step]),
         hovermode = 'x',
         margin_t=100,
+        height=700, width=1400,
         sliders=[dict(active = visible_step, currentvalue = {"visible": False}, steps=steps)])
     
     # height=500,

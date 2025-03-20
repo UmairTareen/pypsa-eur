@@ -1,0 +1,338 @@
+<!-- <!DOCTYPE html> -->
+<html class="no-js" lang="en">
+        <meta charset="utf-8">
+        <link rel='stylesheet' id='twentytwenty-css' href='https://clever-energy-scenario.eu/wp-content/themes/twentytwenty/style.css?ver=6.1.1' media='all' />
+        <link rel='stylesheet' id='twentytwenty-style-css' href='https://clever-energy-scenario.eu/wp-content/themes/clever/style.css?ver=1.' media='all' />
+        <style>
+        /* SEPIA style changes */
+        #navsticky .menu-item { display: inline-block !important }
+        #menu-item-59 img { display: inline-block }
+        .site-main { padding:0 5%; }
+        /* #menu-dropdown { top:-11px !important } */
+        #navsticky li { top: -15px; }
+        #navsticky #menu-dropdown { top: -21px; }
+        #navsticky .menu-item-70 A { background:none; }
+        #navsticky .menu-item-70 { margin-left:0; }
+        #navsticky #return-arrow {
+            font-size: 30px;
+            display: inline;
+            padding-right: 7px;
+        }
+        </style>
+
+    <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-VP0W0EPDS9');
+    </script>
+    <script>
+        var selectedFileType = "combined_scenario_chart"; // Initialize with the default file type
+        var selectedCountry = "BE"; // Initialize empty
+
+        function updateDropdown() {
+            var dropdown = document.getElementById("country-select");
+
+            // Clear existing options
+            //dropdown.innerHTML = '<option value=""></option>';
+
+            // Define a mapping between short codes and full names
+            var countryMapping = {
+                BE: "Belgium",
+				EU: "5 countries"
+                // Add more entries for other countries as needed
+            };
+
+            // Get the current filename from the URL, safely
+            var currentUrl = window.location.href;
+            var urlPath = currentUrl.substring(currentUrl.lastIndexOf('/') + 1);
+
+            // Check each country code in the mapping
+            for (let countryCode in countryMapping) {
+                if (urlPath.includes(countryCode + '_')) {
+                    dropdown.value = countryCode;
+                    selectedCountry = countryCode;
+                    break;
+                }
+            }
+
+
+            // Get the file type select dropdown
+            var fileTypeSelect = document.getElementById("file-type-select");
+
+            // Define possible file types to check
+            var fileTypes = [
+                "combined_scenario_chart",
+				"scenario_comparison",
+                "emissions_suff",
+                "emissions_ref",
+                "sankeys_suff",
+                "sankeys_ref",
+				"fec_suff",
+				"fec_ref",
+				"demands_suff",
+				"demands_ref",
+				"costs_suff",
+				"costs_ref",
+				"capacities_suff",
+				"capacities_ref",
+				"maps_suff",
+				"maps_ref",
+				"dispatch_plots_suff",
+				"dispatch_plots_ref",
+            ];
+
+            // Check if URL contains any of the file types
+            for (let fileType of fileTypes) {
+                if (urlPath.includes(fileType)) {
+                    selectedFileType = fileType;
+                    fileTypeSelect.value = fileType;
+                    break;
+                }
+            }
+
+        }
+
+        function changeCountry() {
+            selectedCountry = document.getElementById("country-select").value;
+            if (selectedCountry) { // Only update if a country is selected
+                updateUrl();
+            }
+        }
+
+        function changeFileType() {
+            selectedFileType = document.getElementById("file-type-select").value;
+            if (selectedCountry) { // Only update if a country is selected
+                updateUrl();
+            }
+        }
+
+        function getSelectedFileType() {
+            var fileTypeSelect = document.getElementById("file-type-select");
+            return fileTypeSelect.value;
+        }
+
+        function updateUrl() {
+            var url = selectedCountry + "_" + selectedFileType + ".html";
+            
+            // Mapping for more readable country and scenario names
+            var countryNames = {
+                BE: "Belgium",
+                EU: "5 countries"
+            };
+
+            var scenarioNames = {
+                "combined_scenario_chart": "Scenario Overview",
+				"scenario_comparison": "Scenario Comaprisons",
+                "emissions_suff": "Emissions",
+                "emissions_ref": "Emissions",
+                "sankeys_ref": "Sankeys",
+                "sankeys_suff": "Sankeys",
+				"fec_suff": "FEC",
+				"fec_suff": "FEC",
+            };
+
+            // Use the existing checkFileExistence function to verify file availability
+            if (checkFileExistence(url)) {
+                console.log("Updating URL:", url);
+                window.location.href = url;
+            } else {
+                // Provide a detailed alert with readable names
+                var countryName = countryNames[selectedCountry] || selectedCountry;
+                var scenarioName = scenarioNames[selectedFileType] || selectedFileType;
+
+                // Show an alert with specific details
+                alert(`Sorry, the selected combination is not available.\n\nRegion: ${countryName}\nScenario: ${scenarioName}`);
+                
+                // Reset the dropdowns to their previous values
+                document.getElementById("country-select").value = selectedCountry;
+                document.getElementById("file-type-select").value = selectedFileType;
+            }
+        }
+
+        function checkFileExistence(filename) {
+            // List of predefined files
+            var predefinedFiles = [
+                "BE_combined_scenario_chart.html",
+				"BE_scenario_comparison.html",
+                "BE_emissions_suff.html",
+                "BE_sankeys_suff.html",
+                "BE_fec_suff.html",
+                "BE_emissions_ref.html",
+				"BE_sankeys_ref.html",
+				"BE_fec_ref.html",
+                "EU_combined_scenario_chart.html",
+                "EU_emissions_ref.html",
+                "EU_emissions_suff.html",
+                "EU_sankeys_ref.html",
+				"EU_sankeys_suff.html",
+				"EU_fec_ref.html",
+				"EU_fec_ref.html",
+                // Add more valid file combinations as needed
+            ];
+
+            // Check if the filename exists in the predefined list
+            return predefinedFiles.includes(filename);
+        }
+
+        function checkFileExistenceHelper(filename) {
+            // Replace this with your actual logic to check file existence
+            // For simplicity, let's assume you have a function or method to check the existence of the file
+            var exists = checkFileExistence(filename);
+
+            // Print a message to the console for debugging
+            console.log(`${filename} exists: ${exists}`);
+
+            return exists;
+        }
+
+        // Placeholder function for file existence (replace with your actual logic)
+        function checkFileExistence(filename) {
+            // Replace this with your actual logic to check file existence
+            // For simplicity, let's assume the file always exists
+            return true;
+        }
+
+        // Call updateDropdown on page load
+        window.onload = function () {
+            updateDropdown();
+
+            // Attach event listeners using JavaScript
+            document.getElementById("country-select").addEventListener("change", changeCountry);
+            document.getElementById("file-type-select").addEventListener("change", changeFileType);
+        };
+    </script>
+    </script>
+</head>
+
+<body class="home page-template page-template-homepage page-template-homepage-php page page-id-7 page-parent wp-custom-logo wp-embed-responsive singular enable-search-modal has-post-thumbnail has-no-pagination not-showing-comments show-avatars homepage footer-top-visible">
+    <div id="top"></div>
+
+    <div id="navsticky">
+    <A HREF="https://www.negawatt.be/"><img src="https://www.negawatt.be/scenario/logo.png" class="logo_stiky"><style>
+    .logo_stiky {
+        width: 250px; /* Adjust the width as needed */
+        height: auto; /* Maintain aspect ratio */
+    }
+</style>
+</a>
+        <li id="menu-item-59" class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-59"></li>
+        <li id="menu-dropdown" >
+            <div id="menu-dropdown">
+<form>
+    <select id="country-select" onchange="saveSelection(); updateFileOptions();">
+        <option value="BE">Belgium</option>
+        <option value="EU">5 countries</option>
+    </select>
+
+    <select id="file-type-select">
+        <!-- Options will be updated dynamically -->
+    </select>
+</form>
+
+<script>
+    function saveSelection() {
+        const selectedCountry = document.getElementById("country-select").value;
+        localStorage.setItem("selectedCountry", selectedCountry);
+    }
+
+    function loadSelection() {
+        return localStorage.getItem("selectedCountry") || "BE"; // Default to BE if nothing is stored
+    }
+
+    function updateFileOptions() {
+        const country = document.getElementById("country-select").value; // Get selected country
+        const fileSelect = document.getElementById("file-type-select");
+
+        // Define file options based on the selected country
+        const fileOptions = {
+            "BE": [
+                { value: "combined_scenario_chart", text: "Scenarios Overview" },
+				{ value: "scenario_comparison", text: "Scenarios Comparison" },
+				{ value: "demands_suff", text: "Demands (Sufficiency)" },
+				{ value: "demands_ref", text: "Demands (Reference)" },
+                { value: "emissions_suff", text: "Emissions (Sufficiency)" },
+                { value: "emissions_ref", text: "Emissions (Reference)" },
+				{ value: "costs_suff", text: "Costs (Sufficiency)" },
+				{ value: "costs_ref", text: "Costs (Reference)" },
+				{ value: "capacities_suff", text: "Capacities (Sufficiency)" },
+				{ value: "capacities_ref", text: "Capacities (Reference)" },
+                { value: "fec_suff", text: "Energy Consumption (Sufficiency)" },
+                { value: "fec_ref", text: "Energy Consumption (Reference)" },
+                { value: "sankeys_suff", text: "Sankeys (Sufficiency)" },
+                { value: "sankeys_ref", text: "Sankeys (Reference)" },
+				{ value: "maps_suff", text: "Maps (Sufficiency)" },
+				{ value: "maps_ref", text: "maps (Reference)" },
+				{ value: "dispatch_plots_suff", text: "Dispatch (Sufficiency)" },
+				{ value: "dispatch_plots_ref", text: "Dispatch (Reference)" }
+            ],
+            "EU": [
+                { value: "combined_scenario_chart", text: "Scenarios Overview" },
+				{ value: "demands_suff", text: "Demands (Sufficiency)" },
+				{ value: "demands_ref", text: "Demands (Reference)" },
+                { value: "emissions_suff", text: "Emissions (Sufficiency)" },
+                { value: "emissions_ref", text: "Emissions (Reference )" },
+				{ value: "costs_suff", text: "Costs (Sufficiency)" },
+				{ value: "costs_ref", text: "Costs (Reference)" },
+				{ value: "capacities_suff", text: "Capacities (Sufficiency)" },
+				{ value: "capacities_ref", text: "Capacities (Reference)" },
+                { value: "fec_suff", text: "Energy Consumption (Sufficiency)" },
+                { value: "fec_ref", text: "Energy Consumption (Reference)" },
+                { value: "sankeys_suff", text: "Sankeys (Sufficiency)" },
+                { value: "sankeys_ref", text: "Sankeys (Reference)" },
+				{ value: "maps_suff", text: "Maps (Sufficiency)" },
+				{ value: "maps_ref", text: "Maps (Reference)" },
+				{ value: "dispatch_plots_suff", text: "Dispatch (Sufficiency)" },
+				{ value: "dispatch_plots_ref", text: "Dispatch (Reference)" }
+            ]
+        };
+
+        // Clear existing options
+        fileSelect.innerHTML = "";
+
+        // Add new options based on selected country
+        if (fileOptions[country]) {
+            fileOptions[country].forEach(option => {
+                const opt = document.createElement("option");
+                opt.value = option.value;
+                opt.textContent = option.text;
+                fileSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function initializeDropdown() {
+        const storedCountry = loadSelection(); // Load stored selection
+        document.getElementById("country-select").value = storedCountry; // Set dropdown value
+        updateFileOptions(); // Update files based on stored country
+    }
+
+    // Initialize options on page load
+    document.addEventListener("DOMContentLoaded", function () {
+        initializeDropdown();
+    });
+
+</script>
+</form>
+
+
+
+        </li>
+        <li id="menu-item-70" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-70"><a href="https://www.negawatt.be/" target="_blank" aria-current="page"><span id="return-arrow">&#5130;</span>	
+             Back to <br>project website</a></li>
+    </div>
+
+    <main id="main" class="site-main main_large" role="main">
+        <div class="encart">
+            <div style="overflow:hidden;">
+                <h2>Table of contents</h2>
+                {{TABLE_OF_CONTENTS}}
+            </div>
+        </div></div>
+        <div class="clear"></div>
+        
+        {{MAIN}}
+    </main>
+    </html>

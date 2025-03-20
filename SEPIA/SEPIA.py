@@ -616,17 +616,19 @@ def prepare_sepia(countries):
     sections_emissions = [(anchor, title) for anchor, title in sections if "CO2" in title or "emissions" in title]
     sections_sankeys = [(anchor, title) for anchor, title in sections if "Sankey" in title]
     sections_FEC = [(anchor, title) for anchor, title in sections if "Final energy consumption" in title or "carrier" in title]
-    for (anchor,title) in sections_emissions:
-        html_items_emissions['TABLE_OF_CONTENTS'] += '<li><a href="#'+anchor+'">'+title+'</a></li>'
-    html_items_emissions['TABLE_OF_CONTENTS'] += '</ol>'
+    for (anchor, title) in sections_emissions:
+     html_items_emissions['TABLE_OF_CONTENTS'] += "<li><a href='#" + anchor + "'>" + title + "</a></li>"
+    html_items_emissions['TABLE_OF_CONTENTS'] += "</ol>"
     html_items_emissions['MAIN'] = ''
-    for (anchor,title) in sections_sankeys:
-        html_items_sankeys['TABLE_OF_CONTENTS'] += '<li><a href="#'+anchor+'">'+title+'</a></li>'
-    html_items_sankeys['TABLE_OF_CONTENTS'] += '</ol>'
+
+    for (anchor, title) in sections_sankeys:
+     html_items_sankeys['TABLE_OF_CONTENTS'] += "<li><a href='#" + anchor + "'>" + title + "</a></li>"
+    html_items_sankeys['TABLE_OF_CONTENTS'] += "</ol>"
     html_items_sankeys['MAIN'] = ''
-    for (anchor,title) in sections_FEC:
-        html_items_FEC['TABLE_OF_CONTENTS'] += '<li><a href="#'+anchor+'">'+title+'</a></li>'
-    html_items_FEC['TABLE_OF_CONTENTS'] += '</ol>'
+
+    for (anchor, title) in sections_FEC:
+     html_items_FEC['TABLE_OF_CONTENTS'] += "<li><a href='#" + anchor + "'>" + title + "</a></li>"
+    html_items_FEC['TABLE_OF_CONTENTS'] += "</ol>"
     html_items_FEC['MAIN'] = ''
     
     #load HTML Texts
