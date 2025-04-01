@@ -33,6 +33,10 @@
             text-decoration: underline; /* Ensure no underline by default */
 			font-size: 25px;
         }
+		ol, ul {
+            margin: 0;
+            padding: 0;
+        }
         .toc li:hover { 
             text-decoration: underline; /* Add underline on hover */
             background: none; /* Remove background on hover */
@@ -46,11 +50,13 @@
             font-weight: bold;
             text-align: left;
             display: none;
+			font-size: 30px;
+			color: black;
         }
         #scenario-switch a {
             text-decoration: underline;
             color: blue;
-            font-size: 25px;
+            font-size: 30px;
         }
         #scenario-switch a:hover {
             text-decoration: underline;
@@ -181,9 +187,87 @@
             let switchLink = document.getElementById("scenario-switch");
             if (currentScenario === "ref" || currentScenario === "suff") {
                 let newScenario = currentScenario === "ref" ? "suff" : "ref";
-                let switchText = currentScenario === "ref" ? "Switch to Sufficiency Scenario" : "Switch to Reference Scenario";
-                let baseName = window.location.pathname.split("/").pop().replace(`_${currentScenario}.html`, "");
-                switchLink.innerHTML = `<a href="${baseName}_${newScenario}.html">${switchText}</a>`;
+                let currentFileName = window.location.pathname.split("/").pop();
+                let baseName = currentFileName.replace(`_${currentScenario}.html`, "");
+                
+                // Create more descriptive switch text based on the content
+                let currentText, newText;
+                if (baseName.includes("emissions")) {
+                    currentText = currentScenario === "ref" 
+                        ? "CO2 equivalent emissions in reference scenario" 
+                        : "CO2 equivalent emissions in sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+				}
+				else if (baseName.includes("demands")) {
+                    currentText = currentScenario === "ref" 
+                        ? "Sectoral demands in reference scenario" 
+                        : "Sectoral demands in sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                }
+				else if (baseName.includes("costs")) {
+                    currentText = currentScenario === "ref" 
+                        ? "Operational and investment costs in reference scenario" 
+                        : "Operational and investment costs in sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                }
+				else if (baseName.includes("capacities")) {
+                    currentText = currentScenario === "ref" 
+                        ? "Optimized technology capacities in reference scenario" 
+                        : "Optimized technology capacities in sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                }
+				else if (baseName.includes("fec")) {
+                    currentText = currentScenario === "ref" 
+                        ? "Final energy consumption in reference scenario" 
+                        : "Final energy consumption in sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                }
+				else if (baseName.includes("sankeys")) {
+                    currentText = currentScenario === "ref" 
+                        ? "Sankey diagrams for reference scenario" 
+                        : "Sankey diagrams for sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                }
+				else if (baseName.includes("maps")) {
+                    currentText = currentScenario === "ref" 
+                        ? "Geographical grid maps in reference scenario" 
+                        : "Geographical grid maps in sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                }
+				else if (baseName.includes("dispatch_plots")) {
+                    currentText = currentScenario === "ref" 
+                        ? "Seasonal electricity and heat dispatch in reference scenario" 
+                        : "Seasonal electricity and heat dispatch in sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                } else {
+                    // Default text for other pages
+                    currentText = currentScenario === "ref" 
+                        ? "Reference scenario" 
+                        : "Sufficiency scenario";
+                    newText = currentScenario === "ref" 
+                        ? "Switch to sufficiency scenario" 
+                        : "Switch to reference scenario";
+                }
+                
+                // Use the full filename including country prefix for the link
+                let newFileName = baseName + `_${newScenario}.html`;
+                switchLink.innerHTML = `${currentText} (<a href="${newFileName}">${newText}</a>)`;
                 switchLink.style.display = "block";
             } else {
                 switchLink.style.display = "none";
