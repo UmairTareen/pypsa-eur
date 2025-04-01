@@ -150,15 +150,6 @@
 				if (currentFile.includes(baseName)) {
 				   let secondaryContainer = document.createElement("div");
 				   secondaryContainer.classList.add("secondary-toc");
-				   if (!document.getElementById("secondary-heading")) {
-				     let heading = document.createElement("h3");
-				     heading.textContent = "Secondary table of contents";
-				     heading.style.marginTop = "2px";
-				     heading.style.fontSize = "20px";
-					 heading.style.marginLeft = "25px";
-				     heading.style.fontWeight = "bold";
-					 heading.id = "secondary-heading";
-					 tocList.appendChild(heading);}
                    let secondaryTOC = document.createElement("div");
 				   secondaryTOC.classList.add("secondary-toc");
 				   secondaryTOC.innerHTML = "{{TABLE_OF_CONTENTS}}"; 
