@@ -71,6 +71,11 @@ run_snakefile_ref.done
 run_prepare_scenarios.done
 run_sensitivity_.done
 sensitivity_analysis
+run_prepare_sensitivity_scenarios.done
+run_sensitivity_1.done
+run_sensitivity_2.done
+run_sensitivity_3.done
+run_sensitivity_4.done
 
 merger-todos.md
 .idea/*

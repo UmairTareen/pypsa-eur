@@ -217,6 +217,17 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
         year_nodes['RowIndex'] = range(len(year_nodes))
         # Removing links with 0 flow
         year_links = links.loc[links[str(year)] > 0]
+        year_links = links.loc[links[str(year)] > 0]
+        if year == 2020:
+          pad_value = 50
+        elif year == 2030:
+          pad_value = 50
+        elif year == 2040:
+          pad_value = 75
+        elif year == 2050:
+          pad_value = 50
+        else:
+          pad_value = 5
         sk = go.Sankey(
             valueformat = ".0f",
             valuesuffix = " MtCO2",
@@ -227,7 +238,7 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
                 "color": year_nodes['Color'],
                 "x": year_nodes['PositionX'],
                 "y": year_nodes['PositionY'],
-                "pad": 75,
+                "pad": pad_value,
             },
             link={
                 "source": year_nodes.loc[year_links['Source'],'RowIndex'],

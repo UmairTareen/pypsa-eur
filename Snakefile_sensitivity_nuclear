@@ -41,7 +41,7 @@ rule run_prepare_sensitivity_scenarios:
     output: touch("run_prepare_sensitivity_scenarios.done")
     log: "logs/run_prepare_sensitivity_scenarios.done"
     shell:
-        "snakemake --snakefile Snakefile_sensitivity_master --cores 1 -call prepare_sensitivity_scenarios"
+        "snakemake --snakefile Snakefile_sensitivity_nuclear --cores 1 -call prepare_sensitivity_scenarios"
 local_countries = config["countries"].copy()
 if "EU" not in local_countries:
     local_countries.append("EU") 

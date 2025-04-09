@@ -27,21 +27,60 @@ from plot_power_network import assign_location, load_projection
 from plot_power_network import add_legend_circles, add_legend_patches, add_legend_lines
 from make_summary import assign_carriers
 import yaml
-
+import plotly.io as pio
 
 def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
     if "heat pump" in tech or "resistive heater" in tech:
         return "power-to-heat"
-    if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction","shipping methanol"]:
+    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction","shipping methanol"]:
+        return "power-to-gas"
+    elif tech in ["electricity distribution grid"]:
+        return "distribution network"
+    elif tech in [ "CHP", "H2 Fuel Cell","CCGT","OCGT","H2 turbine"]:
+        return "CHP & gas turbines"
+    elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G"]:
+        return "battery storage"
+    elif tech in [ "biomass boiler", "oil boiler","gas boiler"]:
+        return "boilers"
+    elif "solar" in tech:
+        return "solar"
+    elif tech == "Fischer-Tropsch":
+        return "power-to-liquid"
+    elif "offshore wind" in tech:
+        return "offshore wind"
+    elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
+         return "CCS"
+    elif tech in ["biomass", "solid biomass", "solid biomass for industry", "biogas", "solid biomass transport"]:
+         return "biomass"
+    elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil", "oil","gas", "coal for industry","gas for industry","coal","lignite"]:
+         return "fossil fuels"
+    elif tech in ["hot water storage", "H2", "H2 storage"]:
+        return "TES & H2 storage"
+    elif "load" in tech:
+        return "load shedding"
+    elif tech in ["SMR", "ammonia cracker", "Haber-Bosch", "BioSNG", "biomass to liquid","methanol","ammonia"]:
+         return "synthetic fuel techs"
+    elif tech in ["uranium", "nuclear"]:
+         return "nuclear"
+    elif tech in ["H2 pipeline", "gas pipeline","gas pipeline new","H2 pipeline retrofitted"]:
+         return "H2 & gas pipelines"
+    else:
+        return tech
+    
+def rename_techs_tyndpp(tech):
+    tech = rename_techs(tech)
+    if "heat pump" in tech or "resistive heater" in tech:
+        return "power-to-heat"
+    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
-    elif tech in ["electricity distribution grid"]:
-        return "Domestic electricity network"
+    elif tech in ["H2 Store", "H2 storage"]:
+        return "hydrogen storage"
     elif tech in [ "CHP", "H2 Fuel Cell"]:
         return "CHP"
-    elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G"]:
+    elif tech in [ "battery charger", "battery discharger"]:
         return "battery storage"
     elif "solar" in tech:
         return "solar"
@@ -49,16 +88,14 @@ def rename_techs_tyndp(tech):
         return "power-to-liquid"
     elif "offshore wind" in tech:
         return "offshore wind"
-    elif tech in ["CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
+    elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
          return "CCS"
     elif tech in ["biomass", "solid biomass", "solid biomass for industry"]:
          return "biomass"
-    elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil"]:
-         return "oil"
-    elif "gas for industry" in tech:
-        return "gas"
-    elif tech == "H2":
-        return "H2 storage"
+    elif "Li ion" in tech:
+        return "battery storage"
+    elif tech in ["electricity distribution grid"]:
+        return "distribution network"
     elif "hot water storage" in tech:
         return "thermal energy storage"
     elif "load" in tech:
@@ -66,8 +103,7 @@ def rename_techs_tyndp(tech):
     elif tech == "coal" or tech == "lignite":
           return "coal"
     else:
-        return tech
-
+        return tech       
 def logo():
     file = snakemake.input.sepia_config
     excel_file = pd.read_excel(file, ['MAIN_PARAMS'], index_col=0)
@@ -236,8 +272,7 @@ def costs(countries, results):
             dc_transmission_values = cos_dc_df.loc[country, 'transmission_DC']
 
             # Assign values to existing columns for each year
-            costs[country].loc['AC Transmission', planning_horizon_str] = ac_transmission_values
-            costs[country].loc['DC Transmission', planning_horizon_str] = dc_transmission_values
+            costs[country].loc['transmission lines', planning_horizon_str] = ac_transmission_values + dc_transmission_values
       
        for country, dataframe in costs.items():
          # Specify the file path within the output directory
@@ -247,7 +282,6 @@ def costs(countries, results):
          dataframe.to_csv(file_path, index=True)
 
          print(f"CSV file for {country} saved at: {file_path}")
-        
     return costs
 
 def Investment_costs(countries, results):
@@ -268,7 +302,7 @@ def Investment_costs(countries, results):
       df = df.drop(columns=['Costs'])
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
-      tech_mapping = {'oil': 'oil storage', 'gas': 'gas storage'}
+      tech_mapping = {'fossil fuels': 'Oil & gas storage'}
       df['tech'] = df['tech'].replace(tech_mapping)
       condition = df[['2030', '2040', '2050']].eq(0).all(axis=1)
       df = df[~condition]
@@ -288,7 +322,7 @@ def Investment_costs(countries, results):
       cf = cf.drop(columns=['Costs'])
       cf['tech'] = cf['tech'].map(rename_techs_tyndp)
       cf = cf.groupby('tech').sum().reset_index()
-      tech_mapping = {'oil': 'oil storage', 'gas': 'gas storage'}
+      tech_mapping = {'fossil fuels': 'Oil & gas storage'}
       cf['tech'] = cf['tech'].replace(tech_mapping)
       condition = cf[['2020']].eq(0).all(axis=1)
       cf = cf[~condition]
@@ -318,8 +352,7 @@ def Investment_costs(countries, results):
             dc_transmission_values = cos_dc_df.loc[country, 'transmission_DC']
 
             # Assign values to existing columns for each year
-            investment_costs[country].loc['AC Transmission', planning_horizon_str] = ac_transmission_values
-            investment_costs[country].loc['DC Transmission', planning_horizon_str] = dc_transmission_values
+            investment_costs[country].loc['transmission lines', planning_horizon_str] = ac_transmission_values + dc_transmission_values
       
        for country, dataframe in investment_costs.items():
          # Specify the file path within the output directory
@@ -329,7 +362,6 @@ def Investment_costs(countries, results):
          dataframe.to_csv(file_path, index=True)
 
          print(f"CSV file for {country} saved at: {file_path}")
-        
     return investment_costs 
    
 def capacities(countries, results):
@@ -348,7 +380,7 @@ def capacities(countries, results):
       columns_to_convert = ['2020']
       df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
       df = df.groupby('tech').sum().reset_index()
-      df['tech'] = df['tech'].map(rename_techs_tyndp)
+      df['tech'] = df['tech'].map(rename_techs_tyndpp)
       df = df.groupby('tech').sum().reset_index()
       cf = cf.iloc[:, 1:]
       cf = cf.iloc[3:, :]
@@ -361,7 +393,7 @@ def capacities(countries, results):
       columns_to_convert = ['2030', '2040', '2050']
       cf[columns_to_convert] = cf[columns_to_convert].apply(pd.to_numeric, errors='coerce')
       cf = cf.groupby('tech').sum().reset_index()
-      cf['tech'] = cf['tech'].map(rename_techs_tyndp)
+      cf['tech'] = cf['tech'].map(rename_techs_tyndpp)
       cf = cf.groupby('tech').sum().reset_index()
       result_df = pd.merge(df, cf, on='tech', how='outer')
       result_df.fillna(0, inplace=True)
@@ -559,6 +591,8 @@ def plot_demands(countries):
         )
         fig.update_layout(height=800, width=1400)
         logo['y']=1.021
+        if country == 'BE':
+         pio.write_image(fig, "results/pdf/Demands.pdf", format='pdf')
         fig.add_layout_image(logo)
         # Show the plot
         html_filename = f"{country}_sectoral_demands.html"
@@ -569,7 +603,42 @@ def plot_demands(countries):
         file_path = f"results/{study}/country_csvs/{country}_sectordemands.csv"
         data.to_csv(file_path, index=True)
         
-        
+def rename_techs_tyndpp(tech):
+    tech = rename_techs(tech)
+    if "heat pump" in tech or "resistive heater" in tech:
+        return "power-to-heat"
+    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
+        return "power-to-gas"
+    elif "H2 pipeline" in tech:
+        return "H2 pipeline"
+    elif tech in ["H2 Store", "H2 storage"]:
+        return "hydrogen storage"
+    elif tech in [ "CHP", "H2 Fuel Cell"]:
+        return "CHP"
+    elif tech in [ "battery charger", "battery discharger"]:
+        return "battery storage"
+    elif "solar" in tech:
+        return "solar"
+    elif tech == "Fischer-Tropsch":
+        return "power-to-liquid"
+    elif "offshore wind" in tech:
+        return "offshore wind"
+    elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
+         return "CCS"
+    elif tech in ["biomass", "solid biomass", "solid biomass for industry"]:
+         return "biomass"
+    elif "Li ion" in tech:
+        return "battery storage"
+    elif tech in ["electricity distribution grid"]:
+        return "distribution network"
+    elif "hot water storage" in tech:
+        return "thermal energy storage"
+    elif "load" in tech:
+        return "load shedding"
+    elif tech == "coal" or tech == "lignite":
+          return "coal"
+    else:
+        return tech       
 def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start,stop,title):
     tech_colors = config["plotting"]["tech_colors"]
     colors = tech_colors 
@@ -580,7 +649,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
     colors["load"] = 'black'
     colors["Imports_Exports"] = "dimgray"
     colors["EV charger"] = colors["V2G"]
-    colors["Domestic electricity network"] = colors["electricity distribution grid"]
+    colors["distribution network"] = colors["electricity distribution grid"]
     tabs = pn.Tabs()
 
     for country in countries:
@@ -652,7 +721,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
                 axis=1,
             ) 
 
-        supplyn = supplyn.groupby(rename_techs_tyndp, axis=1).sum()
+        supplyn = supplyn.groupby(rename_techs_tyndpp, axis=1).sum()
         filtered_ac_lines = n.lines.bus0.str[:2] == country
         ac_lines = n.lines_t.p0.filter(items=filtered_ac_lines[filtered_ac_lines == True].index).sum(axis=1)
         filtered_ac_lines_r = n.lines.bus1.str[:2] == country
@@ -735,14 +804,14 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
              v2g = v2g.to_frame()
              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
              v2g = v2g/1e3
-             supplyn['Domestic electricity network'] = supplyn['Domestic electricity network'] + v2g['V2G']
+             supplyn['distribution network'] = supplyn['distribution network'] + v2g['V2G']
              supplyn['V2G'] = v2g['V2G'].abs()
          else:
              v2g = n.links_t.p1.filter(like="V2G").sum(axis=1)
              v2g = v2g.to_frame()
              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
              v2g = v2g/1e3
-             supplyn['Domestic electricity network'] = supplyn['Domestic electricity network'] + v2g['V2G']
+             supplyn['distribution network'] = supplyn['distribution network'] + v2g['V2G']
              supplyn['V2G'] = v2g['V2G'].abs()
         
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
@@ -803,7 +872,8 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
          title=title + " - " + country + ' - ' + str(planning_horizon),
          width=1200, height=600,
          hovermode='x',)
-    
+        if country == 'BE':
+         pio.write_image(fig, f"results/pdf/Power dispatch_{planning_horizon}.pdf", format='pdf')
         fig.add_layout_image(logo)
             # Add the plot to the tabs
         tab.append((f"{planning_horizon}", fig))
@@ -896,7 +966,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
                 axis=1,
             )
         supplyn = supplyn.rename(columns={"urban central resistive heater": "centralised electric boiler"})
-        supplyn = supplyn.groupby(rename_techs_tyndp, axis=1).sum()
+        supplyn = supplyn.groupby(rename_techs_tyndpp, axis=1).sum()
 
         bothn = supplyn.columns[(supplyn < 0.0).any() & (supplyn > 0.0).any()]
 
@@ -989,7 +1059,8 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
          title=title + " - " + country + ' - ' + str(planning_horizon),
          width=1200, height=600,
          hovermode='x',)
-    
+        if country == 'BE':
+         pio.write_image(fig, f"results/pdf/Heat dispatch_{planning_horizon}.pdf", format='pdf')
         fig.add_layout_image(logo)
             # Add the plot to the tabs
         tab.append((f"{planning_horizon}", fig))
@@ -1013,7 +1084,7 @@ def plot_map(
     with_legend=True,
 ):
     tech_colors = snakemake.params.plotting["tech_colors"]
-    tech_colors["Domestic electricity network"] = tech_colors["electricity distribution grid"]
+    tech_colors["distribution network"] = tech_colors["electricity distribution grid"]
     tech_colors["thermal energy storage"] = tech_colors["hot water storage"]
     tech_colors["H2 storage"] = tech_colors["H2"]
     n = network.copy()
@@ -1030,6 +1101,7 @@ def plot_map(
             continue
 
         df_c["nice_group"] = df_c.carrier.map(rename_techs_tyndp)
+        df_c.loc[df_c["nice_group"] == "fossil fuels", "nice_group"] = "Oil & gas storage"
 
         attr = "e_nom_opt" if comp == "stores" else "p_nom_opt"
 
@@ -1188,8 +1260,8 @@ def plot_map(
             labels,
             legend_kw=legend_kw,
         )
-
-    # fig.tight_layout()
+    
+    fig.tight_layout()
     logo = snakemake.input.logo
     img = plt.imread(logo)
     imagebox = OffsetImage(img, zoom=0.25)
@@ -1222,6 +1294,7 @@ def create_map_plots(planning_horizons, country):
              transmission=True,
          )
          plt.rcParams['legend.title_fontsize'] = '20'
+         
         # Save the map plot as an image
          output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
          fig.savefig(output_image_path, bbox_inches="tight")
@@ -1251,6 +1324,8 @@ def create_map_plots(planning_horizons, country):
          )
          plt.rcParams['legend.title_fontsize'] = '20'
         # Save the map plot as an image
+         if country == 'BE':
+          fig.savefig(f"results/pdf/Maps_{planning_horizon}.pdf", bbox_inches="tight")
          output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
          fig.savefig(output_image_path, bbox_inches="tight")
          plt.close(fig)  # Close the figure to avoid displaying it in the notebook
@@ -1779,7 +1854,7 @@ def create_H2_map_plots(planning_horizons):
         # Plot the H2 map and get the figure
         fig = plot_h2_map(network=n)
         plt.rcParams['legend.title_fontsize'] = '20'
-
+        
         # Save the H2 map plot as an image
         output_image_path = f"results/{study}/htmls/raw_html/map_h2_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
@@ -1804,6 +1879,7 @@ def create_H2_map_plots(planning_horizons):
         fig = plot_h2_map(network=n)
         plt.rcParams['legend.title_fontsize'] = '20'
 
+        fig.savefig(f"results/pdf/H2_maps_{planning_horizon}.pdf", bbox_inches="tight")
         # Save the H2 map plot as an image
         output_image_path = f"results/{study}/htmls/raw_html/map_h2_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
@@ -1863,7 +1939,6 @@ def create_gas_map_plots(planning_horizons):
         # Plot the H2 map and get the figure
         fig = plot_ch4_map(network=n)
         plt.rcParams['legend.title_fontsize'] = '20'
-
         # Save the H2 map plot as an image
         output_image_path = f"results/{study}/htmls/raw_html/map_ch4_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
@@ -1887,7 +1962,8 @@ def create_gas_map_plots(planning_horizons):
         n = loaded_files[planning_horizon]
         fig = plot_ch4_map(network=n)
         plt.rcParams['legend.title_fontsize'] = '20'
-
+    
+        fig.savefig(f"results/pdf/gas_maps_{planning_horizon}.pdf", bbox_inches="tight")
         # Save the H2 map plot as an image
         output_image_path = f"results/{study}/htmls/raw_html/map_ch4_plot_{planning_horizon}.png"
         fig.savefig(output_image_path, bbox_inches="tight")
@@ -1953,6 +2029,8 @@ def create_bar_chart(costs, country,  unit='Euros/year'):
     # Configure layout and labels
     fig.update_layout(height=900, width=1200,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Annual Costs.pdf", format='pdf')
     fig.add_layout_image(logo)
     # Save the HTML file for each country
     # output_file_path = os.path.join(output_folder, f"{country}_bar_chart.html")
@@ -1983,6 +2061,8 @@ def create_investment_costs(investment_costs, country,  unit='Euros/year'):
     # Configure layout and labels
     fig.update_layout(height=900, width=1200,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Annual Investment Costs.pdf", format='pdf')
     fig.add_layout_image(logo)
     return fig
 
@@ -2044,6 +2124,8 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     # Update layout
     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}", yaxis_title=unit)
     logo['y']=1.03
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Annual Capacities.pdf", format='pdf')
     fig.add_layout_image(logo)
     # Save plot as HTML
     # html_file_path = os.path.join(output_folder, f"{country}_capacities_chart.html")
@@ -2088,6 +2170,8 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
     # Update layout
     fig.update_layout(height=500, width=1200, showlegend=True, title=f" Storage Capacities for {country}", yaxis_title=unit)
     logo['y']=1.05
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Annual storage capacities.pdf", format='pdf')
     fig.add_layout_image(logo)
     
 
@@ -2351,7 +2435,7 @@ if __name__ == "__main__":
     with open(snakemake.input.plots_html, 'r') as file:
      plots = yaml.safe_load(file).get('Pypsa_plots')
     if plots['Power Dispatch Winter']:
-        plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-01",stop = "2013-02-07",title="Power Dispatch (Winter Week)")
+        plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-02-08",stop = "2013-02-14",title="Power Dispatch (Winter Week)")
     if plots['Power Dispatch Summer']:
         plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,start = "2013-07-01",stop = "2013-07-07",title="Power Dispatch (Summer Week)")
     if plots['Heat Dispatch Winter']:

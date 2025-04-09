@@ -27,7 +27,7 @@ rule run_prepare_sensitivity_scenarios:
     output: touch("run_prepare_sensitivity_scenarios.done")
     log: "logs/run_prepare_sensitivity_scenarios.done"
     shell:
-        "snakemake --snakefile Snakefile_sensitivity_offshore_master --cores 1 -call prepare_sensitivity_scenarios"
+        "snakemake --snakefile Snakefile_sensitivity_offshore --cores 1 -call prepare_sensitivity_scenarios"
 local_countries = config["countries"].copy()
 if "EU" not in local_countries:
     local_countries.append("EU") 
@@ -38,7 +38,7 @@ rule prepare_sensitivity_scenarios:
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         template = "SEPIA/Template/pypsa.html",      
     output:
-        htmlfile=expand("results/sensitivity_results/{country}_sensitivity_scenario_chart.html", country=local_countries),
+        htmlfile=expand("results/sensitivity_results_offshore/{country}_sensitivity_offshore_chart.html", country=local_countries),
     threads: 1
     resources:
         mem_mb=10000,

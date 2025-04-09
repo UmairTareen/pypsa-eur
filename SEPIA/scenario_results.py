@@ -10,6 +10,8 @@ from datetime import datetime
 import plotly.express as px
 from jinja2 import Template
 import yaml
+import json
+import plotly.io as pio
 
 def logo():
     file = snakemake.input.sepia_config
@@ -196,6 +198,8 @@ def Cumulative_emissions_sector(country):
         legend=dict(orientation="h", y=-0.2),  # Position legend below
         template="plotly_white"  # Optional: Clean aesthetic
     )
+ if country == 'BE':
+  pio.write_image(fig, "results/pdf/Cumulative Emissions by Sector.pdf", format='pdf')
  return fig
 
 
@@ -223,12 +227,6 @@ def scenario_costs(country):
     unit='Euros/year'
     title=f'Total Costs Comparison for {country}'
     tech_colors = config["plotting"]["tech_colors"]
-    colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
-    colors["Domestic electricity network"] = colors["electricity distribution grid"]
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -237,8 +235,10 @@ def scenario_costs(country):
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=1000, width=800,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Total Costs.pdf", format='pdf')
     fig.add_layout_image(logo)
     
     return fig
@@ -267,12 +267,6 @@ def scenario_investment_costs(country):
     unit='Euros/year'
     title=f'Total Investment Costs Comparison for {country}'
     tech_colors = config["plotting"]["tech_colors"]
-    colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
-    colors["Domestic electricity network"] = colors["electricity distribution grid"]
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -281,8 +275,10 @@ def scenario_investment_costs(country):
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=1000, width=800,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Investment Costs.pdf", format='pdf')
     fig.add_layout_image(logo)
     
     return fig
@@ -313,12 +309,6 @@ def scenario_cumulative_costs(country):
     unit='Euros'
     title=f'Total Comulative Costs (2020-2050) for {country}'
     tech_colors = config["plotting"]["tech_colors"]
-    colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
-    colors["Domestic electricity network"] = colors["electricity distribution grid"]
     
     fig = go.Figure()
     df_transposed = combined_df.T
@@ -327,8 +317,10 @@ def scenario_cumulative_costs(country):
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(height=1000, width=1000, showlegend=True,title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=1000, width=800, showlegend=True,title=title, barmode='stack', yaxis=dict(title=unit))
     fig.update_layout(hovermode='y')
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Cumulative Costs.pdf", format='pdf')
     fig.add_layout_image(logo)
     
     return fig   
@@ -356,8 +348,6 @@ def scenario_capacities(country):
     title=f"Capacities for {country}"
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
     
@@ -411,6 +401,8 @@ def scenario_capacities(country):
     # Update layout
     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit)
     logo['y']=1.021
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Capacities.pdf", format='pdf')
     fig.add_layout_image(logo)
     return fig
 
@@ -470,8 +462,286 @@ def storage_capacities(country):
     # Update layout
     fig.update_layout(height=600, width=1400, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit)
     logo['y']=1.05
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Storage Capacities.pdf", format='pdf')
     fig.add_layout_image(logo)
     return fig
+
+def crabon_capture_techs(country):
+    carbon_ref = pd.read_excel(f"results/ref/sepia/inputs{country}.xlsx", sheet_name="Inputs_co2", index_col=2)
+    carbon_suff = pd.read_excel(f"results/suff/sepia/inputs{country}.xlsx", sheet_name="Inputs_co2", index_col=2)
+    carbon_ref.drop(columns=['label', 'source','2030', '2040'], inplace=True)
+    carbon_suff.drop(columns=['label', 'source','2020', '2030', '2040'], inplace=True)
+    rename_dict = {
+        'emmprocessccst': 'CC',
+        'emmdac': 'DAC',
+        'emmindbeccs': 'CC',
+        'emmbmchpcc': 'CC',
+        'emmbiogasatcc': 'CC',
+        'emmgasccx': 'CC',
+        'emmseq': 'CCS',
+        'emmfischer': 'CCU',
+        'emmmet': 'CCU',
+        'emmsaba': 'CCU',
+        'emmsmrcc': 'CC',
+        'emmbmsngccca': 'CC',
+        'emmgaschpatmcc': 'CC'
+    }
+
+    carbon_ref.rename(index=rename_dict, inplace=True)
+    carbon_suff.rename(index=rename_dict, inplace=True)
+    carbon_ref = carbon_ref[carbon_ref.index.isin(rename_dict.values())]
+    carbon_suff = carbon_suff[carbon_suff.index.isin(rename_dict.values())]
+    carbon_ref = carbon_ref.groupby(level=0).sum()
+    carbon_suff = carbon_suff.groupby(level=0).sum()
+    carbon_ref.rename(columns={'2050': 'Ref'}, inplace=True)
+    carbon_suff.rename(columns={'2050': 'Suff'}, inplace=True)
+    carbon_combined = pd.concat([carbon_ref, carbon_suff], axis=1)
+    carbon_combined.fillna(0, inplace=True)
+    carbon_combined = carbon_combined.round(1)
+    desired_order = ['CCU', 'CC', 'DAC', 'CCS', ]  # Define your preferred order
+    carbon_combined = carbon_combined.reindex(desired_order)
+
+    color_palette = {
+        'CC': '#f2385a',
+        'DAC': '#ff5270',
+        'CCS': '#f29dae',
+        'CCU': '#B98F76',
+    }
+    num_pies = len(carbon_combined.columns)
+    fig = make_subplots(
+    rows=1, 
+    cols=1 + num_pies,
+    column_widths=[0.5] + [0.5/num_pies]*num_pies,
+    specs=[[{"type": "bar"}]+[{"type": "pie"}]*num_pies],
+    horizontal_spacing=0.01)
+    for category in carbon_combined.index:
+     fig.add_trace(
+        go.Bar(
+            name=category, 
+            x=carbon_combined.columns,
+            y=carbon_combined.loc[category],
+            marker_color=color_palette[category],
+            width=0.15
+        ),
+        row=1, col=1
+    )
+
+    for idx, column in enumerate(carbon_combined.columns, start=2):  # Start at col 2
+     fig.add_trace(
+        go.Pie(
+            labels=carbon_combined.index,
+            values=carbon_combined[column],
+            marker=dict(colors=[color_palette[cat] for cat in carbon_combined.index]),
+            name=column,
+            textinfo="label+percent",
+            hole=0.3,
+            scalegroup='group1',
+            showlegend=False,
+        ),
+        row=1, col=idx
+    )
+
+    # Update layout
+    fig.update_layout(
+     yaxis_title="Mtons CO2 eq/year",
+     plot_bgcolor='white',
+     xaxis=dict(
+        showgrid=True,
+        gridcolor='lightgray',
+        gridwidth=0.5,
+        tickfont=dict(size=15)
+     ),
+     yaxis=dict(
+        showgrid=True,
+        gridcolor='lightgray',
+        gridwidth=0.5,
+        title_font=dict(size=15),
+        tickfont=dict(size=15)
+     ),
+    # annotations=[
+    #     dict(
+    #         text=column,
+    #         x=(2.2 + idx)/(1.2 + num_pies),  # Position based on column
+    #         y=0.19,
+    #         xref="paper",
+    #         yref="paper",
+    #         showarrow=False,
+    #         font=dict(size=15)
+    #     ) for idx, column in enumerate(carbon_combined.columns)
+    # ]
+     )
+    fig.update_layout(height=800, width=1400, title=f"Required carbon capture capacities for {country}_2050 compared to 2020")
+    logo['y']=1.05
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Carbon capture capacities.pdf", format='pdf')
+    fig.add_layout_image(logo)
+    return fig
+
+def belgium_energy_independence():
+ with open("data/europe.geojson") as f:
+    europe_geojson = json.load(f)
+ visible_countries = {
+    "Belgium": 3,
+    "Germany": 1,
+    "France": 1,
+    "Netherlands": 1,
+    "United Kingdom": 1,}
+
+ country_names = [feature["properties"]["NAME"] for feature in europe_geojson["features"]]
+ z_vals = [visible_countries.get(name, None) for name in country_names]
+ imports_ref = pd.read_csv("results/ref/country_csvs/total_imports_BE.csv",index_col=0).clip(lower=0)
+ imports_suff = pd.read_csv("results/suff/country_csvs/total_imports_BE.csv",index_col=0).clip(lower=0)
+ local_ref = pd.read_csv("results/ref/country_csvs/local_product_BE.csv",index_col=0).clip(lower=0)
+ local_suff = pd.read_csv("results/suff/country_csvs/local_product_BE.csv",index_col=0).clip(lower=0)
+ base_cols = {
+    'imp_gaz_pe': 'Natural gas',
+    'imp_pet_pe': 'Petroleum',
+    'imp_elc_se': 'Electricity',
+    'imp_cms_pe': 'Coal',
+    'imp_hyd_se': 'Hydrogen',
+    'imp_enc_pe': 'Solid biomass',
+    'imp_amm_fe': 'Ammonia',
+    'imp_met_fe': 'Methanol'}
+ carrier_colors = {
+    'Natural gas': '#e05b09',
+    'Petroleum': '#c9c9c9',
+    'Electricity': '#110d63',
+    'Coal': '#545454',
+    'Hydrogen': '#bf13a0',
+    'Solid biomass': '#baa741',
+    'Ammonia': '#46caf0',
+    'Methanol': '#468c8b',
+    'Local production': 'black',
+    'Imports': 'whitesmoke'}
+ ref_renamed = {k: f"{v}" for k, v in base_cols.items()}
+ suff_renamed = {k: f"{v}" for k, v in base_cols.items()}
+ imports_ref.rename(columns=ref_renamed, inplace=True)
+ imports_suff.rename(columns=suff_renamed, inplace=True)
+ imports_ref_2050 = imports_ref.loc[2050]
+ imports_suff_2050 = imports_suff.loc[2050]
+ imports_2020 = imports_ref.loc[2020]
+
+ imports_ref_2050_sum = imports_ref.loc[2050].sum()
+ imports_suff_2050_sum = imports_suff.loc[2050].sum()
+ imports_2020_sum = imports_ref.loc[2020].sum()
+ local_ref_2050_sum = local_ref.loc[2050].sum()
+ local_suff_2050_sum = local_suff.loc[2050].sum()
+ local_2020_sum = local_ref.loc[2020].sum()
+
+ num_pies= 3
+ fig = make_subplots(
+    rows=2, cols=4,
+    specs=[
+        [{"type": "choropleth", "rowspan": 2}, {"type": "domain"}, {"type": "domain"}, {"type": "domain"}],
+        [None, {"type": "domain"}, {"type": "domain"}, {"type": "domain"}]
+    ],
+    column_widths=[0.5] + [0.5/num_pies]*num_pies,
+    row_heights=[0.5] + [0.5],
+    vertical_spacing=0.01,
+    horizontal_spacing=0.01,
+    subplot_titles=(
+        "", "2020", "Ref (2050)", "Suff (2050)",
+        "", "", "", ""
+    )
+)
+
+ fig.add_trace(go.Choropleth(
+    geojson=europe_geojson,
+    locations=country_names,
+    z=z_vals,
+    featureidkey="properties.NAME",
+    colorscale=[
+        [0, "gray"],
+        [0.5, "whitesmoke"],
+        [1, "black"]
+    ],
+    zmin=0,
+    zmax=2,
+    showscale=False,
+    marker_line_color='gray',
+    hoverinfo="location"
+), row=1, col=1)
+
+ fig.update_geos(
+    scope="europe",
+    center=dict(lat=50.85, lon=4.35),
+    projection_scale=5,
+    showland=True,
+    landcolor="whitesmoke",
+    showcountries=True,
+    # fitbounds="locations"
+)
+ labels = imports_2020.index
+ values = imports_2020.values
+ colors = [carrier_colors[label] for label in labels]
+ fig.add_trace(go.Pie(
+    labels=labels,
+    values=values,
+    hole=0.5,
+    name="2020",
+    scalegroup='group1',
+    marker=dict(colors=colors)
+), row=1, col=2)
+ labels = imports_ref_2050.index
+ values = imports_ref_2050.values
+ colors = [carrier_colors[label] for label in labels]
+ fig.add_trace(go.Pie(
+    labels=labels,
+    values=values,
+    hole=0.5,
+    name="Ref 2050",
+    scalegroup='group1',
+    marker=dict(colors=colors)
+), row=1, col=3)
+ labels = imports_suff_2050.index
+ values = imports_suff_2050.values
+ colors = [carrier_colors[label] for label in labels]
+ fig.add_trace(go.Pie(
+    labels=labels,
+    values=values,
+    hole=0.5,
+    name="Suff 2050",
+    scalegroup='group1',
+    marker=dict(colors=colors)
+), row=1, col=4)
+
+ fig.add_trace(go.Pie(
+    labels=["Imports", "Local production"],
+    values=[imports_2020_sum,local_2020_sum],
+    hole=0.5,
+    name="Total",
+    # textinfo='percent+value',
+    scalegroup='group2',
+    marker=dict(colors=[carrier_colors["Imports"], carrier_colors["Local production"]])
+), row=2, col=2)
+
+ fig.add_trace(go.Pie(
+    labels=["Imports", "Local production"],
+    values=[imports_ref_2050_sum,local_ref_2050_sum],
+    hole=0.5,
+    name="Total",
+    # textinfo='label+value',
+    scalegroup='group2',
+    marker=dict(colors=[carrier_colors["Imports"], carrier_colors["Local production"]])
+), row=2, col=3)
+
+ fig.add_trace(go.Pie(
+    labels=["Imports", "Local production"],
+    values=[imports_suff_2050_sum,local_suff_2050_sum],
+    hole=0.5,
+    name="Total",
+    # textinfo='label+value',
+    scalegroup='group2',
+    marker=dict(colors=[carrier_colors["Imports"], carrier_colors["Local production"]])
+), row=2, col=4)
+ 
+ fig.update_layout(height=800, width=1400, title="Belgium energy independence compared to 2020")
+ logo['y']=1.05
+ if country == 'BE':
+  pio.write_image(fig, "results/pdf/Belgium energy independence.pdf", format='pdf')
+ fig.add_layout_image(logo)
+ return fig
 
 def create_scenario_plots():
  scenarios=pd.read_csv("data/scenario_data.csv")
@@ -623,7 +893,8 @@ def create_scenario_plots():
         height=700, width=1200,
         yaxis_title="Demand (TWh)"
     )
- 
+ if country == 'BE':
+  pio.write_image(fig_demand, "results/pdf/Scenario demands comparison.pdf", format='pdf')
  figures['demand'] = fig_demand
 
  # Plot the bar chart for VRE capacities
@@ -643,6 +914,8 @@ def create_scenario_plots():
         height=700, width=1200,
         yaxis_title="Capacities (GW)"
     )
+ if country == 'BE':
+  pio.write_image(fig_vre, "results/pdf/Scenario VRE comparison.pdf", format='pdf')
  figures['vre'] = fig_vre
 
  # Plot the bar chart for Flexibility options
@@ -664,6 +937,8 @@ def create_scenario_plots():
         height=700, width=1400,
         yaxis_title="Capacities (GW)"
     )
+ if country == 'BE':
+  pio.write_image(fig_flex, "results/pdf/Scenario flexibility comparison.pdf", format='pdf')
  figures['flexibility'] = fig_flex
 
  # Plot the bar chart for Costs
@@ -682,6 +957,8 @@ def create_scenario_plots():
         height=700, width=1400,
         yaxis_title="Average Annual Costs (Billion Euros/year)"
     )
+ if country == 'BE':
+  pio.write_image(fig_costs, "results/pdf/Scenario costs comparison.pdf", format='pdf')
  figures['costs'] = fig_costs
 
   #Plot the bar chart for Emissions
@@ -713,6 +990,8 @@ def create_scenario_plots():
       # barmode='group',
       # font=dict(size=15),
   )
+ if country == 'BE':
+  pio.write_image(fig_historic, "results/pdf/Comparison with JRC data.pdf", format='pdf')
  figures['historic'] = fig_historic
  
  fig_scenarios_data = go.Figure(data=[go.Table(
@@ -776,6 +1055,8 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     cumu_investment_costs_desc = country_desc.get(f"{country}_cumu_investment_costs_sce", '')
     capacities_desc = country_desc.get(f"{country}_capacities_sce", '')
     storage_capacities_desc = country_desc.get(f"{country}_storage_capacities_sce", '')
+    cc_capacities_desc = country_desc.get(f"{country}_cc_capacities_sce", '')
+    be_energy_ind_desc = country_desc.get(f"{country}_energy_ind_sce", '')
     scenario_dem_comp_desc = country_desc.get(f"{country}_scenario_dem_comp_sce", '')
     scenario_vre_desc = country_desc.get(f"{country}_scenario_vre_sce", '')
     scenario_flex_desc = country_desc.get(f"{country}_scenario_flex_sce", '')
@@ -813,6 +1094,15 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     if scenario_plots["Storage Capacities"] == True:
      storage_capacities_chart = storage_capacities(country)
      combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     
+     if scenario_plots["CC Capacities"] == True:
+      cc_capacities_chart = crabon_capture_techs(country)
+      combined_html += f"<div><h2>{country} - Required Carbon Capture Capacities</h2>{cc_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+      
+     if country == 'BE':
+      if scenario_plots["Energy Independence"] == True:
+       energy_ind_chart = belgium_energy_independence()
+       combined_html += f"<div><h2>{country} - Energy Independence</h2>{energy_ind_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     
     #Create scenario comparison plots
@@ -860,6 +1150,11 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
      table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
     if scenario_plots["Storage Capacities"] == True:
      table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
+    if scenario_plots["CC Capacities"] == True:
+     table_of_contents_content += f"<a href='#{country} - Required Carbon Capture Capacities'>Carbon Capture Capacities</a><br>"
+    if country == 'BE':
+     if scenario_plots["Energy Independence"] == True:
+      table_of_contents_content += f"<a href='#{country} - Energy Independence'>Energy Independence</a><br>"
     if country == 'BE':
         if scenario_plots["Scenarios Demands Comparison"] == True:
          table_of_contents_content_be += f"<a href='#{country} - Scenarios Demands Comparison'>Scenarios Demands Comparison</a><br>"
@@ -887,7 +1182,11 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
      main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Storage Capacities"] == True:
      main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
-    
+    if scenario_plots["CC Capacities"] == True:
+     main_content += f"<div id='{country} - Required Carbon Capture Capacities'><h2>{country} - Required Carbon Capture Capacities</h2>{cc_capacities_desc}{cc_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+    if country == 'BE':
+     if scenario_plots["Energy Independence"] == True:
+      main_content += f"<div id='{country} - Energy Independence'><h2>{country} - Energy Independence</h2>{be_energy_ind_desc}{energy_ind_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if country == 'BE':
         if scenario_plots["Scenarios Demands Comparison"] == True:
          main_content_be += f"<div id='{country} - Scenarios Demands Comparison'><h2>{country} - Scenarios Demands Comparison</h2>{scenario_dem_comp_desc}{demand_comparison.to_html(full_html=False, include_plotlyjs='cdn')}</div>"

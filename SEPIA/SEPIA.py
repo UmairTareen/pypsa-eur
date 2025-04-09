@@ -195,11 +195,13 @@ def prepare_sepia(countries):
     grouped_fec_p = fec_carrier_p.groupby(level='Source', axis=1).sum()
     fec_p = grouped_fec_p
     if country == 'EU':
-     for en_code in ['hdr','eon','eof','spv','cms','pac','enc','ura','bgl']:
+     for en_code in ['hdr','eon','eof','spv','pac','enc','ura','bgl']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe']
     else: 
-     for en_code in ['hdr','eon','eof','spv','cms','pac','ura','bgl']:
+     for en_code in ['hdr','eon','eof','spv','pac','ura','bgl']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
+    for en_code in ['cms']:
+       flows[('imp',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
     for en_code in ['gaz']:
      if country != 'EU':
       values = fec_p[en_code + '_pe']
@@ -373,12 +375,39 @@ def prepare_sepia(countries):
       flows.loc['2020', (en_code + '_se', 'hyd_se', 'smr')] = 0
       flows.loc['2020', ('hyd_se', 'hyd_fe', '')] = 0
       
-    for en_code in ['gaz']:
-     filtered_flows = flows[('gaz_pe', 'gaz_se', '')]
-     output_dir = f"results/{study}/country_csvs"
-     os.makedirs(output_dir, exist_ok=True)
-     filtered_flows.to_csv(f"{output_dir}/natural_gas_imports_{country}.csv", index=True)
-      
+    filtered_flows = [
+    ('imp', 'gaz_pe', ''),
+    ('imp', 'pet_pe', ''),
+    ('imp', 'elc_se', ''),
+    ('imp', 'hyd_se', ''),
+    ('imp', 'enc_pe', ''),
+    ('imp', 'amm_fe', ''),
+    ('imp', 'met_fe', ''),
+    ('imp', 'cms_pe', '')]
+    selected_imports = pd.DataFrame()
+    for flow in filtered_flows:
+     if flow in flows.columns:
+        selected_imports["_".join([flow[0], flow[1]]).replace(" ", "_")] = flows[flow]
+    local_production = [
+    ('prod', 'gaz_pe', ''),
+    ('prod', 'pet_pe', ''),
+    ('prod', 'hdr_pe', ''),
+    ('prod', 'eon_pe', ''),
+    ('prod', 'eof_pe', ''),
+    ('prod', 'enc_pe', ''),
+    ('prod', 'spv_pe', ''),
+    ('prod', 'pac_pe', ''),
+    ('prod', 'cms_pe', ''),
+    ('prod', 'ura_pe', ''),
+    ('prod', 'bgl_pe', ''),]
+    local_prod = pd.DataFrame()
+    for flow in local_production:
+     if flow in flows.columns:
+        local_prod["_".join([flow[0], flow[1]]).replace(" ", "_")] = flows[flow]
+    output_dir = f"results/{study}/country_csvs"
+    os.makedirs(output_dir, exist_ok=True)
+    selected_imports.to_csv(f"{output_dir}/total_imports_{country}.csv", index=True)
+    local_prod.to_csv(f"{output_dir}/local_product_{country}.csv", index=True) 
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
     tot_ghg[country] = flows_ghg

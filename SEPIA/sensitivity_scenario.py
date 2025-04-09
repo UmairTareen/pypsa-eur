@@ -63,7 +63,7 @@ def scenario_costs(country):
      sensitivity_analyses = [
      ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_costs.csv"),
      ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_costs.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_costs.csv"),
+     ("WNO", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_costs.csv"),
      ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_costs.csv")]
      
     elif "sensitivity_analysis_offshore" in config["run"]["name"]:
@@ -117,7 +117,7 @@ def scenario_costs(country):
      names_values = [
      (f"PyPSA value = {pypsa_value}", pypsa_value),
      (f"FPS value = {fps_value}", fps_value),
-     (f"Mackinze value = {mackinze_value}", mackinze_value),
+     (f"WNO value = {mackinze_value}", mackinze_value),
      (f"Energyville value = {energyville_value}", energyville_value)]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      pypsa_value = "+ 0 GW"
@@ -162,7 +162,7 @@ def scenario_investment_costs(country):
      sensitivity_analyses = [
      ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_investment costs.csv"),
      ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_investment costs.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_investment costs.csv"),
+     ("WNO", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_investment costs.csv"),
      ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_investment costs.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
@@ -213,7 +213,7 @@ def scenario_investment_costs(country):
      names_values = [
      (f"PyPSA value = {pypsa_value}", pypsa_value),
      (f"FPS value = {fps_value}", fps_value),
-     (f"Mackinze value = {mackinze_value}", mackinze_value),
+     (f"WNO value = {mackinze_value}", mackinze_value),
      (f"Energyville value = {energyville_value}", energyville_value)]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      pypsa_value = "+ 0 GW"
@@ -257,7 +257,7 @@ def scenario_cumulative_costs(country):
      sensitivity_analyses = [
      ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_investment costs.csv"),
      ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_investment costs.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_investment costs.csv"),
+     ("WNO", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_investment costs.csv"),
      ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_investment costs.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
@@ -310,7 +310,7 @@ def scenario_cumulative_costs(country):
      names_values = [
      (f"PyPSA value = {pypsa_value}", pypsa_value),
      (f"FPS value = {fps_value}", fps_value),
-     (f"Mackinze value = {mackinze_value}", mackinze_value),
+     (f"WNO value = {mackinze_value}", mackinze_value),
      (f"Energyville value = {energyville_value}", energyville_value)]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      pypsa_value = "+ 0 GW"
@@ -354,7 +354,7 @@ def scenario_capacities(country):
      sensitivity_analyses = [
      ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_capacities.csv"),
      ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_capacities.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_capacities.csv"),
+     ("WNO", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_capacities.csv"),
      ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_capacities.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
@@ -394,11 +394,12 @@ def scenario_capacities(country):
     colors["DC Transmission lines"] = "#104E8B"
     
     fig = go.Figure()
+    fig = go.Figure()
     groups = [
         ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["AC Transmission lines"],
         ["DC Transmission lines"],
         ["CCGT"],
@@ -407,8 +408,8 @@ def scenario_capacities(country):
     groupss = [
         ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["transmission lines"],
         ["gas pipeline","gas pipeline new"],
         ["CCGT"],
@@ -451,7 +452,7 @@ def storage_capacities(country):
      sensitivity_analyses = [
      ("PyPSA", f"results/sensitivity_analysis_nuclear_pypsa/country_csvs/{country}_storage_capacities.csv"),
      ("FPS", f"results/sensitivity_analysis_nuclear_fps/country_csvs/{country}_storage_capacities.csv"),
-     ("Mackinze", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_storage_capacities.csv"),
+     ("WNO", f"results/sensitivity_analysis_nuclear_mackinze/country_csvs/{country}_storage_capacities.csv"),
      ("Energyville", f"results/sensitivity_analysis_nuclear_energyville/country_csvs/{country}_storage_capacities.csv")]
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
      sensitivity_analyses = [
@@ -492,10 +493,9 @@ def storage_capacities(country):
     
     fig = go.Figure()
     groups = [
-        ["Grid-scale battery", "home battery", "V2G"],
-        ["H2"],
+        ["Grid-scale battery", "V2G"],
         ["Thermal Energy storage"],
-        ["biogas"],
+        ["gas"],
     ]
 
     fig = make_subplots(rows=1, cols=len(groups) // 1, subplot_titles=[
@@ -526,8 +526,16 @@ def storage_capacities(country):
     return fig
 
     
-def create_combined_scenario_chart_country(country, output_folder='results/sensitivity_results/'):
+def create_combined_scenario_chart_country(country):
+    def load_html_file(file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        return html_content
     # Create output folder if it doesn't exist
+    if "offshore" in config["run"]["name"]:
+        output_folder='results/sensitivity_results_offshore/'
+    else:
+        output_folder='results/sensitivity_results/'
     os.makedirs(output_folder, exist_ok=True)
 
     # Create combined HTML
@@ -541,7 +549,7 @@ def create_combined_scenario_chart_country(country, output_folder='results/sensi
     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
     
     bar_chart_cumulative = scenario_cumulative_costs(country)
-    combined_html += f"<div><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
+    combined_html += f"<div><h2>{country} - Cummulative Investment Costs (2020-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
     
     # Create capacities chart
     capacities_chart = scenario_capacities(country)
@@ -553,18 +561,25 @@ def create_combined_scenario_chart_country(country, output_folder='results/sensi
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
-    main_content = ""
+    if "offshore" in config["run"]["name"]:
+     html_filnemae = 'SEPIA/html_sensitivity_offshore_' + country + '.html'
+    else:
+     html_filnemae = 'SEPIA/html_sensitivity_nuclear_' + country + '.html' 
+    if os.path.exists(html_filnemae):
+        main_content = load_html_file(html_filnemae)
+    else:
+        main_content = ''
     # Create the content for the "Table of Contents" and "Main" sections
     table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
     table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2023-2050)'>Cummulative Investment Costs (2023-2050)</a><br>"
+    table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2020-2050)'>Cummulative Investment Costs (2020-2050)</a><br>"
     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
     table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
 
     # Add more links for other plots
     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
-    main_content += f"<div id='{country} - Cummulative Investment Costs (2023-2050)'><h2>{country} - Cummulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
+    main_content += f"<div id='{country} - Cummulative Investment Costs (2020-2050)'><h2>{country} - Cummulative Investment Costs (2020-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
     # Add more content for other plots
@@ -579,8 +594,10 @@ def create_combined_scenario_chart_country(country, output_folder='results/sensi
     country=country,
     TABLE_OF_CONTENTS=table_of_contents_content,
     MAIN=main_content,)
-    
-    combined_file_path = os.path.join(output_folder, f"{country}_sensitivity_scenario_chart.html")
+    if "offshore" in config["run"]["name"]:
+     combined_file_path = os.path.join(output_folder, f"{country}_sensitivity_offshore_chart.html")
+    else:
+     combined_file_path = os.path.join(output_folder, f"{country}_sensitivity_scenario_chart.html")
     with open(combined_file_path, "w") as combined_file:
      combined_file.write(rendered_html)
 

@@ -1136,3 +1136,12 @@ plotting:
     load: "black"
     coal for industry: '#343434'
     Imports: 'darkgrey'
+    fossil fuels: '#c9c9c9'
+    boilers: '#e05b09'
+    thermal energy storage: '#e69487'
+    H2 & gas pipelines: '#ebbca0'
+    synthetic fuel techs: '#87d0e6'
+    CHP & gas turbines: '#a85522'
+    Oil & gas storage: '#c9c9c9' 
+    TES & H2 storage: '#870c71'
+    distribution network: '#97ad8c' 

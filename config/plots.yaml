@@ -34,6 +34,8 @@ Scenario_plots:
  Cummulative Emissions: true
  Capacities: true
  Storage Capacities: true
+ CC Capacities: true
+ Energy Independence: true
  Scenarios Demands Comparison: true
  Scenarios VRE Capacities Comparison: true
  Scenario Flexibility Capacities: true

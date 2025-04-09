@@ -22,16 +22,16 @@ def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
     if "heat pump" in tech or "resistive heater" in tech:
         return "power-to-heat"
-    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
+    if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction","shipping methanol"]:
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
-    elif tech in ["H2 Store", "H2 storage"]:
-        return "hydrogen storage"
-    elif tech in ["OCGT", "CHP", "gas boiler", "H2 Fuel Cell"]:
-        return "gas-to-power/heat"
-    elif "solar rooftop" in tech:
-        return "solar rooftop"
+    elif tech in ["electricity distribution grid"]:
+        return "Domestic electricity network"
+    elif tech in [ "CHP", "H2 Fuel Cell"]:
+        return "CHP"
+    elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G"]:
+        return "battery storage"
     elif "solar" in tech:
         return "solar"
     elif tech == "Fischer-Tropsch":
@@ -40,12 +40,16 @@ def rename_techs_tyndp(tech):
         return "offshore wind"
     elif tech in ["CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
          return "CCS"
-    elif tech in ["biomass", "biomass boiler", "solid biomass", "solid biomass for industry"]:
+    elif tech in ["biomass", "solid biomass", "solid biomass for industry"]:
          return "biomass"
-    elif "Li ion" in tech:
-        return "battery storage"
-    elif "EV charger" in tech:
-        return "V2G"
+    elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil"]:
+         return "oil"
+    elif "gas for industry" in tech:
+        return "gas"
+    elif tech == "H2":
+        return "H2 storage"
+    elif "hot water storage" in tech:
+        return "thermal energy storage"
     elif "load" in tech:
         return "load shedding"
     elif tech == "coal" or tech == "lignite":
@@ -344,7 +348,7 @@ def storage_capacities(countries):
       cf = cf.groupby('tech').sum().reset_index()
       mask = ~(cf['tech'].isin(['load shedding']))
       result_df = cf[mask]
-      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'battery storage':'V2G'})
+      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'Li ion':'V2G'})
       if not result_df.empty:
             years = ['2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -424,10 +428,10 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     colors["AC Transmission lines"] = "#FF3030"
     colors["DC Transmission lines"] = "#104E8B"
     groups = [
-        ["solar","solar rooftop"],
+        ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["AC Transmission lines"],
         ["DC Transmission lines"],
         ["CCGT"],
@@ -435,10 +439,10 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     ]
     
     groupss = [
-        ["solar","solar rooftop"],
+        ["solar"],
         ["onshore wind", "offshore wind"],
-        ["SMR"],
-        ["gas-to-power/heat", "power-to-heat", "power-to-liquid"],
+        ["power-to-heat"],
+        ["power-to-gas"],
         ["transmission lines"],
         ["gas pipeline","gas pipeline new"],
         ["CCGT"],
@@ -489,10 +493,9 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
     colors["Grid-scale"] = 'green'
     colors["home battery"] = 'blue'
     groups = [
-        ["Grid-scale battery", "home battery", "V2G"],
-        ["H2"],
+        ["Grid-scale battery", "V2G"],
         ["Thermal Energy storage"],
-        ["biogas"],
+        ["gas"],
     ]
 
     # Create a subplot for each technology

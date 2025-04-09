@@ -1077,6 +1077,7 @@ plotting:
     gas pipeline: '#ebbca0'
     gas pipeline new: '#a87c62'
     # oil
+    fossil fuels: '#c9c9c9'
     oil: '#c9c9c9'
     imported oil: '#a3a3a3'
     oil boiler: '#adadad'
@@ -1300,3 +1301,11 @@ plotting:
     Imports: 'darkgrey'
     DC Transmission lines: "#8a1caf"
     AC Transmission lines: "#70af1d"
+    boilers: '#e05b09'
+    thermal energy storage: '#e69487'
+    H2 & gas pipelines: '#ebbca0'
+    synthetic fuel techs: '#87d0e6'
+    CHP & gas turbines: '#a85522'
+    Oil & gas storage: '#c9c9c9' 
+    TES & H2 storage: '#870c71'
+    distribution network: '#97ad8c' 

@@ -45,7 +45,7 @@ scenario:
   #- 512
   #- 1024
   opts:
-  - EQ0.70c
+  - ''
   sector_opts:
   - 1H-T-H-B-I-A-dist1
   planning_horizons:
@@ -84,11 +84,11 @@ enable:
 co2_budget:
   2020: 0.701
   2025: 0.524
-  2030: 0.45
+  2030: 0.60
   2035: 0.150
-  2040: 0.15
+  2040: 0.20
   2045: 0.032
-  2050: 0.00
+  2050: 0.01
 
 co2_budget_national:
   2030:
@@ -257,17 +257,19 @@ imposed_values:
   country: BE
   nuclear: 2000
   onwind: 6000
-  offshore_ac: 5000
-  offshore_dc: 3000
-  solar: 14000
-  solar_max: 104000
+  offshore_ac: 4000
+  offshore_dc: 2000
+  solar: 12000
+  solar_rooftop: 2000
+  solar_rooftop_max: 90000
   offshore_max: 8000
+  battery: 4000  # The planned power capacity is around 1GW, assuming Energy to power ratio of 4
 
 sequestration_potentia_BE: 
   2030: 2
   2040: 5
   2050: 10
-    
+  
 TYNDP_values:
   at_ch: 1200
   at_cz: 900
@@ -592,15 +594,15 @@ sector:
   shipping_hydrogen_share:
     2020: 0
     2025: 0
-    2030: 0
+    2030: 0.05
     2035: 0
-    2040: 0.3
+    2040: 0.2
     2045: 0
     2050: 0.5
   shipping_methanol_share:
     2020: 0
     2025: 0.15
-    2030: 0.3
+    2030: 0.05
     2035: 0.5
     2040: 0.4
     2045: 0.85
@@ -608,9 +610,9 @@ sector:
   shipping_oil_share:
     2020: 1
     2025: 0.85
-    2030: 0.7
+    2030: 0.9
     2035: 0.5
-    2040: 0.3
+    2040: 0.4
     2045: 0.15
     2050: 0
   shipping_methanol_efficiency: 0.46
@@ -891,7 +893,7 @@ adjustments:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#solving
 solving:
-  #tmpdir: "path/to/tmp"
+  #tmpdir: "/home/umair/tmp"
   options:
     clip_p_max_pu: 1.e-2
     load_shedding: true
@@ -1298,3 +1300,12 @@ plotting:
     Imports: 'darkgrey'
     DC Transmission lines: "#8a1caf"
     AC Transmission lines: "#70af1d"
+    fossil fuels: '#c9c9c9'
+    boilers: '#e05b09'
+    thermal energy storage: '#e69487'
+    H2 & gas pipelines: '#ebbca0'
+    synthetic fuel techs: '#87d0e6'
+    CHP & gas turbines: '#a85522'
+    Oil & gas storage: '#c9c9c9' 
+    TES & H2 storage: '#870c71'
+    distribution network: '#97ad8c' 
