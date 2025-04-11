@@ -38,7 +38,7 @@ rule prepare_sensitivity_scenarios:
         sepia_config = "SEPIA/SEPIA_config.xlsx",
         template = "SEPIA/Template/pypsa.html",      
     output:
-        htmlfile=expand("results/sensitivity_results_offshore/{country}_sensitivity_offshore_chart.html", country=local_countries),
+        htmlfile=expand("results/sensitivity_results_offshore/sensitivity_offshore_{country}.html", country=local_countries),
     threads: 1
     resources:
         mem_mb=10000,

@@ -125,7 +125,13 @@
                     "sankeys_suff", "sankeys_ref",
                     "maps_suff", "maps_ref",
                     "dispatch_plots_suff", "dispatch_plots_ref"
-                ]
+                ],
+				"sensitivity": [
+				    "nuclear_BE",
+					"nuclear_EU",
+					"offshore_BE",
+					"offshore_EU"
+				]
             };
 
             let tocList = document.getElementById("toc-list");
@@ -177,7 +183,11 @@
                 "fec": "Energy Consumption",
                 "sankeys": "Sankeys",
                 "maps": "Maps",
-                "dispatch_plots": "Dispatch"
+                "dispatch_plots": "Dispatch",
+				"nuclear_BE": "Sensitivity Scenario Nuclear (Belgium Results)",
+				"nuclear_EU": "Sensitivity Scenario Nuclear (5 Countries Results)",
+				"offshore_BE": "Sensitivity Scenario Offshore (Belgium Results)",
+				"offshore_EU": "Sensitivity Scenario Offshore (5 Countries Results)"
             };
             fileName = fileName.replace("_suff", "").replace("_ref", "");
             return titleMap[fileName] || fileName;
@@ -301,6 +311,7 @@
             <select id="country-select" onchange="updateCountry()">
                 <option value="BE">Belgium</option>
                 <option value="EU">5 countries</option>
+				<option value="sensitivity">Sensitivity Scenarios</option>
             </select>
         </li>
     </div>

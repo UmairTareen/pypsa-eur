@@ -595,9 +595,9 @@ def create_combined_scenario_chart_country(country):
     TABLE_OF_CONTENTS=table_of_contents_content,
     MAIN=main_content,)
     if "offshore" in config["run"]["name"]:
-     combined_file_path = os.path.join(output_folder, f"{country}_sensitivity_offshore_chart.html")
+     combined_file_path = os.path.join(output_folder, f"sensitivity_offshore_{country}.html")
     else:
-     combined_file_path = os.path.join(output_folder, f"{country}_sensitivity_scenario_chart.html")
+     combined_file_path = os.path.join(output_folder, f"sensitivity_nuclear_{country}.html")
     with open(combined_file_path, "w") as combined_file:
      combined_file.write(rendered_html)
 

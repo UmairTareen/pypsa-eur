@@ -124,11 +124,11 @@ cp ../results/suff/htmls/raw_html/Heat_Dispatch-BE_2050.html ../results/html_fol
 cp ../results/ref/htmls/raw_html/Power_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Power_Dispatch-BE_weekly_ref.html
 cp ../results/ref/htmls/raw_html/Heat_Dispatch-BE_2050.html ../results/html_folder/other_countries/dispatch_plots/Heat_Dispatch-BE_weekly_ref.html
 
-cp ../results/sensitivity_results/BE_sensitivity_scenario_chart.html ../results/html_folder/sensitivity_scenarios/BE_sensitivity_scenario_nuclear.html
-cp ../results/sensitivity_results/EU_sensitivity_scenario_chart.html ../results/html_folder/sensitivity_scenarios/EU_sensitivity_scenario_nuclear.html
+cp ../results/sensitivity_results/sensitivity_nuclear_BE.html ../results/html_folder/sensitivity_scenarios/sensitivity_nuclear_BE.html
+cp ../results/sensitivity_results/sensitivity_nuclear_EU.html ../results/html_folder/sensitivity_scenarios/sensitivity_nuclear_EU.html
 
-cp ../results/sensitivity_results_offshore/BE_sensitivity_offshore_chart.html ../results/html_folder/sensitivity_scenarios/BE_sensitivity_scenario_offshore.html
-cp ../results/sensitivity_results_offshore/EU_sensitivity_offshore_chart.html ../results/html_folder/sensitivity_scenarios/EU_sensitivity_scenario_offshore.html
+cp ../results/sensitivity_results_offshore/sensitivity_offshore_BE.html ../results/html_folder/sensitivity_scenarios/sensitivity_offshore_BE.html
+cp ../results/sensitivity_results_offshore/sensitivity_offshore_EU.html ../results/html_folder/sensitivity_scenarios/sensitivity_offshore_EU.html
 
 
 # Now synchronize with the FTP server.
