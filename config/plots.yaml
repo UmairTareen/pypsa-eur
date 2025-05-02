@@ -16,6 +16,7 @@ Pypsa_plots:
  Sectoral Demands: true
  Annual Costs: true
  Annual Investment Costs: true
+ Annual Operational Costs: true
  Capacities: true
  Storage Capacities: true
  Heat Dispatch Winter: true
@@ -30,6 +31,7 @@ Scenario_plots:
  Cummulative Emissions: true
  Annual Costs: true
  Annual Investment Costs: true
+ Annual Operational Costs: true
  Cummulative Investment Costs: true
  Cummulative Emissions: true
  Capacities: true
@@ -40,6 +42,6 @@ Scenario_plots:
  Scenarios VRE Capacities Comparison: true
  Scenario Flexibility Capacities: true
  Scenarios Costs Comparison: true  
- Historic Generation Comparison: true
+ #Historic Generation Comparison: true
  Scenarios Sectors Comparison: true
  

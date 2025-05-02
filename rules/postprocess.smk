@@ -246,46 +246,35 @@ rule plot_summary:
         "../scripts/plot_summary.py"
 
 
-if "sensitivity" in config["run"]["name"]:
- rule sensitivity_results:
-    params:
-        countries=config_provider("countries"),
-        planning_horizons=config_provider("scenario", "planning_horizons"),
-        sector_opts=config_provider("scenario", "sector_opts"),
-        plotting=config_provider("plotting"),
-        scenario=config_provider("scenario"),
-        study = config_provider("run", "name"),
-        foresight=config_provider("foresight"),
-    input:
-        networks=expand(
-            RESULTS
-            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
-            **config["scenario"]
-        ),
-        balances=RESULTS + "graphs/balances-energy.pdf",
-        sepia_config = "SEPIA/SEPIA_config.xlsx",
-        template = "SEPIA/Template/pypsa.html",
-        logo = "SEPIA/Template/logo.png",         
-    output:
-        htmlfile=expand(RESULTS + "htmls/{country}_sensitivity_chart.html",study = config["run"]["name"], country=config["countries"]),
-    threads: 1
-    log:
-        RESULTS + "logs/sensitivity_results.log",
-    benchmark:
-        RESULTS + "benchmarks/sensitivity_results",
-    conda:
-        "../envs/environment.yaml"
-    script:
-        "../SEPIA/sensitivity_results.py"
-
 planning_horizons = [2020, 2030, 2040, 2050] 
 local_countries = config["countries"].copy()
 if "EU" not in local_countries:
-    local_countries.append("EU")                      
+    local_countries.append("EU") 
+
+rule generate_JRC:
+    params:
+        study = config_provider("run", "name"),
+    input:
+        agri = "data/clever_AFOLUB_2020.csv", 
+        summary = RESULTS + "graphs/costs.pdf",
+    output:
+        excelfile=expand(RESULTS + "sepia/inputs_{country}.xlsx", country=local_countries),
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        RESULTS + "logs/generate_JRC.log",
+    benchmark:
+        RESULTS + "benchmarks/generate_JRC",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/construct_JRC.py"
+                             
 rule prepare_sepia:
     params:
         countries=config_provider("countries"),
-        planning_horizons=planning_horizons,
+        planning_horizons=config_provider("scenario", "planning_horizons"),
         sector_opts=config_provider("scenario", "sector_opts"),
         emissions_scope=config_provider("energy", "emissions"),
         eurostat_report_year=config_provider("energy", "eurostat_report_year"),
@@ -300,7 +289,7 @@ rule prepare_sepia:
             **config["scenario"]
         ),
         costs = "data/costs_2050.csv", 
-        summary = RESULTS + "graphs/costs.pdf",
+        excelfile = RESULTS + "sepia/inputs_EU.xlsx",
     output:
         excelfile=expand(RESULTS + "sepia/inputs{country}.xlsx", country=local_countries),
     threads: 1
@@ -355,13 +344,67 @@ rule generate_sepia:
     script:
         "../SEPIA/SEPIA.py"
         
+rule generate_capacities_costs:
+    params:
+        study = config_provider("run", "name"),
+        countries=config_provider("countries"),
+    input:
+        htmlfile_fec=expand(RESULTS + "htmls/{country}_fec_{study}.html", country=local_countries, study=config["run"]["name"]),
+    output:
+        costs=RESULTS + "country_csvs/costs_EU.csv",
+    threads: 1
+    resources:
+        mem_mb=10000,
+    log:
+        RESULTS + "logs/generate_capacities_costs.log",
+    benchmark:
+        RESULTS + "benchmarks/generate_capacities_costs",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/capacities_costs.py"
+
+if "sensitivity" in config["run"]["name"]:
+ rule sensitivity_results:
+    params:
+        countries=config_provider("countries"),
+        planning_horizons=config_provider("scenario", "planning_horizons"),
+        sector_opts=config_provider("scenario", "sector_opts"),
+        plotting=config_provider("plotting"),
+        scenario=config_provider("scenario"),
+        study = config_provider("run", "name"),
+        foresight=config_provider("foresight"),
+    input:
+        networks=expand(
+            RESULTS
+            + "postnetworks/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}_{planning_horizons}.nc",
+            **config["scenario"]
+        ),
+        balances=RESULTS + "graphs/balances-energy.pdf",
+        sepia_config = "SEPIA/SEPIA_config.xlsx",
+        template = "SEPIA/Template/pypsa.html",
+        logo = "SEPIA/Template/logo.png",
+        htmlfile_fec=expand(RESULTS + "htmls/{country}_fec_{study}.html", country=local_countries, study=config["run"]["name"]), 
+        costs = "data/costs_2050.csv",        
+    output:
+        htmlfile=expand(RESULTS + "htmls/{country}_sensitivity_chart.html",study = config["run"]["name"], country=config["countries"]),
+    threads: 1
+    log:
+        RESULTS + "logs/sensitivity_results.log",
+    benchmark:
+        RESULTS + "benchmarks/sensitivity_results",
+    conda:
+        "../envs/environment.yaml"
+    script:
+        "../SEPIA/sensitivity_results.py" 
+             
 rule make_country_summary:
     params:
         foresight=config_provider("foresight"),
         costs=config_provider("costs"),
         snapshots=config_provider("snapshots"),
         scenario=config_provider("scenario"),
-        planning_horizons=planning_horizons,
+        planning_horizons=config_provider("scenario", "planning_horizons"),
         country = config_provider("country_summary"),
         study = config_provider("run", "name"),
     input:
@@ -384,7 +427,7 @@ rule make_country_summary:
             + "maps/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sector_opts}-costs-all_{planning_horizons}.pdf",
             **config["scenario"]
         ),
-        htmlfile_fec=expand(RESULTS + "htmls/{country}_fec_{study}.html", country=local_countries, study=config["run"]["name"]),
+        costss=RESULTS + "country_csvs/costs_EU.csv",
     output:
         cfs=RESULTS + "country_csvs/cfs.csv",
         costs=RESULTS + "country_csvs/costs.csv",
@@ -411,7 +454,7 @@ rule make_country_summary:
 rule prepare_results:
     params:
         countries=config_provider("countries"),
-        planning_horizons=planning_horizons,
+        planning_horizons=config_provider("scenario", "planning_horizons"),
         sector_opts=config_provider("scenario", "sector_opts"),
         plotting=config_provider("plotting"),
         scenario=config_provider("scenario"),
@@ -454,7 +497,7 @@ rule prepare_results:
 rule prepare_dispatch_plots:
     params:
         countries=config_provider("countries"),
-        planning_horizons=planning_horizons,
+        planning_horizons=config_provider("scenario", "planning_horizons"),
         sector_opts=config_provider("scenario", "sector_opts"),
         plotting=config_provider("plotting"),
         scenario=config_provider("scenario"),
@@ -467,8 +510,8 @@ rule prepare_dispatch_plots:
         ),
         htmlfile=expand(RESULTS + "htmls/{country}_maps_{study}.html",study = config["run"]["name"], country=config["countries"]),      
     output:
-        powerfile=expand(RESULTS + "htmls/raw_html/Power_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
-        heatfile=expand(RESULTS + "htmls/raw_html/Heat_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=planning_horizons,),
+        powerfile=expand(RESULTS + "htmls/raw_html/Power_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=config["scenario"]["planning_horizons"],),
+        heatfile=expand(RESULTS + "htmls/raw_html/Heat_Dispatch-{country}_{planning_horizons}.html", country=config["countries"],planning_horizons=config["scenario"]["planning_horizons"],),
     threads: 1
     resources:
         mem_mb=10000,

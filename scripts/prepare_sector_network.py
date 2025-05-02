@@ -1579,7 +1579,6 @@ def add_land_transport(n, costs):
         )
 
         p_nom = number_cars * options.get("bev_charge_rate", 0.011) * electric_share
-
         n.madd(
             "Link",
             nodes,

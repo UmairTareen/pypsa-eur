@@ -63,6 +63,8 @@ BE_annual_costs_desc: <p>The total annual costs include investment (CAPEX) and o
 
 BE_investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
 
+BE_operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
+
 BE_capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
 
 BE_storage_capacities_desc: <p>The storage capacitiy strongly varies depending on the energy carrier.</p> 
@@ -87,6 +89,7 @@ BE_gas_map_plots_desc: <p>Map plots provide a geographical overview of the inves
 EU_sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
 EU_annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
 EU_investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
+EU_operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
 EU_capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
 EU_storage_capacities_desc: <p>The storage capacitiy strongly varies depending on the energy carrier.</p> 
 EU_heat_dispatch_win_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical winter week. </p>
@@ -102,6 +105,7 @@ EU_gas_map_plots_desc: <p>Map plots provide a geographical overview of the inves
 sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
 annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
 investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
+operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
 capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
 storage_capacities_desc: <p>The storage capacitiy strongly varies depending on the energy carrier.</p> 
 heat_dispatch_win_desc: <p>The heat dispatch charts illustrate the heat production and distribution during a typical winter week. </p>

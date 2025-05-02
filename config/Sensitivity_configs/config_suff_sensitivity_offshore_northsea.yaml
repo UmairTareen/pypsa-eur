@@ -554,7 +554,7 @@ sector:
   ICE_upper_degree_factor: 1.6
   EV_lower_degree_factor: 0.98
   EV_upper_degree_factor: 0.63
-  bev_dsm: true
+  bev_dsm: false
   bev_availability: 0.5
   bev_energy: 0.05
   bev_charge_efficiency: 0.9
@@ -1311,7 +1311,11 @@ plotting:
     thermal energy storage: '#e69487'
     H2 & gas pipelines: '#ebbca0'
     synthetic fuel techs: '#87d0e6'
-    CHP & gas turbines: '#a85522'
+    CHP & powerplants: '#a85522'
     Oil & gas storage: '#c9c9c9' 
     TES & H2 storage: '#870c71'
     distribution network: '#97ad8c' 
+    CCU: '#f29dae'
+    CCUS: '#f29dae'
+    electricity imports/exports: '#110d63'
+    hydrogen imports/exports: '#bf13a0'

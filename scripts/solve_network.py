@@ -568,6 +568,18 @@ def imposed_values_sensitivity_offshore(n, foresight, config):
          
   return n
 
+def imposed_values_sensitivity_nuclear(n, foresight, config):
+  if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+    if foresight == "myopic":
+     country = config["imposed_values"]["country"]
+     suffix = "1 0"
+     if f"{country}{suffix} nuclear-2040" in n.links.index:
+         n.links.loc[f"{country}{suffix} nuclear-2040", "p_nom_max"] = config["sensitivity_analysis"]["additional_capacity"][2040]
+     if f"{country}{suffix} nuclear-2050" in n.links.index:
+         n.links.loc[f"{country}{suffix} nuclear-2050", "p_nom_max"] = config["sensitivity_analysis"]["additional_capacity"][2050]
+         
+  return n
+
 def imposed_values_sequestration(n, config):
   ''' This funtion impse values for carbon sequestration for Belgium for ref scenario.'''
   if config["run"]["name"] == "ref":
@@ -1642,6 +1654,10 @@ if __name__ == "__main__":
         foresight=snakemake.params.foresight,)
     
     n = imposed_values_sensitivity_offshore(
+        n,
+        foresight=snakemake.params.foresight,
+        config=snakemake.config,)
+    n = imposed_values_sensitivity_nuclear(
         n,
         foresight=snakemake.params.foresight,
         config=snakemake.config,)

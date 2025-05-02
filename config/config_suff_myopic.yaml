@@ -271,49 +271,21 @@ sequestration_potentia_BE:
   2050: 10
   
 TYNDP_values:
-  at_ch: 1200
-  at_cz: 900
-  at_de: 5400
-  at_hu: 800
-  at_it: 800
-  at_si: 950
   be_fr: 4300
-  be_lu: 680
   be_nl: 3400
-  bg_hr: 0
-  bg_ro: 1500
-  ch_de: 4200
-  ch_fr: 3700
-  ch_it: 3750
-  cz_de: 2100
-  cz_pl: 1400
-  cz_sk: 1800
-  de_dk: 4100
   de_fr: 3300
-  de_lu: 2300
-  de_pl: 3000
   de_nl: 5000
-  dk_se: 750
-  ee_lv: 1100
-  es_fr: 5000
-  es_pt: 4200
-  fi_se: 2400
-  fr_it: 4100
-  gr_hr: 0
-  hr_hu: 1700
-  hr_ro: 0
-  hr_si: 2000
-  hu_ro: 1100
-  hu_sk: 2600
-  it_si: 660
-  lt_lv: 950
-  no_se: 3695
-  pl_sk: 1980
   be_de: 0
   expansion_limit: true
   max_expansion: 1.35
 country_summary: 'BE'  
 
+DC_transmission_line:
+  be_de: 1000
+  be_gb: 1000
+  gb_nl: 1000
+  gb_fr: 2000
+  gb_gb: 2000
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#renewable
 renewable:
   onwind:
@@ -548,7 +520,7 @@ sector:
   ICE_upper_degree_factor: 1.6
   EV_lower_degree_factor: 0.98
   EV_upper_degree_factor: 0.63
-  bev_dsm: true
+  bev_dsm: false
   bev_availability: 0.5
   bev_energy: 0.05
   bev_charge_efficiency: 0.9
@@ -560,7 +532,7 @@ sector:
   land_transport_fuel_cell_share:
     2020: 0
     2025: 0
-    2030: 0.05
+    2030: 0
     2035: 0
     2040: 0.1
     2045: 0
@@ -568,7 +540,7 @@ sector:
   land_transport_electric_share:
     2020: 0
     2025: 0.15
-    2030: 0.25
+    2030: 0.3
     2035: 0.45
     2040: 0.6
     2045: 0.85
@@ -1305,7 +1277,11 @@ plotting:
     thermal energy storage: '#e69487'
     H2 & gas pipelines: '#ebbca0'
     synthetic fuel techs: '#87d0e6'
-    CHP & gas turbines: '#a85522'
+    CHP & powerplants: '#a85522'
     Oil & gas storage: '#c9c9c9' 
     TES & H2 storage: '#870c71'
-    distribution network: '#97ad8c' 
+    distribution network: '#97ad8c'
+    CCU: '#f29dae'
+    CCUS: '#f29dae'
+    electricity imports/exports: '#110d63'
+    hydrogen imports/exports: '#bf13a0' 

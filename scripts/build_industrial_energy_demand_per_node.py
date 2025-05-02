@@ -97,18 +97,12 @@ if __name__ == "__main__":
         nodal_df.loc[country_energy.index, 'methane'] = clever_Industry.loc[country, 'Total Final energy consumption from gas grid / gas consumed locally in industry']
         nodal_df.loc[country_energy.index, 'low-temperature heat'] = clever_Industry.loc[country, 'Total Final heat consumption in industry']
         nodal_df.loc[country_energy.index, 'hydrogen'] = clever_Industry.loc[country, 'Total Final hydrogen consumption in industry'] + clever_Industry.loc[country, 'Non-energy consumption of hydrogen for the feedstock production'].sum()
-        nodal_df.loc[country_energy.index, 'naphtha'] = clever_Industry.loc[country, 'Non-energy consumption of oil for the feedstock production']
+        nodal_df.loc[country_energy.index, 'naphtha'] = clever_Industry.loc[country, 'Non-energy consumption of oil for the feedstock production'] + clever_Industry.loc[country, 'Total Final oil consumption in industry'].sum()
     
      else:
       nodal_df = nodal_df
-     
-    if config["run"]["name"] == "baseline":
-      nodal_df.loc['BE1 0', 'naphtha']  =  84.4
-      nodal_df.loc['BE1 0', 'coke']  =  15
-      
-      
+    
     if config["run"]["name"] == "ref":
       nodal_df.loc['BE1 0', 'naphtha']  =  84.4
-
     fn = snakemake.output.industrial_energy_demand_per_node
     nodal_df.to_csv(fn, float_format="%.2f")

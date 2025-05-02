@@ -440,7 +440,7 @@ if __name__ == "__main__":
     opt = snakemake.params.scenario["opts"][0]
     sector_opt = snakemake.params.scenario["sector_opts"][0]
     ll = snakemake.params.scenario["ll"][0]
-    planning_horizons = [2020, 2030, 2040, 2050]
+    planning_horizons = [2030, 2040, 2050]
     study = snakemake.params.study
     networks_dict = {
             (cluster, ll, opt + sector_opt, planning_horizon): f"results/{study}" +

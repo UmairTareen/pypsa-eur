@@ -3,29 +3,6 @@ import pypsa
 import os
 import shutil
 from pypsa.descriptors import get_switchable_as_dense as as_dense
-
-
-def prepare_files(simpl, cluster, opt, sector_opt, ll):
-    """This function copies and renames the .nc file for the year 2020 to have similar wildcards for the excel generator"""
-
-    file_name = f'elec_s_{cluster}_lv1.0__{sector_opt}_2020.nc'
-    new_file_name = f'elec_s{simpl}_{cluster}_l{ll}_{opt}_{sector_opt}_2020.nc'
-    source_directory = 'results/baseline/postnetworks/'
-    destination_directory = f'results/{study}/postnetworks/'
-    source_path = os.path.join(source_directory, file_name)
-    destination_path = os.path.join(destination_directory, new_file_name)
-    shutil.copy(source_path, destination_path)
-
-    # CSV files
-    csv_source_directory = 'resources/baseline/'
-    csv_destination_directory = f'resources/{study}/'
-    csv_files = [f"energy_totals_s{simpl}_{cluster}_2020.csv",f"co2_totals_s{simpl}_{cluster}_2020.csv", f"industrial_energy_demand_elec_s{simpl}_{cluster}_2020.csv",f"biomass_potentials_s{simpl}_{cluster}_2020.csv"]
-
-    for csv_file in csv_files:
-        source_csv_path = os.path.join(csv_source_directory, csv_file)
-        destination_csv_path = os.path.join(csv_destination_directory, csv_file)
-        shutil.copy(source_csv_path, destination_csv_path)
-    
     
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     prefix=f"results/{study}/postnetworks/elec_"
@@ -58,8 +35,9 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
             f"resources/{study}/energy_totals_s_" + str(cluster) + "_" + str(planning_horizon) + ".csv",
             index_col=0)
 
-        if planning_horizon == 2020 or study == 'bau':
+        if study == 'ref':
             H2_nonenergyy = 0
+            oil_industry = 0
         if study == 'suff':
             clever_industry = (
                 pd.read_csv("data/clever_Industry_" + str(planning_horizon) + ".csv", index_col=0)).T
@@ -68,10 +46,14 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
                H2_nonenergyy = clever_industry.loc[
                 "Non-energy consumption of hydrogen for the feedstock production"].filter(like=country).sum()
                H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry"].filter(like=country).sum()
+               naphtha_industry = clever_industry.loc["Non-energy consumption of oil for the feedstock production"].filter(like=country).sum()
+               oil_industry = clever_industry.loc["Total Final oil consumption in industry"].filter(like=country).sum()
             else:
                H2_nonenergyy = clever_industry.loc[
                 "Non-energy consumption of hydrogen for the feedstock production", ["BE", "FR", "DE", "GB", "NL"]].sum().sum()
                H2_industry = clever_industry.loc["Total Final hydrogen consumption in industry", ["BE", "FR", "DE", "GB", "NL"]].sum().sum()
+               naphtha_industry = clever_industry.loc["Non-energy consumption of oil for the feedstock production", ["BE", "FR", "DE", "GB", "NL"]].sum().sum()
+               oil_industry = clever_industry.loc["Total Final oil consumption in industry", ["BE", "FR", "DE", "GB", "NL"]].sum().sum()
         industry_demand = pd.read_csv(
             f"resources/{study}/industrial_energy_demand_elec_s_" + str(cluster) + "_" + str(
                 planning_horizon) + ".csv", index_col=0).T
@@ -81,18 +63,10 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
         else:
          Rail_demand = Rail_demand.sum().sum()
 
-        if planning_horizon == 2020:
-            if country != 'EU':
-              ammonia = 0
-              H2_industry = n.loads_t.p.filter(like="H2 for industry").filter(like=country).sum().sum()/1e6
-            else:
-              ammonia = 0
-              H2_industry = industry_demand.loc["hydrogen"].sum().sum()
-        else:
-            if country != 'EU':
+        if country != 'EU':
               ammonia_t = industry_demand.loc["ammonia"]
               ammonia = ammonia_t.filter(like=country).sum()
-            else:
+        else:
               ammonia_t = industry_demand.loc["ammonia"]
               ammonia = ammonia_t.sum().sum()
 
@@ -216,6 +190,8 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
         if study == 'suff':
             load.loc[
                 load.label.str.contains("H2 for industry") & (load.label == "H2 for industry"), "value"] = H2_industry
+            load.loc[
+                load.label.str.contains("naphtha for industry") & (load.label == "naphtha for industry"), "value"] = naphtha_industry
         value = load.loc[load.label.str.contains("electricity") & (load.label == "electricity"), "value"]
         load.loc[load.label.str.contains("AC") & (load.label == "electricity"), "value"] = value - Rail_demand
 
@@ -344,6 +320,11 @@ def process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, count
                         'target': 'Non-energy',
                         'value': H2_nonenergyy}
             connections.loc[len(connections)] = pd.Series(new_row2)
+            new_row3 = {'label': 'Oil for industry',
+                        'source': 'pet',
+                        'target': 'industry',
+                        'value': oil_industry}
+            connections.loc[len(connections)] = pd.Series(new_row3)
         connections.loc[len(connections)] = pd.Series(new_row1)
 
         connections = connections.loc[
@@ -449,7 +430,7 @@ entries_to_select = ['solar', 'solar rooftop', 'onwind', 'offwind',
                      'urban central gas CHP CC','urban central gas CHP CC_2','urban central gas CHP CC_3',
                      'H2 Fuel Cell', 'H2 Fuel Cell_2','H2 Fuel Cell_3','coal for industry','biogas to gas CC',
                      'home battery charger', 'home battery disccharger','home battery charger_2', 'home battery disccharger_2',
-                     'DC']  # Add moe entries if needed
+                     'DC','Oil for industry']  # Add moe entries if needed
 entry_label_mapping = {
     'solar': {'label': 'Solar photovoltaic Production', 'source': 'TWh', 'target': 'prospv'},
     'solar rooftop': {'label': 'Solar photovoltaic Production Rooftop', 'source': 'TWh', 'target': 'prospvr'},
@@ -723,6 +704,7 @@ entry_label_mapping = {
     'home battery discharger': {'label': 'home battery discharger', 'source': 'TWh', 'target': 'prebatelcd'},
     'home battery discharger_2': {'label': 'home battery discharger losses', 'source': 'TWh', 'target': 'prebatelcdloss'},
     'DC': {'label': 'Electricity grid losses', 'source': 'TWh', 'target': 'pregridloss'},
+    'Oil for industry': {'label': 'Oil for industry', 'source': 'TWh', 'target': 'prespetcfind'},
     
 }
 
@@ -1550,13 +1532,6 @@ def prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, cou
 
         # fossil gas
         if country == 'EU':
-         if planning_horizon == 2020:
-            value_gas = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas")).div(
-            1e6).sum() * options.loc[("gas", "CO2 intensity"), "value"]
-            value_ccgt = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="CCGT")
-                 ).div(1e6).sum() * options.loc[("gas", "CO2 intensity"), "value"]
-            value = value_gas +  value_ccgt
-         else:
             value_gas = (n.snapshot_weightings.generators @ n.generators_t.p.filter(like="gas")).div(
             1e6).sum() * options.loc[("gas", "CO2 intensity"), "value"]
             value = value_gas
@@ -1809,7 +1784,11 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
 
         merged_df = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizons[0], country)
         merged_df = merged_df[country]
-
+        data_2020=pd.read_excel(f"results/{study}/sepia/inputs_{country}.xlsx", sheet_name="Inputs")
+        data_2020 = data_2020.groupby('target', as_index=False).agg({
+             'label': 'first',
+             'source': 'first',
+             '2020': 'sum'})
         for planning_horizon in planning_horizons[1:]:
             temp = process_network(simpl, cluster, opt, sector_opt, ll, planning_horizon, country)
             temp = temp[country]
@@ -1835,19 +1814,22 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
                 selected_df.loc[:, 'label'] = label_mapping.get('label', '')
                 selected_df.loc[:, 'source'] = label_mapping.get('source', '')
                 selected_df.loc[:, 'target'] = label_mapping.get('target', '')
-
                 # Concatenate the selected entry to the main DataFrame
                 selected_entries_df = pd.concat([selected_entries_df, selected_df])
 
             selected_entries_df = selected_entries_df.groupby('target').agg({'label': 'first', 'source': 'first',
-                                                                             '2020': 'sum',
                                                                              '2030': 'sum',
                                                                              '2040': 'sum',
                                                                              '2050': 'sum'
                                                                              }).reset_index()
-            selected_entries_df = selected_entries_df[['label', 'source', 'target', '2020', '2030', '2040', '2050']]
+            selected_entries_df = selected_entries_df[['label', 'source', 'target', '2030', '2040', '2050']]
+            total_df = pd.merge(selected_entries_df, data_2020, on=['label', 'source', 'target'], how='outer')
+            for year in ['2020', '2030', '2040', '2050']:
+              if year in total_df.columns:
+                total_df[year] = total_df[year].fillna(0)
+            total_df = total_df.groupby(['label', 'source', 'target'], as_index=False)[['2020', '2030', '2040', '2050']].sum()
             # Write the concatenated DataFrame to a new sheet
-            selected_entries_df.to_excel(writer, sheet_name='Inputs', index=False)
+            total_df.to_excel(writer, sheet_name='Inputs', index=False)
 
         print(f'Excel file "{filename}" created with the selected entries on the "SelectedEntries" sheet.')
 
@@ -1863,6 +1845,11 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
     for country in countries:
         merged_emissions = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizons[0], country)
         merged_emissions = merged_emissions[country]
+        data_2020=pd.read_excel(f"results/{study}/sepia/inputs_{country}.xlsx", sheet_name="Inputs_co2")
+        data_2020 = data_2020.groupby('target', as_index=False).agg({
+             'label': 'first',
+             'source': 'first',
+             '2020': 'sum'})
         for planning_horizon in planning_horizons[1:]:
             temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country)
             temp = temp[country]
@@ -1901,12 +1888,16 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
                 selected_cf.loc[:, 'label'] = label_mapping_c.get('label', '')
                 selected_cf.loc[:, 'source'] = label_mapping_c.get('source', '')
                 selected_cf.loc[:, 'target'] = label_mapping_c.get('target', '')
-
                 # Concatenate the selected entry to the main DataFrame
                 selected_entries_cf = pd.concat([selected_entries_cf, selected_cf])
 
             # Write the concatenated DataFrame to a new sheet
-            selected_entries_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
+            total_cf = pd.merge(selected_entries_cf, data_2020, on=['label', 'source', 'target'], how='outer')
+            for year in ['2020', '2030', '2040', '2050']:
+              if year in total_cf.columns:
+                total_cf[year] = total_cf[year].fillna(0)
+            total_cf = total_cf.groupby(['label', 'source', 'target'], as_index=False)[['2020', '2030', '2040', '2050']].sum()
+            total_cf.to_excel(writer, sheet_name='Inputs_co2', index=False)
 
         print(f'Excel file "{filename}" updated with the emissions data.')
 
@@ -1934,7 +1925,7 @@ if __name__ == "__main__":
     opt = snakemake.params.scenario["opts"][0]
     sector_opt = snakemake.params.scenario["sector_opts"][0]
     ll = snakemake.params.scenario["ll"][0]
-    planning_horizons = [2020, 2030, 2040, 2050] 
+    planning_horizons = [2030, 2040, 2050] 
 
     countries = snakemake.params.countries
     total_country = 'EU'
@@ -1945,7 +1936,6 @@ if __name__ == "__main__":
          countries = countries
     study = snakemake.params.study
     year = snakemake.params.year
-    prepare_files(simpl, cluster, opt, sector_opt, ll)
     loaded_files = load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll)
     
     networks_dict = {

@@ -28,6 +28,7 @@ def biomass_potentials():
     # Iterate over countries and planning horizons
     for country in ALL_COUNTRIES:
         for planning_horizon in planning_horizons:
+         if planning_horizon != 2020:
             biomass_potentials_file = f"resources/{study}/biomass_potentials_s_{cluster}_{planning_horizon}.csv"
             biomass_p = pd.read_csv(biomass_potentials_file, index_col=0)
             
@@ -35,7 +36,8 @@ def biomass_potentials():
             biomass_p = biomass_p / 1E6
             biomass_p.index = biomass_p.index.str[:2]
             biomass_p = biomass_p.groupby(biomass_p.index).sum()
-            
+            if planning_horizon == 2020:
+                biomass_p[:] = 0
             # Assign the summed biomass potential for the country and planning horizon to the DataFrame
             df.loc[planning_horizon, country] = biomass_p.loc[country, 'solid biomass']
 
@@ -155,7 +157,10 @@ def prepare_sepia(countries):
     fec = grouped_fec
     for en_code in ['vap','elc','gaz','hyd','bev']:
         flows[(en_code+'_se',en_code+'_fe','')] = fec[en_code+'_fe']
-        
+    
+    for en_code in ['pet']: 
+      value_pet = fec[en_code+'_fe']['2020']
+      flows.loc['2020', (en_code + '_pe', en_code + '_fe', '')] = value_pet
     selected_columns_pe = flows.columns.get_level_values('Source').isin(FE_NODES)
     fec_carrier_pe = flows.loc[:, selected_columns_pe]
     grouped_fec_pe = fec_carrier_pe.groupby(level='Source', axis=1).sum()
@@ -195,10 +200,10 @@ def prepare_sepia(countries):
     grouped_fec_p = fec_carrier_p.groupby(level='Source', axis=1).sum()
     fec_p = grouped_fec_p
     if country == 'EU':
-     for en_code in ['hdr','eon','eof','spv','pac','enc','ura','bgl']:
+     for en_code in ['hdr','eon','eof','spv','pac','enc','ura','bgl','win']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe']
     else: 
-     for en_code in ['hdr','eon','eof','spv','pac','ura','bgl']:
+     for en_code in ['hdr','eon','eof','spv','pac','ura','bgl','win']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
     for en_code in ['cms']:
        flows[('imp',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
@@ -232,7 +237,8 @@ def prepare_sepia(countries):
       mask = values >= local_val
       flows[('prod', en_code+'_pe', '')] = np.where(mask, local_val, values)
       flows[('imp', en_code+'_pe', '')] = np.where(mask, values - local_val, 0)
-     
+    
+    value_bm_data = flows[('prod', 'enc_pe', '')].squeeze().rename_axis(None)
     ''' Compute biomass imports and local production from model data'''
     if country != 'EU':
      df[country] = df[country].astype(float)
@@ -240,8 +246,11 @@ def prepare_sepia(countries):
      bm_potentials = bm_potentials.loc[:, country].values
      for en_code in ['enc']:
       flows[('prod',en_code+'_pe','')] = bm_potentials
+      flows.loc['2020', ('prod', en_code + '_pe', '')] = value_bm_data['2020']
       imp_values = fec_p[en_code + '_pe'] - bm_potentials
+      imp_values2020 = fec_p[en_code + '_pe']['2020'] - value_bm_data['2020']
       flows[('imp', en_code + '_pe', '')] = imp_values
+      flows.loc['2020', ('imp', en_code + '_pe', '')] = imp_values2020
       flows[(en_code + '_pe', 'exp', '')] = bm_potentials - fec_p[en_code + '_pe']
     
     sec_imports = flows.columns.get_level_values('Target').isin(SE_NODES)
@@ -279,6 +288,7 @@ def prepare_sepia(countries):
     
     # '''using co2 intensities from pypsa and compuing it from demands as on pypsa they are solved on EU level'''
     co2_intensity_gas = options.loc[("gas", "CO2 intensity"), "value"]
+    co2_intensity_oil = options.loc[("oil", "CO2 intensity"), "value"]
     co2_intensity_met = options.loc[("methanolisation", "carbondioxide-input"), "value"]
     # demand_side_emm = flows.columns.get_level_values('Target').isin(DS_NODES)
     # demand_side_emm = flows.loc[:, demand_side_emm]
@@ -290,8 +300,10 @@ def prepare_sepia(countries):
      for en_code in ['fgs']:
         # values_agr_emm = flows[('gaz_fe','agr', '')].squeeze().rename_axis(None) * co2_intensity_gas
         values_gas_emm = fec_p['gaz_pe'] 
-        flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
-    
+        # flows_co2[(en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm * co2_intensity_gas
+        flows_co2.loc['2030', (en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm['2030'] * co2_intensity_gas
+        flows_co2.loc['2040', (en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm['2040'] * co2_intensity_gas
+        flows_co2.loc['2050', (en_code + '_ghg', 'gas_ghg', '')] = values_gas_emm['2050'] * co2_intensity_gas
     # for en_code in ['oil']:
     #     value_so = flows[('pet_fe', 'wati', '')].squeeze().rename_axis(None) * co2_intensity_oil
     #     value_naph = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
@@ -303,7 +315,10 @@ def prepare_sepia(countries):
     #     flows_co2[(en_code + '_ghg', 'atm', 'tra')] = value_tra
   
     
-    
+    for en_code in ['oil']: 
+      val_naphtha = flows[('pet_fe', 'neind', '')].squeeze().rename_axis(None)
+      val_nonen = flows_co2[('pro_ghg', 'atm', '')].squeeze().rename_axis(None).sum(axis=1)
+      flows_co2.loc['2020', ('oil_ghg', 'atm', 'oil')] = (val_naphtha['2020'] * co2_intensity_oil) - val_nonen['2020']
     tot_emm = flows_co2.columns.get_level_values('Target').isin(GHG_SECTORS)
     tot_emm = flows_co2.loc[:, tot_emm]
     tot_emm = tot_emm.groupby(level='Target', axis=1).sum() 
@@ -367,14 +382,24 @@ def prepare_sepia(countries):
     # for en_code in ['ext']:
     #     exp_emm_p = flows[('pet' + '_fe', 'exp', '')].squeeze().rename_axis(None) * co2_intensity_oil
     #     flows_co2[('oil_ghg',en_code + '_ghg', '')] = exp_emm_p
-    
-    
-    for en_code in ['gaz']: 
-      value_smr = flows.loc['2020', (en_code + '_se', 'hyd_se', 'smr')].sum() 
-      flows.loc['2020', (en_code + '_se', 'hyd_fe', 'ddd')] = value_smr 
-      flows.loc['2020', (en_code + '_se', 'hyd_se', 'smr')] = 0
-      flows.loc['2020', ('hyd_se', 'hyd_fe', '')] = 0
+    tot_em = flows_co2.columns.get_level_values('Source').isin(GHG_SECTORS)
+    tot_em = flows_co2.loc[:, tot_em]
+    tot_em = tot_em.groupby(level='Source', axis=1).sum() 
+    for en_code in ['oil']: 
+      value_pet_emm = tot_em[en_code+'_ghg']['2020']
+      flows_co2.loc['2020', ('fol_ghg', en_code + '_ghg', '')] = value_pet_emm
       
+    gas_df = flows_co2.columns.get_level_values('Source').isin(['gas_ghg'])
+    gas_df = flows_co2.loc[:, gas_df]
+    gas_df = gas_df.groupby(level='Target', axis=1).sum()
+    gas_df = gas_df['atm']
+    for en_code in ['fgs']: 
+      value_gas_emm = gas_df['2020']
+      flows_co2.loc['2020', ('fgs_ghg','gas_ghg', '')] = value_gas_emm
+    for en_code in ['ind']: 
+      value_ind = flows_co2[('oil_ghg', 'atm', 'oil')].squeeze().rename_axis(None)
+      flows_ghg.loc['2020', ('ind_ghg','pet_pe', 'oil')] = value_ind['2020']
+    
     filtered_flows = [
     ('imp', 'gaz_pe', ''),
     ('imp', 'pet_pe', ''),
@@ -399,7 +424,8 @@ def prepare_sepia(countries):
     ('prod', 'pac_pe', ''),
     ('prod', 'cms_pe', ''),
     ('prod', 'ura_pe', ''),
-    ('prod', 'bgl_pe', ''),]
+    ('prod', 'bgl_pe', ''),
+    ('prod', 'win_pe', ''),]
     local_prod = pd.DataFrame()
     for flow in local_production:
      if flow in flows.columns:

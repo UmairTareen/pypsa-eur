@@ -17,7 +17,7 @@ path = os.path.join(os.path.dirname(__file__), '../data/')
 PATH = os.path.join(os.path.dirname(__file__), '../')
 skip_cols = [0,1, 2, 3]
 keep_cols = [i for i in range(34) if i not in skip_cols]
-years = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+years = [2020, 2030, 2040, 2050]
 
 countriess = [
     "FR",

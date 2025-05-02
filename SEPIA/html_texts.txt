@@ -7,6 +7,8 @@ BE_annual_costs_sce: <p>This bar chart represents the average total annual costs
 
 BE_investment_costs_sce: <p>Comaprison of average annual investment costs are shown here, representing annualised capital investments in energy infrastructure and technologies.</p><p>The comaprison of both scenarios indicate:</p><ul><li>30% reduced investments in solar PV and 45% in wind onshore anually in sufficiency scenario.</li><li>The annual investment costs in wind offshore are equal as in both scenarios the maximum potential is utlized.</li><li>Annual reduction of 38% in power-to heat technologies, 90% in power-to-liquid technologies and 27% reduction in power-to-gas technologies in sufficiency scenario.
 
+BE_operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
+
 BE_cumu_investment_costs_sce: <p>Comaprison of cumulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2020-2050. In the sufficiency scenario, cumulative investments for Belgium are 35% lower than in the reference scenario.</p>
 
 BE_capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p><p>Notable insights from results include:</p><ul><li>The Sufficiency Scenario significantly reduces solar PV and onshore wind capacities, leading to lower land and material use while enabling a more flexible and adoptable deployment rate.</li><li>Transmission lines play a vital role in enhancing system flexibility and ensuring efficient energy distribution in both scenarios.</li><li>No new investments in nuclear, while only small capacities of CCGT are needed by 2050 to maintain system flexibility.</li><li> While electrification increases across various sectors, sufficiency measures play a crucial role in reducing the over burden on the electricity network.
@@ -35,6 +37,7 @@ BE_sectoral_sce: <p>The table provides a comparison of the sectors analyzed in d
 EU_cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios.</p>
 EU_annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
 EU_investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
+EU_operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
 EU_cumu_investment_costs_sce: <p>Comaprison of cumulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2020-2050.</p>
 EU_capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
 EU_storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>
@@ -44,6 +47,7 @@ EU_storage_capacities_sce: <p>This chart displays the comparison of storage capa
 cumulative_emissions_sce: <p>This plot represents the total cumulative emissions comparison from 2020-2050 between the optimised scenarios.</p>
 annual_costs_sce: <p>This bar chart represents the total annual costs comparison between the optimised scenarios. This costs include investment and operational costs.</p>
 investment_costs_sce: <p>Comaprison of annual investment costs are shown here, representing capital investments in energy infrastructure and technologies.</p>
+operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
 cumu_investment_costs_sce: <p>Comaprison of cumulative investment costs are shown here, showing the total capital investment required for the whole transition period from 2020-2050.</p>
 capacities_sce: <p>The capacities chart shows the comparison of maximum production capacity for each energy source within the country at the end of transition period (2050) comapred to the capacities which were in the year 2020.</p>
 storage_capacities_sce: <p>This chart displays the comparison of storage capacities available for various energy resources in year 2050 and what was the storage capacities in 2020.</p>

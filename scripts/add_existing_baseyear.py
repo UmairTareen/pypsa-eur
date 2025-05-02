@@ -197,12 +197,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
     # drop assets which are already phased out / decommissioned
     phased_out = df_agg[df_agg["DateOut"] < baseyear].index
     df_agg.drop(phased_out, inplace=True)
-    if config["run"]["name"] == "baseline":
-     indices = np.digitize(df_agg.DateIn, grouping_years, right=True)
-     indices = np.clip(indices, 0, len(grouping_years) - 1)  # Ensures index is within bounds
-     df_agg["grouping_year"] = np.take(grouping_years, indices)
-    else:
-     df_agg["grouping_year"] = np.take(
+    df_agg["grouping_year"] = np.take(
         grouping_years, np.digitize(df_agg.DateIn, grouping_years, right=True)
     )
     # calculate (adjusted) remaining lifetime before phase-out (+1 because assuming
@@ -365,7 +360,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         marginal_cost=costs.at[generator, "efficiency"]
                         * costs.at[generator, "VOM"],  # NB: VOM is per MWel
                         capital_cost=costs.at[generator, "efficiency"]
-                        * costs.at[generator, "fixed"],  # NB: fixed cost is per MWel
+                        * costs.at[generator, "fixed"],  #
                         p_nom=new_capacity,
                         efficiency=costs.at[generator, "efficiency"],
                         efficiency2=costs.at[carrier[generator], "CO2 intensity"],

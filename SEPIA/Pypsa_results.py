@@ -14,6 +14,7 @@ import base64
 import matplotlib.pyplot as plt
 from pandas.plotting import table
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.lines import Line2D
 import cartopy.crs as ccrs
 import plotly.graph_objects as go
 import plotly.express as px
@@ -25,6 +26,7 @@ sys.path.append(scripts_path)
 from plot_summary import rename_techs, preferred_order
 from plot_power_network import assign_location, load_projection
 from plot_power_network import add_legend_circles, add_legend_patches, add_legend_lines
+from add_electricity import calculate_annuity
 from make_summary import assign_carriers
 import yaml
 import plotly.io as pio
@@ -37,8 +39,8 @@ def rename_techs_tyndp(tech):
         return "power-to-gas"
     elif tech in ["electricity distribution grid"]:
         return "distribution network"
-    elif tech in [ "CHP", "H2 Fuel Cell","CCGT","OCGT","H2 turbine"]:
-        return "CHP & gas turbines"
+    elif tech in [ "CHP", "H2 Fuel Cell","CCGT","OCGT","H2 turbine","solid biomass powerplants","coal powerplants", "oil powerplants"]:
+        return "CHP & powerplants"
     elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G"]:
         return "battery storage"
     elif tech in [ "biomass boiler", "oil boiler","gas boiler"]:
@@ -50,10 +52,13 @@ def rename_techs_tyndp(tech):
     elif "offshore wind" in tech:
         return "offshore wind"
     elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
-         return "CCS"
+        if study == "suff":
+            return "CCU"
+        else:
+            return "CCUS"
     elif tech in ["biomass", "solid biomass", "solid biomass for industry", "biogas", "solid biomass transport"]:
          return "biomass"
-    elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil", "oil","gas", "coal for industry","gas for industry","coal","lignite"]:
+    elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil", "oil","gas", "coal for industry","gas for industry","coal","lignite","coal fuel","gas fuel"]:
          return "fossil fuels"
     elif tech in ["hot water storage", "H2", "H2 storage"]:
         return "TES & H2 storage"
@@ -61,49 +66,14 @@ def rename_techs_tyndp(tech):
         return "load shedding"
     elif tech in ["SMR", "ammonia cracker", "Haber-Bosch", "BioSNG", "biomass to liquid","methanol","ammonia"]:
          return "synthetic fuel techs"
-    elif tech in ["uranium", "nuclear"]:
+    elif tech in ["uranium", "nuclear", "nuclear fuel"]:
          return "nuclear"
     elif tech in ["H2 pipeline", "gas pipeline","gas pipeline new","H2 pipeline retrofitted"]:
          return "H2 & gas pipelines"
     else:
         return tech
     
-def rename_techs_tyndpp(tech):
-    tech = rename_techs(tech)
-    if "heat pump" in tech or "resistive heater" in tech:
-        return "power-to-heat"
-    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
-        return "power-to-gas"
-    elif "H2 pipeline" in tech:
-        return "H2 pipeline"
-    elif tech in ["H2 Store", "H2 storage"]:
-        return "hydrogen storage"
-    elif tech in [ "CHP", "H2 Fuel Cell"]:
-        return "CHP"
-    elif tech in [ "battery charger", "battery discharger"]:
-        return "battery storage"
-    elif "solar" in tech:
-        return "solar"
-    elif tech == "Fischer-Tropsch":
-        return "power-to-liquid"
-    elif "offshore wind" in tech:
-        return "offshore wind"
-    elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
-         return "CCS"
-    elif tech in ["biomass", "solid biomass", "solid biomass for industry"]:
-         return "biomass"
-    elif "Li ion" in tech:
-        return "battery storage"
-    elif tech in ["electricity distribution grid"]:
-        return "distribution network"
-    elif "hot water storage" in tech:
-        return "thermal energy storage"
-    elif "load" in tech:
-        return "load shedding"
-    elif tech == "coal" or tech == "lignite":
-          return "coal"
-    else:
-        return tech       
+
 def logo():
     file = snakemake.input.sepia_config
     excel_file = pd.read_excel(file, ['MAIN_PARAMS'], index_col=0)
@@ -119,6 +89,9 @@ def logo():
         sizey=0.2,
         layer="below")
     return logo
+
+def annuity_factor(v):
+    return calculate_annuity(v["lifetime"], v["discount rate"]) + v["FOM"] / 100
 
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     prefix=f"results/{study}/postnetworks/elec_"
@@ -145,23 +118,38 @@ def load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll):
 
 def calculate_ac_transmission(lines, line_numbers):
     transmission_ac = lines.s_nom_opt[line_numbers].sum()
+    length_ac = lines.length[line_numbers].sum()
     
     options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
-    ac_life = options.loc[("HVAC overhead", "lifetime"), "value"]
-    ann_factor_ac = (1 - ((1 + discount_rate) ** -ac_life))
+    options.loc[options.unit.str.contains("/kW"), "value"] *= 1e3
+    options = (
+      options.loc[:, "value"].unstack(level=1).groupby("technology").sum(min_count=1))
+    options = options.fillna(config["costs"]["fill_values"])
+    options["fixed"] = [
+        annuity_factor(v) * v["investment"] for i, v in options.iterrows()
+    ]
+    ac_cost = options.loc[("HVAC overhead", "fixed")]
     
-    transmission = ((lines.s_nom_opt[line_numbers].sum()) * (lines.capital_cost[line_numbers].sum()) * discount_rate) / ann_factor_ac
+    transmission = ((lines.s_nom_opt[line_numbers].sum()) * ac_cost * length_ac)
 
     return transmission_ac, transmission
 
 def calculate_dc_transmission(links, link_numbers):
     transmission_dc = links.p_nom_opt[link_numbers].sum()
-
-    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
-    dc_life = options.loc[("HVDC overhead", "lifetime"), "value"]
-    ann_factor_dc = (1 - ((1 + discount_rate) ** -dc_life))
+    length_dc = links.length[link_numbers].sum()
     
-    transmissionc = ((links.p_nom_opt[link_numbers].sum()) * (links.capital_cost[link_numbers].sum())  * discount_rate ) / ann_factor_dc
+    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
+    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
+    options.loc[options.unit.str.contains("/kW"), "value"] *= 1e3
+    options = (
+      options.loc[:, "value"].unstack(level=1).groupby("technology").sum(min_count=1))
+    options = options.fillna(config["costs"]["fill_values"])
+    options["fixed"] = [
+        annuity_factor(v) * v["investment"] for i, v in options.iterrows()
+    ]
+    dc_cost = options.loc[("HVDC overhead", "fixed")]
+    
+    transmissionc = ((links.p_nom_opt[link_numbers].sum()) * dc_cost * length_dc)
 
     return transmission_dc, transmissionc
 
@@ -206,11 +194,181 @@ def calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_
     return results_dict
 
 
+def calculate_elec_import_export_costs(country, planning_horizons):
+    def calculate_import_export_separate(flows, direction, network, marginal_prices):
+        import_cost = pd.DataFrame(index=flows.index, columns=flows.columns)
+        export_revenue = pd.DataFrame(index=flows.index, columns=flows.columns)
+
+        for line in flows.columns:
+            # Identify buses
+            if direction == 'ac0' or direction == 'dc0':
+                bus0 = network.lines.loc[line, "bus0"] if 'ac' in direction else network.links.loc[line, "bus0"]
+                bus1 = network.lines.loc[line, "bus1"] if 'ac' in direction else network.links.loc[line, "bus1"]
+            else:
+                bus0 = network.lines.loc[line, "bus1"] if 'ac' in direction else network.links.loc[line, "bus1"]
+                bus1 = network.lines.loc[line, "bus0"] if 'ac' in direction else network.links.loc[line, "bus0"]
+
+            if bus0 not in marginal_prices.columns or bus1 not in marginal_prices.columns:
+                continue
+
+            price_bus0 = marginal_prices[bus0]
+            price_bus1 = marginal_prices[bus1]
+
+            for t in flows.index:
+                flow = flows.at[t, line]
+                if flow < 0:  # Import
+                    import_cost.at[t, line] = -flow * price_bus1[t]
+                    export_revenue.at[t, line] = 0
+                else:  # Export
+                    import_cost.at[t, line] = 0
+                    export_revenue.at[t, line] = flow * price_bus0[t]
+
+        return import_cost, export_revenue
+
+    results = {}
+
+    for planning_horizon in planning_horizons:
+        # Load network
+        n = loaded_files[planning_horizon]
+
+        # Marginal prices
+        marginal_price_filter = n.buses.carrier == "AC"
+        marginal_price = n.buses_t.marginal_price.filter(items=marginal_price_filter[marginal_price_filter].index)
+        marginal_price = marginal_price.drop(columns=["GB2 0"], errors='ignore')
+
+        # AC lines
+        filtered_ac_lines = n.lines.bus0.str[:2] == country
+        ac_lines = n.lines_t.p0.filter(items=filtered_ac_lines[filtered_ac_lines].index)
+
+        filtered_ac_lines_r = n.lines.bus1.str[:2] == country
+        ac_lines_r = n.lines_t.p1.filter(items=filtered_ac_lines_r[filtered_ac_lines_r].index)
+
+        # DC links
+        filtered_dc_lines = (n.links.carrier == 'DC') & (n.links.bus0.str[:2] == country)
+        dc_lines = n.links_t.p0.filter(items=filtered_dc_lines[filtered_dc_lines].index)
+        dc_lines = dc_lines.drop(columns=["5580", "5581"], errors='ignore')
+
+        filtered_dc_lines_r = (n.links.carrier == 'DC') & (n.links.bus1.str[:2] == country)
+        dc_lines_r = n.links_t.p1.filter(items=filtered_dc_lines_r[filtered_dc_lines_r].index)
+        dc_lines_r = dc_lines_r.drop(columns=["5580", "5581"], errors='ignore')
+
+        # Calculate import/export
+        ac_import, ac_export = calculate_import_export_separate(ac_lines, "ac0", n, marginal_price)
+        ac_r_import, ac_r_export = calculate_import_export_separate(ac_lines_r, "acr", n, marginal_price)
+        dc_import, dc_export = calculate_import_export_separate(dc_lines, "dc0", n, marginal_price)
+        dc_r_import, dc_r_export = calculate_import_export_separate(dc_lines_r, "dcr", n, marginal_price)
+
+        # Total import/export
+        total_import_cost = ac_import.add(ac_r_import, fill_value=0).add(dc_import, fill_value=0).add(dc_r_import, fill_value=0)
+        total_export_revenue = ac_export.add(ac_r_export, fill_value=0).add(dc_export, fill_value=0).add(dc_r_export, fill_value=0)
+
+        # Net cost
+        total_import_cost_sum = total_import_cost.sum().sum()
+        total_export_revenue_sum = total_export_revenue.sum().sum()
+        net_cost = total_import_cost_sum - total_export_revenue_sum
+
+        results[planning_horizon] = net_cost
+
+    # Convert results to DataFrame
+    results_df = pd.DataFrame.from_dict(results, orient='index', columns=['net_cost'])
+    results_df.index.name = 'planning_horizon'
+
+    return results_df
+
+def calculate_h2_import_export_costs(country, planning_horizons):
+    def calculate_import_export_separate(flows, direction, network, marginal_prices):
+     import_cost = pd.DataFrame(index=flows.index, columns=flows.columns)
+     export_revenue = pd.DataFrame(index=flows.index, columns=flows.columns)
+
+     for pipeline in flows.columns:
+        # Always use network.links for pipelines
+        if direction == 'forward':
+            bus0 = network.links.loc[pipeline, "bus0"]
+            bus1 = network.links.loc[pipeline, "bus1"]
+        else:  # reverse
+            bus0 = network.links.loc[pipeline, "bus1"]
+            bus1 = network.links.loc[pipeline, "bus0"]
+
+        if bus0 not in marginal_prices.columns or bus1 not in marginal_prices.columns:
+            continue
+
+        price_bus0 = marginal_prices[bus0]
+        price_bus1 = marginal_prices[bus1]
+
+        for t in flows.index:
+            flow = flows.at[t, pipeline]
+            if flow < 0:  # Import
+                import_cost.at[t, pipeline] = -flow * price_bus1[t]
+                export_revenue.at[t, pipeline] = 0
+            else:  # Export
+                import_cost.at[t, pipeline] = 0
+                export_revenue.at[t, pipeline] = flow * price_bus0[t]
+
+     return import_cost, export_revenue
+
+    results = {}
+
+    for planning_horizon in planning_horizons:
+        # Load network
+        n = loaded_files[planning_horizon]
+
+        # Marginal prices
+        marginal_price_filter = n.buses.carrier == "H2"
+        marginal_price = n.buses_t.marginal_price.filter(items=marginal_price_filter[marginal_price_filter].index)
+        marginal_price = marginal_price.drop(columns=["GB2 0"], errors='ignore')
+
+        # AC lines
+        filtered_h2_pipelines = (n.links.carrier == 'H2 pipeline') & (n.links.bus0.str[:2] == country)
+        h2_pipelines = n.links_t.p0.filter(items=filtered_h2_pipelines[filtered_h2_pipelines].index)
+
+        filtered_h2_pipelines_r = (n.links.carrier == 'H2 pipeline') & (n.links.bus1.str[:2] == country)
+        h2_pipelines_r = n.links_t.p1.filter(items=filtered_h2_pipelines_r[filtered_h2_pipelines_r].index)
+
+        # DC links
+        filtered_h2_retro_pipelines = (n.links.carrier == 'H2 pipeline retrofitted') & (n.links.bus0.str[:2] == country)
+        h2_retro_pipelines = n.links_t.p0.filter(items=filtered_h2_retro_pipelines[filtered_h2_retro_pipelines].index)
+
+
+        filtered_h2_retro_pipelines_r = (n.links.carrier == 'H2 pipeline retrofitted') & (n.links.bus1.str[:2] == country)
+        h2_retro_pipelines_r = n.links_t.p1.filter(items=filtered_h2_retro_pipelines_r[filtered_h2_retro_pipelines_r].index)
+
+        # Calculate import/export
+        h2_import, h2_export = calculate_import_export_separate(h2_pipelines, "ac0", n, marginal_price)
+        h2_r_import, h2_r_export = calculate_import_export_separate(h2_pipelines_r, "acr", n, marginal_price)
+        h2_retro_import, h2_retro_export = calculate_import_export_separate(h2_retro_pipelines, "dc0", n, marginal_price)
+        h2_retro_r_import, h2_retro_r_export = calculate_import_export_separate(h2_retro_pipelines_r, "dcr", n, marginal_price)
+
+        # Total import/export
+        total_import_cost = h2_import.add(h2_r_import, fill_value=0).add(h2_retro_import, fill_value=0).add(h2_retro_r_import, fill_value=0)
+        total_export_revenue = h2_export.add(h2_r_export, fill_value=0).add(h2_retro_export, fill_value=0).add(h2_retro_r_export, fill_value=0)
+
+        # Net cost
+        total_import_cost_sum = total_import_cost.sum().sum()
+        total_export_revenue_sum = total_export_revenue.sum().sum()
+        net_cost = total_import_cost_sum - total_export_revenue_sum
+
+        results[planning_horizon] = net_cost
+
+    # Convert results to DataFrame
+    results_df = pd.DataFrame.from_dict(results, orient='index', columns=['net_cost'])
+    results_df.index.name = 'planning_horizon'
+
+    return results_df
+
+
 def costs(countries, results):
     costs = {}
     fn = snakemake.input.costs
     options = pd.read_csv(fn, index_col=[0, 1]).sort_index()
     for country in countries:
+      net_costs_elc = calculate_elec_import_export_costs(country, planning_horizons)
+      net_costs_h2 = calculate_h2_import_export_costs(country, planning_horizons)
+      uranium = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx",sheet_name="Chart 22", index_col=0,skiprows=2).drop(2020, axis=0)
+      uranium = uranium["Uranium"]
+      coal = pd.read_csv(f"results/{study}/country_csvs/total_imports_{country}.csv", index_col=0).drop(2020, axis=0)
+      coal = coal["imp_cms_pe"]
+      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 24", index_col=0,skiprows=2).drop(2020, axis=0)
+      gas_val = gas_val["Natural gas"]
       df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 2:]
       df = df.iloc[8:, :]
@@ -222,19 +380,33 @@ def costs(countries, results):
       df = df.rename(columns={'Unnamed: 3': 'tech', f'{cluster}': '2030',f'{cluster}.1': '2040',f'{cluster}.2': '2050'})
       df[['2030', '2040', '2050']] = df[['2030', '2040', '2050']].apply(pd.to_numeric, errors='coerce')
       df = df.groupby('tech').sum().reset_index()
+      if country != 'EU':
+       elc_row = {"tech": "electricity imports/exports"}
+       for year in net_costs_elc.index:
+          elc_row[str(year)] = net_costs_elc.loc[year, 'net_cost']
+       df = pd.concat([df, pd.DataFrame([elc_row])], ignore_index=True)
+       h2_row = {"tech": "hydrogen imports/exports"}
+       for year in net_costs_h2.index:
+          h2_row[str(year)] = net_costs_h2.loc[year, 'net_cost']
+       df = pd.concat([df, pd.DataFrame([h2_row])], ignore_index=True)
+       ura_row = {"tech": "nuclear fuel"}
+       for year in uranium.index:
+           ura_row[str(year)] = uranium.loc[year] * options.loc[("uranium", "fuel"), "value"] * 1e6  
+       df = pd.concat([df, pd.DataFrame([ura_row])], ignore_index=True)
+       coal_row = {"tech": "coal fuel"}
+       for year in coal.index:
+           coal_row[str(year)] = coal.loc[year] * options.loc[("coal", "fuel"), "value"] * 1e6  
+       df = pd.concat([df, pd.DataFrame([coal_row])], ignore_index=True)
+       gas_row = {"tech": "gas fuel"}
+       for year in gas_val.index:
+           gas_row[str(year)] = gas_val.loc[year] * options.loc[("gas", "fuel"), "value"] * 1e6  
+       df = pd.concat([df, pd.DataFrame([gas_row])], ignore_index=True)
+     
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
 
-      cf = pd.read_csv("results/baseline/csvs/nodal_costs.csv", index_col=2)
+      cf = pd.read_csv(f"results/{study}/country_csvs/costs_{country}.csv", index_col=1)
       cf = cf.iloc[:, 2:]
-      cf = cf.iloc[3:, :]
-      cf.index = cf.index.str[:2]
-      if country != 'EU':
-       cf = cf[cf.index == country]
-      else:
-       cf=cf
-      cf = cf.rename(columns={'Unnamed: 3': 'tech', f'{cluster}': '2020'})
-      cf[['2020']] = cf[['2020']].apply(pd.to_numeric, errors='coerce')
       cf = cf.groupby('tech').sum().reset_index()
       cf['tech'] = cf['tech'].map(rename_techs_tyndp)
       cf = cf.groupby('tech').sum().reset_index()
@@ -243,14 +415,8 @@ def costs(countries, results):
       result_df.fillna(0, inplace=True)
       mask = ~(result_df['tech'].isin(['load shedding']))
       result_df = result_df[mask]
-      #calculationg gas costs for each country as in pypsa they are treated on EU level
-      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 24", index_col=0,skiprows=2)
-      if country != 'EU':
-        for year in planning_horizons:
-         result_df.loc[result_df['tech'] == "gas", str(year)] = gas_val.loc[year, "Natural gas"] * options.loc[("gas", "fuel"), "value"] * 1e6
-      else:
-         result_df = result_df
-      result_df.iloc[:, 1:] = result_df.iloc[:, 1:].clip(lower=0) 
+      
+      result_df.iloc[:, 1:] = result_df.iloc[:, 1:]#.clip(lower=0) 
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -307,25 +473,15 @@ def Investment_costs(countries, results):
       condition = df[['2030', '2040', '2050']].eq(0).all(axis=1)
       df = df[~condition]
 
-      cf = pd.read_csv("results/baseline/csvs/nodal_costs.csv", index_col=2)
+      cf = pd.read_csv(f"results/{study}/country_csvs/costs_{country}.csv", index_col=1)
       cf = cf.iloc[:, 1:]
-      cf = cf.iloc[3:, :]
-      cf.index = cf.index.str[:2]
-      if country != 'EU':
-       cf = cf[cf.index == country]
-      else:
-       cf=cf
-      cf = cf.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', f'{cluster}': '2020'})
-      cf[['2020']] = cf[['2020']].apply(pd.to_numeric, errors='coerce')
-      cf = cf[cf['Costs'] == 'capital']
+      cf = cf[cf['costss'] == 'capital']
       cf = cf.groupby('tech').sum().reset_index()
-      cf = cf.drop(columns=['Costs'])
+      cf = cf.drop(columns=['costss'])
       cf['tech'] = cf['tech'].map(rename_techs_tyndp)
       cf = cf.groupby('tech').sum().reset_index()
       tech_mapping = {'fossil fuels': 'Oil & gas storage'}
       cf['tech'] = cf['tech'].replace(tech_mapping)
-      condition = cf[['2020']].eq(0).all(axis=1)
-      cf = cf[~condition]
       
       result_df = pd.merge(cf, df, on='tech', how='outer')
       result_df.fillna(0, inplace=True)
@@ -363,22 +519,93 @@ def Investment_costs(countries, results):
 
          print(f"CSV file for {country} saved at: {file_path}")
     return investment_costs 
-   
-def capacities(countries, results):
-    capacities = {}
+
+def operational_costs(countries, results):
+    operational_costs = {}
+    fn = snakemake.input.costs
+    options = pd.read_csv(fn, index_col=[0, 1]).sort_index()
     for country in countries:
-      df=pd.read_csv("results/baseline/csvs/nodal_capacities.csv", index_col=1)
-      cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
+      net_costs_elc = calculate_elec_import_export_costs(country, planning_horizons)
+      net_costs_h2 = calculate_h2_import_export_costs(country, planning_horizons)
+      uranium = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx",sheet_name="Chart 22", index_col=0,skiprows=2).drop(2020, axis=0)
+      uranium = uranium["Uranium"]
+      coal = pd.read_csv(f"results/{study}/country_csvs/total_imports_{country}.csv", index_col=0).drop(2020, axis=0)
+      coal = coal["imp_cms_pe"]
+      gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 24", index_col=0,skiprows=2).drop(2020, axis=0)
+      gas_val = gas_val["Natural gas"]
+      df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 1:]
-      df = df.iloc[3:, :]
+      df = df.iloc[6:, :]
       df.index = df.index.str[:2]
       if country != 'EU':
        df = df[df.index == country]
       else:
        df=df
-      df = df.rename(columns={'Unnamed: 2': 'tech', f'{cluster}': '2020'})
-      columns_to_convert = ['2020']
-      df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
+      df = df.rename(columns={'Unnamed: 1': 'Costs','Unnamed: 3': 'tech', f'{cluster}': '2030',f'{cluster}.1': '2040',f'{cluster}.2': '2050'})
+      df[['2030', '2040', '2050']] = df[['2030', '2040', '2050']].apply(pd.to_numeric, errors='coerce')
+      df = df[df['Costs'] == 'marginal']
+      df = df.groupby('tech').sum().reset_index()
+      df = df.drop(columns=['Costs'])
+      if country != 'EU':
+       elc_row = {"tech": "electricity imports/exports"}
+       for year in net_costs_elc.index:
+          elc_row[str(year)] = net_costs_elc.loc[year, 'net_cost']
+       df = pd.concat([df, pd.DataFrame([elc_row])], ignore_index=True)
+       h2_row = {"tech": "hydrogen imports/exports"}
+       for year in net_costs_h2.index:
+          h2_row[str(year)] = net_costs_h2.loc[year, 'net_cost']
+       df = pd.concat([df, pd.DataFrame([h2_row])], ignore_index=True)
+       ura_row = {"tech": "nuclear fuel"}
+       for year in uranium.index:
+           ura_row[str(year)] = uranium.loc[year] * options.loc[("uranium", "fuel"), "value"] * 1e6  
+       df = pd.concat([df, pd.DataFrame([ura_row])], ignore_index=True)
+       coal_row = {"tech": "coal fuel"}
+       for year in coal.index:
+           coal_row[str(year)] = coal.loc[year] * options.loc[("coal", "fuel"), "value"] * 1e6  
+       df = pd.concat([df, pd.DataFrame([coal_row])], ignore_index=True)
+       gas_row = {"tech": "gas fuel"}
+       for year in gas_val.index:
+           gas_row[str(year)] = gas_val.loc[year] * options.loc[("gas", "fuel"), "value"] * 1e6  
+       df = pd.concat([df, pd.DataFrame([gas_row])], ignore_index=True)
+      df['tech'] = df['tech'].map(rename_techs_tyndp)
+      df = df.groupby('tech').sum().reset_index()
+      condition = df[['2030', '2040', '2050']].eq(0).all(axis=1)
+      df = df[~condition]
+
+      cf = pd.read_csv(f"results/{study}/country_csvs/costs_{country}.csv", index_col=1)
+      cf = cf.iloc[:, 1:]
+      cf = cf[cf['costss'] == 'marginal']
+      cf = cf.groupby('tech').sum().reset_index()
+      cf = cf.drop(columns=['costss'])
+      cf['tech'] = cf['tech'].map(rename_techs_tyndp)
+      cf = cf.groupby('tech').sum().reset_index()
+      
+      result_df = pd.merge(cf, df, on='tech', how='outer')
+      result_df.fillna(0, inplace=True)
+      mask = ~(result_df['tech'].isin(['load shedding']))
+      result_df = result_df[mask]
+      if not result_df.empty:
+            years = ['2020', '2030', '2040', '2050']
+            technologies = result_df['tech'].unique()
+            
+            operational_costs[country] = result_df.set_index('tech').loc[technologies, years]
+
+      
+      for country, dataframe in operational_costs.items():
+         # Specify the file path within the output directory
+         file_path = f"results/{study}/country_csvs/{country}_operational costs.csv"
+    
+         # Save the DataFrame to a CSV file
+         dataframe.to_csv(file_path, index=True)
+
+         print(f"CSV file for {country} saved at: {file_path}")
+    return operational_costs 
+   
+def capacities(countries, results):
+    capacities = {}
+    for country in countries:
+      df=pd.read_csv(f"results/{study}/country_csvs/capacities_{country}.csv", index_col=1)
+      cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
       df = df.groupby('tech').sum().reset_index()
       df['tech'] = df['tech'].map(rename_techs_tyndpp)
       df = df.groupby('tech').sum().reset_index()
@@ -435,18 +662,9 @@ def capacities(countries, results):
 def storage_capacities(countries):
     s_capacities = {}
     for country in countries:
-      df=pd.read_csv("results/baseline/csvs/nodal_capacities.csv", index_col=1)
+      df=pd.read_csv(f"results/{study}/country_csvs/capacities_{country}.csv", index_col=1)
       cf = pd.read_csv(f"results/{study}/csvs/nodal_capacities.csv", index_col=1)
       df = df[df['cluster'] == 'stores']
-      df = df.iloc[2:, :]
-      df.index = df.index.str[:2]
-      if country != 'EU':
-       df = df[df.index == country]
-      else:
-       df=df
-      df = df.rename(columns={'Unnamed: 2': 'tech', f'{cluster}': '2020'})
-      columns_to_convert = ['2020']
-      df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
       df = df.groupby('tech').sum().reset_index()
       cf = cf[cf['cluster'] == 'stores']
       cf = cf.iloc[1:, :]
@@ -461,7 +679,7 @@ def storage_capacities(countries):
       cf = cf.groupby('tech').sum().reset_index()
       result_df = pd.merge(df, cf, on='tech', how='outer')
       result_df.fillna(0, inplace=True)
-      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'Li ion':'V2G'})
+      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'Li ion':'EV battery'})
       if not result_df.empty:
             years = ['2020', '2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -503,10 +721,11 @@ def plot_demands(countries):
     colors["Residential and tertiary heat demand"] = "pink"
     colors["electricity demand for rail network"] = "blue"
     colors["H2 for non-energy"] = "violet" 
+    colors["Oil for industry"] = colors["oil"]
     
     mapping = {
         "hydrogen for industry": "hydrogen",
-        "H2 for non-energy": "Non-energy demand",
+        "H2 for non-energy": "Non-energy",
         "shipping hydrogen": "hydrogen",
         "shipping oil": "oil",
         "agriculture electricity": "electricity",
@@ -520,12 +739,13 @@ def plot_demands(countries):
         "land transport hydrogen demand": "hydrogen",
         "oil to transport demand": "oil",
         "low-temperature heat for industry": "heat",
-        "naphtha for non-energy": "Non-energy demand",
+        "naphtha for non-energy": "Non-energy",
         "electricity demand for rail network": "electricity",
         "Residential and tertiary DH demand": "heat",
         "Residential and tertiary heat demand": "heat",
         "solid biomass for Industry": "solid biomass",
         "NH3":"hydrogen",
+        "Oil for industry": "oil"
     }
     mapping_eu = {
             "preshydcfind": "hydrogen for industry",
@@ -554,6 +774,7 @@ def plot_demands(countries):
             "presenccfind": "solid biomass for Industry",
             "presenccfindd": "solid biomass for Industry",
             "preammind":"NH3",
+            "prespetcfind": "Oil for industry"
     }
     
     for country in countries:
@@ -589,11 +810,12 @@ def plot_demands(countries):
         facet_col='Demand',
         labels={'year': '', 'value': 'Final energy and non-energy demand [TWh/a]'}
         )
+        fig.for_each_annotation(lambda a: a.update(text=a.text.split('=')[-1].strip()))
         fig.update_layout(height=800, width=1400)
         logo['y']=1.021
         if country == 'BE':
          pio.write_image(fig, "results/pdf/Demands.pdf", format='pdf')
-        fig.add_layout_image(logo)
+        # fig.add_layout_image(logo)
         # Show the plot
         html_filename = f"{country}_sectoral_demands.html"
         output_folder = f'results/{study}/htmls/raw_html' # Set your desired output folder
@@ -627,8 +849,6 @@ def rename_techs_tyndpp(tech):
          return "CCS"
     elif tech in ["biomass", "solid biomass", "solid biomass for industry"]:
          return "biomass"
-    elif "Li ion" in tech:
-        return "battery storage"
     elif tech in ["electricity distribution grid"]:
         return "distribution network"
     elif "hot water storage" in tech:
@@ -648,7 +868,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
     colors["CHP"] = 'darkred'
     colors["load"] = 'black'
     colors["Imports_Exports"] = "dimgray"
-    colors["EV charger"] = colors["V2G"]
+    colors["EV battery"] = colors["V2G"]
     colors["distribution network"] = colors["electricity distribution grid"]
     tabs = pn.Tabs()
 
@@ -797,22 +1017,24 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
          supplyn.loc["offshore curtailment"] = -abs(c_offwindn)
         if "H2 pipeline" in supplyn.index:
            supplyn = supplyn.drop('H2 pipeline')
+        if "gas pipeline" in supplyn.index:
+           supplyn = supplyn.drop('gas pipeline')
         supplyn = supplyn.T
         if "V2G" in n.carriers.index:
-         if country != 'EU':
-             v2g = n.links_t.p1.filter(like=country).filter(like="V2G").sum(axis=1)
-             v2g = v2g.to_frame()
-             v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
-             v2g = v2g/1e3
-             supplyn['distribution network'] = supplyn['distribution network'] + v2g['V2G']
-             supplyn['V2G'] = v2g['V2G'].abs()
-         else:
-             v2g = n.links_t.p1.filter(like="V2G").sum(axis=1)
-             v2g = v2g.to_frame()
-             v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
-             v2g = v2g/1e3
-             supplyn['distribution network'] = supplyn['distribution network'] + v2g['V2G']
-             supplyn['V2G'] = v2g['V2G'].abs()
+          if country != 'EU':
+              v2g = n.links_t.p1.filter(like=country).filter(like="V2G").sum(axis=1)
+              v2g = v2g.to_frame()
+              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
+              v2g = v2g/1e3
+              supplyn['distribution network'] = supplyn['distribution network'] + v2g['V2G']
+              supplyn['V2G'] = v2g['V2G'].abs()
+          else:
+              v2g = n.links_t.p1.filter(like="V2G").sum(axis=1)
+              v2g = v2g.to_frame()
+              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
+              v2g = v2g/1e3
+              supplyn['distribution network'] = supplyn['distribution network'] + v2g['V2G']
+              supplyn['V2G'] = v2g['V2G'].abs()
         
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
@@ -874,7 +1096,7 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,sta
          hovermode='x',)
         if country == 'BE':
          pio.write_image(fig, f"results/pdf/Power dispatch_{planning_horizon}.pdf", format='pdf')
-        fig.add_layout_image(logo)
+        # fig.add_layout_image(logo)
             # Add the plot to the tabs
         tab.append((f"{planning_horizon}", fig))
 
@@ -1061,7 +1283,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
          hovermode='x',)
         if country == 'BE':
          pio.write_image(fig, f"results/pdf/Heat dispatch_{planning_horizon}.pdf", format='pdf')
-        fig.add_layout_image(logo)
+        # fig.add_layout_image(logo)
             # Add the plot to the tabs
         tab.append((f"{planning_horizon}", fig))
 
@@ -1079,7 +1301,7 @@ def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,star
 def plot_map(
     network,country,
     components=["links", "stores", "storage_units", "generators"],
-    bus_size_factor=8e8,
+    bus_size_factor=35e9,
     transmission=True,
     with_legend=True,
 ):
@@ -1087,6 +1309,8 @@ def plot_map(
     tech_colors["distribution network"] = tech_colors["electricity distribution grid"]
     tech_colors["thermal energy storage"] = tech_colors["hot water storage"]
     tech_colors["H2 storage"] = tech_colors["H2"]
+    tech_colors["CCUS"] = tech_colors["CCS"]
+    tech_colors["CCU"] = tech_colors["CCS"]
     n = network.copy()
     assign_location(n)
     # Drop non-electric buses so they don't clutter the plot
@@ -1144,7 +1368,10 @@ def plot_map(
 
     # make sure they are removed from index
     costs.index = pd.MultiIndex.from_tuples(costs.index.values)
-
+    combined_costs = costs.groupby(costs.index).sum()
+    multi_index = pd.MultiIndex.from_tuples(combined_costs.index)
+    combined_costs.index = multi_index
+    combined_costs = combined_costs.groupby(level=0).sum()/1e9
     threshold = 100e6  # 100 mEUR/a
     carriers = costs.groupby(level=1).sum()
     carriers = carriers.where(carriers > threshold).dropna()
@@ -1153,9 +1380,9 @@ def plot_map(
     # PDF has minimum width, so set these to zero
     line_lower_threshold = 500.0
     line_upper_threshold = 1e4
-    linewidth_factor = 750
-    ac_color = "rosybrown"
-    dc_color = "darkseagreen"
+    linewidth_factor = 1e3
+    ac_color = "#FF3030"
+    dc_color = "#104E8B"
 
     title = "added grid"
 
@@ -1183,10 +1410,29 @@ def plot_map(
     line_widths = line_widths.replace(line_lower_threshold, 0)
     link_widths = link_widths.replace(line_lower_threshold, 0)
     
+    value_dict = {
+        'BE1 0': 568,
+        'DE1 0': 3985,
+        'FR1 0': 2688,
+        'GB0 0': 2977,
+        'GB2 0': 2977,
+        'NL1 0': 1016}
+    new_values = [value_dict.get(idx, 0) for idx in combined_costs.index]
+    gdp_costs = pd.Series(new_values, index=combined_costs.index)
+    gdp_ratio = (combined_costs / (gdp_costs)) * 100
+    index_mapping = {
+        'GB2 0': 'GB0 0'}
+    for target_index, reference_index in index_mapping.items():
+        if target_index in gdp_ratio.index and reference_index in gdp_ratio.index:
+            gdp_ratio[target_index] = gdp_ratio[reference_index]
+    regions = gpd.read_file(f"resources/{study}/regions_onshore_elec_s_6.geojson").set_index("name")
+    regions['GDP'] = regions.index.map(gdp_ratio)
+    regions = regions.to_crs(ccrs.EqualEarth())
+    
     fig, ax = plt.subplots(figsize=(15, 15), subplot_kw={"projection": proj})
-    eu_location = config["plotting"].get("eu_node_location", dict(x=-50, y=46))
-    n.buses.loc["EU gas", "x"] = eu_location["x"]
-    n.buses.loc["EU gas", "y"] = eu_location["y"]
+    # eu_location = config["plotting"].get("eu_node_location", dict(x=-50, y=46))
+    # n.buses.loc["EU gas", "x"] = eu_location["x"]
+    # n.buses.loc["EU gas", "y"] = eu_location["y"]
     
     n.plot(
         bus_sizes=costs / bus_size_factor,
@@ -1196,8 +1442,22 @@ def plot_map(
         line_widths=line_widths / linewidth_factor,
         link_widths=link_widths / linewidth_factor,
         ax=ax,
-        # **map_opts,
+        **map_opts,
     )
+    regions.plot(
+           ax=ax,
+           column="GDP",
+           cmap="Greys",
+           linewidths=0,
+           legend=False,
+           vmax=6,
+           vmin=0,
+           legend_kwds={
+               "label": "GDP Percentage / year",
+               "shrink": 0.6,
+               # "extend": "max",
+           },
+       )
 
     sizes = [20, 10, 5]
     labels = [f"{s} bEUR/year" for s in sizes]
@@ -1205,12 +1465,12 @@ def plot_map(
 
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.001, 0.85),
-        labelspacing=2.25,
+        bbox_to_anchor=(0.001, 0.98),
+        labelspacing=1,
         frameon=False,
         handletextpad=1,
         fontsize=15,
-        title="Investment Costs",
+        title="Annualised Investment Costs",
     )
 
     add_legend_circles(
@@ -1232,7 +1492,7 @@ def plot_map(
     #     value = "total grid capacity"
     legend_kw = dict(
         loc="upper left",
-        bbox_to_anchor=(0.001, 0.45),
+        bbox_to_anchor=(0.45, 0.98),
         frameon=False,
         labelspacing=1,
         handletextpad=1,
@@ -1247,26 +1507,49 @@ def plot_map(
     legend_kw = dict(
         bbox_to_anchor=(1.35, 1),
         frameon=False,
-        fontsize=12
+        fontsize=15
     )
 
-    if with_legend:
-        colors = [tech_colors[c] for c in carriers] + [ac_color, dc_color]
-        labels = carriers + ["HVAC line", "HVDC line"]
+    # if with_legend:
+    #     colors = [tech_colors[c] for c in carriers] + [ac_color, dc_color]
+    #     labels = carriers + ["HVAC line", "HVDC line"]
 
-        add_legend_patches(
-            ax,
-            colors,
-            labels,
-            legend_kw=legend_kw,
-        )
-    
-    fig.tight_layout()
-    logo = snakemake.input.logo
-    img = plt.imread(logo)
-    imagebox = OffsetImage(img, zoom=0.25)
-    ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
-    ax.add_artist(ab)
+    #     add_legend_patches(
+    #         ax,
+    #         colors,
+    #         labels,
+    #         legend_kw=legend_kw,
+    #     )
+    sm = plt.cm.ScalarMappable(cmap="Greys", norm=plt.Normalize(vmin=0, vmax=6))
+    sm._A = []
+    cbar = fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.5, pad=0)
+    cbar.set_label(r"Cost [% GDP$_{2023}$ / year]", fontsize=15)
+    legend_kw = dict(
+          bbox_to_anchor=(1, 1),
+          frameon=False,
+          fontsize=15,
+      )
+    cbar.ax.tick_params(labelsize=15)
+    colors = [tech_colors[c] for c in carriers] + [ac_color, dc_color]
+    labels = carriers + ['AC line', 'DC line']
+    legend_handles = [
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=15) for color in colors
+    ]
+    fig.legend(
+        legend_handles,
+        labels,
+        # loc="lower center",            # Position the legend at the bottom center of the figure
+        bbox_to_anchor=(0.8, 0.25),    # Centered horizontally and placed below the figure
+        ncol=4,                        # Number of columns in the legend
+        frameon=False,                 # No frame around the legend
+        fontsize=15,
+    )
+    # fig.tight_layout()
+    # logo = snakemake.input.logo
+    # img = plt.imread(logo)
+    # imagebox = OffsetImage(img, zoom=0.25)
+    # ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
+    # ax.add_artist(ab)
     return fig
 
 def create_map_plots(planning_horizons, country):
@@ -1290,14 +1573,14 @@ def create_map_plots(planning_horizons, country):
          fig = plot_map(
              n,country,
              components=["generators", "links", "stores", "storage_units"],
-             bus_size_factor=160e9,
+             bus_size_factor=35e9,
              transmission=True,
          )
          plt.rcParams['legend.title_fontsize'] = '20'
          
         # Save the map plot as an image
          output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
-         fig.savefig(output_image_path, bbox_inches="tight")
+         fig.savefig(output_image_path)
          plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
         # Encode the image as base64
@@ -1319,7 +1602,7 @@ def create_map_plots(planning_horizons, country):
          fig = plot_map(
              n,country,
              components=["generators", "links", "stores", "storage_units"],
-             bus_size_factor=160e9,
+             bus_size_factor=35e9,
              transmission=True,
          )
          plt.rcParams['legend.title_fontsize'] = '20'
@@ -1327,7 +1610,7 @@ def create_map_plots(planning_horizons, country):
          if country == 'BE':
           fig.savefig(f"results/pdf/Maps_{planning_horizon}.pdf", bbox_inches="tight")
          output_image_path = f"results/{study}/htmls/raw_html/map_plot_{planning_horizon}_{country}.png"
-         fig.savefig(output_image_path, bbox_inches="tight")
+         fig.savefig(output_image_path)
          plt.close(fig)  # Close the figure to avoid displaying it in the notebook
 
         # Encode the image as base64
@@ -1590,11 +1873,11 @@ def plot_h2_map(network):
 
 
     ax.set_facecolor("white")
-    logo = snakemake.input.logo
-    img = plt.imread(logo)
-    imagebox = OffsetImage(img, zoom=0.25)
-    ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
-    ax.add_artist(ab)
+    # logo = snakemake.input.logo
+    # img = plt.imread(logo)
+    # imagebox = OffsetImage(img, zoom=0.25)
+    # ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
+    # ax.add_artist(ab)
     return fig
 
 def plot_ch4_map(network):
@@ -1625,10 +1908,8 @@ def plot_ch4_map(network):
     if "-" in first_index and first_index.split("-")[-1].isdigit():
         planning_horizon = int(first_index.split("-")[-1])  # Extract year
     for country in countries:
-     gas_val = pd.read_csv(f"results/{study}/country_csvs/natural_gas_imports_{country}.csv")
-     gas_val = gas_val.set_index(gas_val.columns[0])
-     gas_val = gas_val.iloc[2:]
-     gas_val = gas_val.apply(pd.to_numeric, errors='coerce')
+     gas_val = pd.read_csv(f"results/{study}/country_csvs/total_imports_{country}.csv", index_col=0)
+     gas_val = gas_val[["imp_gaz_pe"]]
      gas_val.index = gas_val.index.astype(int)
      desired_years = [2020, 2030, 2040, 2050]
      if len(gas_val) >= len(desired_years):
@@ -1636,7 +1917,7 @@ def plot_ch4_map(network):
       gas_val.index = desired_years
       gas_val = gas_val.clip(lower=0)
       if planning_horizon in gas_val.index:
-            gas_data[country] = gas_val.loc[planning_horizon, "gaz_pe"]
+            gas_data[country] = gas_val.loc[planning_horizon, "imp_gaz_pe"]
 
     gas_supply = pd.Series(gas_data)
     country_codes = fossil_gas.index.str[:2]
@@ -1824,11 +2105,11 @@ def plot_ch4_map(network):
         labels,
         legend_kw=legend_kw,
     )
-    logo = snakemake.input.logo
-    img = plt.imread(logo)
-    imagebox = OffsetImage(img, zoom=0.25)
-    ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
-    ax.add_artist(ab)
+    # logo = snakemake.input.logo
+    # img = plt.imread(logo)
+    # imagebox = OffsetImage(img, zoom=0.25)
+    # ab = AnnotationBbox(imagebox, xy=(0.5, 1.05), xycoords='axes fraction', boxcoords="axes fraction", frameon=False)
+    # ax.add_artist(ab)
     return fig
 
 
@@ -2007,11 +2288,40 @@ def create_gas_map_plots(planning_horizons):
     with open(output_combined_html_path, "w") as html_file:
         html_file.write(html_content)
         
-def create_bar_chart(costs, country,  unit='Euros/year'):
+# def create_bar_chart(costs, country,  unit='Euros/year'):
+#     tech_colors = config["plotting"]["tech_colors"]
+#     colors = config["plotting"]["tech_colors"]
+#     colors["AC Transmission"] = "#FF3030"
+#     colors["DC Transmission"] = "#104E8B"
+
+#     title = f"{country} - Total Annual Costs"
+#     df = costs[country]
+#     df = df.rename_axis(unit)
+#     df = df.reset_index()
+#     df.index = df.index.astype(str)
+
+#     # Create a bar chart using Plotly
+#     fig = go.Figure()
+#     df_transposed = df.set_index(unit).T
+
+#     for tech in df_transposed.columns:
+#         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey'),width=0.62))
+#     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
+#     # Configure layout and labels
+#     fig.update_layout(height=900, width=1000,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
+#     fig.update_layout(hovermode='y')
+#     if country == 'BE':
+#      pio.write_image(fig, "results/pdf/Annual Costs.pdf", format='pdf')
+#     # fig.add_layout_image(logo)
+#     # Save the HTML file for each country
+#     # output_file_path = os.path.join(output_folder, f"{country}_bar_chart.html")
+#     # fig.write_html(output_file_path)
+
+#     return fig
+def create_bar_chart(costs, country, unit='Euros/year'):
     tech_colors = config["plotting"]["tech_colors"]
-    colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
+    tech_colors["AC Transmission"] = "#FF3030"
+    tech_colors["DC Transmission"] = "#104E8B"
 
     title = f"{country} - Total Annual Costs"
     df = costs[country]
@@ -2019,25 +2329,53 @@ def create_bar_chart(costs, country,  unit='Euros/year'):
     df = df.reset_index()
     df.index = df.index.astype(str)
 
-    # Create a bar chart using Plotly
     fig = go.Figure()
     df_transposed = df.set_index(unit).T
 
     for tech in df_transposed.columns:
-        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
-    fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
-    # Configure layout and labels
-    fig.update_layout(height=900, width=1200,title=title, barmode='stack', yaxis=dict(title=unit))
-    fig.update_layout(hovermode='y')
+        y = df_transposed[tech]
+        color = tech_colors.get(tech, 'lightgrey')
+
+        # Positive values
+        fig.add_trace(go.Bar(
+            x=df_transposed.index,
+            y=y.where(y > 0, 0),
+            name=tech,
+            marker_color=color,
+            width=0.62
+        ))
+
+        # Negative values (plotted separately, but still under the same name)
+        fig.add_trace(go.Bar(
+            x=df_transposed.index,
+            y=y.where(y < 0, 0),
+            name=tech,
+            marker_color=color,
+            width=0.62,
+            showlegend=False  # avoid duplicate legend
+        ))
+
+    fig.add_trace(go.Scatter(
+        x=[None], y=[None],
+        mode='markers',
+        name='Euro reference value = 2020',
+        marker=dict(color='rgba(0,0,0,0)')
+    ))
+
+    fig.update_layout(
+        height=900, width=1000,
+        title=title,
+        barmode='relative',  # important for splitting positive and negative
+        yaxis=dict(title=unit, title_font=dict(size=15), tickfont=dict(size=15)),
+        xaxis=dict(tickfont=dict(size=15)),
+        legend=dict(font=dict(size=15)),
+        hovermode='y'
+    )
+
     if country == 'BE':
-     pio.write_image(fig, "results/pdf/Annual Costs.pdf", format='pdf')
-    fig.add_layout_image(logo)
-    # Save the HTML file for each country
-    # output_file_path = os.path.join(output_folder, f"{country}_bar_chart.html")
-    # fig.write_html(output_file_path)
+        pio.write_image(fig, "results/pdf/Annual Costs.pdf", format='pdf')
 
     return fig
-
 def create_investment_costs(investment_costs, country,  unit='Euros/year'):
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
@@ -2055,17 +2393,101 @@ def create_investment_costs(investment_costs, country,  unit='Euros/year'):
     df_transposed = df.set_index(unit).T
 
     for tech in df_transposed.columns:
-        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
+        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey'),width=0.62))
     
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(height=900, width=1200,title=title, barmode='stack', yaxis=dict(title=unit))
+    fig.update_layout(height=900, width=1000,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
     fig.update_layout(hovermode='y')
     if country == 'BE':
      pio.write_image(fig, "results/pdf/Annual Investment Costs.pdf", format='pdf')
-    fig.add_layout_image(logo)
+    # fig.add_layout_image(logo)
     return fig
 
+# def create_operational_costs(operational_costs, country,  unit='Euros/year'):
+#     tech_colors = config["plotting"]["tech_colors"]
+#     colors = config["plotting"]["tech_colors"]
+
+#     title = f"{country} - Operational Costs"
+#     df = operational_costs[country]
+#     df = df.rename_axis(unit)
+#     df = df.reset_index()
+#     df.index = df.index.astype(str)
+
+#     # Create a bar chart using Plotly
+#     fig = go.Figure()
+#     df_transposed = df.set_index(unit).T
+
+#     for tech in df_transposed.columns:
+#         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey'),width=0.62))
+    
+#     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
+#     # Configure layout and labels
+#     fig.update_layout(height=900, width=1000,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
+#     fig.update_layout(hovermode='y')
+#     if country == 'BE':
+#      pio.write_image(fig, "results/pdf/Annual operational Costs.pdf", format='pdf')
+#     # fig.add_layout_image(logo)
+#     return fig
+
+def create_operational_costs(operational_costs, country, unit='Euros/year'):
+    tech_colors = config["plotting"]["tech_colors"]
+    tech_colors["AC Transmission"] = "#FF3030"
+    tech_colors["DC Transmission"] = "#104E8B"
+
+    title = f"{country} - Operational Costs"
+    df = operational_costs[country]
+    df = df.rename_axis(unit)
+    df = df.reset_index()
+    df.index = df.index.astype(str)
+
+    fig = go.Figure()
+    df_transposed = df.set_index(unit).T
+
+    for tech in df_transposed.columns:
+        y = df_transposed[tech]
+        color = tech_colors.get(tech, 'lightgrey')
+
+        # Positive values
+        fig.add_trace(go.Bar(
+            x=df_transposed.index,
+            y=y.where(y > 0, 0),
+            name=tech,
+            marker_color=color,
+            width=0.62
+        ))
+
+        # Negative values
+        fig.add_trace(go.Bar(
+            x=df_transposed.index,
+            y=y.where(y < 0, 0),
+            name=tech,
+            marker_color=color,
+            width=0.62,
+            showlegend=False
+        ))
+
+    fig.add_trace(go.Scatter(
+        x=[None], y=[None],
+        mode='markers',
+        name='Euro reference value = 2020',
+        marker=dict(color='rgba(0,0,0,0)')
+    ))
+
+    fig.update_layout(
+        height=900, width=1000,
+        title=title,
+        barmode='relative',
+        yaxis=dict(title=unit, title_font=dict(size=15), tickfont=dict(size=15)),
+        xaxis=dict(tickfont=dict(size=15)),
+        legend=dict(font=dict(size=15)),
+        hovermode='y'
+    )
+
+    if country == 'BE':
+        pio.write_image(fig, "results/pdf/Annual operational Costs.pdf", format='pdf')
+
+    return fig
 
 def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     tech_colors = config["plotting"]["tech_colors"]
@@ -2122,11 +2544,21 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
                 fig.update_yaxes(title_text=unit, row=2, col=1)
 
     # Update layout
-    fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}", yaxis_title=unit)
+    fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    num_cols = len(value) // 2 + (len(value) % 2 > 0)
+    for row in [1, 2]:
+     for col in range(1, num_cols + 1):
+        fig.update_xaxes(tickfont=dict(size=13), row=row, col=col)
+        fig.update_yaxes(
+            tickfont=dict(size=13),
+            title_font=dict(size=15),
+            row=row,
+            col=col
+        )
     logo['y']=1.03
     if country == 'BE':
      pio.write_image(fig, "results/pdf/Annual Capacities.pdf", format='pdf')
-    fig.add_layout_image(logo)
+    # fig.add_layout_image(logo)
     # Save plot as HTML
     # html_file_path = os.path.join(output_folder, f"{country}_capacities_chart.html")
     # fig.write_html(html_file_path)
@@ -2138,8 +2570,9 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
     colors = config["plotting"]["tech_colors"]
     colors["Thermal Energy storage"] = colors["urban central water tanks"]
     colors["Grid-scale"] = 'green'
+    colors["EV battery"] = colors["V2G"]
     groups = [
-        ["Grid-scale battery", "V2G"],
+        ["Grid-scale battery"],
         ["Thermal Energy storage"],
         ["gas"],
     ]
@@ -2168,11 +2601,20 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
                 fig.update_yaxes(title_text=unit, row=2, col=1)
     
     # Update layout
-    fig.update_layout(height=500, width=1200, showlegend=True, title=f" Storage Capacities for {country}", yaxis_title=unit)
+    fig.update_layout(height=500, width=1200, showlegend=True, title=f" Storage Capacities for {country}", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    num_cols = len(groups)
+    for col in range(1, num_cols + 1):
+     fig.update_xaxes(tickfont=dict(size=13), row=1, col=col)
+     fig.update_yaxes(
+        tickfont=dict(size=13),
+        title_font=dict(size=15),
+        row=1,
+        col=col
+    )
     logo['y']=1.05
     if country == 'BE':
      pio.write_image(fig, "results/pdf/Annual storage capacities.pdf", format='pdf')
-    fig.add_layout_image(logo)
+    # fig.add_layout_image(logo)
     
 
     return fig
@@ -2216,6 +2658,7 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     sectoral_demands_desc = country_desc.get(f"{country}_sectoral_demands_desc", '')
     annual_costs_desc = country_desc.get(f"{country}_annual_costs_desc", '')
     investment_costs_desc = country_desc.get(f"{country}_investment_costs_desc", '')
+    operational_costs_desc = country_desc.get(f"{country}_operational_costs_desc", '')
     capacities_desc = country_desc.get(f"{country}_capacities_desc", '')
     storage_capacities_desc = country_desc.get(f"{country}_storage_capacities_desc", '')
     heat_dispatch_win_desc = country_desc.get(f"{country}_heat_dispatch_win_desc", '')
@@ -2245,6 +2688,10 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     if pypsa_plots["Annual Investment Costs"] == True:
      bar_chart_investment = create_investment_costs(investment_costs, country)
      combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     
+    if pypsa_plots["Annual Operational Costs"] == True:
+     bar_chart_operational = create_operational_costs(operational_costs, country)
+     combined_html += f"<div><h2>{country} - Annual Operational Costs</h2>{bar_chart_operational.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
 
     # Create capacities chart
     if pypsa_plots["Capacities"] == True:
@@ -2297,7 +2744,8 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     table_of_contents = {
     "demands.html": "<a href='#sectoral_demands'>Sectoral Demands</a><br>",
     "costs.html": "<a href='#annual_costs'>Annual Costs</a><br>"
-                  "<a href='#investment_costs'>Annual Investment Costs</a><br>",
+                  "<a href='#investment_costs'>Annual Investment Costs</a><br>"
+                  "<a href='#operational_costs'>Annual Operational Costs</a><br>",
     "capacities.html": "<a href='#capacities'>Capacities</a><br>"
                        "<a href='#storage capacities'>Storage Capacities</a><br>",
     "dispatch_plots.html": "<a href='#heat_dispatch_winter'>Heat Dispatch (Winter)</a><br>"
@@ -2311,7 +2759,8 @@ def create_combined_chart_country(costs,investment_costs, capacities, s_capaciti
     html_sections = {
     "demands.html": f"<div id='sectoral_demands'><h2>{country} - Sectoral Demands</h2>{sectoral_demands_desc}{plot_demands_html}</div>",
     "costs.html": f"<div id='annual_costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
-                  f"<div id='investment_costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>",
+                  f"<div id='investment_costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+                  f"<div id='operational_costs'><h2>{country} - Annual Operational Costs</h2>{operational_costs_desc}{bar_chart_operational.to_html(full_html=False, include_plotlyjs='cdn')}</div>",
     "capacities.html": f"<div id='capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
                        f"<div id='storage capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{s_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>",
     "dispatch_plots.html": f"<div id='heat_dispatch_winter'><h2>{country} - Heat Dispatch (Winter)</h2>{heat_dispatch_win_desc}{plot_series_heat_html}</div>"
@@ -2412,7 +2861,7 @@ if __name__ == "__main__":
     opt = snakemake.params.scenario["opts"][0]
     sector_opt = snakemake.params.scenario["sector_opts"][0]
     ll = snakemake.params.scenario["ll"][0]
-    planning_horizons = [2020, 2030, 2040, 2050]
+    planning_horizons = [2030, 2040, 2050]
     discount_rate = 0.07
     total_country = 'EU'
     countries = snakemake.params.countries 
@@ -2429,6 +2878,7 @@ if __name__ == "__main__":
     results = calculate_transmission_values(simpl, cluster, opt, sector_opt, ll, planning_horizons)
     costs = costs(countries, results)
     investment_costs = Investment_costs(countries, results)
+    operational_costs = operational_costs(countries, results)
     capacities = capacities(countries, results)
     s_capacities = storage_capacities(countries)
 

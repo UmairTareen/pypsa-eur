@@ -44,10 +44,6 @@ def rename_techs_tyndp(tech):
          return "CCS"
     elif tech in ["biomass", "biomass boiler", "solid biomass", "solid biomass for industry"]:
          return "biomass"
-    elif "Li ion" in tech:
-        return "battery storage"
-    # elif "EV charger" in tech:
-    #     return "V2G"
     elif "load" in tech:
         return "load shedding"
     elif tech == "coal" or tech == "lignite":
@@ -199,12 +195,12 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
            supplyn = supplyn.drop('H2 pipeline')
         supplyn = supplyn.T
         if "V2G" in n.carriers.index:
-             v2g = n.links_t.p1.filter(like=country).filter(like="V2G").sum(axis=1)
-             v2g = v2g.to_frame()
-             v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
-             v2g = v2g/1e3
-             supplyn['electricity distribution grid'] = supplyn['electricity distribution grid'] + v2g['V2G']
-             supplyn['V2G'] = v2g['V2G'].abs()
+              v2g = n.links_t.p1.filter(like=country).filter(like="V2G").sum(axis=1)
+              v2g = v2g.to_frame()
+              v2g = v2g.rename(columns={v2g.columns[0]: 'V2G'})
+              v2g = v2g/1e3
+              supplyn['electricity distribution grid'] = supplyn['electricity distribution grid'] + v2g['V2G']
+              supplyn['V2G'] = v2g['V2G'].abs()
          
         positive_supplyn = supplyn[supplyn >= 0].fillna(0)
         negative_supplyn = supplyn[supplyn < 0].fillna(0)
@@ -459,7 +455,7 @@ if __name__ == "__main__":
     opt = snakemake.params.scenario["opts"][0]
     sector_opt = snakemake.params.scenario["sector_opts"][0]
     ll = snakemake.params.scenario["ll"][0]
-    planning_horizons = [2020, 2030, 2040, 2050]
+    planning_horizons = [2030, 2040, 2050]
 
 
     countries = snakemake.params.countries 
