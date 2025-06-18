@@ -348,11 +348,11 @@ def prepare_costs_2020(country):
     "cluster": "lines",
     "country": country,
     "costss": "capital",
-    "tech": "transmission lines",
+    "tech": "Transmission Lines",
     "2020": transmission_lines
 })
 
-  prod = pd.read_excel(f"results/{study}/sepia/inputs_{country}.xlsx", sheet_name="Inputs", index_col=0)
+  prod = pd.read_excel(f"results/{study}/sepia/inputs_{country}.xlsx", sheet_name="Inputs", index_col="label")
   prod = prod.groupby(level=0).sum(numeric_only=True) * 1e6
   techs_marginal = {
     "Gas-fired power generation":         {"cluster": "links",      "cost_name": "CCGT"},

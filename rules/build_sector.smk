@@ -301,6 +301,8 @@ rule build_energy_totals:
         clever_Tertairy = "data/clever_Tertairy_{planning_horizons}.csv",
         clever_AFOLUB = "data/clever_AFOLUB_{planning_horizons}.csv",
         clever_Macro = "data/clever_Macro_{planning_horizons}.csv",
+        datacenters_ref = "data/datacenters/ref_datacenters_{planning_horizons}.csv",
+        datacenters_suff = "data/datacenters/suff_datacenters_{planning_horizons}.csv",
     output:
         energy_name=resources("energy_totals_s{simpl}_{clusters}_{planning_horizons}.csv"),
         co2_name=resources("co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv"),
@@ -888,6 +890,7 @@ rule prepare_sector_network:
         ),
         foresight=config_provider("foresight"),
         costs=config_provider("costs"),
+        snapshots=config_provider("snapshots"),
         sector=config_provider("sector"),
         industry=config_provider("industry"),
         lines=config_provider("lines"),
@@ -935,8 +938,10 @@ rule prepare_sector_network:
             "pop_weighted_heat_totals_s{simpl}_{clusters}_{planning_horizons}.csv"
         ),
         shipping_demand=resources("shipping_demand_s{simpl}_{clusters}_{planning_horizons}.csv"),
+        traffic_data_KFZ="data/bundle-sector/emobility/KFZ__count",
         transport_demand=resources("transport_demand_s{simpl}_{clusters}_{planning_horizons}.csv"),
         transport_data=resources("transport_data_s{simpl}_{clusters}_{planning_horizons}.csv"),
+        transport_datas=resources("transport_datas_s{simpl}_{clusters}_{planning_horizons}.csv"),
         avail_profile=resources("avail_profile_s{simpl}_{clusters}_{planning_horizons}.csv"),
         dsm_profile=resources("dsm_profile_s{simpl}_{clusters}_{planning_horizons}.csv"),
         co2_totals_name=resources("co2_totals_s{simpl}_{clusters}_{planning_horizons}.csv"),

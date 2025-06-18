@@ -263,7 +263,7 @@ def plot_figures():
     kind="bar",
     ax=ax,
     stacked=True,
-    color=[snakemake.params.plotting["tech_colors"][i] for i in new_index],
+    color = [snakemake.params.plotting["tech_colors"].get(i, "grey") for i in new_index]
       )
 
     handles, labels = ax.get_legend_handles_labels()

@@ -90,7 +90,7 @@ if __name__ == "__main__":
         country_energy = nodal_df[nodal_df.index.str.startswith(country)]
         country_energy = country_energy[~country_energy.index.isin([f'{country}2 0'])]
         #country_energy = country_energy[~country_energy.index.isin(['DK2 0','ES4 0', 'GB5 0', 'IT3 0'])] (for 28 countries)
-        # nodal_df.loc[country_energy.index, 'ammonia'] = clever_Industry.loc[country, 'Total Final Energy Consumption of the ammonia industry']
+        nodal_df.loc[country_energy.index, 'ammonia'] = clever_Industry.loc[country, 'Total Final Energy Consumption of the ammonia industry']
         nodal_df.loc[country_energy.index, 'electricity'] = clever_Industry.loc[country, 'Total Final electricity consumption in industry']
         nodal_df.loc[country_energy.index, 'coal'] = clever_Industry.loc[country, 'Total Final energy consumption from solid fossil fuels (coal ...) in industry']
         nodal_df.loc[country_energy.index, 'solid biomass'] = clever_Industry.loc[country, 'Total Final energy consumption from solid biomass in industry']

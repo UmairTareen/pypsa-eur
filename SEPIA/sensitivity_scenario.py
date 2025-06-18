@@ -102,61 +102,97 @@ def scenario_costs(country):
      combined_df = combined_df.set_index('tech')
     
     unit='Euros/year'
-    title=f'Average Costs Per Year Comparison For {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Average Costs Per Year Comparison For {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
+    # colors["AC Transmission"] = "#FF3030"
+    # colors["DC Transmission"] = "#104E8B"
+    # colors["AC Transmission lines"] = "#FF3030"
+    # colors["DC Transmission lines"] = "#104E8B"
     
+    # if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+    #  Scenario_1 = "8594 EUR/kW_nuclear"
+    #  Scenario_2 = "7000 EUR/kW_nuclear"
+    #  Scenario_3 = "6000 EUR/kW_nuclear"
+    #  Scenario_4 =  "4500 EUR/kW_nuclear"
+    #  names_values = [
+    #  (f"Scenario_1 = {Scenario_1}", Scenario_1),
+    #  (f"Scenario_2 = {Scenario_2}", Scenario_2),
+    #  (f"Scenario_3 = {Scenario_3}", Scenario_3),
+    #  (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+    # if "sensitivity_analysis_offshore" in config["run"]["name"]:
+    #  pypsa_value = "+ 0 GW"
+    #  nothsea_value = "+ 16 GW"
+    #  names_values = [
+    #  (f"PyPSA value = {pypsa_value}", pypsa_value),
+    #  (f"Nortsea_value = {nothsea_value}", nothsea_value)]
+    # if "sensitivity_analysis_seq" in config["run"]["name"]:
+    #  a_value = "No-seq"
+    #  b_value = "2 Mtons/year"
+    #  c_value = "5 Mtons/year"
+    #  d_value = "10 Mtons/year"
+    #  e_value = "No-limit"
+    #  names_values = [
+    #  (f"No-seq = {a_value}", a_value),
+    #  (f"2 Mtons/year = {b_value}", b_value),
+    #  (f"5 Mtons/year = {c_value}", c_value),
+    #  (f"10 Mtons/year = {d_value}", d_value),
+    #  (f"No-limit = {e_value}", e_value)]
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     Scenario_1 = "8594 EUR/KW_nuclear"
-     Scenario_2 = "7000 EUR/KW_nuclear"
-     Scenario_3 = "6000 EUR/KW_nuclear"
-     Scenario_4 =  "4500 EUR/KW_nuclear"
-     names_values = [
-     (f"Scenario_1 = {Scenario_1}", Scenario_1),
-     (f"Scenario_2 = {Scenario_2}", Scenario_2),
-     (f"Scenario_3 = {Scenario_3}", Scenario_3),
-     (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+     scenario_label_map = {
+        "Scenario_1": "8594 EUR/kW_nuclear",
+        "Scenario_2": "7000 EUR/kW_nuclear",
+        "Scenario_3": "6000 EUR/kW_nuclear",
+        "Scenario_4": "4500 EUR/kW_nuclear"}
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
-     pypsa_value = "+ 0 GW"
-     nothsea_value = "+ 16 GW"
-     names_values = [
-     (f"PyPSA value = {pypsa_value}", pypsa_value),
-     (f"Nortsea_value = {nothsea_value}", nothsea_value)]
-    if "sensitivity_analysis_seq" in config["run"]["name"]:
-     a_value = "No-seq"
-     b_value = "2 Mtons/year"
-     c_value = "5 Mtons/year"
-     d_value = "10 Mtons/year"
-     e_value = "No-limit"
-     names_values = [
-     (f"No-seq = {a_value}", a_value),
-     (f"2 Mtons/year = {b_value}", b_value),
-     (f"5 Mtons/year = {c_value}", c_value),
-     (f"10 Mtons/year = {d_value}", d_value),
-     (f"No-limit = {e_value}", e_value)]
+     scenario_label_map = {
+        "PyPSA_Suff": "+ 0 GW",
+        "Northsea_Capacity": "+ 16 GW"}
     fig = go.Figure()
     df_transposed = combined_df.T
+    df_transposed.index = [scenario_label_map.get(idx, idx) for idx in df_transposed.index]
 
     for tech in df_transposed.columns:
-        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
-    for name, value in names_values:
-     fig.add_trace(go.Scatter(
-        x=[None], 
-        y=[None], 
-        mode='markers', 
-        name=name,
-        marker=dict(color='rgba(0,0,0,0)')
+      y = df_transposed[tech]
+      color = tech_colors.get(tech, 'lightgrey')
+      fig.add_trace(go.Bar(
+        x=df_transposed.index,
+        y=y.where(y > 0, 0),
+        name=tech,
+        marker_color=color
     ))
+      fig.add_trace(go.Bar(
+        x=df_transposed.index,
+        y=y.where(y < 0, 0),
+        name=tech,
+        marker_color=color,
+        showlegend=False
+    ))
+    # for name, value in names_values:
+    #  fig.add_trace(go.Scatter(
+    #     x=[None],
+    #     y=[None],
+    #     mode='markers',
+    #     name=name,
+    #     marker=dict(color='rgba(0,0,0,0)')
+    # ))
+    layout_common = dict(
+    title=title,
+    barmode='relative',  # Changed from 'stack'
+    yaxis=dict(title=unit, title_font=dict(size=15), tickfont=dict(size=15)),
+    xaxis=dict(tickfont=dict(size=15)),
+    legend=dict(font=dict(size=15)),
+    hovermode='y'
+)
     # Configure layout and labels
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
+      fig.update_layout(height=1000, width=1000, **layout_common)
     else:
-     fig.update_layout(height=800, width=600,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
-    fig.update_layout(hovermode='y')
+      fig.update_layout(height=800, width=600, **layout_common)
     if country == 'BE':
      pio.write_image(fig, f"results/pdf/{study} total costs.pdf", format='pdf')
     # fig.add_layout_image(logo)
@@ -203,55 +239,71 @@ def scenario_investment_costs(country):
      combined_df = combined_df.set_index('tech')
     
     unit='Euros/year'
-    title=f'Average Investment Costs Per Year Comparison For {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Average Investment Costs Per Year Comparison For {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
+    tech_colors["Biogas Plants"] = tech_colors["Biomass"]
+    # colors["AC Transmission"] = "#FF3030"
+    # colors["DC Transmission"] = "#104E8B"
+    # colors["AC Transmission lines"] = "#FF3030"
+    # colors["DC Transmission lines"] = "#104E8B"
     
+    # if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+    #  Scenario_1 = "8594 EUR/kW_nuclear"
+    #  Scenario_2 = "7000 EUR/kW_nuclear"
+    #  Scenario_3 = "6000 EUR/kW_nuclear"
+    #  Scenario_4 =  "4500 EUR/kW_nuclear"
+    #  names_values = [
+    #  (f"Scenario_1 = {Scenario_1}", Scenario_1),
+    #  (f"Scenario_2 = {Scenario_2}", Scenario_2),
+    #  (f"Scenario_3 = {Scenario_3}", Scenario_3),
+    #  (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+    # if "sensitivity_analysis_offshore" in config["run"]["name"]:
+    #  pypsa_value = "+ 0 GW"
+    #  nothsea_value = "+ 16 GW"
+    #  names_values = [
+    #  (f"PyPSA value = {pypsa_value}", pypsa_value),
+    #  (f"Nortsea_value = {nothsea_value}", nothsea_value)]
+    # if "sensitivity_analysis_seq" in config["run"]["name"]:
+    #  a_value = "No-seq"
+    #  b_value = "2 Mtons/year"
+    #  c_value = "5 Mtons/year"
+    #  d_value = "10 Mtons/year"
+    #  e_value = "No-limit"
+    #  names_values = [
+    #  (f"No-seq = {a_value}", a_value),
+    #  (f"2 Mtons/year = {b_value}", b_value),
+    #  (f"5 Mtons/year = {c_value}", c_value),
+    #  (f"10 Mtons/year = {d_value}", d_value),
+    #  (f"No-limit = {e_value}", e_value)]
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     Scenario_1 = "8594 EUR/KW_nuclear"
-     Scenario_2 = "7000 EUR/KW_nuclear"
-     Scenario_3 = "6000 EUR/KW_nuclear"
-     Scenario_4 =  "4500 EUR/KW_nuclear"
-     names_values = [
-     (f"Scenario_1 = {Scenario_1}", Scenario_1),
-     (f"Scenario_2 = {Scenario_2}", Scenario_2),
-     (f"Scenario_3 = {Scenario_3}", Scenario_3),
-     (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+     scenario_label_map = {
+        "Scenario_1": "8594 EUR/kW_nuclear",
+        "Scenario_2": "7000 EUR/kW_nuclear",
+        "Scenario_3": "6000 EUR/kW_nuclear",
+        "Scenario_4": "4500 EUR/kW_nuclear"}
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
-     pypsa_value = "+ 0 GW"
-     nothsea_value = "+ 16 GW"
-     names_values = [
-     (f"PyPSA value = {pypsa_value}", pypsa_value),
-     (f"Nortsea_value = {nothsea_value}", nothsea_value)]
-    if "sensitivity_analysis_seq" in config["run"]["name"]:
-     a_value = "No-seq"
-     b_value = "2 Mtons/year"
-     c_value = "5 Mtons/year"
-     d_value = "10 Mtons/year"
-     e_value = "No-limit"
-     names_values = [
-     (f"No-seq = {a_value}", a_value),
-     (f"2 Mtons/year = {b_value}", b_value),
-     (f"5 Mtons/year = {c_value}", c_value),
-     (f"10 Mtons/year = {d_value}", d_value),
-     (f"No-limit = {e_value}", e_value)]
+     scenario_label_map = {
+        "PyPSA_Suff": "+ 0 GW",
+        "Northsea_Capacity": "+ 16 GW"}
     fig = go.Figure()
     df_transposed = combined_df.T
+    df_transposed.index = [scenario_label_map.get(idx, idx) for idx in df_transposed.index]
 
     for tech in df_transposed.columns:
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
-    for name, value in names_values:
-     fig.add_trace(go.Scatter(
-        x=[None], 
-        y=[None], 
-        mode='markers', 
-        name=name,
-        marker=dict(color='rgba(0,0,0,0)')
-    ))
+    # for name, value in names_values:
+    #  fig.add_trace(go.Scatter(
+    #     x=[None], 
+    #     y=[None], 
+    #     mode='markers', 
+    #     name=name,
+    #     marker=dict(color='rgba(0,0,0,0)')
+    # ))
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
     else:
@@ -296,48 +348,84 @@ def scenario_operational_costs(country):
      combined_df = combined_df.set_index('tech')
     
     unit='Euros/year'
-    title=f'Average Operational Costs Per Year Comparison For {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Average Operational Costs Per Year Comparison For {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
+    # colors["AC Transmission"] = "#FF3030"
+    # colors["DC Transmission"] = "#104E8B"
+    # colors["AC Transmission lines"] = "#FF3030"
+    # colors["DC Transmission lines"] = "#104E8B"
     
+    # if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+    #  Scenario_1 = "8594 EUR/kW_nuclear"
+    #  Scenario_2 = "7000 EUR/kW_nuclear"
+    #  Scenario_3 = "6000 EUR/kW_nuclear"
+    #  Scenario_4 =  "4500 EUR/kW_nuclear"
+    #  names_values = [
+    #  (f"Scenario_1 = {Scenario_1}", Scenario_1),
+    #  (f"Scenario_2 = {Scenario_2}", Scenario_2),
+    #  (f"Scenario_3 = {Scenario_3}", Scenario_3),
+    #  (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+    # if "sensitivity_analysis_offshore" in config["run"]["name"]:
+    #  pypsa_value = "+ 0 GW"
+    #  nothsea_value = "+ 16 GW"
+    #  names_values = [
+    #  (f"PyPSA value = {pypsa_value}", pypsa_value),
+    #  (f"Nortsea_value = {nothsea_value}", nothsea_value)]
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     Scenario_1 = "8594 EUR/KW_nuclear"
-     Scenario_2 = "7000 EUR/KW_nuclear"
-     Scenario_3 = "6000 EUR/KW_nuclear"
-     Scenario_4 =  "4500 EUR/KW_nuclear"
-     names_values = [
-     (f"Scenario_1 = {Scenario_1}", Scenario_1),
-     (f"Scenario_2 = {Scenario_2}", Scenario_2),
-     (f"Scenario_3 = {Scenario_3}", Scenario_3),
-     (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+     scenario_label_map = {
+        "Scenario_1": "8594 EUR/kW_nuclear",
+        "Scenario_2": "7000 EUR/kW_nuclear",
+        "Scenario_3": "6000 EUR/kW_nuclear",
+        "Scenario_4": "4500 EUR/kW_nuclear"}
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
-     pypsa_value = "+ 0 GW"
-     nothsea_value = "+ 16 GW"
-     names_values = [
-     (f"PyPSA value = {pypsa_value}", pypsa_value),
-     (f"Nortsea_value = {nothsea_value}", nothsea_value)]
+     scenario_label_map = {
+        "PyPSA_Suff": "+ 0 GW",
+        "Northsea_Capacity": "+ 16 GW"}
     fig = go.Figure()
     df_transposed = combined_df.T
+    df_transposed.index = [scenario_label_map.get(idx, idx) for idx in df_transposed.index]
 
     for tech in df_transposed.columns:
-        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
-    for name, value in names_values:
-     fig.add_trace(go.Scatter(
-        x=[None], 
-        y=[None], 
-        mode='markers', 
-        name=name,
-        marker=dict(color='rgba(0,0,0,0)')
+      y = df_transposed[tech]
+      color = tech_colors.get(tech, 'lightgrey')
+      fig.add_trace(go.Bar(
+        x=df_transposed.index,
+        y=y.where(y > 0, 0),
+        name=tech,
+        marker_color=color
     ))
+      fig.add_trace(go.Bar(
+        x=df_transposed.index,
+        y=y.where(y < 0, 0),
+        name=tech,
+        marker_color=color,
+        showlegend=False
+    ))
+    # for name, value in names_values:
+    #  fig.add_trace(go.Scatter(
+    #     x=[None],
+    #     y=[None],
+    #     mode='markers',
+    #     name=name,
+    #     marker=dict(color='rgba(0,0,0,0)')
+    # ))
+    layout_common = dict(
+    title=title,
+    barmode='relative',  # changed from 'stack'
+    yaxis=dict(title=unit, title_font=dict(size=15), tickfont=dict(size=15)),
+    xaxis=dict(tickfont=dict(size=15)),
+    legend=dict(font=dict(size=15)),
+    hovermode='y'
+)
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
+      fig.update_layout(height=1000, width=1000, **layout_common)
     else:
-     fig.update_layout(height=800, width=600,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
-    fig.update_layout(hovermode='y')
+      fig.update_layout(height=800, width=600, **layout_common)
     if country == 'BE':
      pio.write_image(fig, f"results/pdf/{study} operational costs.pdf", format='pdf')
     # fig.add_layout_image(logo)
@@ -386,55 +474,70 @@ def scenario_cumulative_costs(country):
      combined_df = combined_df.set_index('tech')
     
     unit='Euros'
-    title=f'Total Comulative Costs (2020-2050) for {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Total Comulative Costs (2020-2050) for {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
+    # colors["AC Transmission"] = "#FF3030"
+    # colors["DC Transmission"] = "#104E8B"
+    # colors["AC Transmission lines"] = "#FF3030"
+    # colors["DC Transmission lines"] = "#104E8B"
     
+    # if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+    #  Scenario_1 = "8594 EUR/kW_nuclear"
+    #  Scenario_2 = "7000 EUR/kW_nuclear"
+    #  Scenario_3 = "6000 EUR/kW_nuclear"
+    #  Scenario_4 =  "4500 EUR/kW_nuclear"
+    #  names_values = [
+    #  (f"Scenario_1 = {Scenario_1}", Scenario_1),
+    #  (f"Scenario_2 = {Scenario_2}", Scenario_2),
+    #  (f"Scenario_3 = {Scenario_3}", Scenario_3),
+    #  (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+    # if "sensitivity_analysis_offshore" in config["run"]["name"]:
+    #  pypsa_value = "+ 0 GW"
+    #  nothsea_value = "+ 16 GW"
+    #  names_values = [
+    #  (f"PyPSA value = {pypsa_value}", pypsa_value),
+    #  (f"Nortsea_value = {nothsea_value}", nothsea_value)]
+    # if "sensitivity_analysis_seq" in config["run"]["name"]:
+    #  a_value = "No-seq"
+    #  b_value = "2 Mtons/year"
+    #  c_value = "5 Mtons/year"
+    #  d_value = "10 Mtons/year"
+    #  e_value = "No-limit"
+    #  names_values = [
+    #  (f"No-seq = {a_value}", a_value),
+    #  (f"2 Mtons/year = {b_value}", b_value),
+    #  (f"5 Mtons/year = {c_value}", c_value),
+    #  (f"10 Mtons/year = {d_value}", d_value),
+    #  (f"No-limit = {e_value}", e_value)]
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     Scenario_1 = "8594 EUR/KW_nuclear"
-     Scenario_2 = "7000 EUR/KW_nuclear"
-     Scenario_3 = "6000 EUR/KW_nuclear"
-     Scenario_4 =  "4500 EUR/KW_nuclear"
-     names_values = [
-     (f"Scenario_1 = {Scenario_1}", Scenario_1),
-     (f"Scenario_2 = {Scenario_2}", Scenario_2),
-     (f"Scenario_3 = {Scenario_3}", Scenario_3),
-     (f"Scenario_4 = {Scenario_4}", Scenario_4)]
+     scenario_label_map = {
+        "Scenario_1": "8594 EUR/kW_nuclear",
+        "Scenario_2": "7000 EUR/kW_nuclear",
+        "Scenario_3": "6000 EUR/kW_nuclear",
+        "Scenario_4": "4500 EUR/kW_nuclear"}
     if "sensitivity_analysis_offshore" in config["run"]["name"]:
-     pypsa_value = "+ 0 GW"
-     nothsea_value = "+ 16 GW"
-     names_values = [
-     (f"PyPSA value = {pypsa_value}", pypsa_value),
-     (f"Nortsea_value = {nothsea_value}", nothsea_value)]
-    if "sensitivity_analysis_seq" in config["run"]["name"]:
-     a_value = "No-seq"
-     b_value = "2 Mtons/year"
-     c_value = "5 Mtons/year"
-     d_value = "10 Mtons/year"
-     e_value = "No-limit"
-     names_values = [
-     (f"No-seq = {a_value}", a_value),
-     (f"2 Mtons/year = {b_value}", b_value),
-     (f"5 Mtons/year = {c_value}", c_value),
-     (f"10 Mtons/year = {d_value}", d_value),
-     (f"No-limit = {e_value}", e_value)]
+     scenario_label_map = {
+        "PyPSA_Suff": "+ 0 GW",
+        "Northsea_Capacity": "+ 16 GW"}
     fig = go.Figure()
     df_transposed = combined_df.T
+    df_transposed.index = [scenario_label_map.get(idx, idx) for idx in df_transposed.index]
 
     for tech in df_transposed.columns:
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, marker_color=tech_colors.get(tech, 'lightgrey')))
-    for name, value in names_values:
-     fig.add_trace(go.Scatter(
-        x=[None], 
-        y=[None], 
-        mode='markers', 
-        name=name,
-        marker=dict(color='rgba(0,0,0,0)')
-    ))
+    # for name, value in names_values:
+    #  fig.add_trace(go.Scatter(
+    #     x=[None], 
+    #     y=[None], 
+    #     mode='markers', 
+    #     name=name,
+    #     marker=dict(color='rgba(0,0,0,0)')
+    # ))
     if "sensitivity_analysis_nuclear" in config["run"]["name"]:
      fig.update_layout(height=1000, width=1000,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=15),tickfont=dict(size=15)),xaxis=dict(tickfont=dict(size=15)),legend=dict(font=dict(size=15)))
     else:
@@ -466,7 +569,16 @@ def scenario_capacities(country):
      ("No-limit", f"results/sensitivity_analysis_seq_nolim/country_csvs/{country}_capacities.csv")]
     # Dictionary to store the processed dataframes
     capacity_sensitivity = {}
-
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     scenario_label_map = {
+        "Scenario_1": "8594 EUR/kW_nuclear",
+        "Scenario_2": "7000 EUR/kW_nuclear",
+        "Scenario_3": "6000 EUR/kW_nuclear",
+        "Scenario_4": "4500 EUR/kW_nuclear"}
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     scenario_label_map = {
+        "PyPSA_Suff": "+ 0 GW",
+        "Northsea_Capacity": "+ 16 GW"}
     # Process each sensitivity analysis
     for name, file_path in sensitivity_analyses:
       # Read the CSV file
@@ -481,14 +593,15 @@ def scenario_capacities(country):
      combined_df = pd.merge(combined_df, df, on='tech', how='outer')
      combined_df = combined_df.fillna(0)
      combined_df = combined_df.set_index('tech')
+     combined_df.columns = [scenario_label_map.get(col, col) for col in combined_df.columns]
     
     unit='Capacity [GW]'
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission"] = "#FF3030"
-    colors["DC Transmission"] = "#104E8B"
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
+    # colors["AC Transmission"] = "#FF3030"
+    # colors["DC Transmission"] = "#104E8B"
+    # colors["AC Transmission lines"] = "#FF3030"
+    # colors["DC Transmission lines"] = "#104E8B"
     
     fig = go.Figure()
     fig = go.Figure()
@@ -516,9 +629,10 @@ def scenario_capacities(country):
         value = groups
     else:
         value = groupss
+    def smart_capitalize(phrase):
+     return phrase[0].upper() + phrase[1:] if phrase and not phrase[0].isupper() else phrase
 
-    fig = make_subplots(rows=2, cols=len(value) // 2, subplot_titles=[
-        f"{', '.join(tech_group)}" for tech_group in value], shared_yaxes=True)
+    fig = make_subplots(rows=2, cols=len(value) // 2, subplot_titles=[", ".join(smart_capitalize(t) for t in tech_group) for tech_group in value], shared_yaxes=True)
 
     df = combined_df
 
@@ -532,17 +646,21 @@ def scenario_capacities(country):
             trace = go.Bar(
                 x=df.columns,
                 y=y_values,
-                name=f"{tech}",
+                name=smart_capitalize(tech),
                 marker_color=tech_colors.get(tech, 'gray')
             )
             fig.add_trace(trace, row=row_idx, col=col_idx)
             fig.update_yaxes(title_text=unit, row=2, col=1)
 
     # Update layout
-    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}_2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    if country == "EU":
+     title_country = "5 Countries"
     else:
-     fig.update_layout(height=800, width=1000, showlegend=True, title=f"Capacities for {country}_2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
+     title_country = country
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {title_country} in 2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    else:
+     fig.update_layout(height=800, width=1000, showlegend=True, title=f"Capacities for {title_country} in 2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
     logo['y']=1.021
     num_cols = len(value) // 2 + (len(value) % 2 > 0)
     for row in [1, 2]:
@@ -580,7 +698,16 @@ def storage_capacities(country):
     
     # Dictionary to store the processed dataframes
     storeage_capacity_sensitivity = {}
-
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     scenario_label_map = {
+        "Scenario_1": "8594 EUR/kW_nuclear",
+        "Scenario_2": "7000 EUR/kW_nuclear",
+        "Scenario_3": "6000 EUR/kW_nuclear",
+        "Scenario_4": "4500 EUR/kW_nuclear"}
+    if "sensitivity_analysis_offshore" in config["run"]["name"]:
+     scenario_label_map = {
+        "PyPSA_Suff": "+ 0 GW",
+        "Northsea_Capacity": "+ 16 GW"}
     # Process each sensitivity analysis
     for name, file_path in sensitivity_analyses:
       # Read the CSV file
@@ -595,6 +722,7 @@ def storage_capacities(country):
      combined_df = pd.merge(combined_df, df, on='tech', how='outer')
      combined_df = combined_df.fillna(0)
      combined_df = combined_df.set_index('tech')
+     combined_df.columns = [scenario_label_map.get(col, col) for col in combined_df.columns]
     
     unit='Capacity [GWh]'
     tech_colors = config["plotting"]["tech_colors"]
@@ -602,12 +730,13 @@ def storage_capacities(country):
     colors["Thermal Energy storage"] = colors["urban central water tanks"]
     colors["Grid-scale"] = 'green'
     colors["home battery"] = 'blue'
+    colors["Gas storage"] = colors["gas"]
     
     fig = go.Figure()
     groups = [
         ["Grid-scale battery"],
         ["Thermal Energy storage"],
-        ["gas"],
+        ["Gas storage"],
     ]
 
     fig = make_subplots(rows=1, cols=len(groups) // 1, subplot_titles=[
@@ -632,10 +761,14 @@ def storage_capacities(country):
             fig.update_yaxes(title_text=unit, row=2, col=1)
 
     # Update layout
-    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
-     fig.update_layout(height=600, width=1400, showlegend=True, title=f"Storage capacities for {country}_2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    if country == "EU":
+     title_country = "5 Countries"
     else:
-     fig.update_layout(height=500, width=1200, showlegend=True, title=f"Storage capacities for {country}_2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
+     title_country = country
+    if "sensitivity_analysis_nuclear" in config["run"]["name"]:
+     fig.update_layout(height=600, width=1400, showlegend=True, title=f"Storage capacities for {title_country} in 2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    else:
+     fig.update_layout(height=500, width=1200, showlegend=True, title=f"Storage capacities for {title_country} in 2050 compared for all scenarios", yaxis_title=unit,legend=dict(font=dict(size=15)))
     logo['y']=1.021
     num_cols = len(groups)
     for col in range(1, num_cols + 1):
@@ -666,27 +799,27 @@ def create_combined_scenario_chart_country(country):
 
     # Create combined HTML
     combined_html = "<html><head><title>Combined Plots</title></head><body>"
-
+    display_country = "5 Countries" if country == "EU" else country
     # Create bar chart
     bar_chart = scenario_costs(country)
-    combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+    combined_html += f"<div><h2>{display_country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
     
     bar_chart_investment = scenario_investment_costs(country)
-    combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+    combined_html += f"<div><h2>{display_country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
     
     bar_chart_operational = scenario_operational_costs(country)
-    combined_html += f"<div><h2>{country} - Annual Operational Costs</h2>{bar_chart_operational.to_html()}</div>"
+    combined_html += f"<div><h2>{display_country} - Annual Operational Costs</h2>{bar_chart_operational.to_html()}</div>"
     
     bar_chart_cumulative = scenario_cumulative_costs(country)
-    combined_html += f"<div><h2>{country} - Cummulative Investment Costs (2020-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
+    combined_html += f"<div><h2>{display_country} - Cummulative Investment Costs (2020-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
     
     # Create capacities chart
     capacities_chart = scenario_capacities(country)
-    combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    combined_html += f"<div><h2>{display_country} - Capacities</h2>{capacities_chart.to_html()}</div>"
     
     # Create capacities chart
     storage_capacities_chart = storage_capacities(country)
-    combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
+    combined_html += f"<div><h2>{display_country} -  Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
 
     combined_html += "</body></html>"
     table_of_contents_content = ""
@@ -699,20 +832,20 @@ def create_combined_scenario_chart_country(country):
     else:
         main_content = ''
     # Create the content for the "Table of Contents" and "Main" sections
-    table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Annual Operational Costs'>Annual Operational Costs</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Cummulative Investment Costs (2020-2050)'>Cummulative Investment Costs (2020-2050)</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
-    table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
+    table_of_contents_content += f"<a href='#{display_country} - Annual Costs'>Annual Costs</a><br>"
+    table_of_contents_content += f"<a href='#{display_country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
+    table_of_contents_content += f"<a href='#{display_country} - Annual Operational Costs'>Annual Operational Costs</a><br>"
+    table_of_contents_content += f"<a href='#{display_country} - Cummulative Investment Costs (2020-2050)'>Cummulative Investment Costs (2020-2050)</a><br>"
+    table_of_contents_content += f"<a href='#{display_country} - Capacities'>Capacities</a><br>"
+    table_of_contents_content += f"<a href='#{display_country} - Storage Capacities'>Storage Capacities</a><br>"
 
     # Add more links for other plots
-    main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
-    main_content += f"<div id='{country} - Annual Operational Costs'><h2>{country} - Annual Operational Costs</h2>{bar_chart_operational.to_html()}</div>"
-    main_content += f"<div id='{country} - Cummulative Investment Costs (2020-2050)'><h2>{country} - Cummulative Investment Costs (2020-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
-    main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_chart.to_html()}</div>"
-    main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{display_country} - Annual Costs'><h2>{display_country} - Annual Costs</h2>{bar_chart.to_html()}</div>"
+    main_content += f"<div id='{display_country} - Annual Investment Costs'><h2>{display_country} - Annual Investment Costs</h2>{bar_chart_investment.to_html()}</div>"
+    main_content += f"<div id='{display_country} - Annual Operational Costs'><h2>{display_country} - Annual Operational Costs</h2>{bar_chart_operational.to_html()}</div>"
+    main_content += f"<div id='{display_country} - Cummulative Investment Costs (2020-2050)'><h2>{display_country} - Cummulative Investment Costs (2020-2050)</h2>{bar_chart_cumulative.to_html()}</div>"
+    main_content += f"<div id='{display_country} - Capacities'><h2>{display_country} - Capacities</h2>{capacities_chart.to_html()}</div>"
+    main_content += f"<div id='{display_country} - Storage Capacities'><h2>{display_country} - Storage Capacities</h2>{storage_capacities_chart.to_html()}</div>"
     # Add more content for other plots
     
     template_path =  snakemake.input.template

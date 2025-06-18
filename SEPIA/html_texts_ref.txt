@@ -1,16 +1,16 @@
 # Texts for SEPIA html file for Belgium
 
-BE_CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
+BE_CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2019 to end of transition period in 2050.</p>
 
-BE_CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
+BE_CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2019 to end of transition period in 2050.</p>
 
 BE_Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
 
 BE_Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
 
-BE_sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> 
+BE_sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2019, 2030, 2040, 2050).</p> 
 
-BE_carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
+BE_carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2019, 2030, 2040, 2050).</p>
 
 BE_RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
 
@@ -26,12 +26,12 @@ BE_FEC_carrier: <p> This plot shows the evolution of the final energy consumptio
 
 # Texts for SEPIA html file for 5 countries combined
 
-EU_CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
-EU_CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
+EU_CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2019 to end of transition period in 2050.</p>
+EU_CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2019 to end of transition period in 2050.</p>
 EU_Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
 EU_Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
-EU_sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> 
-EU_carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
+EU_sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2019, 2030, 2040, 2050).</p> 
+EU_carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2019, 2030, 2040, 2050).</p>
 EU_RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
 EU_FEC_origin: <p> This plot shows the the share of renewable energy technologies, fossil fuels and nuclear in total energy consumption.</p>
 EU_Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
@@ -41,12 +41,12 @@ EU_FEC_carrier: <p> This plot shows the evolution of the final energy consumptio
 
 # Texts for SEPIA html file for other countries
 
-CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2020 to end of transition period in 2050.</p>
-CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2020 to end of transition period in 2050.</p>
+CO2_emissions_sector: <p> This plot shows the CO2 emissions for each sector and planning horizon starting from 2019 to end of transition period in 2050.</p>
+CO2_emissions_source: <p> This plot shows the CO2 emissions for each source and planning horizon starting from 2019 to end of transition period in 2050.</p>
 Cumulative_CO2_emissions_sector: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each sector for each year.</p>
 Cumulative_CO2_emissions_source: <p> This plot shows the cumulative CO2 emissions at the end of transition period and contribution of each source for each year.</p>
-sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p> 
-carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2020, 2030, 2040, 2050).</p>
+sankey_diagram: <p> The sankey diagram illustrates the energy flows and conversion from primary energy sources to final energy demands. It can be displayed for each simulated time period (2019, 2030, 2040, 2050).</p> 
+carbon_sankey_diagram: <p> The carbon sankey diagram illustrates the carbon flow (expressed in tons of CO2) for each source and sector. It can be displayed for each simulated time period (2019, 2030, 2040, 2050).</p>
 RES_share: <p> This plot shows the the share of renewable energy technologies for each energy carrier and how the system evolves in each planning horizon.</p>
 FEC_origin: <p> This plot shows the the share of renewable energy technologies, fossil fuels and nuclear in total energy consumption.</p>
 Domestic_production_share: <p> This plot shows the the share of local or domestic production for each energy carrier and how the system evolves in each planning horizon.</p>
@@ -61,9 +61,13 @@ BE_sectoral_demands_desc: <p>This figure displays the final and energy and non-e
 
 BE_annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
 
+BE_annual_clustered_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
+
 BE_investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
 
 BE_operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
+
+BE_carbon_elec_costs_desc: <p>This plot shows average electricity price and carbon price for each planning horizon</p>
 
 BE_capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
 
@@ -78,7 +82,7 @@ BE_power_dispatch_win_desc: <p>The power dispatch charts show electricity produc
 
 BE_power_dispatch_sum_desc: <p>The power dispatch charts show electricity production and distribution during a typical summer week.</p>
 
-BE_map_plots_desc: <p>Map plots provide a geographical overview of the investments in energy infrastructure and associated electricity grid expansion.</p>
+BE_map_plots_desc: <p>Map plots provide a geographical overview of the investments in energy infrastructure and associated electricity grid expansion.<p></p> Important insights from results for Belgium include:</p><ul><li> Considering the Belgium GDP in 2023, which was about 568 billion Euros, in the reference scenario the investment requirements are 2% of GDP in 2030, 3.06% in 2040, and 3.28% in 2050.
 
 BE_h2_map_plots_desc: <p>Map plots provide a geographical overview of the investments in the hydrogen grid and associated expansion in hydrogen pipelines.</p>
 
@@ -88,6 +92,7 @@ BE_gas_map_plots_desc: <p>Map plots provide a geographical overview of the inves
 
 EU_sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
 EU_annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
+EU_annual_clustered_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
 EU_investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
 EU_operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
 EU_capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>
@@ -104,6 +109,7 @@ EU_gas_map_plots_desc: <p>Map plots provide a geographical overview of the inves
 
 sectoral_demands_desc: <p>This figure displays the final and energy and non-energy demands for each carrier and across different sectors.</p> 
 annual_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
+annual_clustered_costs_desc: <p>The total annual costs include investment (CAPEX) and operational (OPEX) expenses</p> 
 investment_costs_desc: <p>The annual investment costs are annualized and don't necessarily represent the invesments to be realized in the given time period</p>
 operational_costs_desc: <p>The annual operational costs show all the operational costs which include fuel costs and also variable operational and maintenence costs of technologies</p>
 capacities_desc: <p>The evolution of installed capacities is shown for several key technologies.</p>

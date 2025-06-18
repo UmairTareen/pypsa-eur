@@ -200,12 +200,12 @@ def prepare_sepia(countries):
     grouped_fec_p = fec_carrier_p.groupby(level='Source', axis=1).sum()
     fec_p = grouped_fec_p
     if country == 'EU':
-     for en_code in ['hdr','eon','eof','spv','pac','enc','ura','bgl','win']:
+     for en_code in ['hdr','eon','eof','spv','pac','enc','bgl','win']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe']
     else: 
-     for en_code in ['hdr','eon','eof','spv','pac','ura','bgl','win']:
+     for en_code in ['hdr','eon','eof','spv','pac','bgl','win']:
         flows[('prod',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
-    for en_code in ['cms']:
+    for en_code in ['cms','ura']:
        flows[('imp',en_code+'_pe','')] = fec_p[en_code+'_pe'] 
     for en_code in ['gaz']:
      if country != 'EU':
@@ -408,6 +408,7 @@ def prepare_sepia(countries):
     ('imp', 'enc_pe', ''),
     ('imp', 'amm_fe', ''),
     ('imp', 'met_fe', ''),
+    ('imp', 'ura_pe', ''),
     ('imp', 'cms_pe', '')]
     selected_imports = pd.DataFrame()
     for flow in filtered_flows:
@@ -423,17 +424,29 @@ def prepare_sepia(countries):
     ('prod', 'spv_pe', ''),
     ('prod', 'pac_pe', ''),
     ('prod', 'cms_pe', ''),
-    ('prod', 'ura_pe', ''),
     ('prod', 'bgl_pe', ''),
     ('prod', 'win_pe', ''),]
     local_prod = pd.DataFrame()
     for flow in local_production:
      if flow in flows.columns:
         local_prod["_".join([flow[0], flow[1]]).replace(" ", "_")] = flows[flow]
+    exports = [
+    ('elc_se', 'exp', ''),
+    ('hyd_se', 'exp', ''),
+    ('enc_pe', 'exp', ''),
+    ('met_fe', 'exp', ''),
+    ('amm_fe', 'exp', ''),
+    ('gaz_se', 'exp', ''),]
+    
+    exports_prod = pd.DataFrame()
+    for flow in exports:
+     if flow in flows.columns:
+        exports_prod["_".join([flow[0], flow[1]]).replace(" ", "_")] = flows[flow]
     output_dir = f"results/{study}/country_csvs"
     os.makedirs(output_dir, exist_ok=True)
     selected_imports.to_csv(f"{output_dir}/total_imports_{country}.csv", index=True)
     local_prod.to_csv(f"{output_dir}/local_product_{country}.csv", index=True) 
+    exports_prod.to_csv(f"{output_dir}/exports_{country}.csv", index=True) 
     ## Storing energy flows, non-energy GHG values and other relevant values for each country
     tot_flows[country] = flows
     tot_ghg[country] = flows_ghg

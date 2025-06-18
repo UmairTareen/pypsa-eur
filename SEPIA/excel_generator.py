@@ -1847,9 +1847,9 @@ def write_to_excel(simpl, cluster, opt, sector_opt, ll, planning_horizons,countr
         merged_emissions = merged_emissions[country]
         data_2020=pd.read_excel(f"results/{study}/sepia/inputs_{country}.xlsx", sheet_name="Inputs_co2")
         data_2020 = data_2020.groupby('target', as_index=False).agg({
-             'label': 'first',
-             'source': 'first',
-             '2020': 'sum'})
+              'label': 'first',
+              'source': 'first',
+              '2020': 'sum'})
         for planning_horizon in planning_horizons[1:]:
             temp = prepare_emissions(simpl, cluster, opt, sector_opt, ll, planning_horizon, country)
             temp = temp[country]

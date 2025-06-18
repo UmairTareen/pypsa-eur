@@ -414,19 +414,8 @@ def imposed_values_genertion(n, foresight, config):
    first_index = n.generators.index[0]
    if "-" in first_index and first_index.split("-")[-1].isdigit():
        planning_horizon = int(first_index.split("-")[-1])  # Extract year
-   if planning_horizon == 2020:
-    # Correcting pre-installed capacities of solar, CCGT and wind for Belgium in 2020
-    n.generators.loc[f"{country}{suffix} solar-2020", "p_nom"] = 0
-    n.generators.loc[f"{country}{suffix} solar-2020", "p_nom_min"] = 0
-    n.generators.loc[f"{country}{suffix} offwind-ac-2020", "p_nom"] = 0
-    n.generators.loc[f"{country}{suffix} offwind-ac-2020", "p_nom_min"] = 0
-    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom_min"] = 0
-    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom"] = 0
-    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom"] = 900
-    n.generators.loc[f"{country}{suffix} onwind-2020", "p_nom_min"] = 900
-    n.links.loc[f"{country}{suffix} CCGT-2015", "p_nom"] = 2000
-   else:  
-    if foresight == "myopic":
+   
+   if foresight == "myopic":
      if planning_horizon == 2030:
         
       #getting values from config file
@@ -496,6 +485,7 @@ def imposed_values_genertion(n, foresight, config):
      solar_max_pot = config["imposed_values"]["solar_rooftop_max"]
      max_DAC = 600 #tons/h assuming only 5% of emissions comapred to 1990 values will be removed by DAC
      if planning_horizon == 2040:
+          onwind_max = config["imposed_values"]["onwind"]
           solar = n.generators[
             n.generators.index.str.contains(country) & 
             n.generators.index.str.contains('solar') & 
@@ -507,8 +497,14 @@ def imposed_values_genertion(n, foresight, config):
             n.links.index.str.contains('DAC') & 
             ~n.links.index.str.contains('-2040')].p_nom.sum()
            n.links.loc[f"{country}{suffix} urban central DAC-2040", "p_nom_max"] = (max_DAC - dac) * 0.5
-          n.generators.loc[f"{country}{suffix} solar rooftop-2040", "p_nom_max"] = (solar_max_pot - solar) * 0.35
+          n.generators.loc[f"{country}{suffix} solar rooftop-2040", "p_nom_max"] = (solar_max_pot - solar) * 0.45
           offwind_max_val = config["imposed_values"]["offshore_max"]
+          onwind = n.generators[
+            n.generators.index.str.contains(country) & 
+            n.generators.index.str.contains('onwind') & 
+            ~n.generators.index.str.contains('-2040')
+          ].p_nom.sum()
+          n.generators.loc[f"{country}{suffix} onwind-2040", "p_nom_min"] = onwind_max - onwind
           offwind_val = n.generators[
             n.generators.index.str.contains(country) & 
             n.generators.index.str.contains('offwind')].p_nom_opt.sum()
@@ -527,7 +523,7 @@ def imposed_values_genertion(n, foresight, config):
             n.links.index.str.contains('DAC') & 
             ~n.links.index.str.contains('-2050')].p_nom.sum()
            n.links.loc[f"{country}{suffix} urban central DAC-2050", "p_nom_max"] = max_DAC - dac
-          n.generators.loc[f"{country}{suffix} solar rooftop-2050", "p_nom_max"] = (solar_max_pot - solar) * 0.7
+          n.generators.loc[f"{country}{suffix} solar rooftop-2050", "p_nom_max"] = (solar_max_pot - solar) * 0.8
           offwind_max_val = config["imposed_values"]["offshore_max"]
           offwind_val = n.generators[
             n.generators.index.str.contains(country) & 

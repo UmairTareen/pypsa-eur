@@ -44,7 +44,7 @@ def Cumulative_emissions_sector(country):
  ref.rename(columns=code_to_label, inplace=True)
  ref['Industry'] = ref[['Other energy industry', 'Industrial processes', 'Fuel usage - industry']].sum(axis=1)
  ref = ref.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel usage - industry'])
- ref = ref.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion - maritime bunkers":"Maritime bunkers","biogas to gas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
+ ref = ref.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion – inland waterways":"Inland waterways","biogas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
  ref = ref.loc[:, (ref != 0).any(axis=0)]
  ref['Total'] = ref.sum(axis=1)
  ref_cumulative = ref.drop(columns='Total').cumsum()
@@ -58,7 +58,7 @@ def Cumulative_emissions_sector(country):
  suff.rename(columns=code_to_label, inplace=True)
  suff['Industry'] =suff[['Other energy industry', 'Industrial processes', 'Fuel usage - industry']].sum(axis=1)
  suff = suff.drop(columns=['Other energy industry', 'Industrial processes', 'Fuel usage - industry'])
- suff = suff.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion - maritime bunkers":"Maritime bunkers","biogas to gas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
+ suff = suff.rename(columns={"Fuel combustion - agriculture": "Agriculture", "Fuel combustion - transport": "Transport", "Fuel combustion - aviation bunkers": "Aviation bunkers", "DAC":"DACCS","Fuel combustion – inland waterways":"Inland waterways","biogas": "Biogas","Fuel combustion – residential and tertiary":"Residential and tertiary sectors"})
  suff = suff.loc[:, (suff != 0).any(axis=0)]
  suff['Total'] = suff.sum(axis=1)
  suff_cumulative = suff.drop(columns='Total').cumsum()
@@ -69,19 +69,34 @@ def Cumulative_emissions_sector(country):
  suff_total = suff['Total'].cumsum() 
  
 
+ # colors = {
+ #        "Agriculture": "#008556",
+ #        "Industry": "#feda47",
+ #        "Transport": "#a26643",
+ #        "Residential and tertiary sectors": "#d60a51",
+ #        "Maritime bunkers": "#f18959",
+ #        "Aviation bunkers": "#ff4d00",
+ #        "BECCS": "#889717",
+ #        "Biogas": "#dfeac2",
+ #        "Biomass": "green",
+ #        "DACCS": "#b1d1fc",
+ #        "Heat and power production ": "#75519c",
+ #        "Land use and forestry": "#befdb7",
+ #    }
  colors = {
-        "Agriculture": "#008556",
-        "Industry": "#feda47",
-        "Transport": "#a26643",
-        "Residential and tertiary sectors": "#d60a51",
-        "Maritime bunkers": "#f18959",
-        "Aviation bunkers": "#ff4d00",
-        "BECCS": "#889717",
-        "Biogas": "#dfeac2",
-        "Biomass": "green",
-        "DACCS": "#b1d1fc",
-        "Heat and power production ": "#75519c",
-        "Land use and forestry": "#befdb7",
+        "Agriculture": "#11875d",
+        "Industry": "#fcc006",
+        "Transport": "#c14a09",
+        "Residential and tertiary sectors": "#9a0200",
+        "Inland waterways": "#fd5956",
+        "Aviation bunkers": "#f0833a",
+        "BECCS": "#c5c9c7",
+        "Biogas": "#32bf84",
+        "Biomass": "#11875d",
+        "DACCS": "#ffbacd",
+        "Heat and power production ": "#01889f",
+        "Land use and forestry": "#82cbb2",
+        "GHG Agriculture": "#95d0fc"
     }
 
     # Create subplots
@@ -89,7 +104,7 @@ def Cumulative_emissions_sector(country):
         rows=1, cols=2,
         subplot_titles=[
             "Reference Scenario",
-            "Sufficiency Scenario"
+            "negaWatt BE Scenario"
         ]
     )
 
@@ -210,12 +225,132 @@ def Cumulative_emissions_sector(country):
   pio.write_image(fig, "results/pdf/Cumulative Emissions by Sector.pdf", format='pdf')
  return fig
 
+def spline_plot(country):
+ column_map = {
+     'EV': 'Electricity',
+     'Methanol': 'Others',
+     'Coal': 'Others',
+     'Ammonia': 'Others',
+     'Ambient heat': 'Others',
+     'Solid biomass': 'Biomass',
+     'Network gas': 'Gas',
+     'Network heat / steam': 'Others'
+     }
+ suff = pd.read_excel(f"results/suff/htmls/ChartData_{country}.xlsx", sheet_name="Chart 30", index_col=0,skiprows=2)
+ ref = pd.read_excel(f"results/ref/htmls/ChartData_{country}.xlsx", sheet_name="Chart 30", index_col=0,skiprows=2)
+ suff = suff.rename(columns=column_map)
+ suff = suff.groupby(suff.columns, axis=1).sum()
+ ref = ref.rename(columns=column_map)
+ ref = ref.groupby(ref.columns, axis=1).sum()
+ suff.index = suff.index.astype(int)
+ ref.index = ref.index.astype(int)
+ new_index = range(suff.index.min(), suff.index.max() + 1)
+ suff = suff.reindex(new_index)
+ ref = ref.reindex(new_index)
+ suff = suff.interpolate(method='spline', order=2)
+ ref = ref.interpolate(method='spline', order=2)
+ suff_total = suff.sum(axis=1)
+ ref_total = ref.sum(axis=1)
+ suff_nonzero = suff.loc[:, (suff != 0).any(axis=0)]
+ ref_nonzero = ref.loc[:, (ref != 0).any(axis=0)]
+ bau_value_2020 = ref_total.loc[2020]
+ bau_total_line = [bau_value_2020] * len(ref_total.index)
+
+ tech_colors = config["plotting"]["tech_colors"]
+ tech_colors["Liquid fuels"] = "#c5c9c7"
+ tech_colors["Hydrogen"] = "#95d0fc"
+ tech_colors["Gas"] = "#fcc006"
+ tech_colors["Biomass"] = "#11875d"
+ tech_colors["Electricity"] = "#01889f"
+ tech_colors["Others"] = "#fd5956"
+ fig = go.Figure()
+
+ for col in suff_nonzero.columns:
+    fig.add_trace(go.Scatter(
+        x=suff_nonzero.index,
+        y=suff[col],
+        mode='lines',
+        stackgroup='one',
+        name=col.title(),
+        line=dict(color=tech_colors.get(col, 'gray')) 
+    ))
+
+ fig.add_trace(go.Scatter(
+    x=suff_total.index,
+    y=suff_total,
+    mode='markers+lines',
+    name='Suff Total',
+    line=dict(dash='dot', color='green'),
+    marker=dict(symbol='circle', size=8),
+    showlegend=True
+))
+
+ fig.add_trace(go.Scatter(
+    x=ref_total.index,
+    y=ref_total,
+    mode='markers+lines',
+    name='Ref Total',
+    line=dict(dash='dot', color='red'),
+    marker=dict(symbol='circle', size=8),
+    showlegend=True
+))
+ fig.add_trace(go.Scatter(
+    x=ref_total.index,
+    y=bau_total_line,
+    mode='lines',
+    name='BAU Total',
+    line=dict(color='black', width=2, dash='dash'),
+    showlegend=True
+))
+#  fig.add_trace(go.Scatter(
+#     x=ref_total.index.tolist() + ref_total.index[::-1].tolist(),
+#     y=[bau_value_2020] * len(ref_total) + ref_total[::-1].tolist(),
+#     fill='toself',
+#     fillcolor='rgba(0, 0, 255, 0.1)',  # light blue
+#     line=dict(color='rgba(255,255,255,0)'),
+#     hoverinfo='skip',
+#     # name='Ref vs BAU',
+#     showlegend=True
+# ))
+#  fig.add_trace(go.Scatter(
+#     x=suff_total.index.tolist() + suff_total.index[::-1].tolist(),
+#     y=ref_total.tolist() + suff_total[::-1].tolist(),
+#     fill='toself',
+#     fillcolor='rgba(255, 165, 0, 0.2)',  # light orange
+#     line=dict(color='rgba(255,255,255,0)'),
+#     hoverinfo='skip',
+#     # name='Suff vs Ref',
+#     showlegend=True
+# ))
+
+# Layout
+ fig.update_layout(
+    title='Sufficiency and Reference Scenarios Comparison',
+    xaxis_title='Year',
+    yaxis_title='TWh',
+    hovermode='x unified',
+    template='plotly_white',
+    legend=dict(font=dict(size=15)),
+    xaxis=dict(
+        title_font=dict(size=15),
+        tickfont=dict(size=15)
+    ),
+    yaxis=dict(
+        title_font=dict(size=15),
+        tickfont=dict(size=15)
+    ),
+    height=600,
+    width=1200
+)
+ if country == 'BE':
+  pio.write_image(fig, "results/pdf/Comparison.pdf", format='pdf')
+ return fig
 
 def scenario_costs(country):
     costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_costs.csv")
     costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_costs.csv")
     
-    costs_baseline = costs_ref[['tech', '2020']]
+    costs_baseline = costs_ref[['tech', '2019']]
     costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     
@@ -227,7 +362,7 @@ def scenario_costs(country):
     costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
     costs_suff = costs_suff[['tech', 'Total']]
     costs_suff['Total'] = costs_suff['Total'] / 3
-    costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
+    costs_suff = costs_suff.rename(columns={'Total': 'nW BE'})
     
     combined_df = pd.merge(costs_baseline, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_Ref'))
     combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
@@ -235,7 +370,11 @@ def scenario_costs(country):
     combined_df = combined_df.set_index('tech')
     
     unit='Euros/year'
-    title=f'Total Costs Comparison for {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Total Costs Comparison for {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
     
     fig = go.Figure()
@@ -289,7 +428,7 @@ def scenario_investment_costs(country):
     costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_investment costs.csv")
     costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_investment costs.csv")
     
-    costs_baseline = costs_ref[['tech', '2020']]
+    costs_baseline = costs_ref[['tech', '2019']]
     costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     
@@ -301,7 +440,7 @@ def scenario_investment_costs(country):
     costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
     costs_suff = costs_suff[['tech', 'Total']]
     costs_suff['Total'] = costs_suff['Total'] / 3
-    costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
+    costs_suff = costs_suff.rename(columns={'Total': 'nW BE'})
     
     combined_df = pd.merge(costs_baseline, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
@@ -309,9 +448,13 @@ def scenario_investment_costs(country):
     combined_df = combined_df.set_index('tech')
     
     unit='Euros/year'
-    title=f'Total Investment Costs Comparison for {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Total Investment Costs Comparison for {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
-    
+    tech_colors["Biogas Plants"] = tech_colors["Biomass"]
     fig = go.Figure()
     df_transposed = combined_df.T
 
@@ -327,12 +470,11 @@ def scenario_investment_costs(country):
     
     return fig
 
-
-def operational_costs(country):
-    costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_operational costs.csv")
-    costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_operational costs.csv")
+def scenario_clustered_costs(country):
+    costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_clustered_costs.csv")
+    costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_clustered_costs.csv")
     
-    costs_baseline = costs_ref[['tech', '2020']]
+    costs_baseline = costs_ref[['tech', '2019']]
     costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
     costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
     
@@ -344,7 +486,7 @@ def operational_costs(country):
     costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
     costs_suff = costs_suff[['tech', 'Total']]
     costs_suff['Total'] = costs_suff['Total'] / 3
-    costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
+    costs_suff = costs_suff.rename(columns={'Total': 'nW BE'})
     
     combined_df = pd.merge(costs_baseline, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_Ref'))
     combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
@@ -352,7 +494,60 @@ def operational_costs(country):
     combined_df = combined_df.set_index('tech')
     
     unit='Euros/year'
-    title=f'Total Operational Costs Comparison for {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Total Costs Comparison for {title_country}'
+    tech_colors = config["plotting"]["tech_colors"]
+    tech_colors["Uses"] = "#01889f"
+    tech_colors["Networks"] = "#fcc006"
+    tech_colors["Power Plants"] = "#11875d"
+    tech_colors["Imports"] = "#9a0200"
+    
+    fig = go.Figure()
+    df_transposed = combined_df.T
+
+    for tech in df_transposed.columns:
+        fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, width=0.6, marker_color=tech_colors.get(tech, 'lightgrey')))
+    # fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
+    # Configure layout and labels
+    fig.update_layout(height=500, width=500,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=18),tickfont=dict(size=18)),xaxis=dict(tickfont=dict(size=18)),legend=dict(font=dict(size=18)))
+    fig.update_layout(hovermode='y')
+    if country == 'BE':
+     pio.write_image(fig, "results/pdf/Clustered Costs.pdf", format='pdf')
+
+    return fig
+
+def operational_costs(country):
+    costs_ref = pd.read_csv(f"results/ref/country_csvs/{country}_operational costs.csv")
+    costs_suff = pd.read_csv(f"results/suff/country_csvs/{country}_operational costs.csv")
+    
+    costs_baseline = costs_ref[['tech', '2019']]
+    costs_ref = costs_ref[['tech', '2030', '2040', '2050']]
+    costs_suff = costs_suff[['tech', '2030', '2040', '2050']]
+    
+    costs_ref['Total'] = costs_ref[['2030', '2040', '2050']].sum(axis=1)
+    costs_ref = costs_ref[['tech', 'Total']]
+    costs_ref['Total'] = costs_ref['Total'] / 3
+    costs_ref = costs_ref.rename(columns={'Total': 'Ref'})
+    
+    costs_suff['Total'] = costs_suff[['2030', '2040', '2050']].sum(axis=1)
+    costs_suff = costs_suff[['tech', 'Total']]
+    costs_suff['Total'] = costs_suff['Total'] / 3
+    costs_suff = costs_suff.rename(columns={'Total': 'nW BE'})
+    
+    combined_df = pd.merge(costs_baseline, costs_ref, on='tech', how='outer', suffixes=('_baseline', '_Ref'))
+    combined_df = pd.merge(combined_df, costs_suff, on='tech', how='outer')
+    combined_df = combined_df.fillna(0)
+    combined_df = combined_df.set_index('tech')
+    
+    unit='Euros/year'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Total Operational Costs Comparison for {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
     
     fig = go.Figure()
@@ -419,14 +614,18 @@ def scenario_cumulative_costs(country):
     costs_suff = costs_suff[['tech', 'Total']]
     costs_suff['Total'] = costs_suff['Total'] / 3
     costs_suff['Total'] = costs_suff['Total'] * 30
-    costs_suff = costs_suff.rename(columns={'Total': 'Suff'})
+    costs_suff = costs_suff.rename(columns={'Total': 'nW BE'})
     
     combined_df = pd.merge(costs_suff, costs_ref, on='tech', how='outer', suffixes=('_Suff', '_ref'))
     combined_df = combined_df.fillna(0)
     combined_df = combined_df.set_index('tech')
     
     unit='Euros'
-    title=f'Total Comulative Costs (2020-2050) for {country}'
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f'Total Comulative Costs (2020-2050) for {title_country}'
     tech_colors = config["plotting"]["tech_colors"]
     
     fig = go.Figure()
@@ -448,7 +647,7 @@ def scenario_capacities(country):
     caps_ref = pd.read_csv(f"results/ref/country_csvs/{country}_capacities.csv")
     caps_suff = pd.read_csv(f"results/suff/country_csvs/{country}_capacities.csv")
     
-    caps_baseline = caps_ref[['tech', '2020']]
+    caps_baseline = caps_ref[['tech', '2019']]
     caps_ref = caps_ref[['tech', '2030', '2040', '2050']]
     caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
     
@@ -456,7 +655,7 @@ def scenario_capacities(country):
     caps_ref = caps_ref.rename(columns={'2050': 'Ref'})
     
     caps_suff = caps_suff[['tech', '2050']]
-    caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
+    caps_suff = caps_suff.rename(columns={'2050': 'nW BE'})
     
     combined_df = pd.merge(caps_baseline, caps_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
@@ -464,11 +663,16 @@ def scenario_capacities(country):
     combined_df = combined_df.set_index('tech')
     
     unit='Capacity [GW]'
-    title=f"Capacities for {country}"
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f"Capacities for {title_country}"
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
+    tech_colors["Transmission lines"] = tech_colors["Transmission Lines"]
+    # colors["AC Transmission lines"] = "#FF3030"
+    # colors["DC Transmission lines"] = "#104E8B"
     
     fig = go.Figure()
     groups = [
@@ -482,11 +686,11 @@ def scenario_capacities(country):
         ["nuclear"],
     ]
     groupss = [
-        ["solar"],
+        ["solar PV"],
         ["onshore wind", "offshore wind"],
         ["power-to-heat"],
         ["power-to-gas"],
-        ["transmission lines"],
+        ["Transmission lines"],
         ["gas pipeline","gas pipeline new"],
         ["CCGT"],
         ["nuclear"],
@@ -495,9 +699,10 @@ def scenario_capacities(country):
         value = groups
     else:
         value = groupss
+    def smart_capitalize(phrase):
+     return phrase[0].upper() + phrase[1:] if phrase and not phrase[0].isupper() else phrase
 
-    fig = make_subplots(rows=2, cols=len(value) // 2, subplot_titles=[
-        f"{', '.join(tech_group)}" for tech_group in value], shared_yaxes=True)
+    fig = make_subplots(rows=2, cols=len(value) // 2, subplot_titles=[", ".join(smart_capitalize(t) for t in tech_group) for tech_group in value], shared_yaxes=True)
 
     df = combined_df
 
@@ -511,14 +716,14 @@ def scenario_capacities(country):
             trace = go.Bar(
                 x=df.columns,
                 y=y_values,
-                name=f"{tech}",
+                name=smart_capitalize(tech),
                 marker_color=tech_colors.get(tech, 'gray')
             )
             fig.add_trace(trace, row=row_idx, col=col_idx)
             fig.update_yaxes(title_text=unit, row=2, col=1)
 
     # Update layout
-    fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    fig.update_layout(height=800, width=1200, showlegend=True, title=f"Capacities for {country} in 2050 compared to 2020", yaxis_title=unit,legend=dict(font=dict(size=15)))
     logo['y']=1.021
     num_cols = len(value) // 2 + (len(value) % 2 > 0)
     for row in [1, 2]:
@@ -538,7 +743,7 @@ def scenario_capacities(country):
 def storage_capacities(country):
     caps_ref = pd.read_csv(f"results/ref/country_csvs/{country}_storage_capacities.csv")
     caps_suff = pd.read_csv(f"results/suff/country_csvs/{country}_storage_capacities.csv")
-    caps_baseline = caps_ref[['tech', '2020']]
+    caps_baseline = caps_ref[['tech', '2019']]
     caps_ref = caps_ref[['tech', '2030', '2040', '2050']]
     caps_suff = caps_suff[['tech', '2030', '2040', '2050']]
     
@@ -546,7 +751,7 @@ def storage_capacities(country):
     caps_ref = caps_ref.rename(columns={'2050': 'Ref'})
     
     caps_suff = caps_suff[['tech', '2050']]
-    caps_suff = caps_suff.rename(columns={'2050': 'Suff'})
+    caps_suff = caps_suff.rename(columns={'2050': 'nW BE'})
     
     combined_df = pd.merge(caps_baseline, caps_ref, on='tech', how='outer', suffixes=('_baseline', '_ref'))
     combined_df = pd.merge(combined_df, caps_suff, on='tech', how='outer')
@@ -554,17 +759,22 @@ def storage_capacities(country):
     combined_df = combined_df.set_index('tech')
     
     unit='Capacity [GWh]'
-    title=f"Storage Capacities for {country}"
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    title=f"Storage Capacities for {title_country}"
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
     colors["Thermal Energy storage"] = colors["urban central water tanks"]
-    colors["Grid-scale"] = 'green'
+    colors["Grid-scale battery"] = 'green'
+    colors["Gas storage"] = colors["gas"]
     
     fig = go.Figure()
     groups = [
         ["Grid-scale battery"],
         ["Thermal Energy storage"],
-        ["gas"],
+        ["Gas storage"],
     ]
 
     fig = make_subplots(rows=1, cols=len(groups) // 1, subplot_titles=[
@@ -589,7 +799,7 @@ def storage_capacities(country):
             fig.update_yaxes(title_text=unit, row=2, col=1)
 
     # Update layout
-    fig.update_layout(height=500, width=1200, showlegend=True, title=f"Capacities for {country}_2050 compared to 2020", yaxis_title=unit,legend=dict(font=dict(size=15)))
+    fig.update_layout(height=500, width=1200, showlegend=True, title=f"Capacities for {country} in 2050 compared to 2020", yaxis_title=unit,legend=dict(font=dict(size=15)))
     logo['y']=1.05
     num_cols = len(groups)
     for col in range(1, num_cols + 1):
@@ -609,10 +819,11 @@ def crabon_capture_techs(country):
     carbon_ref = pd.read_excel(f"results/ref/sepia/inputs{country}.xlsx", sheet_name="Inputs_co2", index_col=2)
     carbon_suff = pd.read_excel(f"results/suff/sepia/inputs{country}.xlsx", sheet_name="Inputs_co2", index_col=2)
     carbon_ref.drop(columns=['label', 'source','2030', '2040'], inplace=True)
+    carbon_ref.rename(columns={"2020": "2019"}, inplace=True)
     carbon_suff.drop(columns=['label', 'source','2020', '2030', '2040'], inplace=True)
     rename_dict = {
         'emmprocessccst': 'CC',
-        'emmdac': 'DAC',
+        'emmdac': 'CC(DAC)',
         'emmindbeccs': 'CC',
         'emmbmchpcc': 'CC',
         'emmbiogasatcc': 'CC',
@@ -633,18 +844,24 @@ def crabon_capture_techs(country):
     carbon_ref = carbon_ref.groupby(level=0).sum()
     carbon_suff = carbon_suff.groupby(level=0).sum()
     carbon_ref.rename(columns={'2050': 'Ref'}, inplace=True)
-    carbon_suff.rename(columns={'2050': 'Suff'}, inplace=True)
+    carbon_suff.rename(columns={'2050': 'nW BE'}, inplace=True)
     carbon_combined = pd.concat([carbon_ref, carbon_suff], axis=1)
     carbon_combined.fillna(0, inplace=True)
     carbon_combined = carbon_combined.round(1)
     desired_order = ['CCU', 'CC', 'DAC', 'CCS', ]  # Define your preferred order
     carbon_combined = carbon_combined.reindex(desired_order)
 
+    # color_palette = {
+    #     'CC': '#f2385a',
+    #     'DAC': '#ff5270',
+    #     'CCS': '#f29dae',
+    #     'CCU': '#B98F76',
+    # }
     color_palette = {
-        'CC': '#f2385a',
-        'DAC': '#ff5270',
-        'CCS': '#f29dae',
-        'CCU': '#B98F76',
+        'CC': '#9a0200',
+        'CC(DAC)': '#ffbacd',
+        'CCS': '#c14a09',
+        'CCU': '#fd5956',
     }
     num_pies = len(carbon_combined.columns)
     fig = make_subplots(
@@ -712,7 +929,11 @@ def crabon_capture_techs(country):
         ) for idx, column in enumerate(carbon_combined.columns)
     ]
      )
-    fig.update_layout(height=800, width=1400, title=f"Required carbon capture capacities for {country}_2050 compared to 2020",legend=dict(font=dict(size=15)))
+    if country == "EU":
+     title_country = "5 Countries"
+    else:
+     title_country = country
+    fig.update_layout(height=800, width=1400, title=f"Required carbon capture capacities for {title_country} in 2050 compared to 2019",legend=dict(font=dict(size=15)))
     logo['y']=1.05
     if country == 'BE':
      pio.write_image(fig, "results/pdf/Carbon capture capacities.pdf", format='pdf')
@@ -732,9 +953,17 @@ def belgium_energy_independence():
  country_names = [feature["properties"]["NAME"] for feature in europe_geojson["features"]]
  z_vals = [visible_countries.get(name, None) for name in country_names]
  imports_ref = pd.read_csv("results/ref/country_csvs/total_imports_BE.csv",index_col=0).clip(lower=0)
+ imports_ref.rename(index={2020: 2019}, inplace=True)
  imports_suff = pd.read_csv("results/suff/country_csvs/total_imports_BE.csv",index_col=0).clip(lower=0)
  local_ref = pd.read_csv("results/ref/country_csvs/local_product_BE.csv",index_col=0).clip(lower=0)
+ local_ref.rename(index={2020: 2019}, inplace=True)
  local_suff = pd.read_csv("results/suff/country_csvs/local_product_BE.csv",index_col=0).clip(lower=0)
+ exports_ref = pd.read_csv("results/ref/country_csvs/exports_BE.csv", index_col=0).clip(lower=0)
+ exports_ref = exports_ref.loc[2050]
+ exports_ref = exports_ref.sum()
+ exports_suff = pd.read_csv("results/suff/country_csvs/exports_BE.csv", index_col=0).clip(lower=0)
+ exports_suff = exports_suff.loc[2050]
+ exports_suff = exports_suff.sum()
  base_cols = {
     'imp_gaz_pe': 'Natural gas',
     'imp_pet_pe': 'Petroleum',
@@ -743,32 +972,47 @@ def belgium_energy_independence():
     'imp_hyd_se': 'Hydrogen',
     'imp_enc_pe': 'Solid biomass',
     'imp_amm_fe': 'Ammonia',
+    'imp_ura_pe': 'Uranium',
     'imp_met_fe': 'Methanol'}
+ # carrier_colors = {
+ #    'Natural gas': '#e05b09',
+ #    'Petroleum': '#c9c9c9',
+ #    'Electricity': '#110d63',
+ #    'Coal': '#545454',
+ #    'Hydrogen': '#bf13a0',
+ #    'Solid biomass': '#baa741',
+ #    'Ammonia': '#46caf0',
+ #    'Methanol': '#468c8b',
+ #    'Local production': 'black',
+ #    'Net imports': 'whitesmoke'}
  carrier_colors = {
-    'Natural gas': '#e05b09',
-    'Petroleum': '#c9c9c9',
-    'Electricity': '#110d63',
-    'Coal': '#545454',
-    'Hydrogen': '#bf13a0',
-    'Solid biomass': '#baa741',
-    'Ammonia': '#46caf0',
-    'Methanol': '#468c8b',
+    'Natural gas': '#f0833a ',
+    'Petroleum': '#c5c9c7',
+    'Electricity': '#01889f',
+    'Coal': '#9a0200',
+    'Hydrogen': '#95d0fc',
+    'Solid biomass': '#11875d',
+    'Ammonia': '#fddc5c',
+    'Methanol': '#82cbb2',
+    'Uranium': '#ffbacd',
     'Local production': 'black',
-    'Imports': 'whitesmoke'}
+    'Net imports': 'whitesmoke'}
  ref_renamed = {k: f"{v}" for k, v in base_cols.items()}
  suff_renamed = {k: f"{v}" for k, v in base_cols.items()}
  imports_ref.rename(columns=ref_renamed, inplace=True)
  imports_suff.rename(columns=suff_renamed, inplace=True)
  imports_ref_2050 = imports_ref.loc[2050]
  imports_suff_2050 = imports_suff.loc[2050]
- imports_2020 = imports_ref.loc[2020]
+ imports_2020 = imports_ref.loc[2019]
 
  imports_ref_2050_sum = imports_ref.loc[2050].sum()
+ imports_ref_2050_sum = imports_ref_2050_sum - exports_ref
  imports_suff_2050_sum = imports_suff.loc[2050].sum()
- imports_2020_sum = imports_ref.loc[2020].sum()
+ imports_suff_2050_sum = imports_suff_2050_sum - exports_suff
+ imports_2020_sum = imports_ref.loc[2019].sum()
  local_ref_2050_sum = local_ref.loc[2050].sum()
  local_suff_2050_sum = local_suff.loc[2050].sum()
- local_2020_sum = local_ref.loc[2020].sum()
+ local_2020_sum = local_ref.loc[2019].sum()
 
  num_pies= 3
  fig = make_subplots(
@@ -782,7 +1026,7 @@ def belgium_energy_independence():
     vertical_spacing=0.01,
     horizontal_spacing=0.01,
     subplot_titles=(
-        "", "2020", "Ref (2050)", "Suff (2050)",
+        "", "2019 imports", "Ref imports (2050)", "nW BE imports (2050)",
         "", "", "", ""
     )
 )
@@ -821,7 +1065,7 @@ def belgium_energy_independence():
     labels=labels,
     values=values,
     hole=0.5,
-    name="2020",
+    name="2019",
     scalegroup='group1',
     marker=dict(colors=colors)
 ), row=1, col=2)
@@ -851,36 +1095,36 @@ def belgium_energy_independence():
 ), row=1, col=4)
 
  fig.add_trace(go.Pie(
-    labels=["Imports", "Local production"],
+    labels=["Net imports", "Local production"],
     values=[imports_2020_sum,local_2020_sum],
     hole=0.5,
     name="Total",
     # textinfo='percent+value',
     scalegroup='group2',
-    marker=dict(colors=[carrier_colors["Imports"], carrier_colors["Local production"]])
+    marker=dict(colors=[carrier_colors["Net imports"], carrier_colors["Local production"]])
 ), row=2, col=2)
 
  fig.add_trace(go.Pie(
-    labels=["Imports", "Local production"],
+    labels=["Net imports", "Local production"],
     values=[imports_ref_2050_sum,local_ref_2050_sum],
     hole=0.5,
     name="Total",
     # textinfo='label+value',
     scalegroup='group2',
-    marker=dict(colors=[carrier_colors["Imports"], carrier_colors["Local production"]])
+    marker=dict(colors=[carrier_colors["Net imports"], carrier_colors["Local production"]])
 ), row=2, col=3)
 
  fig.add_trace(go.Pie(
-    labels=["Imports", "Local production"],
+    labels=["Net imports", "Local production"],
     values=[imports_suff_2050_sum,local_suff_2050_sum],
     hole=0.5,
     name="Total",
     # textinfo='label+value',
     scalegroup='group2',
-    marker=dict(colors=[carrier_colors["Imports"], carrier_colors["Local production"]])
+    marker=dict(colors=[carrier_colors["Net imports"], carrier_colors["Local production"]])
 ), row=2, col=4)
  
- fig.update_layout(height=800, width=1400, title="Belgium energy independence compared to 2020",legend=dict(font=dict(size=15)))
+ fig.update_layout(height=800, width=1400, title="Belgium energy independence compared to 2019",legend=dict(font=dict(size=15)))
  logo['y']=1.05
  if country == 'BE':
   pio.write_image(fig, "results/pdf/Belgium energy independence.pdf", format='pdf')
@@ -905,7 +1149,7 @@ def create_scenario_plots():
  demands_suff= demands_suff[3:]
  demands_suff.columns = new_header
  demands_suff.set_index(new_header[0], inplace=True)
- demands_suff = demands_suff.drop(['Non-energy', 'Aviation bunkers', 'Maritime bunkers'], axis=1)
+ demands_suff = demands_suff.drop(['Non-energy', 'Aviation bunkers', 'Inland waterways'], axis=1)
  elec_demand_suff = demands_suff.loc[str(2050)].sum()
  total_costs_suff=pd.read_csv("results/suff/country_csvs/BE_costs.csv", index_col=0)
  total_costs_suff_2050 = total_costs_suff[['2030', '2040', '2050']].sum(axis=1)
@@ -927,7 +1171,7 @@ def create_scenario_plots():
  demands_ref = demands_ref[3:]  # drop all rows above the third row
  demands_ref.columns = new_header  # set the third row as the header
  demands_ref.set_index(new_header[0], inplace=True)
- demands_ref = demands_ref.drop(['Non-energy', 'Aviation bunkers', 'Maritime bunkers'], axis=1)
+ demands_ref = demands_ref.drop(['Non-energy', 'Aviation bunkers', 'Inland waterways'], axis=1)
  elec_demand_ref = demands_ref.loc[str(2050)].sum()
  total_costs_ref=pd.read_csv("results/ref/country_csvs/BE_costs.csv", index_col=0)
  total_costs_ref_2050 = total_costs_ref[['2030', '2040', '2050']].sum(axis=1)
@@ -959,10 +1203,10 @@ def create_scenario_plots():
  # combined_df.rename(index=rename_dict, inplace=True)
 
 
- scenarios['Pypsa-sufficiency'] = None
- scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-sufficiency'] = elec_demand_suff
- scenarios.loc['Average Investment Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = investment_suff_2050
- scenarios.loc['Average Annual Costs(Billion Euros/year)', 'Pypsa-sufficiency'] = total_costs_suff_2050
+ scenarios['Pypsa-nW BE'] = None
+ scenarios.loc['Final Energy Demand (Twh)', 'Pypsa-nW BE'] = elec_demand_suff
+ scenarios.loc['Average Investment Costs(Billion Euros/year)', 'Pypsa-nW BE'] = investment_suff_2050
+ scenarios.loc['Average Annual Costs(Billion Euros/year)', 'Pypsa-nW BE'] = total_costs_suff_2050
  # scenarios.loc['Emissions(%)', 'Pypsa-sufficiency'] = -95
 
  scenarios['Pypsa-Ref'] = None
@@ -974,13 +1218,13 @@ def create_scenario_plots():
  techs = ['solar', 'onshore wind','offshore wind', 'nuclear']
 
  for tech in techs:
-    scenarios.loc[tech, 'Pypsa-sufficiency'] = capacities_suff_2050.loc[tech, '2050']
+    scenarios.loc[tech, 'Pypsa-nW BE'] = capacities_suff_2050.loc[tech, '2050']
     scenarios.loc[tech, 'Pypsa-Ref'] = capacities_ref_2050.loc[tech, '2050']
 
- scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-sufficiency'] = capacities_suff_2050.loc['H2 turbine', '2050']
- scenarios.loc['CCGT/OCGT', 'Pypsa-sufficiency'] = capacities_suff_2050.loc['CCGT', '2050']
- scenarios.loc['Interconnections', 'Pypsa-sufficiency'] = transmission_suff
- scenarios.loc['Others', 'Pypsa-sufficiency'] = capacities_suff_2050.loc['hydroelectricity', '2050']
+ scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-nW BE'] = capacities_suff_2050.loc['H2 turbine', '2050']
+ scenarios.loc['CCGT/OCGT', 'Pypsa-nW BE'] = capacities_suff_2050.loc['CCGT', '2050']
+ scenarios.loc['Interconnections', 'Pypsa-nW BE'] = transmission_suff
+ scenarios.loc['Others', 'Pypsa-nW BE'] = capacities_suff_2050.loc['hydroelectricity', '2050']
 
  scenarios.loc['Hydrogen Turbines or CHPs', 'Pypsa-Ref'] = capacities_ref_2050.loc['H2 turbine', '2050']
  scenarios.loc['CCGT/OCGT', 'Pypsa-Ref'] = capacities_ref_2050.loc['CCGT', '2050']
@@ -1001,15 +1245,15 @@ def create_scenario_plots():
  scenarios_data["Residential & Tertiary"] = None 
  scenarios_data["LULUCF"] = None 
 
- new_rows = pd.DataFrame(columns=scenarios_data.columns, index=["Climact PAC2.0", "PyPSA-Sufficiency", "PyPSA-Ref"])
+ new_rows = pd.DataFrame(columns=scenarios_data.columns, index=["Climact PAC2.0", "PyPSA-nW BE", "PyPSA-Ref"])
  scenarios_data = pd.concat([scenarios_data, new_rows])
  scenarios_data.loc["McKinsey", ["Power", "Industry", "Domestic Transport", 
                             "Agriculture", "LULUCF", "Residential & Tertiary"]] = "✔"
  scenarios_data.loc["McKinsey", ["Maritime Transport (Domestic)", "Maritime Transport (International)","Aviation Transport"]] = "X"
- scenarios_data.loc["PyPSA-Sufficiency", :] = "✔"
+ scenarios_data.loc["PyPSA-nW BE", :] = "✔"
  scenarios_data.loc["PyPSA-Ref", :] = "✔"
  scenarios_data.loc["PyPSA-Ref", ["Maritime Transport (International)"]] = "X"
- scenarios_data.loc["PyPSA-Sufficiency", ["Maritime Transport (International)"]] = "X"
+ scenarios_data.loc["PyPSA-nW BE", ["Maritime Transport (International)"]] = "X"
  scenarios_data.loc["CLEVER", :] = "✔"
  scenarios_data.loc["Climact PAC2.0", :] = "✔"
  scenarios_data.loc["Climact PAC2.0", ["Maritime Transport (International)"]] = "X"
@@ -1019,12 +1263,12 @@ def create_scenario_plots():
  scenarios_data.loc["Elia Blue Print(Elec)", ["Maritime Transport (International)"]] = "50%"
  scenarios_data.loc["Elia Blue Print(GA)", ["Maritime Transport (International)"]] = "50%"
  scenarios_data.loc["Elia Blue Print(DE)", ["Maritime Transport (International)"]] = "50%"
- scenarios_data.loc["Energyville(Shift)", ["Power", "Industry", "Domestic Transport", 
+ scenarios_data.loc["Energyville(2023)(Shift)", ["Power", "Industry", "Domestic Transport", 
                             "Residential & Tertiary", "Agriculture", "Maritime Transport (Domestic)"]] = "✔"
- scenarios_data.loc["Energyville(Shift)", ["Maritime Transport (International)", "LULUCF", "Aviation Transport"]] = "X"
- scenarios_data.loc["Energyville(Central)", ["Power", "Industry", "Domestic Transport", 
+ scenarios_data.loc["Energyville(2023)(Shift)", ["Maritime Transport (International)", "LULUCF", "Aviation Transport"]] = "X"
+ scenarios_data.loc["Energyville(2023)(Central)", ["Power", "Industry", "Domestic Transport", 
                             "Residential & Tertiary", "Agriculture", "Maritime Transport (Domestic)"]] = "✔"
- scenarios_data.loc["Energyville(Central)", ["Maritime Transport (International)", "LULUCF", "Aviation Transport"]] = "X"
+ scenarios_data.loc["Energyville(2023)(Central)", ["Maritime Transport (International)", "LULUCF", "Aviation Transport"]] = "X"
 
  scenarios_transposed = scenarios.transpose()
  figures = {}
@@ -1040,18 +1284,19 @@ def create_scenario_plots():
  if country == 'BE':
   pio.write_image(fig_demand, "results/pdf/Scenario demands comparison.pdf", format='pdf')
  figures['demand'] = fig_demand
-
+ def smart_capitalize(phrase):
+    return phrase[0].upper() + phrase[1:] if phrase and not phrase[0].isupper() else phrase
  # Plot the bar chart for VRE capacities
  columns_to_plot_vre = ['solar', 'onshore wind', 'offshore wind']
  colors_vre = {
-        'solar': '#f9d002',
-        'onshore wind': '#235ebc',
-        'offshore wind': '#6895dd',
+        'solar': '#fcc006',
+        'onshore wind': '#06b1c4',
+        'offshore wind': '#95d0fc',
     }
  fig_vre = go.Figure()
  for column in columns_to_plot_vre:
         color = colors_vre.get(column, None)
-        fig_vre.add_trace(go.Bar(name=column, x=scenarios_transposed.index, y=scenarios_transposed[column], marker_color=color))
+        fig_vre.add_trace(go.Bar(name=smart_capitalize(column), x=scenarios_transposed.index, y=scenarios_transposed[column], marker_color=color))
  fig_vre.update_layout(
         title="VRE capacities for scenarios in 2050",
         xaxis_title="Scenario",
@@ -1065,16 +1310,16 @@ def create_scenario_plots():
  # Plot the bar chart for Flexibility options
  columns_to_plot_flex = ['nuclear', 'Hydrogen Turbines or CHPs', 'CCGT/OCGT', 'Interconnections', 'Others']
  colors_flex = {
-        'nuclear': '#ff8c00',
-        'Hydrogen Turbines or CHPs': '#bf13a0',
-        'CCGT/OCGT': '#a85522',
-        'Interconnections': '#6c9459',
-        'Others': '#cc1f1f'
+        'nuclear': '#fd5956',
+        'Hydrogen Turbines or CHPs': '#9a0200',
+        'CCGT/OCGT': '#c14a09',
+        'Interconnections': '#06b1c4',
+        'Others': '#82cbb2'
     }
  fig_flex = go.Figure()
  for column in columns_to_plot_flex:
         color = colors_flex.get(column, None)
-        fig_flex.add_trace(go.Bar(name=column, x=scenarios_transposed.index, y=scenarios_transposed[column], marker_color=color))
+        fig_flex.add_trace(go.Bar(name=smart_capitalize(column), x=scenarios_transposed.index, y=scenarios_transposed[column], marker_color=color))
  fig_flex.update_layout(
         title="Flexibility options in electricity grid for scenarios in 2050",
         xaxis_title="Scenario",
@@ -1088,8 +1333,8 @@ def create_scenario_plots():
  # Plot the bar chart for Costs
  columns_to_plot_costs = ['Average Annual Costs(Billion Euros/year)', 'Average Investment Costs(Billion Euros/year)']
  colors_costs = {
-        'Average Annual Costs(Billion Euros/year)': 'blue',
-        'Average Investment Costs(Billion Euros/year)': 'green'
+        'Average Annual Costs(Billion Euros/year)': '#01889f',
+        'Average Investment Costs(Billion Euros/year)': '#11875d'
     }
  fig_costs = go.Figure()
  for column in columns_to_plot_costs:
@@ -1139,17 +1384,24 @@ def create_scenario_plots():
  # figures['historic'] = fig_historic
  
  fig_scenarios_data = go.Figure(data=[go.Table(
+     columnwidth=[200] + [100] * len(scenarios_data.columns),
      header=dict(
          values=["Scenario"] + list(scenarios_data.columns),  # Add the 'Scenario' column header at the start
          fill_color='paleturquoise',
-         align='center'
+         align='center',
+         font=dict(size=14)
      ),
      cells=dict(
          values=[scenarios_data.index] + [scenarios_data[col] for col in scenarios_data.columns],  # Include the index as a column
          fill_color='lavender',
-         align='center'
+         align='center',
+         font=dict(size=12),
+         height=30
      )
  )])
+ fig_scenarios_data.update_layout(
+    width=1200,
+    height=700)
  
  figures['scenarios_data'] = fig_scenarios_data
  
@@ -1194,7 +1446,9 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     country_desc = get_country_specific_desc(country, html_texts)
 
     cummulative_emm_desc = country_desc.get(f"{country}_cumulative_emissions_sce", '')
+    comparison_desc = country_desc.get(f"{country}_comparison_sce", '')
     annual_costs_desc = country_desc.get(f"{country}_annual_costs_sce", '')
+    annual_clustered_costs_desc = country_desc.get(f"{country}_annual_clustered_costs_desc", '')
     investment_costs_desc = country_desc.get(f"{country}_investment_costs_sce", '')
     operational_costs_desc = country_desc.get(f"{country}_operational_costs_desc", '')
     cumu_investment_costs_desc = country_desc.get(f"{country}_cumu_investment_costs_sce", '')
@@ -1213,40 +1467,48 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
     with open(snakemake.input.plots_html, 'r') as file:
      plots = yaml.safe_load(file)
     scenario_plots = plots.get("Scenario_plots", {})
-    
+    display_country = "5 Countries" if country == "EU" else country
     if scenario_plots["Cummulative Emissions"] == True:
      emm_chart = Cumulative_emissions_sector(country)
-     combined_html += f"<div><h2>{country} - Cumulative Emissions</h2>{emm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     combined_html += f"<div><h2>{display_country} - Cumulative Emissions</h2>{emm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     
+    if scenario_plots["Comparison Energy"] == True:
+     comm_chart = spline_plot(country)
+     combined_html += f"<div><h2>{display_country} - Energy Consumption Comparison</h2>{comm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     # Create bar chart
     if scenario_plots["Annual Costs"] == True:
      bar_chart = scenario_costs(country)
-     combined_html += f"<div><h2>{country} - Annual Costs</h2>{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     combined_html += f"<div><h2>{display_country} - Annual Costs</h2>{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     
+    if scenario_plots["Annual Clustered Costs"] == True:
+     bar_chart_clustered = scenario_clustered_costs(country)
+     combined_html += f"<div><h2>{display_country} - Annual Total Costs</h2>{bar_chart_clustered.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     if scenario_plots["Annual Investment Costs"] == True:
      bar_chart_investment = scenario_investment_costs(country)
-     combined_html += f"<div><h2>{country} - Annual Investment Costs</h2>{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     combined_html += f"<div><h2>{display_country} - Annual Investment Costs</h2>{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
      
     if scenario_plots["Annual Operational Costs"] == True:
      bar_chart_operational = operational_costs(country)
-     combined_html += f"<div><h2>{country} - Annual Operational Costs</h2>{bar_chart_operational.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     combined_html += f"<div><h2>{display_country} - Annual Operational Costs</h2>{bar_chart_operational.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     if scenario_plots["Cummulative Investment Costs"] == True:
      bar_chart_cumulative = scenario_cumulative_costs(country)
-     combined_html += f"<div><h2>{country} - Cumulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     combined_html += f"<div><h2>{display_country} - Cumulative Investment Costs (2023-2050)</h2>{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     # Create capacities chart
     if scenario_plots["Capacities"] == True:
      capacities_chart = scenario_capacities(country)
-     combined_html += f"<div><h2>{country} - Capacities</h2>{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     combined_html += f"<div><h2>{display_country} - Capacities</h2>{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     
     # Create storage capacities chart
     if scenario_plots["Storage Capacities"] == True:
      storage_capacities_chart = storage_capacities(country)
-     combined_html += f"<div><h2>{country} -  Storage Capacities</h2>{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     combined_html += f"<div><h2>{display_country} -  Storage Capacities</h2>{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
      
      if scenario_plots["CC Capacities"] == True:
       cc_capacities_chart = crabon_capture_techs(country)
-      combined_html += f"<div><h2>{country} - Required Carbon Capture Capacities</h2>{cc_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+      combined_html += f"<div><h2>{display_country} - Required Carbon Capture Capacities</h2>{cc_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
       
      if country == 'BE':
       if scenario_plots["Energy Independence"] == True:
@@ -1288,21 +1550,25 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
         main_content = ''
     # Create the content for the "Table of Contents" and "Main" sections
     if scenario_plots["Cummulative Emissions"] == True:
-     table_of_contents_content += f"<a href='#{country} - Cumulative Emissions'>Cumulative Emissions</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Cumulative Emissions'>Cumulative Emissions</a><br>"
+    if scenario_plots["Comparison Energy"] == True:
+     table_of_contents_content += f"<a href='#{display_country} - Energy Consumption Comparison'>Energy Consumption Comparison</a><br>"
     if scenario_plots["Annual Costs"] == True:
-     table_of_contents_content += f"<a href='#{country} - Annual Costs'>Annual Costs</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Annual Costs'>Annual Costs</a><br>"
+    if scenario_plots["Annual Clustered Costs"] == True:
+     table_of_contents_content += f"<a href='#{display_country} - Annual Total Costs'>Annual Total Costs</a><br>"
     if scenario_plots["Annual Investment Costs"] == True:
-     table_of_contents_content += f"<a href='#{country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Annual Investment Costs'>Annual Investment Costs</a><br>"
     if scenario_plots["Annual Operational Costs"] == True:
-     table_of_contents_content += f"<a href='#{country} - Annual Operational Costs'>Annual Operational Costs</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Annual Operational Costs'>Annual Operational Costs</a><br>"
     if scenario_plots["Cummulative Investment Costs"] == True:
-     table_of_contents_content += f"<a href='#{country} - Cumulative Investment Costs (2020-2050)'>Cumulative Investment Costs (2020-2050)</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Cumulative Investment Costs (2020-2050)'>Cumulative Investment Costs (2020-2050)</a><br>"
     if scenario_plots["Capacities"] == True:
-     table_of_contents_content += f"<a href='#{country} - Capacities'>Capacities</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Capacities'>Capacities</a><br>"
     if scenario_plots["Storage Capacities"] == True:
-     table_of_contents_content += f"<a href='#{country} - Storage Capacities'>Storage Capacities</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Storage Capacities'>Storage Capacities</a><br>"
     if scenario_plots["CC Capacities"] == True:
-     table_of_contents_content += f"<a href='#{country} - Required Carbon Capture Capacities'>Carbon Capture Capacities</a><br>"
+     table_of_contents_content += f"<a href='#{display_country} - Required Carbon Capture Capacities'>Carbon Capture Capacities</a><br>"
     if country == 'BE':
      if scenario_plots["Energy Independence"] == True:
       table_of_contents_content += f"<a href='#{country} - Energy Independence'>Energy Independence</a><br>"
@@ -1322,21 +1588,25 @@ def create_combined_scenario_chart_country(country, output_folder='results/scena
 
     # Add more links for other plots
     if scenario_plots["Cummulative Emissions"] == True:
-     main_content += f"<div id='{country} - Cumulative Emissions'><h2>{country} - Cumulative Emissions</h2>{cummulative_emm_desc}{emm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Cumulative Emissions'><h2>{display_country} - Cumulative Emissions</h2>{cummulative_emm_desc}{emm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+    if scenario_plots["Comparison Energy"] == True:
+     main_content += f"<div id='{display_country} - Energy Consumption Comparison'><h2>{display_country} - Energy Consumption Comparison</h2>{comparison_desc}{comm_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Annual Costs"] == True:
-     main_content += f"<div id='{country} - Annual Costs'><h2>{country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Annual Costs'><h2>{display_country} - Annual Costs</h2>{annual_costs_desc}{bar_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+    if scenario_plots["Annual Clustered Costs"] == True:
+     main_content += f"<div id='{display_country} - AnnualTotal  Costs'><h2>{display_country} - Annual Total Costs</h2>{annual_clustered_costs_desc}{bar_chart_clustered.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Annual Investment Costs"] == True:
-     main_content += f"<div id='{country} - Annual Investment Costs'><h2>{country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Annual Investment Costs'><h2>{display_country} - Annual Investment Costs</h2>{investment_costs_desc}{bar_chart_investment.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Annual Operational Costs"] == True:
-     main_content += f"<div id='{country} - Annual Operational Costs'><h2>{country} - Annual Operational Costs</h2>{operational_costs_desc}{bar_chart_operational.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Annual Operational Costs'><h2>{display_country} - Annual Operational Costs</h2>{operational_costs_desc}{bar_chart_operational.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Cummulative Investment Costs"] == True:
-     main_content += f"<div id='{country} - Cumulative Investment Costs (2020-2050)'><h2>{country} - Cumulative Investment Costs (2020-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Cumulative Investment Costs (2020-2050)'><h2>{display_country} - Cumulative Investment Costs (2020-2050)</h2>{cumu_investment_costs_desc}{bar_chart_cumulative.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Capacities"] == True:
-     main_content += f"<div id='{country} - Capacities'><h2>{country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Capacities'><h2>{display_country} - Capacities</h2>{capacities_desc}{capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["Storage Capacities"] == True:
-     main_content += f"<div id='{country} - Storage Capacities'><h2>{country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Storage Capacities'><h2>{display_country} - Storage Capacities</h2>{storage_capacities_desc}{storage_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if scenario_plots["CC Capacities"] == True:
-     main_content += f"<div id='{country} - Required Carbon Capture Capacities'><h2>{country} - Required Carbon Capture Capacities</h2>{cc_capacities_desc}{cc_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
+     main_content += f"<div id='{display_country} - Required Carbon Capture Capacities'><h2>{display_country} - Required Carbon Capture Capacities</h2>{cc_capacities_desc}{cc_capacities_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"
     if country == 'BE':
      if scenario_plots["Energy Independence"] == True:
       main_content += f"<div id='{country} - Energy Independence'><h2>{country} - Energy Independence</h2>{be_energy_ind_desc}{energy_ind_chart.to_html(full_html=False, include_plotlyjs='cdn')}</div>"

@@ -15,8 +15,10 @@ Sepia_plots:
 Pypsa_plots:
  Sectoral Demands: true
  Annual Costs: true
+ Annual Clustered Costs: true
  Annual Investment Costs: true
  Annual Operational Costs: true
+ CO2 and Electricity Prices: true
  Capacities: true
  Storage Capacities: true
  Heat Dispatch Winter: true
@@ -29,7 +31,9 @@ Pypsa_plots:
  
 Scenario_plots:
  Cummulative Emissions: true
+ Comparison Energy: true
  Annual Costs: true
+ Annual Clustered Costs: true
  Annual Investment Costs: true
  Annual Operational Costs: true
  Cummulative Investment Costs: true

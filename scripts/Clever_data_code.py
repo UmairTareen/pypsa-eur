@@ -296,7 +296,6 @@ def build_Clever_Transport(countriess, year):
     with mute_print():
         with mp.Pool() as pool:
             totals_list = list(tqdm(pool.imap(func, countriess), **tqdm_kwargs))
-
     totals = pd.concat(totals_list, axis=1, keys=countriess)
     
 

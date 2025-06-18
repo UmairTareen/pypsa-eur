@@ -20,6 +20,8 @@ import xarray as xr
 from _helpers import (
     configure_logging,
     set_scenario_config,
+    generate_periodic_profiles,
+    get_snapshots,
     update_config_from_wildcards,
 )
 from add_electricity import calculate_annuity, sanitize_carriers, sanitize_locations
@@ -1512,8 +1514,51 @@ def add_storage_and_grids(n, costs):
             lifetime=costs.at["SMR", "lifetime"],
         )
 
+def transport_degree_factor(
+    temperature,
+    deadband_lower=15,
+    deadband_upper=20,
+    lower_degree_factor=0.5,
+    upper_degree_factor=1.6,
+):
+    """
+    Work out how much energy demand in vehicles increases due to heating and
+    cooling.
 
-def add_land_transport(n, costs):
+    There is a deadband where there is no increase. Degree factors are %
+    increase in demand compared to no heating/cooling fuel consumption.
+    Returns per unit increase in demand for each place and time
+    """
+
+    dd = temperature.copy()
+
+    dd[(temperature > deadband_lower) & (temperature < deadband_upper)] = 0.0
+
+    dT_lower = deadband_lower - temperature[temperature < deadband_lower]
+    dd[temperature < deadband_lower] = lower_degree_factor / 100 * dT_lower
+
+    dT_upper = temperature[temperature > deadband_upper] - deadband_upper
+    dd[temperature > deadband_upper] = upper_degree_factor / 100 * dT_upper
+
+    return dd
+
+def build_nodal_transport_data(fn, pop_layout, year):
+    transport_datas = pd.read_csv(fn, index_col=[0, 1])
+    transport_datas = transport_datas.xs(min(2015, year), level="year")
+
+    nodal_transport_data = transport_datas.loc[pop_layout.ct].fillna(0.0)
+    nodal_transport_data.index = pop_layout.index
+    nodal_transport_data["number cars"] = (
+        pop_layout["fraction"] * nodal_transport_data["number cars"]
+    )
+    nodal_transport_data.loc[
+        nodal_transport_data["average fuel efficiency"] == 0.0,
+        "average fuel efficiency",
+    ] = transport_datas["average fuel efficiency"].mean()
+
+    return nodal_transport_data
+
+def add_land_transport(n, costs,nodal_transport_data):
     # TODO options?
 
     logger.info("Add land transport")
@@ -1546,6 +1591,8 @@ def add_land_transport(n, costs):
     logger.info(f"ICEV share: {ice_share*100}%")
 
     nodes = pop_layout.index
+    plug_to_wheels_eta = options["bev_plug_to_wheel_efficiency"]
+    battery_to_wheels_eta = plug_to_wheels_eta * options["bev_charge_efficiency"]
 
     if electric_share > 0:
         n.add("Carrier", "Li ion")
@@ -1630,9 +1677,9 @@ def add_land_transport(n, costs):
 
     if fuel_cell_share > 0:
      if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
-            value = fuel_cell_share * transport[nodes]
+             value = (fuel_cell_share) * transport[nodes]
      else:
-            value = fuel_cell_share / options["transport_fuel_cell_efficiency"] * transport[nodes]
+             value = (fuel_cell_share * battery_to_wheels_eta) / options["transport_fuel_cell_efficiency"] * transport[nodes]
      n.madd(
             "Load",
             nodes,
@@ -1646,11 +1693,42 @@ def add_land_transport(n, costs):
         add_carrier_buses(n, "oil")
 
         ice_efficiency = options["transport_internal_combustion_efficiency"]
+        airtemp_fn = snakemake.input.temp_air_total
+        temperature = xr.open_dataarray(airtemp_fn).to_pandas()
+        dd_EV = transport_degree_factor(
+            temperature,
+            options["transport_heating_deadband_lower"],
+            options["transport_heating_deadband_upper"],
+            options["EV_lower_degree_factor"],
+            options["EV_upper_degree_factor"],
+         )
+        dd_ICE = transport_degree_factor(
+            temperature,
+            options["transport_heating_deadband_lower"],
+            options["transport_heating_deadband_upper"],
+            options["ICE_lower_degree_factor"],
+            options["ICE_upper_degree_factor"],
+         )
+        traffic_fn = snakemake.input.traffic_data_KFZ
+        traffic = pd.read_csv(traffic_fn, skiprows=2, usecols=["count"]).squeeze("columns")
 
+        transport_shape = generate_periodic_profiles(
+            dt_index=snapshots,
+            nodes=nodes,
+            weekly_profile=traffic.values,
+        )
+        transport_shape = transport_shape / transport_shape.sum()
+        efficiency_gain = (
+            nodal_transport_data["average fuel efficiency"] / battery_to_wheels_eta
+         )
+        ice_correction = (transport_shape * (1 + dd_ICE)).sum() / transport_shape.sum()
+        ice_correction = ice_correction.mean()
+        ice = (efficiency_gain * ice_correction) / (1 + dd_EV)
+        ice = ice.mean().mean()
         if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
-            p_set_land_transport_oil = ice_share * transport[nodes].rename(columns=lambda x: x + " land transport oil")
+            p_set_land_transport_oil = (ice_share)  * transport[nodes].rename(columns=lambda x: x + " land transport oil")
         else:
-            p_set_land_transport_oil = ice_share / ice_efficiency * transport[nodes].rename(columns=lambda x: x + " land transport oil")
+            p_set_land_transport_oil = (ice_share * ice) * transport[nodes].rename(columns=lambda x: x + " land transport oil")
 
         if not options["regional_oil_demand"]:
             p_set_land_transport_oil = p_set_land_transport_oil.sum(axis=1).to_frame(
@@ -3042,7 +3120,7 @@ def add_industry(n, costs):
         if config["run"]["name"] == "suff" or "sensitivity_analysis" in config["run"]["name"]:
          fn = snakemake.input.pop_weighted_energy_totals
          energy_totals = pd.read_csv(fn, index_col=0)
-         sum_result = (energy_totals.loc[:, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[:, ['electricity residential space', 'electricity residential water', 'electricity services space', 'electricity services water', 'electricity residential cooking', 'electricity services cooking']].sum(axis=1))
+         sum_result = (energy_totals.loc[:, ['electricity residential', 'electricity services', 'total rail']].sum(axis=1)) - (energy_totals.loc[:, ['electricity residential space', 'electricity services space']].sum(axis=1))
          factor = ((sum_result)
             / (n.loads_t.p_set[loads_i].sum()/1e6)
          )
@@ -3696,9 +3774,15 @@ if __name__ == "__main__":
     add_generation(n, costs)
 
     add_storage_and_grids(n, costs)
-
+    energy_totals_year = snakemake.params.energy_totals_year
+    nodal_transport_data = build_nodal_transport_data(
+        snakemake.input.transport_datas, pop_layout, energy_totals_year
+    )
+    snapshots = get_snapshots(
+        snakemake.params.snapshots, snakemake.params.drop_leap_day, tz="UTC"
+    )
     if options["transport"]:
-        add_land_transport(n, costs)
+        add_land_transport(n, costs,nodal_transport_data)
 
     if options["heating"]:
         add_heat(n, costs)

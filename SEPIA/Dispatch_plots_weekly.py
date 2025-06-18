@@ -24,7 +24,7 @@ def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
     # if "heat pump" in tech or "resistive heater" in tech:
     #     return "power-to-heat"
-    if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
+    if tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction","Haber-Bosch"]:
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
@@ -77,13 +77,6 @@ def load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll):
 def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,title):
     tech_colors = config["plotting"]["tech_colors"]
     colors = tech_colors 
-    colors["fossil oil and gas"] = colors["oil"]
-    colors["hydrogen storage"] = colors["H2 Store"]
-    colors["load shedding"] = 'black'
-    colors["CHP"] = 'darkred'
-    colors["load"] = 'black'
-    colors["Imports_Exports"] = "dimgray"
-    colors["EV charger"] = colors["V2G"]
     tabs = pn.Tabs()
 
     for country in countries:
@@ -283,9 +276,6 @@ def plot_series_power(simpl, cluster, opt, sector_opt, ll, planning_horizons,tit
 def plot_series_heat(simpl, cluster, opt, sector_opt, ll, planning_horizons,title):
     tech_colors = config["plotting"]["tech_colors"]
     colors = tech_colors 
-    colors["agriculture heat"] = "grey"
-    colors["CHP"] = "orange"
-    colors["centralised electric boiler"] = "#6488ea"
     tabs = pn.Tabs()
 
     for country in countries:

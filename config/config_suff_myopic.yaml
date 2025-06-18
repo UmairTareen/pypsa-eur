@@ -532,27 +532,27 @@ sector:
   land_transport_fuel_cell_share:
     2020: 0
     2025: 0
-    2030: 0
+    2030: 0.00
     2035: 0
-    2040: 0.1
+    2040: 0.06
     2045: 0
-    2050: 0.15
+    2050: 0.25
   land_transport_electric_share:
     2020: 0
     2025: 0.15
-    2030: 0.3
+    2030: 0.06
     2035: 0.45
-    2040: 0.6
+    2040: 0.22
     2045: 0.85
-    2050: 0.85
+    2050: 0.55
   land_transport_ice_share:
     2020: 1
     2025: 0.85
-    2030: 0.7
+    2030: 0.94
     2035: 0.55
-    2040: 0.3
+    2040: 0.72
     2045: 0.15
-    2050: 0
+    2050: 0.2
   transport_fuel_cell_efficiency: 0.5
   transport_internal_combustion_efficiency: 0.3
   agriculture_machinery_electric_share: 0
@@ -995,9 +995,8 @@ plotting:
   tech_colors:
     # wind
     onwind: "#235ebc"
-    onshore wind: "#235ebc"
+    
     offwind: "#6895dd"
-    offshore wind: "#6895dd"
     offwind-ac: "#6895dd"
     offshore wind (AC): "#6895dd"
     offshore wind ac: "#6895dd"
@@ -1009,11 +1008,9 @@ plotting:
     hydro reservoir: '#298c81'
     ror: '#3dbfb0'
     run of river: '#3dbfb0'
-    hydroelectricity: '#298c81'
     PHS: '#51dbcc'
     hydro+PHS: "#08ad97"
     # solar
-    solar: "#f9d002"
     solar PV: "#f9d002"
     solar thermal: '#ffbf2b'
     residential rural solar thermal: '#f1c069'
@@ -1026,7 +1023,6 @@ plotting:
     OCGT: '#e0986c'
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
-    gas boiler: '#db6a25'
     gas boilers: '#db6a25'
     gas boiler marginal: '#db6a25'
     residential rural gas boiler: '#d4722e'
@@ -1039,7 +1035,6 @@ plotting:
     natural gas: '#e05b09'
     biogas to gas: '#e36311'
     biogas to gas CC: '#e51245'
-    CCGT: '#a85522'
     CCGT marginal: '#a85522'
     allam: '#B98F76'
     gas for industry co2 to atmosphere: '#692e0a'
@@ -1049,7 +1044,6 @@ plotting:
     gas pipeline: '#ebbca0'
     gas pipeline new: '#a87c62'
     # oil
-    fossil fuels: '#c9c9c9'
     oil: '#c9c9c9'
     imported oil: '#a3a3a3'
     oil boiler: '#adadad'
@@ -1064,7 +1058,6 @@ plotting:
     # nuclear
     Nuclear: '#ff8c00'
     Nuclear marginal: '#ff8c00'
-    nuclear: '#ff8c00'
     uranium: '#ff8c00'
     # coal
     Coal: '#545454'
@@ -1086,7 +1079,6 @@ plotting:
     solid biomass for industry co2 to stored: '#47411c'
     urban central solid biomass CHP: '#9d9042'
     urban central solid biomass CHP CC: '#6c5d28'
-    biomass boiler: '#8A9A5B'
     residential rural biomass boiler: '#a1a066'
     residential urban decentral biomass boiler: '#b0b87b'
     services rural biomass boiler: '#c6cf98'
@@ -1095,7 +1087,6 @@ plotting:
     BioSNG: '#123456'
     # power transmission
     lines: '#6c9459'
-    transmission lines: '#6c9459'
     electricity distribution grid: '#97ad8c'
     low voltage: '#97ad8c'
     # electricity demand
@@ -1143,7 +1134,6 @@ plotting:
     Heat load: '#cc1f1f'
     heat: '#cc1f1f'
     heat vent: '#aa3344'
-    heat demand: '#cc1f1f'
     rural heat: '#ff5c5c'
     residential rural heat: '#ff7c7c'
     services rural heat: '#ff9c9c'
@@ -1153,9 +1143,7 @@ plotting:
     decentral heat: '#750606'
     residential urban decentral heat: '#a33c3c'
     services urban decentral heat: '#cc1f1f'
-    low-temperature heat for industry: '#8f2727'
     process heat: '#ff0000'
-    agriculture heat: '#d9a5a5'
     # heat supply
     heat pumps: '#2fb537'
     heat pump: '#2fb537'
@@ -1169,7 +1157,6 @@ plotting:
     residential rural air heat pump: '#48f74f'
     services rural ground heat pump: '#5af95d'
     Ambient: '#98eb9d'
-    CHP: '#8a5751'
     urban central gas CHP: '#8d5e56'
     CHP CC: '#634643'
     urban central gas CHP CC: '#6e4e4c'
@@ -1188,7 +1175,6 @@ plotting:
     H2 for industry: "#f073da"
     H2 for shipping: "#ebaee0"
     H2: '#bf13a0'
-    H: '#bf13a0'
     hydrogen: '#bf13a0'
     retrofitted H2 boiler: '#e5a0d9'
     SMR: '#870c71'
@@ -1203,7 +1189,6 @@ plotting:
     H2 Fuel Cell: '#c251ae'
     H2 fuel cell: '#c251ae'
     H2 turbine: '#991f83'
-    H2 Electrolysis: '#ff29d9'
     H2 electrolysis: '#ff29d9'
     # ammonia
     NH3: '#46caf0'
@@ -1226,10 +1211,9 @@ plotting:
     # co2
     CC: '#f29dae'
     CCS: '#f29dae'
-    CO2 sequestration: '#f29dae'
-    DAC: '#ff5270'
+    CO2 sequestration: 'violet'
     co2 stored: '#f2385a'
-    co2 sequestered: '#f2682f'
+    co2 sequestered: 'violet'
     co2: '#f29dae'
     co2 vent: '#ffd4dc'
     CO2 pipeline: '#f5627f'
@@ -1245,10 +1229,7 @@ plotting:
     agriculture machinery oil emissions: '#333333'
     # other
     shipping: '#03a2ff'
-    power-to-heat: '#2fb537'
-    power-to-gas: '#c44ce6'
     power-to-H2: '#ff29d9'
-    power-to-liquid: '#25c49a'
     gas-to-power/heat: '#ee8340'
     waste: '#e3d37d'
     other: '#000000'
@@ -1262,26 +1243,102 @@ plotting:
     DC-DC: "#8a1caf"
     DC link: "#8a1caf"
     LULUCF: "greenyellow"
-    solar curtailment: "goldenrod"
-    onshore wind curtailment: "navy"
-    offshore wind curtailment: "lightskyblue"
-    onshore curtailment: "navy"
-    offshore curtailment: "lightskyblue"
     load shedding: "black"
     load: "black"
     coal for industry: '#343434'
     Imports: 'darkgrey'
-    DC Transmission lines: "#8a1caf"
-    AC Transmission lines: "#70af1d"
+    fossil fuels: '#c9c9c9'
     boilers: '#e05b09'
     thermal energy storage: '#e69487'
     H2 & gas pipelines: '#ebbca0'
-    synthetic fuel techs: '#87d0e6'
+    synthetic fuels & techs: '#87d0e6'
     CHP & powerplants: '#a85522'
-    Oil & gas storage: '#c9c9c9' 
+    Oil & Gas Storage: '#c9c9c9' 
     TES & H2 storage: '#870c71'
-    distribution network: '#97ad8c'
+    distribution network: '#97ad8c' 
     CCU: '#f29dae'
     CCUS: '#f29dae'
     electricity imports/exports: '#110d63'
-    hydrogen imports/exports: '#bf13a0' 
+    hydrogen imports/exports: '#bf13a0'
+    #DAC: '#ff5270'
+    #heat demand: '#cc1f1f'
+    #gas boiler: '#db6a25'
+    #biomass boiler: '#8A9A5B'
+    #CHP: '#8a5751'
+    #agriculture heat: '#d9a5a5'
+    #low-temperature heat for industry: '#8f2727'
+    #centralised electric boiler: '#6488ea'
+    #thermal energy storage: '#e69487'
+    #DC Transmission lines: '#104E8B'
+    #AC Transmission lines: '#FF3030'
+    #nuclear: '#ff8c00'
+    #CCGT: '#a85522'
+    #power-to-liquid: '#25c49a'
+    #power-to-heat: '#2fb537'
+    #power-to-gas: '#c44ce6'
+    #offshore wind: "#6895dd"
+    #onshore wind: "#235ebc"
+    #solar: "#f9d002"
+    #Gas storage: '#c5c9c7'
+    #Thermal Energy storage: '#fd5956'
+    #Grid-scale battery: '#82cbb2'
+    #H2 Electrolysis: '#ff29d9'
+    #Imports_Exports: 'dimgray'
+    #battery storage: '#e5ffa8'
+    #hydroelectricity: '#298c81'
+    #distribution network: '#97ad8c'
+    #solar curtailment: "goldenrod"
+    #onshore curtailment: "navy"
+    #offshore curtailment: "lightskyblue"
+    #transmission lines: '#6c9459'
+    Transmission Lines: '#06b1c4'
+    transmission lines: '#06b1c4'
+    Power-to-X: '#ffb07c'
+    Distribution Network: '#82cbb2'
+    CHP & Powerplants: '#c14a09'
+    TES & Battery & H2 storage: '#fddc5c'
+    Boilers: '#f0833a'
+    Solar PV: '#fcc006'
+    Wind: '#95d0fc'
+    CCU (Suff) & CCUS (Ref): '#ffbacd'
+    Biomass: '#11875d'
+    Fossil Fuels: '#c5c9c7'
+    Synthetic Fuels & Techs: '#32bf84'
+    Nuclear: '#fd5956'
+    Transmission Lines & Pipelines: '#06b1c4'
+    Hydro-electricity: '#fbeeac'
+    Electricity Imports/Exports: '#01889f'
+    Hydrogen Imports/Exports: '#9a0200'
+    Oil & Gas Storage: '#c5c9c7'
+    VOM of Technologies: '#ffb07c'
+    Synthetic Fuels: '#fcc006'
+    power-to-heat: '#32bf84'
+    power-to-gas: '#f0833a'
+    power-to-liquid: '#fbeeac'
+    DAC: '#06b1c4'
+    heat demand: '#fd5956'
+    gas boiler: '#ffb07c'
+    biomass boiler: '#11875d'
+    CHP: '#9a0200'
+    agriculture heat: '#fddc5c'
+    low-temperature heat for industry: '#06b1c4'
+    centralised electric boiler: '#95d0fc'
+    thermal energy storage: '#ffbacd'
+    offshore wind: '#95d0fc'
+    onshore wind: '#01889f'
+    solar: '#fcc006'
+    CCGT: '#c14a09'
+    DC Transmission lines: "#11875d"
+    AC Transmission lines: "#9a0200"
+    Gas storage: '#ffb07c'
+    Thermal Energy storage: '#ffbacd'
+    Grid-scale battery: '#82cbb2'
+    nuclear: '#fd5956'
+    H2 Electrolysis: '#ffbacd'
+    Imports_Exports: '#c5c9c7'
+    battery storage: '#11875d'
+    hydroelectricity: '#fbeeac'
+    distribution network: '#32bf84'
+    solar curtailment: "#9a0200"
+    onshore curtailment: "#ffbacd"
+    offshore curtailment: "#c14a09"

@@ -15,47 +15,92 @@ current_script_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_path = os.path.join(current_script_dir, "../scripts/")
 sys.path.append(scripts_path)
 from plot_summary import rename_techs
-
-
+from add_electricity import calculate_annuity
 
 def rename_techs_tyndp(tech):
     tech = rename_techs(tech)
-    if "heat pump" in tech or "resistive heater" in tech:
-        return "power-to-heat"
-    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction","shipping methanol"]:
-        return "power-to-gas"
+    if tech in ["H2 Electrolysis", "methanation","helmeth", "H2 liquefaction","heat pump","resistive heater","Fischer-Tropsch", "air heat pump","air-sourced heat pump","ground heat pump"]:
+        return "Power-to-X"
     elif tech in ["electricity distribution grid"]:
-        return "distribution network"
+        return "Distribution Network"
     elif tech in [ "CHP", "H2 Fuel Cell","CCGT","OCGT","H2 turbine","solid biomass powerplants","coal powerplants", "oil powerplants"]:
-        return "CHP & powerplants"
-    elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G"]:
-        return "battery storage"
+        return "CHP & Powerplants"
+    elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G","hot water storage", "H2", "H2 storage"]:
+        return "TES & Battery & H2 storage"
     elif tech in [ "biomass boiler", "oil boiler","gas boiler"]:
-        return "boilers"
+        return "Boilers"
     elif "solar" in tech:
-        return "solar"
-    elif tech == "Fischer-Tropsch":
-        return "power-to-liquid"
-    elif "offshore wind" in tech:
-        return "offshore wind"
-    elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
-         return "CCU"
-    elif tech in ["biomass", "solid biomass", "solid biomass for industry", "biogas", "solid biomass transport"]:
-         return "biomass"
+        return "Solar PV"
+    elif "wind" in tech:
+        return "Wind"
+    elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC","DAC"]:
+        # if study == "suff":
+        #     return "CCU"
+        # else:
+            return "CCU (Suff) & CCUS (Ref)"
+    elif tech in ["biomass", "solid biomass", "solid biomass for industry", "biogas", "solid biomass transport", "biomass exports", "biogas exports"]:
+          return "Biomass"
     elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil", "oil","gas", "coal for industry","gas for industry","coal","lignite","coal fuel","gas fuel"]:
-         return "fossil fuels"
-    elif tech in ["hot water storage", "H2", "H2 storage"]:
-        return "TES & H2 storage"
+          return "Fossil Fuels"
     elif "load" in tech:
         return "load shedding"
-    elif tech in ["SMR", "ammonia cracker", "Haber-Bosch", "BioSNG", "biomass to liquid","methanol","ammonia"]:
-         return "synthetic fuel techs"
+    elif "hydroelectricity" in tech:
+        return "Hydro-electricity"
+    elif "electricity imports/exports" in tech:
+        return "Electricity Imports/Exports"
+    elif "hydrogen imports/exports" in tech:
+        return "Hydrogen Imports/Exports"
+    elif tech in ["SMR", "ammonia cracker", "Haber-Bosch", "BioSNG", "biomass to liquid","methanol","ammonia", "methanol exports", "ammonia exports","methanolisation","shipping methanol"]:
+          return "Synthetic Fuels & Techs"
     elif tech in ["uranium", "nuclear", "nuclear fuel"]:
-         return "nuclear"
-    elif tech in ["H2 pipeline", "gas pipeline","gas pipeline new","H2 pipeline retrofitted"]:
-         return "H2 & gas pipelines"
+          return "Nuclear"
     else:
         return tech
+    
+def rename_techs_tyndp_EU(tech):
+    tech = rename_techs(tech)
+    if tech in ["H2 pipeline", "gas pipeline","gas pipeline new","H2 pipeline retrofitted","transmission lines","Transmission Lines"]:
+          return "Transmission Lines & Pipelines"
+    else:
+        return tech
+# def rename_techs_tyndp(tech):
+#     tech = rename_techs(tech)
+#     if "heat pump" in tech or "resistive heater" in tech:
+#         return "power-to-heat"
+#     elif tech in ["H2 Electrolysis", "methanation","helmeth", "H2 liquefaction"]:
+#         return "power-to-gas"
+#     elif tech in ["electricity distribution grid"]:
+#         return "distribution network"
+#     elif tech in [ "CHP", "H2 Fuel Cell","CCGT","OCGT","H2 turbine","solid biomass powerplants","coal powerplants", "oil powerplants"]:
+#         return "CHP & powerplants"
+#     elif tech in [ "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G"]:
+#         return "battery storage"
+#     elif tech in [ "biomass boiler", "oil boiler","gas boiler"]:
+#         return "boilers"
+#     elif "solar" in tech:
+#         return "solar"
+#     elif tech == "Fischer-Tropsch":
+#         return "power-to-liquid"
+#     elif "offshore wind" in tech:
+#         return "offshore wind"
+#     elif tech in ["co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC"]:
+#          return "CCU"
+#     elif tech in ["biomass", "solid biomass", "solid biomass for industry", "biogas", "solid biomass transport", "biomass exports", "biogas exports"]:
+#          return "biomass"
+#     elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil", "oil","gas", "coal for industry","gas for industry","coal","lignite","coal fuel","gas fuel"]:
+#          return "fossil fuels"
+#     elif tech in ["hot water storage", "H2", "H2 storage"]:
+#         return "TES & H2 storage"
+#     elif "load" in tech:
+#         return "load shedding"
+#     elif tech in ["SMR", "ammonia cracker", "Haber-Bosch", "BioSNG", "biomass to liquid","methanol","ammonia", "methanol exports", "ammonia exports","methanolisation","shipping methanol"]:
+#          return "synthetic fuels & techs"
+#     elif tech in ["uranium", "nuclear", "nuclear fuel"]:
+#          return "nuclear"
+#     elif tech in ["H2 pipeline", "gas pipeline","gas pipeline new","H2 pipeline retrofitted"]:
+#          return "H2 & gas pipelines"
+#     else:
+#         return tech
 
 def logo():
     file = snakemake.input.sepia_config
@@ -72,6 +117,9 @@ def logo():
         sizey=0.2,
         layer="below")
     return logo
+
+def annuity_factor(v):
+    return calculate_annuity(v["lifetime"], v["discount rate"]) + v["FOM"] / 100
 
 def build_filename(simpl,cluster,opt,sector_opt,ll ,planning_horizon):
     prefix=f"results/{study}/postnetworks/elec_"
@@ -98,25 +146,38 @@ def load_files(study, planning_horizons, simpl, cluster, opt, sector_opt, ll):
 
 def calculate_ac_transmission(lines, line_numbers):
     transmission_ac = lines.s_nom_opt[line_numbers].sum()
-
-    # Add condition to check if transmission_ac is less than or equal to 0 for 2020
-    if transmission_ac <= 0:
-        transmission_ac = lines.s_nom[line_numbers].sum()
-        transmission = 0
-    else:
-        transmission = (lines.s_nom_opt[line_numbers].sum() - lines.s_nom[line_numbers].sum()) * (lines.capital_cost[line_numbers].sum()) * 0.5
+    length_ac = lines.length[line_numbers].sum()
+    
+    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
+    options.loc[options.unit.str.contains("/kW"), "value"] *= 1e3
+    options = (
+      options.loc[:, "value"].unstack(level=1).groupby("technology").sum(min_count=1))
+    options = options.fillna(config["costs"]["fill_values"])
+    options["fixed"] = [
+        annuity_factor(v) * v["investment"] for i, v in options.iterrows()
+    ]
+    ac_cost = options.loc[("HVAC overhead", "fixed")]
+    
+    transmission = ((lines.s_nom_opt[line_numbers].sum()) * ac_cost * length_ac)
 
     return transmission_ac, transmission
 
 def calculate_dc_transmission(links, link_numbers):
     transmission_dc = links.p_nom_opt[link_numbers].sum()
-
-    # Add condition to check if transmission_ac is less than or equal to 0
-    if transmission_dc <= 0:
-        transmission_dc = links.p_nom[link_numbers].sum()
-        transmissionc = 0
-    else:
-        transmissionc = (links.p_nom_opt[link_numbers].sum() - links.p_nom[link_numbers].sum()) * (links.capital_cost[link_numbers].sum()) * 0.5
+    length_dc = links.length[link_numbers].sum()
+    
+    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
+    options = pd.read_csv(fn ,index_col=[0, 1]).sort_index()
+    options.loc[options.unit.str.contains("/kW"), "value"] *= 1e3
+    options = (
+      options.loc[:, "value"].unstack(level=1).groupby("technology").sum(min_count=1))
+    options = options.fillna(config["costs"]["fill_values"])
+    options["fixed"] = [
+        annuity_factor(v) * v["investment"] for i, v in options.iterrows()
+    ]
+    dc_cost = options.loc[("HVDC overhead", "fixed")]
+    
+    transmissionc = ((links.p_nom_opt[link_numbers].sum()) * dc_cost * length_dc)
 
     return transmission_dc, transmissionc
 
@@ -335,6 +396,9 @@ def costs(countries, results):
       coal = coal["imp_cms_pe"]
       gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 24", index_col=0,skiprows=2).drop(2020, axis=0)
       gas_val = gas_val["Natural gas"]
+      exports = pd.read_csv(f"results/{study}/country_csvs/exports_{country}.csv", index_col=0).drop(2020, axis=0)
+      exports = exports.clip(lower=0)
+      exports = exports.where(exports <= 0, -exports)
       df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 2:]
       df = df.iloc[8:, :]
@@ -365,8 +429,33 @@ def costs(countries, results):
        df = pd.concat([df, pd.DataFrame([coal_row])], ignore_index=True)
        gas_row = {"tech": "gas fuel"}
        for year in gas_val.index:
-           gas_row[str(year)] = gas_val.loc[year] * options.loc[("gas", "fuel"), "value"] * 1e6  
+           val = gas_val.loc[year]
+           val = max(val, 0)
+           gas_row[str(year)] = val * options.loc[("gas", "fuel"), "value"] * 1e6  
        df = pd.concat([df, pd.DataFrame([gas_row])], ignore_index=True)
+       biomass_exports = exports["enc_pe_exp"]
+       bm_row = {"tech": "biomass exports"}
+       for year in biomass_exports.index:
+           bm_row[str(year)] = biomass_exports.loc[year] * options.loc[("biomass", "fuel"), "value"] * 1e6
+       df = pd.concat([df, pd.DataFrame([bm_row])], ignore_index=True)
+
+       biogas_exports = exports["gaz_se_exp"]
+       biogas_row = {"tech": "biogas exports"}
+       for year in biogas_exports.index:
+           biogas_row[str(year)] = biogas_exports.loc[year] * options.loc[("biogas", "fuel"), "value"] * 1e6
+       df = pd.concat([df, pd.DataFrame([biogas_row])], ignore_index=True)
+
+       meth_exports = exports["met_fe_exp"]
+       meth_row = {"tech": "methanol exports"}
+       for year in meth_exports.index:
+           meth_row[str(year)] = meth_exports.loc[year] * methanol_fuel * 1e6
+       df = pd.concat([df, pd.DataFrame([meth_row])], ignore_index=True)
+
+       amm_exports = exports["amm_fe_exp"]
+       amm_row = {"tech": "ammonia exports"}
+       for year in amm_exports.index:
+           amm_row[str(year)] = amm_exports.loc[year] * ammonia_fuel * 1e6
+       df = pd.concat([df, pd.DataFrame([amm_row])], ignore_index=True)
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
 
@@ -379,29 +468,31 @@ def costs(countries, results):
             
             costs[country] = result_df.set_index('tech').loc[technologies, years]
 
-    for country in countries:
+    for planning_horizon in planning_horizons:
+      planning_horizon_str = str(planning_horizon)
 
-       for planning_horizon in planning_horizons:
-        # Convert planning_horizon to string for column name
-        planning_horizon_str = str(planning_horizon)
+      if planning_horizon in results:
+        cos_ac_df = results[planning_horizon]['cos_ac']
+        cos_dc_df = results[planning_horizon]['cos_dc']
 
-        # Check if the planning horizon key exists in the results dictionary
-        if planning_horizon in results:
-         if country != 'EU':
-            cos_ac_df = results[planning_horizon]['cos_ac']
-            cos_dc_df = results[planning_horizon]['cos_dc']
-            ac_transmission_values = cos_ac_df.loc[country, 'transmission_AC']
-            dc_transmission_values = cos_dc_df.loc[country, 'transmission_DC']
-
-            # Assign values to existing columns for each year
-            costs[country].loc['transmission lines', planning_horizon_str] = ac_transmission_values + dc_transmission_values
-      
-       for country, dataframe in costs.items():
+        for country in countries:
+            if country != 'EU':
+                ac_transmission_values = cos_ac_df.loc[country, 'transmission_AC']
+                dc_transmission_values = cos_dc_df.loc[country, 'transmission_DC']
+                total_cost = ac_transmission_values + dc_transmission_values
+                costs[country].loc['Transmission Lines', planning_horizon_str] = total_cost
+            else:
+                # Sum over all non-EU countries
+                total_ac = cos_ac_df.loc[cos_ac_df.index != 'EU', 'transmission_AC'].sum()
+                total_dc = cos_dc_df.loc[cos_dc_df.index != 'EU', 'transmission_DC'].sum()
+                costs['EU'].loc['Transmission Lines', planning_horizon_str] = total_ac + total_dc
+    if country == 'EU':
+     costs['EU'].index = costs['EU'].index.map(rename_techs_tyndp_EU)
+     costs['EU'] = costs['EU'].groupby(costs['EU'].index).sum()
+    for country, dataframe in costs.items():
          # Specify the file path within the output directory
          file_path = f"results/{study}/country_csvs/{country}_costs.csv"
-         directory = os.path.dirname(file_path)
-         if not os.path.exists(directory):
-          os.makedirs(directory)
+    
          # Save the DataFrame to a CSV file
          dataframe.to_csv(file_path, index=True)
 
@@ -427,7 +518,7 @@ def Investment_costs(countries, results):
       df = df.drop(columns=['Costs'])
       df['tech'] = df['tech'].map(rename_techs_tyndp)
       df = df.groupby('tech').sum().reset_index()
-      tech_mapping = {'fossil fuels': 'Oil & gas storage'}
+      tech_mapping = {'Fossil Fuels': 'Oil & Gas Storage', 'Biomass': 'Biogas Plants'}
       df['tech'] = df['tech'].replace(tech_mapping)
       condition = df[['2030', '2040', '2050']].eq(0).all(axis=1)
       df = df[~condition]
@@ -440,24 +531,28 @@ def Investment_costs(countries, results):
             
             investment_costs[country] = result_df.set_index('tech').loc[technologies, years]
 
-    for country in countries:
+    for planning_horizon in planning_horizons:
+      planning_horizon_str = str(planning_horizon)
 
-       for planning_horizon in planning_horizons:
-        # Convert planning_horizon to string for column name
-        planning_horizon_str = str(planning_horizon)
+      if planning_horizon in results:
+        cos_ac_df = results[planning_horizon]['cos_ac']
+        cos_dc_df = results[planning_horizon]['cos_dc']
 
-        # Check if the planning horizon key exists in the results dictionary
-        if planning_horizon in results:
-         if country != 'EU':
-            cos_ac_df = results[planning_horizon]['cos_ac']
-            cos_dc_df = results[planning_horizon]['cos_dc']
-            ac_transmission_values = cos_ac_df.loc[country, 'transmission_AC']
-            dc_transmission_values = cos_dc_df.loc[country, 'transmission_DC']
-
-            # Assign values to existing columns for each year
-            investment_costs[country].loc['transmission lines', planning_horizon_str] = ac_transmission_values + dc_transmission_values
-      
-       for country, dataframe in investment_costs.items():
+        for country in countries:
+            if country != 'EU':
+                ac_transmission_values = cos_ac_df.loc[country, 'transmission_AC']
+                dc_transmission_values = cos_dc_df.loc[country, 'transmission_DC']
+                total_cost = ac_transmission_values + dc_transmission_values
+                investment_costs[country].loc['Transmission Lines', planning_horizon_str] = total_cost
+            else:
+                # Sum over all non-EU countries
+                total_ac = cos_ac_df.loc[cos_ac_df.index != 'EU', 'transmission_AC'].sum()
+                total_dc = cos_dc_df.loc[cos_dc_df.index != 'EU', 'transmission_DC'].sum()
+                investment_costs['EU'].loc['Transmission Lines', planning_horizon_str] = total_ac + total_dc
+    if country == 'EU':
+     investment_costs['EU'].index = investment_costs['EU'].index.map(rename_techs_tyndp_EU)
+     investment_costs['EU'] = investment_costs['EU'].groupby(investment_costs['EU'].index).sum()
+    for country, dataframe in investment_costs.items():
          # Specify the file path within the output directory
          file_path = f"results/{study}/country_csvs/{country}_investment costs.csv"
     
@@ -467,7 +562,32 @@ def Investment_costs(countries, results):
          print(f"CSV file for {country} saved at: {file_path}")
         
     return investment_costs 
-
+def rename_techs_tynd(tech):
+    tech = rename_techs(tech)
+    if tech in ["H2 Electrolysis", "methanation","helmeth", "H2 liquefaction","heat pump","resistive heater","Fischer-Tropsch",
+                "electricity distribution grid","CHP", "H2 Fuel Cell","CCGT","OCGT","H2 turbine","solid biomass powerplants","coal powerplants", "oil powerplants",
+                "battery charger", "battery discharger","battery", "Li ion", "EV charger", "V2G","hot water storage", "H2", "H2 storage",
+                "biomass boiler", "oil boiler","gas boiler","solar","Wind","co2 sequestered","CO2 sequestration", "co2", "SMR CC", "process emissions CC","process emissions", "solid biomass for industry CC", "gas for industry CC","DAC",
+                "hydroelectricity","SMR", "ammonia cracker", "Haber-Bosch", "BioSNG", "biomass to liquid","methanol","ammonia","methanolisation","shipping methanol",
+                "air heat pump","air-sourced heat pump","ground heat pump","solar PV","solar rooftop", "offshore wind","offshore wind (AC)", "offshore wind (DC)",
+                "onshore wind", "solar thermal","H2 pipeline", "gas pipeline","gas pipeline new","H2 pipeline retrofitted","transmission lines","Transmission Lines"]:
+        return "VOM of Technologies"
+    elif tech in ["biomass", "solid biomass", "solid biomass for industry", "biogas", "solid biomass transport", "biomass exports", "biogas exports"]:
+          return "Biomass"
+    elif tech in ["shipping oil", "naphtha for industry", "land transport oil", "kerosene for aviation", "agriculture machinery oil", "oil","gas", "coal for industry","gas for industry","coal","lignite","coal fuel","gas fuel"]:
+          return "Fossil Fuels"
+    elif "load" in tech:
+        return "load shedding"
+    elif "electricity imports/exports" in tech:
+        return "Electricity Imports/Exports"
+    elif "hydrogen imports/exports" in tech:
+        return "Hydrogen Imports/Exports"
+    elif tech in ["uranium", "nuclear", "nuclear fuel"]:
+          return "Nuclear"
+    elif tech in ["methanol exports", "ammonia exports"]:
+          return "Synthetic Fuels"
+    else:
+        return tech
 def operational_costs(countries, results):
     operational_costs = {}
     fn = snakemake.input.costs
@@ -481,6 +601,9 @@ def operational_costs(countries, results):
       coal = coal["imp_cms_pe"]
       gas_val = pd.read_excel(f"results/{study}/htmls/ChartData_{country}.xlsx", sheet_name="Chart 24", index_col=0,skiprows=2).drop(2020, axis=0)
       gas_val = gas_val["Natural gas"]
+      exports = pd.read_csv(f"results/{study}/country_csvs/exports_{country}.csv", index_col=0).drop(2020, axis=0)
+      exports = exports.clip(lower=0)
+      exports = exports.where(exports <= 0, -exports)
       df=pd.read_csv(f"results/{study}/csvs/nodal_costs.csv", index_col=2)
       df = df.iloc[:, 1:]
       df = df.iloc[6:, :]
@@ -513,9 +636,34 @@ def operational_costs(countries, results):
        df = pd.concat([df, pd.DataFrame([coal_row])], ignore_index=True)
        gas_row = {"tech": "gas fuel"}
        for year in gas_val.index:
-           gas_row[str(year)] = gas_val.loc[year] * options.loc[("gas", "fuel"), "value"] * 1e6  
+           val = gas_val.loc[year]
+           val = max(val, 0)
+           gas_row[str(year)] = val * options.loc[("gas", "fuel"), "value"] * 1e6 
        df = pd.concat([df, pd.DataFrame([gas_row])], ignore_index=True)
-      df['tech'] = df['tech'].map(rename_techs_tyndp)
+       biomass_exports = exports["enc_pe_exp"]
+       bm_row = {"tech": "biomass exports"}
+       for year in biomass_exports.index:
+           bm_row[str(year)] = biomass_exports.loc[year] * options.loc[("biomass", "fuel"), "value"] * 1e6
+       df = pd.concat([df, pd.DataFrame([bm_row])], ignore_index=True)
+
+       biogas_exports = exports["gaz_se_exp"]
+       biogas_row = {"tech": "biogas exports"}
+       for year in biogas_exports.index:
+           biogas_row[str(year)] = biogas_exports.loc[year] * options.loc[("biogas", "fuel"), "value"] * 1e6
+       df = pd.concat([df, pd.DataFrame([biogas_row])], ignore_index=True)
+
+       meth_exports = exports["met_fe_exp"]
+       meth_row = {"tech": "methanol exports"}
+       for year in meth_exports.index:
+           meth_row[str(year)] = meth_exports.loc[year] * methanol_fuel * 1e6
+       df = pd.concat([df, pd.DataFrame([meth_row])], ignore_index=True)
+
+       amm_exports = exports["amm_fe_exp"]
+       amm_row = {"tech": "ammonia exports"}
+       for year in amm_exports.index:
+           amm_row[str(year)] = amm_exports.loc[year] * ammonia_fuel * 1e6
+       df = pd.concat([df, pd.DataFrame([amm_row])], ignore_index=True)
+      df['tech'] = df['tech'].map(rename_techs_tynd)
       df = df.groupby('tech').sum().reset_index()
       condition = df[['2030', '2040', '2050']].eq(0).all(axis=1)
       df = df[~condition]
@@ -529,7 +677,7 @@ def operational_costs(countries, results):
             operational_costs[country] = result_df.set_index('tech').loc[technologies, years]
 
       
-      for country, dataframe in operational_costs.items():
+    for country, dataframe in operational_costs.items():
          # Specify the file path within the output directory
          file_path = f"results/{study}/country_csvs/{country}_operational costs.csv"
     
@@ -543,7 +691,7 @@ def rename_techs_tyndpp(tech):
     tech = rename_techs(tech)
     if "heat pump" in tech or "resistive heater" in tech:
         return "power-to-heat"
-    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction"]:
+    elif tech in ["H2 Electrolysis", "methanation", 'methanolisation',"helmeth", "H2 liquefaction","Haber-Bosch"]:
         return "power-to-gas"
     elif "H2 pipeline" in tech:
         return "H2 pipeline"
@@ -644,7 +792,7 @@ def storage_capacities(countries):
       cf = cf.groupby('tech').sum().reset_index()
       mask = ~(cf['tech'].isin(['load shedding']))
       result_df = cf[mask]
-      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'Li ion':'EV battery'})
+      result_df['tech'] = result_df['tech'].replace({'urban central water tanks': 'Thermal Energy storage', 'battery':'Grid-scale battery', 'Li ion':'EV battery','gas':'Gas storage'})
       if not result_df.empty:
             years = ['2030', '2040', '2050']
             technologies = result_df['tech'].unique()
@@ -723,6 +871,7 @@ def create_investment_costs(investment_costs, country,  unit='Euros/year'):
     colors = config["plotting"]["tech_colors"]
     colors["AC Transmission"] = "#FF3030"
     colors["DC Transmission"] = "#104E8B"
+    tech_colors["Biogas Plants"] = tech_colors["Biomass"]
 
     title = f"{country} - Investment Costs"
     df = investment_costs[country]
@@ -748,6 +897,7 @@ def create_operational_costs(operational_costs, country, unit='Euros/year'):
     tech_colors = config["plotting"]["tech_colors"]
     tech_colors["AC Transmission"] = "#FF3030"
     tech_colors["DC Transmission"] = "#104E8B"
+    
 
     title = f"{country} - Operational Costs"
     df = operational_costs[country]
@@ -803,8 +953,8 @@ def create_operational_costs(operational_costs, country, unit='Euros/year'):
 def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
     tech_colors = config["plotting"]["tech_colors"]
     colors = config["plotting"]["tech_colors"]
-    colors["AC Transmission lines"] = "#FF3030"
-    colors["DC Transmission lines"] = "#104E8B"
+    # colors["AC Transmission lines"] = "#FF3030"
+    # colors["DC Transmission lines"] = "#104E8B"
     groups = [
         ["solar"],
         ["onshore wind", "offshore wind"],
@@ -833,8 +983,9 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
         value = groups
     else:
         value = groupss
-    fig = make_subplots(rows=2, cols=len(value) // 2, subplot_titles=[
-        f"{', '.join(tech_group)}" for tech_group in value], shared_yaxes=True)
+    def smart_capitalize(phrase):
+     return phrase[0].upper() + phrase[1:] if phrase and not phrase[0].isupper() else phrase
+    fig = make_subplots(rows=2, cols=len(value) // 2, subplot_titles=[", ".join(smart_capitalize(t) for t in tech_group) for tech_group in value], shared_yaxes=True)
 
     df = capacities[country]
 
@@ -848,7 +999,7 @@ def create_capacity_chart(capacities, country, unit='Capacity [GW]'):
                 trace = go.Bar(
                     x=years,
                     y=y_values,
-                    name=f"{tech}",
+                    name=smart_capitalize(tech),
                     marker_color=tech_colors.get(tech, 'gray')
                 )
                 fig.add_trace(trace, row=row_idx, col=col_idx)
@@ -880,10 +1031,11 @@ def storage_capacity_chart(s_capacities, country, unit='Capacity [GWh]'):
     colors["Thermal Energy storage"] = colors["urban central water tanks"]
     colors["Grid-scale"] = 'green'
     colors["home battery"] = 'blue'
+    colors["Gas storage"] = colors["gas"]
     groups = [
         ["Grid-scale battery"],
         ["Thermal Energy storage"],
-        ["gas"],
+        ["Gas storage"],
     ]
 
     # Create a subplot for each technology
@@ -1003,8 +1155,11 @@ if __name__ == "__main__":
     sector_opt = snakemake.params.scenario["sector_opts"][0]
     ll = snakemake.params.scenario["ll"][0]
     planning_horizons = [2030, 2040, 2050]
+    methanol_fuel = 119 #https://www.methanol.org/wp-content/uploads/2023/05/Marine_Methanol_Report_Methanol_Institute_May_2023.pdf
+    ammonia_fuel = 92 #https://www.iee.fraunhofer.de/en/presse-infothek/press-media/2022/green-ammonia-for-climate-protection.html
     total_country = 'EU'
     countries = snakemake.params.countries 
+    fn = snakemake.input.costs
     map_opts = snakemake.params.plotting["map"]
     countries.append(total_country)
     logging.basicConfig(level=snakemake.config["logging"]["level"])

@@ -86,12 +86,14 @@ def create_ghg_chart(results, NODES, main_params, type="area", title='', xls_wri
     fig.update_layout(
     xaxis=dict(
         range=[2020, 2050],
-        tickmode='linear',
+        tickmode='array',
+        tickvals=[2020, 2030, 2040, 2050],
+        ticktext=['2019', '2030', '2040', '2050'],
         dtick=10,
         tickfont=dict(
             size=18),
     ))
-    fig.update_layout(hovermode='x',height=700, width=1400, legend_title_text='', yaxis_title='MtCO2/year', title=title, font=dict(
+    fig.update_layout(hovermode='x',height=700, width=1400, legend_title_text='', yaxis_title='MtCO<sub>2</sub>eq', title=title, font=dict(
                 size=18))
     if len(targets) > 0:
         fig.add_scatter(y=targets['y'], x=targets['x'], mode=targets['mode'], name=targets['title'], marker_size=18,
@@ -162,10 +164,10 @@ def create_sankey(flows, nodes, processes, main_params, interval_year=5, title="
         )
         fig.add_trace(sk)
         step = dict(
-            label = str(year),
+            label = "2019" if year == 2020 else str(year),
             method = "update",
             args = [{"visible": [False] * len(years)},
-                    {"title": {"text": title+" in " + str(year)}}],
+                    {"title": {"text": title + " in " + ("2019" if year == 2020 else str(year))}}],
         )
         step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
         steps.append(step)
@@ -253,10 +255,10 @@ def create_carbon_sankey(flows_co2, nodes, processes, main_params, interval_year
         )
         fig.add_trace(sk)
         step = dict(
-            label = str(year),
+            label = "2019" if year == 2020 else str(year),
             method = "update",
             args = [{"visible": [False] * len(years)},
-                    {"title": {"text": title+" in " + str(year)}}],
+                    {"title": {"text": title + " in " + ("2019" if year == 2020 else str(year))}}],
         )
         step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
         steps.append(step)

@@ -126,6 +126,16 @@ def Construct_2020_from_JRC_IDEES(country):
     "target": "demandheatc",
     "2020": total_res_ter})
     totals_df = pd.DataFrame(ct_totals)
+    totals_df = (
+    totals_df
+    .sort_values("target")  # Ensure consistent order for 'first'
+    .groupby("target", as_index=False)
+    .agg({
+        "label": "first",
+        "source": "first",
+        "2020": "sum"
+    })
+)
     
     return totals_df
 
@@ -236,6 +246,16 @@ def Construct_2020_emissions_from_JRC_IDEES(country):
     "2020": lulucf})
     
     emm_totals = pd.DataFrame(ct_totals)
+    emm_totals = (
+    emm_totals
+    .sort_values("target")  # Ensure consistent order for 'first'
+    .groupby("target", as_index=False)
+    .agg({
+        "label": "first",
+        "source": "first",
+        "2020": "sum"
+    })
+)
     return emm_totals
 
 def Construct_2015_GB_from_JRC_IDEES(country):
@@ -343,6 +363,16 @@ def Construct_2015_GB_from_JRC_IDEES(country):
              
     ]
     totals_df = pd.DataFrame(ct_totals)
+    totals_df = (
+    totals_df
+    .sort_values("target")  # Ensure consistent order for 'first'
+    .groupby("target", as_index=False)
+    .agg({
+        "label": "first",
+        "source": "first",
+        "2020": "sum"
+    })
+)
     return totals_df
 
 
@@ -452,9 +482,102 @@ def Construct_2015_GB_emissions_from_JRC_IDEES(country):
     "target": "emmluf",
     "2020": lulucf})
     emm_totals = pd.DataFrame(ct_totals)
+    emm_totals = (
+    emm_totals
+    .sort_values("target")  # Ensure consistent order for 'first'
+    .groupby("target", as_index=False)
+    .agg({
+        "label": "first",
+        "source": "first",
+        "2020": "sum"
+    })
+)
     return emm_totals
 
+def prepare_norway_switzerland():
+ conversion_factor = 11.63 / 1e3 #ktoe to Twh
+
+ df_raw = pd.read_excel(
+    "data/eurostat/eurostat-energy_balances-april_2023_edition/NO-Energy-balance-sheets-April-2023-edition.xlsb",
+    sheet_name="2019",
+    index_col=7,
+    header=None,
+    engine='pyxlsb')
+ new_columns = df_raw.iloc[4]
+ df = df_raw.iloc[5:].copy()
+ df.columns = new_columns
+ df = df.drop(df.columns[:7], axis=1)
+ df = df.apply(pd.to_numeric, errors='coerce').fillna(0)
+ df = df * conversion_factor
+
+ def make_row(label, fuels, target, df, columns):
+      data = df.loc[fuels, columns]
+      total = data.sum().sum()
+      return {
+          "label": label,
+          "source": "TWh",
+          "target": target,
+          "2020": total
+      }
+  
+ ct_totals = [
+    make_row("Residential and tertiary gas for heating", ["FC_OTH_HH_E"], "presgazcfg", df, columns=["Liquefied petroleum gases", "Natural gas"]),
+    make_row("Residential and tertiary oil for heating", ["FC_OTH_HH_E"], "prespetcfo", df, columns=["Gas oil and diesel oil (excluding biofuel portion)", "Oil and petroleum products"]),
+    make_row("Residential and tertiary biomass for heating", ["FC_OTH_HH_E"], "presenccfb", df, columns=["Renewables and biofuels", "Primary solid biofuels"]),
+    make_row("Residential and tertiary DH demand", ["FC_OTH_HH_E"], "presvapcfdhs", df, columns=["Heat"]),
+    make_row("Residential and tertiary HP for heating", ["FC_OTH_HH_E"], "prespaccfaaa", df, columns=["Ambient heat (heat pumps)"]),
+    make_row("Residential and tertiary gas for heating", ["FC_OTH_CP_E"], "presgazcfggg", df, columns=["Liquefied petroleum gases", "Natural gas"]),
+    make_row("Residential and tertiary oil for heating", ["FC_OTH_CP_E"], "prespetcfooo", df, columns=["Gas oil and diesel oil (excluding biofuel portion)", "Oil and petroleum products"]),
+    make_row("Residential and tertiary biomass for heating", ["FC_OTH_CP_E"], "presenccfbbb", df, columns=["Renewables and biofuels", "Primary solid biofuels"]),
+    make_row("Residential and tertiary DH demand", ["FC_OTH_CP_E"], "presvapcfdhs", df, columns=["Heat"]),
+    make_row("Residential and tertiary HP for heating", ["FC_OTH_CP_E"], "prespaccffff", df, columns=["Ambient heat (heat pumps)"]),
+    make_row("electricity demand of residential and tertairy", ["FC_OTH_HH_E"], "preselccfres", df, columns=["Electricity"]),
+    make_row("electricity demand of residential and tertairy", ["FC_OTH_CP_E"], "preselccfterr", df, columns=["Electricity"]),
+    make_row("electricity for Industry", ["FC_IND_E"], "preselccfind", df, columns=["Electricity"]),
+    make_row("coal for industry", ["FC_IND_E"], "cmscfind", df, columns=["Solid fossil fuels","Other bituminous coal","Coke oven coke","Charcoal"]),
+    make_row("gas for Industry", ["FC_IND_E"], "presgazcfind", df, columns=["Manufactured gases","Blast furnace gas","Liquefied petroleum gases","Natural gas","Ethane"]),
+    make_row("Oil for industry", ["FC_IND_E"], "prespetcfind", df, columns=["Oil and petroleum products","Other kerosene","Gas oil and diesel oil (excluding biofuel portion)","Fuel oil","Petroleum coke"]),
+    make_row("solid biomass for Industry", ["FC_IND_E"], "presenccfind", df, columns=["Renewables and biofuels","Primary solid biofuels","Biogases","Renewable municipal waste"]),
+    make_row("low-temperature heat for industry", ["FC_IND_E"], "presvapcfind", df, columns=["Heat"]),
+    make_row("naphtha for non-energy", ["FC_IND_NE"], "prespetcfneind", df, columns=["Fossil energy"]),
+    make_row("oil to transport demand", ["FC_TRA_ROAD_E"], "preslqfcftra", df, columns=["Fossil energy"]),
+    make_row("BEV charging", ["FC_TRA_ROAD_E"], "prebev", df, columns=["Electricity"]),
+    make_row("electricity demand for rail network", ["FC_TRA_RAIL_E"], "preserail", df, columns=["Electricity"]),
+    make_row("oil demand for rail network", ["FC_TRA_RAIL_E"], "preserailoil", df, columns=["Fossil energy"]),
+    make_row("aviation oil demand", ["FC_TRA_DAVI_E"], "preslqfcfavi", df, columns=["Fossil energy"]),
+    make_row("shipping oil", ["FC_TRA_DNAVI_E"], "preslqfcffrewati", df, columns=["Fossil energy"]),
+    make_row("agriculture electricity", ["FC_OTH_AF_E"], "preselccfagr", df, columns=["Electricity"]),
+    make_row("agriculture oil", ["FC_OTH_AF_E"], "prespetcfagr", df, columns=["Gas oil and diesel oil (excluding biofuel portion)", "Oil and petroleum products"]),
+    make_row("agriculture heat", ["FC_OTH_AF_E"], "pregazcfagr", df, columns=["Liquefied petroleum gases", "Natural gas"]),
+    make_row("Nuclear production", ["TI_EHG_E"], "proelcnuc", df, columns=["Nuclear heat"]),
+    make_row("Solar photovoltaic Production", ["TI_EHG_E"], "prospv", df, columns=["Solar photovoltaic"]),
+    make_row("wind-generated electricity", ["TI_EHG_E"], "prowind", df, columns=["Wind"]),
+    make_row("Total hydropower production", ["TI_EHG_E"], "prohdr", df, columns=["Hydro"]),
+    make_row("Gas-fired power generation", ["TI_EHG_E"], "proelcgaz", df, columns=["Manufactured gases","Blast furnace gas","Liquefied petroleum gases","Natural gas","Ethane"]),
+    make_row("Oil generation", ["TI_EHG_E"], "proelcpet", df, columns=["Oil and petroleum products","Other kerosene","Gas oil and diesel oil (excluding biofuel portion)","Fuel oil","Petroleum coke"]),
+    make_row("solid biomass power plants", ["TI_EHG_E"], "proelcboi", df, columns=["Renewables and biofuels","Primary solid biofuels","Biogases","Renewable municipal waste"]),
+    make_row("Coal-fired power generation", ["TI_EHG_E"], "proelccms", df, columns=["Solid fossil fuels","Other bituminous coal","Coke oven coke","Charcoal"]),
+    make_row("Domestic production of solid biomass", ["PPRD"], "prodomboi", df, columns=["Renewables and biofuels","Primary solid biofuels","Biogases","Renewable municipal waste"]),
     
+]
+ norway_df = pd.DataFrame(ct_totals)
+ norway_df = (
+    norway_df
+    .sort_values("target")  # Ensure consistent order for 'first'
+    .groupby("target", as_index=False)
+    .agg({
+        "label": "first",
+        "source": "first",
+        "2020": "sum"
+    })
+)
+
+ swiss = pd.read_excel("results/ref/sepia/inputsCH.xlsx", sheet_name="Inputs")
+ targets_to_keep = norway_df['target'].unique()
+ filtered_swiss = swiss[swiss['target'].isin(targets_to_keep)]
+ swiss_df = filtered_swiss[['label', 'source', 'target', '2020']]
+ 
+ return norway_df, swiss_df    
     
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -465,6 +588,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=snakemake.config["logging"]["level"])
     countries = ['BE', 'DE', 'FR', 'NL']
+    # countries = ['AT','BG','CZ','BE', 'DE','DK','EE','ES','GR','FI', 'FR','HR','HU','IE','IT','LT','LU','LV', 'NL','PL','PT','RO','SE','SI','SK']
     countriess = ['GB']
     study = snakemake.params.study
     # Create separate files for each country
@@ -496,7 +620,14 @@ if __name__ == "__main__":
         df_emm = Construct_2015_GB_emissions_from_JRC_IDEES(country).set_index(["label", "source", "target"])
         combined_inputs = combined_inputs.add(df_inputs, fill_value=0)
         combined_emissions = combined_emissions.add(df_emm, fill_value=0)
-
+    if 'NO' in snakemake.config["countries"]:
+     norway_df, swiss_df = prepare_norway_switzerland()
+     norway_df.to_excel(f"results/{study}/sepia/inputs_NO.xlsx", sheet_name="Inputs", index=False)
+     swiss_df.to_excel(f"results/{study}/sepia/inputs_CH.xlsx", sheet_name="Inputs", index=False)
+     df_inputs_NO = norway_df.set_index(["label", "source", "target"])
+     df_inputs_CH = swiss_df.set_index(["label", "source", "target"])
+     combined_inputs = combined_inputs.add(df_inputs_NO, fill_value=0)
+     combined_inputs = combined_inputs.add(df_inputs_CH, fill_value=0)
     # Save to inputsEU.xlsx with two sheets
     with pd.ExcelWriter(f"results/{study}/sepia/inputs_EU.xlsx") as writer:
         combined_inputs.reset_index().to_excel(writer, sheet_name="Inputs", index=False)
