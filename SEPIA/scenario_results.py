@@ -512,7 +512,7 @@ def scenario_clustered_costs(country):
         fig.add_trace(go.Bar(x=df_transposed.index, y=df_transposed[tech], name=tech, width=0.6, marker_color=tech_colors.get(tech, 'lightgrey')))
     # fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', name='Euro reference value = 2020', marker=dict(color='rgba(0,0,0,0)')))
     # Configure layout and labels
-    fig.update_layout(height=500, width=500,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=18),tickfont=dict(size=18)),xaxis=dict(tickfont=dict(size=18)),legend=dict(font=dict(size=18)))
+    fig.update_layout(height=800, width=600,title=title, barmode='stack', yaxis=dict(title=unit,title_font=dict(size=18),tickfont=dict(size=18)),xaxis=dict(tickfont=dict(size=18)),legend=dict(font=dict(size=18)))
     fig.update_layout(hovermode='y')
     if country == 'BE':
      pio.write_image(fig, "results/pdf/Clustered Costs.pdf", format='pdf')
@@ -848,7 +848,7 @@ def crabon_capture_techs(country):
     carbon_combined = pd.concat([carbon_ref, carbon_suff], axis=1)
     carbon_combined.fillna(0, inplace=True)
     carbon_combined = carbon_combined.round(1)
-    desired_order = ['CCU', 'CC', 'DAC', 'CCS', ]  # Define your preferred order
+    desired_order = ['CCU', 'CC', 'CC(DAC)', 'CCS', ]  # Define your preferred order
     carbon_combined = carbon_combined.reindex(desired_order)
 
     # color_palette = {
