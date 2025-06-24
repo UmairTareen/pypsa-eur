@@ -408,7 +408,7 @@ def prepare_sepia(countries):
     ('imp', 'enc_pe', ''),
     ('imp', 'amm_fe', ''),
     ('imp', 'met_fe', ''),
-    ('imp', 'ura_pe', ''),
+    ('ura_pe', 'elc_se', 'thm'),
     ('imp', 'cms_pe', '')]
     selected_imports = pd.DataFrame()
     for flow in filtered_flows:

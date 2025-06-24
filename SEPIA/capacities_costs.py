@@ -396,7 +396,7 @@ def prepare_costs_2020(country):
   oil_fuel = (imports.loc[2020, "imp_pet_pe"] + local.loc[2020, "prod_pet_pe"]) * costs.loc[("oil", "fuel")] * 1e6
   bm_fuel = (imports.loc[2020, "imp_enc_pe"] + local.loc[2020, "prod_enc_pe"]) * costs.loc[("biomass", "fuel")] * 1e6
   coal_fuel = (imports.loc[2020, "imp_cms_pe"] + local.loc[2020, "prod_cms_pe"]) * costs.loc[("coal", "fuel")] * 1e6
-  ura_fuel = imports.loc[2020, "imp_ura_pe"] * costs.loc[("uranium", "fuel")] * 1e6
+  ura_fuel = imports.loc[2020, "ura_pe_elc_se"] * costs.loc[("uranium", "fuel")] * 1e6
   fuel_costs = {
     "gas": gas_fuel,
     "oil": oil_fuel,

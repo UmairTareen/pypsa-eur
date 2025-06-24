@@ -972,7 +972,7 @@ def belgium_energy_independence():
     'imp_hyd_se': 'Hydrogen',
     'imp_enc_pe': 'Solid biomass',
     'imp_amm_fe': 'Ammonia',
-    'imp_ura_pe': 'Uranium',
+    'ura_pe_elc_se': 'Uranium',
     'imp_met_fe': 'Methanol'}
  # carrier_colors = {
  #    'Natural gas': '#e05b09',
